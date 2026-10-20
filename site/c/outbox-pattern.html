@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>📮 事务性发件箱模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="" data-root="../">
+<div id="readbar"></div>
+<header class="top"><a class="brand" href="../index.html">🧭 <b>AI 造物指南</b></a>
+<nav class="tools">
+<a href="../glossary.html" title="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个">🎲<span>随机</span></button>
+<button data-act="font-" title="字变小">A-</button><button data-act="font+" title="字变大">A+</button>
+<button data-act="calm" title="宽松阅读：字距行距更大">🫧<span>宽松</span></button>
+<button data-act="focus" title="专注模式：只亮当前这块">🔦<span>专注</span></button>
+<button data-act="motion" title="暂停/播放动画">⏯️<span>动画</span></button>
+</nav></header>
+
+<main class="cp l4" data-slug="outbox-pattern" data-answer="0">
+<nav class="crumb"><a href="../index.html">🏠 首页</a> › <a href="../index.html#l4">🔥 进阶</a> › 🗄️ 数据库</nav>
+<section class="hero blk" id="s-hero">
+  <div class="hemo">📮</div>
+  <div><div class="meta"><span class="lvb">🔥 进阶</span><span>No.280 / 310</span><span>⏱ 约 2 分钟</span></div>
+  <h1>事务性发件箱模式</h1><p class="en">Outbox Pattern</p></div>
+  <button class="say" data-say="s-hero s-one s-ana" title="读给我听">🔊 读给我听</button>
+</section>
+<ol class="steps-nav" aria-label="本页进度">
+<li><a href="#s-one">🎯</a></li><li><a href="#s-ana">🧸</a></li><li><a href="#s-anim">🎬</a></li><li><a href="#s-tab">📊</a></li><li><a href="#s-how">👣</a></li><li><a href="#s-oops">💥</a></li><li><a href="#s-ai">🤖</a></li><li><a href="#s-quiz">✅</a></li></ol>
+<section class="blk one" id="s-one"><h2>🎯 一句话</h2><p class="big">把“要发的消息”和数据一起存，绝不漏发</p></section>
+<section class="blk" id="s-ana"><h2>🧸 打个比方</h2><p>签合同时，把通知信和合同锁进同一个箱子。合同生效后，邮差再取信寄出。一封不漏。</p><ul class="pts"><li>💾 业务数据和消息同时写入</li><li>📮 消息先放进“发件箱”表</li><li>🚚 后台程序再慢慢发出去</li></ul>
+<button class="say sm" data-say="s-ana">🔊</button></section>
+<section class="blk" id="s-anim"><h2>🎬 动起来看</h2><div class="sc sc-lock"><div class="fr f1"><div class="nd "><span class="ne">🧾</span><span class="nl">订单+消息</span></div></div><div class="arw">➜</div><div class="fr f2"><div class="nd big"><span class="ne">🔐</span><span class="nl">同一事务</span></div></div><div class="arw a2">➜</div><div class="fr f3"><div class="nd "><span class="ne">📮</span><span class="nl">一起存好</span></div></div></div><p class="cap">👀 数据和消息要么都存，要么都不存</p></section>
+<section class="blk" id="s-tab"><h2>📊 两种写法对比</h2><div class="tw"><table><thead><tr><th>写法</th><th>断电时</th><th>结果</th></tr></thead><tbody><tr><td>先存库再发</td><td>消息丢了</td><td>❌ 漏发</td></tr><tr><td>发件箱模式</td><td>都还在</td><td>✅ 补发</td></tr><tr><td>先发再存</td><td>库没存上</td><td>❌ 假消息</td></tr></tbody></table></div></section>
+<section class="blk" id="s-how"><h2>👣 你该怎么做</h2><ol class="how"><li><span class="sn">1</span><p>🔎 找出“存库后发消息”的地方</p></li><li><span class="sn">2</span><p>📮 让 AI 加一张 outbox 表</p></li><li><span class="sn">3</span><p>🚚 加个后台任务负责投递</p></li></ol><button class="say sm" data-say="s-how">🔊</button></section>
+<section class="blk oops" id="s-oops"><h2>💥 翻车现场</h2><p>订单刚存进库服务器就断电，“发货通知”没发出，用户等了三天。</p></section>
+<section class="blk ai" id="s-ai"><h2>🤖 复制给 AI 的话</h2><pre class="prompt">请把“下单后发消息”改成事务性发件箱模式：在同一个事务里写订单表和 outbox 表，再用后台任务投递消息。</pre><button class="copy">📋 一键复制</button></section>
+<section class="blk quiz" id="s-quiz"><h2>✅ 小测一下</h2><p class="q">发件箱模式解决什么问题？</p><div class="opts"><button class="opt" data-i="0">A. 消息漏发</button><button class="opt" data-i="1">B. 页面太丑</button><button class="opt" data-i="2">C. 密码太短</button></div>
+<p class="why" hidden>💡 数据和消息同一事务写入，不会存了库却没发。</p></section>
+<section class="blk words"><h2>📚 顺便认识这些词</h2><div class="chips"><span class="chip">事务 (Transaction)</span><span class="chip">发件箱表 (Outbox)</span><span class="chip">消息队列</span><span class="chip">最终一致性</span></div>
+<h3>🔗 相关概念</h3><div class="rels"><a class="rel" href="transactions.html">🤝 数据库事务</a><a class="rel" href="message-queue.html">📬 消息队列</a><a class="rel" href="change-data-capture.html">📸 变更数据捕获 (CDC)</a><a class="rel" href="at-least-once-delivery.html">📬 至少一次投递语义</a></div></section>
+<div class="done-row"><button class="done">🙋 我学会了！</button></div>
+<nav class="pnav"><a class="pn prev" href="change-data-capture.html">⬅️ <span>上一个</span><b>📸 变更数据捕获 (CDC)</b></a><a class="pn next" href="nat-gateways.html"><span>下一个</span><b>🚪 网络地址转换网关</b> ➡️</a></nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · 给不会代码的人 · by Q1f730 · 内容可能有疏漏，欢迎在 GitHub 提 Issue</footer>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

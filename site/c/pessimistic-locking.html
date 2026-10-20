@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🚪 悲观并发控制 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="" data-root="../">
+<div id="readbar"></div>
+<header class="top"><a class="brand" href="../index.html">🧭 <b>AI 造物指南</b></a>
+<nav class="tools">
+<a href="../glossary.html" title="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个">🎲<span>随机</span></button>
+<button data-act="font-" title="字变小">A-</button><button data-act="font+" title="字变大">A+</button>
+<button data-act="calm" title="宽松阅读：字距行距更大">🫧<span>宽松</span></button>
+<button data-act="focus" title="专注模式：只亮当前这块">🔦<span>专注</span></button>
+<button data-act="motion" title="暂停/播放动画">⏯️<span>动画</span></button>
+</nav></header>
+
+<main class="cp l3" data-slug="pessimistic-locking" data-answer="1">
+<nav class="crumb"><a href="../index.html">🏠 首页</a> › <a href="../index.html#l3">🔮 高级</a> › 🗄️ 数据库</nav>
+<section class="hero blk" id="s-hero">
+  <div class="hemo">🚪</div>
+  <div><div class="meta"><span class="lvb">🔮 高级</span><span>No.173 / 310</span><span>⏱ 约 2 分钟</span></div>
+  <h1>悲观并发控制</h1><p class="en">Pessimistic Locking</p></div>
+  <button class="say" data-say="s-hero s-one s-ana" title="读给我听">🔊 读给我听</button>
+</section>
+<ol class="steps-nav" aria-label="本页进度">
+<li><a href="#s-one">🎯</a></li><li><a href="#s-ana">🧸</a></li><li><a href="#s-anim">🎬</a></li><li><a href="#s-tab">📊</a></li><li><a href="#s-how">👣</a></li><li><a href="#s-oops">💥</a></li><li><a href="#s-ai">🤖</a></li><li><a href="#s-quiz">✅</a></li></ol>
+<section class="blk one" id="s-one"><h2>🎯 一句话</h2><p class="big">先把门锁上，用完才放人</p></section>
+<section class="blk" id="s-ana"><h2>🧸 打个比方</h2><p>像商场试衣间。进去先插上门栓。你换完出来，下一个人才能进。</p><ul class="pts"><li>🔒 先锁住数据，再去修改</li><li>🧍 其他人只能排队等</li><li>💰 适合扣余额、扣库存</li></ul>
+<button class="say sm" data-say="s-ana">🔊</button></section>
+<section class="blk" id="s-anim"><h2>🎬 动起来看</h2><div class="sc sc-queue"><div class="belt"><div class="items"><span class="qi" style="--i:0">💸</span><span class="qi" style="--i:1">💸</span><span class="qi" style="--i:2">💸</span><span class="qi" style="--i:3">💸</span><span class="qi" style="--i:4">💸</span></div><div class="qlab">扣款请求</div></div><div class="nd pulse big"><span class="ne">🔒</span><span class="nl">加锁的行</span></div></div><p class="cap">👀 一个一个来，不抢不乱</p></section>
+<section class="blk" id="s-tab"><h2>📊 悲观锁的取舍</h2><div class="tw"><table><thead><tr><th>方面</th><th>好处</th><th>代价</th></tr></thead><tbody><tr><td>正确性</td><td>不会超卖</td><td>—</td></tr><tr><td>速度</td><td>—</td><td>大家要排队</td></tr><tr><td>风险</td><td>—</td><td>可能死锁</td></tr></tbody></table></div></section>
+<section class="blk" id="s-how"><h2>👣 你该怎么做</h2><ol class="how"><li><span class="sn">1</span><p>💰 找出扣钱扣库存的代码</p></li><li><span class="sn">2</span><p>🔒 让 AI 用 FOR UPDATE 加锁</p></li><li><span class="sn">3</span><p>⏱️ 事务尽量短，设好超时</p></li></ol><button class="say sm" data-say="s-how">🔊</button></section>
+<section class="blk oops" id="s-oops"><h2>💥 翻车现场</h2><p>用户狂点十次提现。没加锁，十个请求都通过了余额检查，多提了九倍。</p></section>
+<section class="blk ai" id="s-ai"><h2>🤖 复制给 AI 的话</h2><pre class="prompt">请在扣减余额的事务里，先用 SELECT ... FOR UPDATE 锁住该用户的行，再检查余额并扣减。</pre><button class="copy">📋 一键复制</button></section>
+<section class="blk quiz" id="s-quiz"><h2>✅ 小测一下</h2><p class="q">悲观锁适合哪种场景？</p><div class="opts"><button class="opt" data-i="0">A. 看文章列表</button><button class="opt" data-i="1">B. 扣减账户余额</button><button class="opt" data-i="2">C. 改头像</button></div>
+<p class="why" hidden>💡 钱的操作冲突代价大，先锁住最稳。</p></section>
+<section class="blk words"><h2>📚 顺便认识这些词</h2><div class="chips"><span class="chip">悲观锁</span><span class="chip">排他锁</span><span class="chip">FOR UPDATE</span><span class="chip">超卖</span></div>
+<h3>🔗 相关概念</h3><div class="rels"><a class="rel" href="optimistic-locking.html">📝 乐观并发控制</a><a class="rel" href="deadlocks.html">🚗 数据库死锁</a><a class="rel" href="transactions.html">🤝 数据库事务</a><a class="rel" href="race-conditions.html">🏁 竞态条件</a></div></section>
+<div class="done-row"><button class="done">🙋 我学会了！</button></div>
+<nav class="pnav"><a class="pn prev" href="optimistic-locking.html">⬅️ <span>上一个</span><b>📝 乐观并发控制</b></a><a class="pn next" href="normalization.html"><span>下一个</span><b>🗂️ 数据库范式化</b> ➡️</a></nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · 给不会代码的人 · by Q1f730 · 内容可能有疏漏，欢迎在 GitHub 提 Issue</footer>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="DNS缓存传播延迟 专业模式：所谓 DNS 传播（DNS Propagation）并不是变更被主动推送到全网，而是各级缓存（递归解析器、操作系统、浏览器）在旧记录的 TTL 到期前继续返回旧">
+<title>🎓 DNS缓存传播延迟 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="dns-propagation" data-answer="0" data-prev="reverse-proxy.pro.html" data-next="keep-alive.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#net">🔮 高级 · 🌐 网络与 API</a><span>›</span><a href="dns-propagation.html">DNS缓存传播延迟</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.256 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="reverse-proxy.pro.html" rel="prev"><small>‹ 上一个</small><b>🛎️ 反向代理 (Nginx)</b></a><a class="pn next" href="keep-alive.pro.html" rel="next"><small>下一个 ›</small><b>📞 HTTP持久连接复用</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📮</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>DNS缓存传播延迟</h1><p class="en">DNS Propagation</p>
+    <div class="hbtns"><a class="prosw back" href="dns-propagation.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">所谓 DNS 传播（DNS Propagation）并不是变更被主动推送到全网，而是各级缓存（递归解析器、操作系统、浏览器）在旧记录的 TTL 到期前继续返回旧值。修改记录后，不同用户在不同时间看到新值。理解 TTL 与缓存层级，才能把切换窗口控制到可预期。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>权威 DNS 服务器保存记录及其 TTL，修改后权威端立即返回新值。</p></li><li><span class="sn">2</span><p>递归解析器（运营商、8.8.8.8、1.1.1.1）按 TTL 缓存答案，到期前不会重新查询。</p></li><li><span class="sn">3</span><p>操作系统、浏览器和应用运行时也有各自的缓存，部分客户端不严格遵守 TTL。</p></li><li><span class="sn">4</span><p>更换 NS（换 DNS 服务商）还受上级注册局委派记录的 TTL 影响，通常更久。</p></li><li><span class="sn">5</span><p>查询不存在的记录也会被缓存（负缓存），时长由 SOA 记录决定。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>TTL (Time To Live)</dt><dd>记录可被缓存的秒数。</dd></div><div class="term"><dt>权威服务器 (Authoritative Server)</dt><dd>持有域名区域数据的最终来源。</dd></div><div class="term"><dt>递归解析器 (Recursive Resolver)</dt><dd>替客户端逐级查询并缓存结果的服务器。</dd></div><div class="term"><dt>负缓存 (Negative Caching)</dt><dd>缓存“记录不存在”的结果，见 RFC 2308。</dd></div><div class="term"><dt>NS 委派 (Delegation)</dt><dd>上级区域用 NS 记录指明子域由谁负责。</dd></div><div class="term"><dt>SOA 记录</dt><dd>区域起始授权记录，含序列号与负缓存时长等。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>切换前后的 DNS 排查</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 1. 查当前记录与剩余 TTL（第二列为秒）
+dig +noall +answer api.example.com A
+
+# 2. 直接问权威服务器，确认改动已生效
+dig +short NS example.com
+dig @ns1.example-dns.com api.example.com A +norecurse
+
+# 3. 对比几家公共解析器的缓存状态
+for r in 8.8.8.8 1.1.1.1 223.5.5.5; do
+  echo &quot;$r -&gt; $(dig @$r +short api.example.com A)&quot;
+done
+
+# 4. 从根开始逐级追踪委派路径（换 NS 时尤其有用）
+dig +trace api.example.com
+
+# 5. 本机缓存：macOS 清缓存
+sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+# Linux（systemd-resolved）
+resolvectl flush-caches</code></pre></div><p class="cnote">先问权威确认改动，再看各解析器缓存；dig +trace 排查委派问题。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">影响生效时间的因素</h3><div class="tw"><table><thead><tr><th>因素</th><th>影响</th><th>可控性</th></tr></thead><tbody><tr><td data-h="因素">记录 TTL</td><td data-h="影响">解析器最长缓存时长</td><td data-h="可控性">可控：变更前提前调低</td></tr><tr><td data-h="因素">NS 委派 TTL</td><td data-h="影响">换服务商时的延迟</td><td data-h="可控性">由注册局决定，常为数小时到两天</td></tr><tr><td data-h="因素">负缓存 TTL</td><td data-h="影响">新增记录前被查过则延迟</td><td data-h="可控性">可控：SOA 中设置</td></tr><tr><td data-h="因素">客户端缓存</td><td data-h="影响">浏览器/OS/JVM 自有缓存</td><td data-h="可控性">部分可控，需应用配置</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>长 TTL（数小时）</h4><p><b class="k-p">优点</b>查询少、解析快，抗权威故障</p><p><b class="k-c">代价</b>切换慢，出错回滚也慢</p><p><b class="k-w">适用</b>长期稳定的记录</p></div><div class="trd"><h4>短 TTL（数十秒到几分钟）</h4><p><b class="k-p">优点</b>切换和回滚快</p><p><b class="k-c">代价</b>查询量与延迟增加</p><p><b class="k-w">适用</b>迁移窗口或故障切换记录</p></div><div class="trd"><h4>不改 DNS，改后端指向</h4><p><b class="k-p">优点</b>切换即时生效</p><p><b class="k-c">代价</b>需要负载均衡或 Anycast 层</p><p><b class="k-w">适用</b>频繁切换的生产流量</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>切换当天才把 TTL 调低</p><p class="fix"><b>✓</b>至少提前一个旧 TTL 周期调低，等旧缓存过期</p></li><li><p class="bad"><b>✗</b>切换后立刻下线旧服务器</p><p class="fix"><b>✓</b>保留旧服务直到旧 TTL 过期且流量归零</p></li><li><p class="bad"><b>✗</b>上线前反复查询尚未创建的记录</p><p class="fix"><b>✓</b>注意负缓存，必要时降低 SOA 负缓存时长</p></li><li><p class="bad"><b>✗</b>Java 等运行时永久缓存 DNS，切换后连旧 IP</p><p class="fix"><b>✓</b>配置运行时 DNS 缓存时长，如 networkaddress.cache.ttl</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>提前调低待改记录的 TTL</span></label></li><li><label><input type="checkbox"><span>权威服务器已确认返回新值</span></label></li><li><label><input type="checkbox"><span>多个公共解析器验证通过</span></label></li><li><label><input type="checkbox"><span>旧服务保留到旧 TTL 过期</span></label></li><li><label><input type="checkbox"><span>切换完成后恢复较长 TTL</span></label></li><li><label><input type="checkbox"><span>应用运行时的 DNS 缓存已核查</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么说“DNS 传播”这个说法不准确？</summary><p>DNS 没有把变更推送出去的机制。权威端修改即生效，各处看到旧值是因为解析器和客户端缓存未过期。生效时间由旧记录的 TTL 和缓存行为决定，所以要提前降 TTL，而不是等它“传播”。</p></details><details class="iv"><summary>迁移服务器时如何安排 DNS 切换？</summary><p>提前一个以上旧 TTL 周期把记录 TTL 降到较短值；新服务准备好后修改记录；用权威查询与多家解析器验证；新旧服务并行运行直到旧流量消失；确认稳定后恢复正常 TTL。</p></details><details class="iv"><summary>换 DNS 服务商为什么比改 A 记录慢？</summary><p>换服务商要修改注册局中的 NS 委派，解析器缓存的是上级区域返回的 NS 记录，其 TTL 由注册局设定，常比普通记录长。期间新旧服务商都应保持相同的完整记录，避免解析失败。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.rfc-editor.org/rfc/rfc1034" target="_blank" rel="noopener"><b>RFC 1034: Domain Names - Concepts</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://www.rfc-editor.org/rfc/rfc2308" target="_blank" rel="noopener"><b>RFC 2308: Negative Caching of DNS Queries</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://developers.cloudflare.com/dns/manage-dns-records/reference/ttl/" target="_blank" rel="noopener"><b>Cloudflare Docs: DNS TTL</b><small>developers.cloudflare.com ↗</small></a></li><li><a href="https://developers.google.com/speed/public-dns/cache" target="_blank" rel="noopener"><b>Google Public DNS: Flush Cache</b><small>developers.google.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="reverse-proxy.pro.html" rel="prev"><small>‹ 上一个</small><b>🛎️ 反向代理 (Nginx)</b></a><a class="pn next" href="keep-alive.pro.html" rel="next"><small>下一个 ›</small><b>📞 HTTP持久连接复用</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

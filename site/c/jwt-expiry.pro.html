@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="JWT过期时间机制 专业模式：JWT 过期机制（JWT Expiry）指在 JSON Web Token 的载荷中使用 exp（过期时间）、nbf（生效时间）、iat（签发时间）等注册声明限">
+<title>🎓 JWT过期时间机制 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="jwt-expiry" data-answer="0" data-prev="password-salting.pro.html" data-next="refresh-tokens.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#sec">🌊 中级 · 🛡️ 安全防线</a><span>›</span><a href="jwt-expiry.html">JWT过期时间机制</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.114 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="password-salting.pro.html" rel="prev"><small>‹ 上一个</small><b>🧂 密码加盐</b></a><a class="pn next" href="refresh-tokens.pro.html" rel="next"><small>下一个 ›</small><b>🔁 刷新令牌</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">⏰</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>JWT过期时间机制</h1><p class="en">JWT Expiry</p>
+    <div class="hbtns"><a class="prosw back" href="jwt-expiry.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">JWT 过期机制（JWT Expiry）指在 JSON Web Token 的载荷中使用 exp（过期时间）、nbf（生效时间）、iat（签发时间）等注册声明限定令牌有效期，由校验方在每次请求时检查。由于 JWT 通常无状态、签发后难以撤销，较短的过期时间是控制令牌泄露风险的主要手段，常与刷新令牌配合使用。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>签发时在载荷中写入 exp，值为 Unix 时间戳秒数（NumericDate），表示令牌过期时刻。</p></li><li><span class="sn">2</span><p>令牌由头部、载荷、签名三段 Base64URL 编码组成，签名保证声明不被篡改。</p></li><li><span class="sn">3</span><p>校验方先用固定的算法和密钥验证签名，再检查 exp、nbf、iss、aud 等声明。</p></li><li><span class="sn">4</span><p>当前时间超过 exp（允许少量时钟偏差 leeway）则拒绝，客户端需用刷新令牌换取新令牌。</p></li><li><span class="sn">5</span><p>需要提前失效时，只能借助黑名单、令牌版本号或缩短有效期等有状态补充手段。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>exp 声明</dt><dd>过期时间，NumericDate 格式，超过即令牌无效。</dd></div><div class="term"><dt>时钟偏差 (Clock Skew)</dt><dd>签发方与校验方时间不一致，通常允许小幅容忍。</dd></div><div class="term"><dt>JWS</dt><dd>JSON Web Signature，带签名的 JWT 形式，载荷未加密可被读取。</dd></div><div class="term"><dt>aud 声明</dt><dd>令牌的目标受众，校验方应确认令牌是发给自己的。</dd></div><div class="term"><dt>jti 声明</dt><dd>令牌唯一 ID，可用于黑名单和防重放。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>PyJWT 设置与校验过期</span><em>python</em><button class="ccopy">复制</button></div><pre><code># pip install pyjwt
+import datetime as dt, os
+import jwt
+
+SECRET = os.environ[&quot;JWT_SECRET&quot;]   # 至少 32 字节随机值
+now = dt.datetime.now(dt.timezone.utc)
+
+token = jwt.encode({
+    &quot;sub&quot;: &quot;user_42&quot;,
+    &quot;aud&quot;: &quot;api.example.com&quot;,
+    &quot;iat&quot;: now,
+    &quot;exp&quot;: now + dt.timedelta(minutes=15),   # 短有效期
+}, SECRET, algorithm=&quot;HS256&quot;)
+
+try:
+    claims = jwt.decode(
+        token, SECRET,
+        algorithms=[&quot;HS256&quot;],       # 显式指定算法，防算法混淆
+        audience=&quot;api.example.com&quot;,
+        leeway=30,                   # 容忍 30 秒时钟偏差
+    )
+    print(claims[&quot;sub&quot;])
+except jwt.ExpiredSignatureError:
+    print(&quot;令牌已过期，请用刷新令牌换新&quot;)
+except jwt.InvalidTokenError as e:
+    print(&quot;无效令牌:&quot;, e)</code></pre></div><p class="cnote">PyJWT 默认校验 exp；datetime 会被转换为时间戳；必须显式传入 algorithms。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">JWT 时间相关声明</h3><div class="tw"><table><thead><tr><th>声明</th><th>含义</th><th>校验行为</th></tr></thead><tbody><tr><td data-h="声明">exp</td><td data-h="含义">过期时间</td><td data-h="校验行为">当前时间晚于它则拒绝</td></tr><tr><td data-h="声明">nbf</td><td data-h="含义">生效时间</td><td data-h="校验行为">当前时间早于它则拒绝</td></tr><tr><td data-h="声明">iat</td><td data-h="含义">签发时间</td><td data-h="校验行为">可用于计算令牌年龄</td></tr><tr><td data-h="声明">jti</td><td data-h="含义">唯一标识</td><td data-h="校验行为">配合黑名单或防重放</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>短期访问令牌（分钟级）</h4><p><b class="k-p">优点</b>泄露窗口小</p><p><b class="k-c">代价</b>需刷新机制</p><p><b class="k-w">适用</b>大多数 API 认证</p></div><div class="trd"><h4>长期 JWT</h4><p><b class="k-p">优点</b>实现简单</p><p><b class="k-c">代价</b>泄露后长期可用且难撤销</p><p><b class="k-w">适用</b>不推荐用于用户会话</p></div><div class="trd"><h4>JWT + 服务端黑名单</h4><p><b class="k-p">优点</b>可立即撤销</p><p><b class="k-c">代价</b>失去无状态优势</p><p><b class="k-w">适用</b>需强制登出的场景</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>签发时不设置 exp</p><p class="fix"><b>✓</b>所有用户令牌都设置较短的 exp</p></li><li><p class="bad"><b>✗</b>decode 时未指定 algorithms</p><p class="fix"><b>✓</b>显式限定允许的算法，拒绝 none</p></li><li><p class="bad"><b>✗</b>在 JWT 载荷中放敏感信息</p><p class="fix"><b>✓</b>载荷只是 Base64URL 编码，任何人可读</p></li><li><p class="bad"><b>✗</b>用户改密或登出后旧令牌仍有效</p><p class="fix"><b>✓</b>缩短有效期，或引入令牌版本号/黑名单</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>访问令牌设置短 exp</span></label></li><li><label><input type="checkbox"><span>校验签名、exp、iss、aud</span></label></li><li><label><input type="checkbox"><span>显式限定签名算法</span></label></li><li><label><input type="checkbox"><span>时钟偏差容忍值较小</span></label></li><li><label><input type="checkbox"><span>载荷不含敏感数据</span></label></li><li><label><input type="checkbox"><span>有强制失效方案</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>JWT 为什么难以撤销？</summary><p>JWT 的设计是自包含的：校验方只需验证签名和声明，不查询服务端状态。这带来了扩展性，但也意味着签发后在 exp 之前一直有效。要提前撤销，就必须引入黑名单、版本号等服务端状态，部分抵消无状态的优势。</p></details><details class="iv"><summary>访问令牌有效期设多长合适？</summary><p>没有统一值，取决于风险与体验：常见做法是访问令牌设为几分钟到一小时，配合刷新令牌维持登录。越敏感的系统越短。关键是权衡泄露窗口与刷新频率，并确保刷新令牌本身有更严格的保护。</p></details><details class="iv"><summary>什么是 JWT 算法混淆攻击？</summary><p>若校验代码信任令牌头部的 alg 字段，攻击者可把算法改为 none 绕过签名，或把 RS256 改为 HS256，用公开的公钥当作 HMAC 密钥伪造签名。防御方法是服务端显式指定允许的算法并按密钥类型校验。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.rfc-editor.org/rfc/rfc7519" target="_blank" rel="noopener"><b>RFC 7519: JSON Web Token</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://www.rfc-editor.org/rfc/rfc8725" target="_blank" rel="noopener"><b>RFC 8725: JWT Best Current Practices</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://pyjwt.readthedocs.io/en/stable/usage.html" target="_blank" rel="noopener"><b>PyJWT Docs: Usage</b><small>pyjwt.readthedocs.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="password-salting.pro.html" rel="prev"><small>‹ 上一个</small><b>🧂 密码加盐</b></a><a class="pn next" href="refresh-tokens.pro.html" rel="next"><small>下一个 ›</small><b>🔁 刷新令牌</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

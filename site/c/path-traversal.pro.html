@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="路径遍历 专业模式：路径遍历（Path Traversal / Directory Traversal，CWE-22）是攻击者利用 ../、绝对路径或编码变体，让应用访问预期目录之">
+<title>🎓 路径遍历 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="path-traversal" data-answer="0" data-prev="ssrf.pro.html" data-next="mass-assignment.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sec">🔮 高级 · 🛡️ 安全防线</a><span>›</span><a href="path-traversal.html">路径遍历</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.219 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="ssrf.pro.html" rel="prev"><small>‹ 上一个</small><b>🎯 服务端请求伪造</b></a><a class="pn next" href="mass-assignment.pro.html" rel="next"><small>下一个 ›</small><b>📮 批量赋值漏洞</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🪜</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>路径遍历</h1><p class="en">Path Traversal</p>
+    <div class="hbtns"><a class="prosw back" href="path-traversal.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">路径遍历（Path Traversal / Directory Traversal，CWE-22）是攻击者利用 ../、绝对路径或编码变体，让应用访问预期目录之外文件的漏洞，常见于文件下载、模板加载、上传保存和压缩包解压。它可导致读取配置与密钥、覆盖程序文件，进而远程代码执行。根因是把用户输入直接拼进文件路径。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>应用根据用户输入构造文件路径，如 base_dir + &quot;/&quot; + filename。</p></li><li><span class="sn">2</span><p>攻击者提交 ../../etc/passwd 或绝对路径，使拼接结果跳出基准目录。</p></li><li><span class="sn">3</span><p>绕过简单过滤的变体包括 URL 编码 %2e%2e%2f、双重编码、反斜杠和符号链接。</p></li><li><span class="sn">4</span><p>解压时条目名包含 ../ 可把文件写到任意位置，即 Zip Slip。</p></li><li><span class="sn">5</span><p>正确防御是先规范化为绝对真实路径，再确认它仍位于基准目录之内。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>CWE-22</dt><dd>对受限目录的路径名限制不当，即路径遍历。</dd></div><div class="term"><dt>规范化 (Canonicalization)</dt><dd>解析 ..、符号链接等，得到唯一真实路径。</dd></div><div class="term"><dt>Zip Slip</dt><dd>压缩包条目名含 ../，解压时写出目标目录。</dd></div><div class="term"><dt>符号链接攻击 (Symlink Attack)</dt><dd>借助指向外部的链接绕过目录检查。</dd></div><div class="term"><dt>间接引用 (Indirect Reference)</dt><dd>用 ID 映射文件而不让用户直接给路径。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>安全地拼接用户文件路径</span><em>python</em><button class="ccopy">复制</button></div><pre><code>from pathlib import Path
+import zipfile
+
+BASE = Path(&quot;/srv/app/uploads&quot;).resolve()
+
+def safe_path(user_name: str) -&gt; Path:
+    # resolve() 会处理 ..、绝对路径与符号链接
+    p = (BASE / user_name).resolve()
+    if not p.is_relative_to(BASE):          # Python 3.9+
+        raise PermissionError(&quot;非法路径&quot;)
+    return p
+
+def safe_extract(zip_path: str, dest: Path):
+    dest = dest.resolve()
+    with zipfile.ZipFile(zip_path) as z:
+        for name in z.namelist():
+            target = (dest / name).resolve()
+            if not target.is_relative_to(dest):   # 防 Zip Slip
+                raise PermissionError(f&quot;恶意条目: {name}&quot;)
+        z.extractall(dest)
+
+print(safe_path(&quot;report.pdf&quot;))
+# safe_path(&quot;../../etc/passwd&quot;)  -&gt; PermissionError</code></pre></div><p class="cnote">先 resolve 规范化再判断是否仍在基准目录内；解压前逐个检查条目。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见攻击载荷</h3><div class="tw"><table><thead><tr><th>载荷</th><th>目的</th><th>防御要点</th></tr></thead><tbody><tr><td data-h="载荷">../../etc/passwd</td><td data-h="目的">跳出目录读取系统文件</td><td data-h="防御要点">规范化后比对前缀目录</td></tr><tr><td data-h="载荷">/etc/passwd</td><td data-h="目的">绝对路径覆盖拼接</td><td data-h="防御要点">拒绝绝对路径或规范化检查</td></tr><tr><td data-h="载荷">..%2f..%2f</td><td data-h="目的">编码绕过过滤</td><td data-h="防御要点">先解码再规范化，勿黑名单</td></tr><tr><td data-h="载荷">指向外部的符号链接</td><td data-h="目的">绕过字符串检查</td><td data-h="防御要点">解析真实路径后检查</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>规范化 + 目录前缀校验</h4><p><b class="k-p">优点</b>通用，支持用户指定文件名</p><p><b class="k-c">代价</b>需正确处理平台差异</p><p><b class="k-w">适用</b>必须接受文件名输入</p></div><div class="trd"><h4>ID 映射到文件</h4><p><b class="k-p">优点</b>用户完全接触不到路径</p><p><b class="k-c">代价</b>需维护映射表</p><p><b class="k-w">适用</b>下载、附件等业务场景</p></div><div class="trd"><h4>文件名白名单正则</h4><p><b class="k-p">优点</b>简单直观</p><p><b class="k-c">代价</b>限制字符集，可能误拒</p><p><b class="k-w">适用</b>文件名格式固定</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>用 replace(&quot;../&quot;, &quot;&quot;) 过滤</p><p class="fix"><b>✓</b>....// 等变体可绕过；改为规范化后校验</p></li><li><p class="bad"><b>✗</b>用字符串 startswith 比较路径前缀</p><p class="fix"><b>✓</b>/srv/app2 会匹配 /srv/app；用 is_relative_to 等路径语义判断</p></li><li><p class="bad"><b>✗</b>上传文件直接使用客户端提供的文件名保存</p><p class="fix"><b>✓</b>服务端生成随机文件名，原名只存数据库</p></li><li><p class="bad"><b>✗</b>Agent 文件工具未限制工作目录</p><p class="fix"><b>✓</b>Agent 读写工具同样做目录限制并在沙箱中运行</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>用户输入不直接拼接路径</span></label></li><li><label><input type="checkbox"><span>规范化后校验在基准目录内</span></label></li><li><label><input type="checkbox"><span>解压前检查每个条目</span></label></li><li><label><input type="checkbox"><span>上传文件使用服务端生成名</span></label></li><li><label><input type="checkbox"><span>进程以最小文件权限运行</span></label></li><li><label><input type="checkbox"><span>有 ../ 与编码变体的测试用例</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么黑名单过滤 ../ 不可靠？</summary><p>存在大量变体：URL 编码、双重编码、Unicode 形式、Windows 反斜杠、嵌套如 ....//、绝对路径和符号链接。正确方法是把路径规范化为真实绝对路径，再判断其是否位于允许的目录内。</p></details><details class="iv"><summary>路径遍历如何升级为代码执行？</summary><p>若能写文件，攻击者可覆盖应用代码、模板、启动脚本、cron 配置或 SSH authorized_keys，从而执行任意代码；即使只能读，也可能读到密钥和配置，再进一步入侵。</p></details><details class="iv"><summary>检查和使用之间有什么竞态风险？</summary><p>检查路径后、打开文件前，攻击者可能把文件替换为符号链接（TOCTOU）。可在打开时使用不跟随符号链接的选项，或在受控目录中操作，并限制进程文件权限。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://owasp.org/www-community/attacks/Path_Traversal" target="_blank" rel="noopener"><b>OWASP：Path Traversal</b><small>owasp.org ↗</small></a></li><li><a href="https://cwe.mitre.org/data/definitions/22.html" target="_blank" rel="noopener"><b>CWE-22</b><small>cwe.mitre.org ↗</small></a></li><li><a href="https://docs.python.org/3/library/pathlib.html" target="_blank" rel="noopener"><b>Python 文档：pathlib</b><small>docs.python.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="ssrf.pro.html" rel="prev"><small>‹ 上一个</small><b>🎯 服务端请求伪造</b></a><a class="pn next" href="mass-assignment.pro.html" rel="next"><small>下一个 ›</small><b>📮 批量赋值漏洞</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

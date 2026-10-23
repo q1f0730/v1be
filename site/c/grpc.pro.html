@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="高性能远程过程调用 专业模式：gRPC 是 Google 开源的高性能远程过程调用框架，以 HTTP/2 为传输层、默认用 Protocol Buffers 定义接口和序列化消息。通过代码生">
+<title>🎓 高性能远程过程调用 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="grpc" data-answer="0" data-prev="long-polling.pro.html" data-next="protocol-buffers.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#net">🔮 高级 · 🌐 网络与 API</a><span>›</span><a href="grpc.html">高性能远程过程调用</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.262 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="long-polling.pro.html" rel="prev"><small>‹ 上一个</small><b>☎️ HTTP长轮询</b></a><a class="pn next" href="protocol-buffers.pro.html" rel="next"><small>下一个 ›</small><b>🗜️ Protobuf二进制序列化</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🚄</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>高性能远程过程调用</h1><p class="en">gRPC</p>
+    <div class="hbtns"><a class="prosw back" href="grpc.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">gRPC 是 Google 开源的高性能远程过程调用框架，以 HTTP/2 为传输层、默认用 Protocol Buffers 定义接口和序列化消息。通过代码生成，调用远程服务就像调用本地函数。它支持一元调用与三种流式调用、超时传播和拦截器，广泛用于微服务内部通信。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>在 .proto 文件中定义 service 与方法、请求和响应消息。</p></li><li><span class="sn">2</span><p>protoc 及语言插件生成客户端存根（stub）和服务端接口代码。</p></li><li><span class="sn">3</span><p>客户端调用存根，请求被序列化为 Protobuf，作为 HTTP/2 流发送，元数据放在头部。</p></li><li><span class="sn">4</span><p>服务端反序列化、执行业务逻辑，返回响应与状态码（放在 HTTP/2 trailers 中）。</p></li><li><span class="sn">5</span><p>截止时间（deadline）随调用传播，超时自动取消；长连接复用承载大量并发调用。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>存根 (Stub)</dt><dd>生成的客户端代理，封装序列化与网络调用。</dd></div><div class="term"><dt>一元调用 (Unary RPC)</dt><dd>一个请求对应一个响应。</dd></div><div class="term"><dt>流式 RPC (Streaming RPC)</dt><dd>服务端流、客户端流、双向流三种模式。</dd></div><div class="term"><dt>截止时间 (Deadline)</dt><dd>调用必须完成的绝对时间点，超时返回 DEADLINE_EXCEEDED。</dd></div><div class="term"><dt>元数据 (Metadata)</dt><dd>随调用传递的键值对，类似 HTTP 头。</dd></div><div class="term"><dt>gRPC-Web</dt><dd>让浏览器经代理调用 gRPC 服务的协议变体。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Python 客户端调用与超时</span><em>python</em><button class="ccopy">复制</button></div><pre><code># greeter.proto:
+#   service Greeter { rpc SayHello (HelloRequest) returns (HelloReply); }
+#   message HelloRequest { string name = 1; }
+#   message HelloReply   { string message = 1; }
+# 生成代码：pip install grpcio grpcio-tools
+#   python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. greeter.proto
+import grpc
+import greeter_pb2, greeter_pb2_grpc
+
+with grpc.insecure_channel(&quot;localhost:50051&quot;) as channel:   # 内网示例，生产用 TLS
+    stub = greeter_pb2_grpc.GreeterStub(channel)
+    try:
+        reply = stub.SayHello(
+            greeter_pb2.HelloRequest(name=&quot;Q1f730&quot;),
+            timeout=2.0,                                  # 必须设截止时间
+            metadata=[(&quot;x-request-id&quot;, &quot;req-123&quot;)],
+        )
+        print(reply.message)
+    except grpc.RpcError as e:
+        if e.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
+            print(&quot;超时&quot;)
+        elif e.code() == grpc.StatusCode.UNAVAILABLE:
+            print(&quot;服务不可用，可按策略重试&quot;)
+        else:
+            raise</code></pre></div><p class="cnote">接口由 .proto 生成；每次调用都设 timeout，并按状态码区分可重试错误。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">gRPC 与 REST/JSON</h3><div class="tw"><table><thead><tr><th>维度</th><th>gRPC</th><th>REST + JSON</th></tr></thead><tbody><tr><td data-h="维度">接口定义</td><td data-h="gRPC">.proto 强类型契约</td><td data-h="REST + JSON">OpenAPI（可选）</td></tr><tr><td data-h="维度">传输</td><td data-h="gRPC">HTTP/2，支持流式</td><td data-h="REST + JSON">HTTP/1.1 或 2</td></tr><tr><td data-h="维度">载荷</td><td data-h="gRPC">二进制 Protobuf</td><td data-h="REST + JSON">文本 JSON，可读性好</td></tr><tr><td data-h="维度">浏览器调用</td><td data-h="gRPC">需 gRPC-Web 或 Connect</td><td data-h="REST + JSON">原生支持</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>gRPC</h4><p><b class="k-p">优点</b>强契约、性能好、原生流式</p><p><b class="k-c">代价</b>调试不直观，浏览器需代理</p><p><b class="k-w">适用</b>微服务内部、多语言调用</p></div><div class="trd"><h4>REST/JSON</h4><p><b class="k-p">优点</b>通用、易调试、生态成熟</p><p><b class="k-c">代价</b>契约松散，载荷较大</p><p><b class="k-w">适用</b>对外公开 API</p></div><div class="trd"><h4>Connect / gRPC-Web</h4><p><b class="k-p">优点</b>复用 proto 契约到浏览器</p><p><b class="k-c">代价</b>多一层协议与工具链</p><p><b class="k-w">适用</b>前后端共享 proto</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>调用不设 deadline，下游卡住时请求无限挂起</p><p class="fix"><b>✓</b>每个调用设置截止时间并向下游传播</p></li><li><p class="bad"><b>✗</b>用四层负载均衡，长连接导致流量集中在少数实例</p><p class="fix"><b>✓</b>用七层（如 Envoy）或客户端负载均衡</p></li><li><p class="bad"><b>✗</b>所有错误都返回 UNKNOWN</p><p class="fix"><b>✓</b>按语义映射标准状态码，附带错误详情</p></li><li><p class="bad"><b>✗</b>随意修改 proto 字段编号或类型</p><p class="fix"><b>✓</b>遵循 Protobuf 兼容规则，在 CI 中做破坏性变更检查</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有调用设置了截止时间</span></label></li><li><label><input type="checkbox"><span>负载均衡在请求级别分发</span></label></li><li><label><input type="checkbox"><span>错误映射到标准状态码</span></label></li><li><label><input type="checkbox"><span>生产启用 TLS 或 mTLS</span></label></li><li><label><input type="checkbox"><span>proto 变更有兼容性检查</span></label></li><li><label><input type="checkbox"><span>重试仅针对幂等方法与可重试状态码</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么 gRPC 在 Kubernetes 默认 Service 下负载不均？</summary><p>kube-proxy 做的是四层连接级均衡，而 gRPC 客户端复用一条 HTTP/2 长连接发送所有请求，连接建立后请求全落在同一 Pod。需改用 headless Service 加客户端负载均衡，或经 Envoy/服务网格做请求级均衡。</p></details><details class="iv"><summary>deadline 和 timeout 有何不同？为什么要传播？</summary><p>timeout 是相对时长，deadline 是绝对时间点。gRPC 把 deadline 随调用传给下游，下游可得知剩余时间，在上游已放弃时及时取消，避免为已超时的请求继续消耗资源。</p></details><details class="iv"><summary>gRPC 的四种调用模式分别适合什么？</summary><p>一元：普通请求响应。服务端流：订阅、大结果分批下发。客户端流：批量上传、遥测上报。双向流：实时对话、协同。流式调用需注意背压与连接寿命管理。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://grpc.io/docs/what-is-grpc/core-concepts/" target="_blank" rel="noopener"><b>gRPC: Core concepts</b><small>grpc.io ↗</small></a></li><li><a href="https://grpc.io/docs/guides/deadlines/" target="_blank" rel="noopener"><b>gRPC: Deadlines</b><small>grpc.io ↗</small></a></li><li><a href="https://grpc.io/docs/guides/status-codes/" target="_blank" rel="noopener"><b>gRPC: Status codes</b><small>grpc.io ↗</small></a></li><li><a href="https://grpc.io/docs/languages/python/quickstart/" target="_blank" rel="noopener"><b>gRPC Python Quick start</b><small>grpc.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="long-polling.pro.html" rel="prev"><small>‹ 上一个</small><b>☎️ HTTP长轮询</b></a><a class="pn next" href="protocol-buffers.pro.html" rel="next"><small>下一个 ›</small><b>🗜️ Protobuf二进制序列化</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

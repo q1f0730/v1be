@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="重试风暴 专业模式：重试风暴（Retry Storm）是指下游出现故障或变慢时，各层客户端同时、反复重试，使请求量成倍放大，把原本可恢复的局部问题变成持续过载的现象。它属于分布式系">
+<title>🎓 重试风暴 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="retry-storms" data-answer="0" data-prev="jitter.pro.html" data-next="cascading-failures.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#dist">🔮 高级 · 🕸️ 分布式</a><span>›</span><a href="retry-storms.html">重试风暴</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.289 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="jitter.pro.html" rel="prev"><small>‹ 上一个</small><b>🎲 退避随机抖动</b></a><a class="pn next" href="cascading-failures.pro.html" rel="next"><small>下一个 ›</small><b>🌊 级联故障 / 雪崩效应</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🌪️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>重试风暴</h1><p class="en">Retry Storms</p>
+    <div class="hbtns"><a class="prosw back" href="retry-storms.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">重试风暴（Retry Storm）是指下游出现故障或变慢时，各层客户端同时、反复重试，使请求量成倍放大，把原本可恢复的局部问题变成持续过载的现象。它属于分布式系统的过载与级联故障范畴，多层调用链中每层都重试 N 次时，最底层可能承受 N 的层数次方倍流量。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>下游因发布变更、容量不足或自身依赖问题，出现部分请求失败或延迟明显升高。</p></li><li><span class="sn">2</span><p>上游客户端超时后重试，请求量增加，下游负载进一步升高、失败率上升。</p></li><li><span class="sn">3</span><p>多层链路中每层独立重试，放大效应相乘，例如三层各重试 3 次最多 27 倍。</p></li><li><span class="sn">4</span><p>即使原始故障消除，积压的重试流量仍让服务无法恢复，形成亚稳态故障。</p></li><li><span class="sn">5</span><p>防护依赖重试预算、只在单层重试、退避抖动、熔断和服务端卸载共同作用。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>重试放大 (Retry Amplification)</dt><dd>多层重试叠加使底层请求量成倍增长。</dd></div><div class="term"><dt>重试预算 (Retry Budget)</dt><dd>限制重试请求占总请求的比例，例如不超过 10%。</dd></div><div class="term"><dt>亚稳态故障 (Metastable Failure)</dt><dd>触发因素消失后，系统仍被自身反馈环困在故障态。</dd></div><div class="term"><dt>熔断器 (Circuit Breaker)</dt><dd>失败率超阈值时暂停调用下游，一段时间后试探恢复。</dd></div><div class="term"><dt>重试节流 (Retry Throttling)</dt><dd>gRPC 中基于令牌桶，失败多时自动停止重试的机制。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>gRPC 重试与节流配置</span><em>json</em><button class="ccopy">复制</button></div><pre><code>{
+  &quot;methodConfig&quot;: [{
+    &quot;name&quot;: [{ &quot;service&quot;: &quot;orders.OrderService&quot; }],
+    &quot;retryPolicy&quot;: {
+      &quot;maxAttempts&quot;: 3,
+      &quot;initialBackoff&quot;: &quot;0.2s&quot;,
+      &quot;maxBackoff&quot;: &quot;2s&quot;,
+      &quot;backoffMultiplier&quot;: 2,
+      &quot;retryableStatusCodes&quot;: [&quot;UNAVAILABLE&quot;]
+    }
+  }],
+  &quot;retryThrottling&quot;: {
+    &quot;maxTokens&quot;: 10,
+    &quot;tokenRatio&quot;: 0.1
+  }
+}</code></pre></div><p class="cnote">gRPC 服务配置：限定重试次数和可重试状态码，retryThrottling 在失败率高时自动停止重试。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">多层重试的放大效应</h3><div class="tw"><table><thead><tr><th>调用层数</th><th>每层尝试次数</th><th>底层最大请求倍数</th></tr></thead><tbody><tr><td data-h="调用层数">1</td><td data-h="每层尝试次数">3</td><td data-h="底层最大请求倍数">3</td></tr><tr><td data-h="调用层数">2</td><td data-h="每层尝试次数">3</td><td data-h="底层最大请求倍数">9</td></tr><tr><td data-h="调用层数">3</td><td data-h="每层尝试次数">3</td><td data-h="底层最大请求倍数">27</td></tr><tr><td data-h="调用层数">3（仅一层重试）</td><td data-h="每层尝试次数">3 / 1 / 1</td><td data-h="底层最大请求倍数">3</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>只在最外层或最靠近故障的一层重试</h4><p><b class="k-p">优点</b>放大可控</p><p><b class="k-c">代价</b>需跨团队约定</p><p><b class="k-w">适用</b>多层同步调用链</p></div><div class="trd"><h4>重试预算</h4><p><b class="k-p">优点</b>故障时自动收敛重试量</p><p><b class="k-c">代价</b>需维护计数状态</p><p><b class="k-w">适用</b>高 QPS 客户端</p></div><div class="trd"><h4>熔断</h4><p><b class="k-p">优点</b>快速失败，给下游喘息</p><p><b class="k-c">代价</b>阈值不当会误熔断</p><p><b class="k-w">适用</b>依赖可能长时间不可用</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>SDK、网关、业务代码各自默认重试，叠加后远超预期。</p><p class="fix"><b>✓</b>梳理全链路重试点，只保留一处。</p></li><li><p class="bad"><b>✗</b>对超时也无脑重试，而下游其实已在处理原请求。</p><p class="fix"><b>✓</b>确认操作幂等，超时重试配合幂等键与预算。</p></li><li><p class="bad"><b>✗</b>故障恢复时所有客户端同时重连。</p><p class="fix"><b>✓</b>重连加退避抖动，服务端配合负载卸载。</p></li><li><p class="bad"><b>✗</b>服务返回过载错误仍被当作可重试。</p><p class="fix"><b>✓</b>约定过载信号不重试，或尊重 Retry-After。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>全链路列出重试点并只保留必要一层</span></label></li><li><label><input type="checkbox"><span>重试次数有上限并配退避抖动</span></label></li><li><label><input type="checkbox"><span>有重试预算或节流机制</span></label></li><li><label><input type="checkbox"><span>仅对幂等操作或带幂等键的请求重试</span></label></li><li><label><input type="checkbox"><span>监控重试率并设告警</span></label></li><li><label><input type="checkbox"><span>关键依赖配熔断器</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>如何量化并控制重试放大？</summary><p>放大倍数约为各层尝试次数的乘积。控制方法：只在一层重试；设置重试预算，例如 Google SRE 书中建议重试占比低于 10%；下游返回过载信号时上游不再重试；监控重试与原始请求的比例。</p></details><details class="iv"><summary>什么是亚稳态故障，和重试有何关系？</summary><p>系统被触发进入故障后，即使触发原因消失，也因正反馈环无法自愈。重试就是典型反馈环：失败引发重试，重试加剧过载。打破它要减载，例如关闭重试、卸载流量或临时扩容。</p></details><details class="iv"><summary>重试和熔断应怎么配合？</summary><p>重试处理偶发瞬时错误，熔断处理持续故障。熔断打开后请求直接失败、不再重试；半开状态放少量请求试探。顺序上一般是先过熔断器再决定是否重试。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://sre.google/sre-book/addressing-cascading-failures/" target="_blank" rel="noopener"><b>Google SRE Book：Addressing Cascading Failures</b><small>sre.google ↗</small></a></li><li><a href="https://grpc.io/docs/guides/retry/" target="_blank" rel="noopener"><b>gRPC 文档：Retry</b><small>grpc.io ↗</small></a></li><li><a href="https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/" target="_blank" rel="noopener"><b>AWS Builders&#x27; Library：Timeouts, retries and backoff with jitter</b><small>aws.amazon.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="jitter.pro.html" rel="prev"><small>‹ 上一个</small><b>🎲 退避随机抖动</b></a><a class="pn next" href="cascading-failures.pro.html" rel="next"><small>下一个 ›</small><b>🌊 级联故障 / 雪崩效应</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

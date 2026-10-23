@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="模型路由 专业模式：模型路由（Model Routing）是在 LLM 应用中根据请求的难度、类型、成本预算或延迟要求，把每次调用分派给最合适模型的策略层。简单请求走便宜快速的小模">
+<title>🎓 模型路由 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="model-routing" data-answer="0" data-prev="fine-tuning.pro.html" data-next="context-compaction.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#ai">🔮 高级 · 🤖 AI 与提示词</a><span>›</span><a href="model-routing.html">模型路由</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.207 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="fine-tuning.pro.html" rel="prev"><small>‹ 上一个</small><b>🎓 微调 (Fine-tuning)</b></a><a class="pn next" href="context-compaction.pro.html" rel="next"><small>下一个 ›</small><b>🗜️ 上下文压缩</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🚦</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>模型路由</h1><p class="en">Model Routing</p>
+    <div class="hbtns"><a class="prosw back" href="model-routing.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">模型路由（Model Routing）是在 LLM 应用中根据请求的难度、类型、成本预算或延迟要求，把每次调用分派给最合适模型的策略层。简单请求走便宜快速的小模型，复杂推理走能力更强的大模型，失败时可升级或切换供应商。它位于应用与模型 API 之间，目标是在质量不明显下降的前提下降低成本与延迟。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>定义候选模型池，记录各自的能力、价格、上下文长度、延迟与可用性。</p></li><li><span class="sn">2</span><p>对请求提取特征：任务类型、输入长度、是否需要工具或视觉、用户套餐等。</p></li><li><span class="sn">3</span><p>路由器根据这些特征，用规则、轻量分类器或小模型打分，决定首选模型。</p></li><li><span class="sn">4</span><p>调用后可做质量检查（格式校验、置信度），不达标则升级到更强模型重试（级联）。</p></li><li><span class="sn">5</span><p>持续记录每条路由的成本、延迟与评测分数，据此调整规则或重新训练路由器。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>级联 (Cascade)</dt><dd>先用便宜模型，不满足条件再逐级升级。</dd></div><div class="term"><dt>回退 (Fallback)</dt><dd>首选模型报错或限流时切换到备用模型或供应商。</dd></div><div class="term"><dt>路由分类器 (Router Classifier)</dt><dd>预测请求难度或类别以选择模型的轻量模型。</dd></div><div class="term"><dt>质量-成本前沿 (Pareto Frontier)</dt><dd>在给定成本下能达到的最佳质量曲线。</dd></div><div class="term"><dt>LLM 网关 (LLM Gateway)</dt><dd>统一代理多家模型 API，集中做路由、限流与计费。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>规则路由 + 级联升级</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import json
+
+SMALL, LARGE = &quot;small-model&quot;, &quot;large-model&quot;   # 替换为实际模型名
+
+def pick_model(task: str, prompt: str) -&gt; str:
+    if task in {&quot;classify&quot;, &quot;extract&quot;, &quot;translate&quot;} and len(prompt) &lt; 4000:
+        return SMALL
+    if task in {&quot;code&quot;, &quot;plan&quot;, &quot;math&quot;}:
+        return LARGE
+    return SMALL
+
+def valid(output: str) -&gt; bool:
+    try:
+        json.loads(output)          # 要求结构化输出
+        return True
+    except ValueError:
+        return False
+
+def run(task: str, prompt: str, call_llm) -&gt; str:
+    model = pick_model(task, prompt)
+    out = call_llm(model, prompt)
+    if model == SMALL and not valid(out):
+        out = call_llm(LARGE, prompt)   # 级联：小模型不达标就升级
+    return out
+# call_llm(model, prompt) 由你接入具体 SDK；记录每次的模型、token 与是否升级</code></pre></div><p class="cnote">先用规则把明显简单的任务交给小模型，用可校验的输出决定是否升级。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">路由策略对比</h3><div class="tw"><table><thead><tr><th>策略</th><th>实现成本</th><th>效果</th><th>风险</th></tr></thead><tbody><tr><td data-h="策略">静态规则</td><td data-h="实现成本">低</td><td data-h="效果">取决于任务划分是否清晰</td><td data-h="风险">边界请求分错</td></tr><tr><td data-h="策略">分类器路由</td><td data-h="实现成本">中</td><td data-h="效果">可学习难度分布</td><td data-h="风险">需要标注数据</td></tr><tr><td data-h="策略">级联升级</td><td data-h="实现成本">低到中</td><td data-h="效果">质量有兜底</td><td data-h="风险">失败请求延迟翻倍</td></tr><tr><td data-h="策略">供应商回退</td><td data-h="实现成本">低</td><td data-h="效果">提升可用性</td><td data-h="风险">不同模型行为不一致</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>全部用最强模型</h4><p><b class="k-p">优点</b>质量最稳，实现简单</p><p><b class="k-c">代价</b>成本和延迟最高</p><p><b class="k-w">适用</b>流量小或质量要求极高</p></div><div class="trd"><h4>按任务静态路由</h4><p><b class="k-p">优点</b>可预期，易调试</p><p><b class="k-c">代价</b>无法适应同类任务的难度差异</p><p><b class="k-w">适用</b>任务类型清晰的产品</p></div><div class="trd"><h4>动态路由/级联</h4><p><b class="k-p">优点</b>成本与质量兼顾</p><p><b class="k-c">代价</b>需评测体系与监控</p><p><b class="k-w">适用</b>流量大、成本敏感</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>没有评测就上路由，质量下降无人察觉</p><p class="fix"><b>✓</b>按路由分支分别评测，并对比全用大模型的基线</p></li><li><p class="bad"><b>✗</b>同一提示词直接套用不同模型</p><p class="fix"><b>✓</b>为各模型调整提示词与输出格式要求</p></li><li><p class="bad"><b>✗</b>回退模型能力差太多，静默降低质量</p><p class="fix"><b>✓</b>记录回退事件并告警，关键任务宁可报错重试</p></li><li><p class="bad"><b>✗</b>路由本身用大模型判断，成本反而更高</p><p class="fix"><b>✓</b>路由器用规则或轻量模型，开销远小于节省</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每条路由分支有独立评测</span></label></li><li><label><input type="checkbox"><span>记录模型、token、成本与延迟</span></label></li><li><label><input type="checkbox"><span>回退与升级事件可观测</span></label></li><li><label><input type="checkbox"><span>各模型提示词已适配</span></label></li><li><label><input type="checkbox"><span>有供应商故障的回退方案</span></label></li><li><label><input type="checkbox"><span>定期复核路由规则效果</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>如何判断一个请求该用小模型？</summary><p>离线用评测集同时跑大小模型，标出小模型也能做对的样本，提取其特征（任务类型、长度、关键词）形成规则或训练分类器；线上再用可验证的输出（格式、测试通过）兜底升级。</p></details><details class="iv"><summary>级联路由的主要代价是什么？</summary><p>被升级的请求要先等小模型失败，延迟叠加，且付了两次费用；若小模型失败率高，总成本可能高于直接用大模型。需监控升级率并调整入口规则。</p></details><details class="iv"><summary>多供应商回退要注意什么？</summary><p>统一抽象接口与错误分类，区分可重试错误（限流、超时）与不可重试错误；各模型的工具调用格式、上下文长度、安全策略不同，要分别测试；数据合规上确认每家供应商都允许处理该数据。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://arxiv.org/abs/2406.18665" target="_blank" rel="noopener"><b>RouteLLM 论文 (arXiv:2406.18665)</b><small>arxiv.org ↗</small></a></li><li><a href="https://arxiv.org/abs/2305.05176" target="_blank" rel="noopener"><b>FrugalGPT 论文 (arXiv:2305.05176)</b><small>arxiv.org ↗</small></a></li><li><a href="https://docs.litellm.ai/docs/routing" target="_blank" rel="noopener"><b>LiteLLM 文档：Router</b><small>docs.litellm.ai ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="fine-tuning.pro.html" rel="prev"><small>‹ 上一个</small><b>🎓 微调 (Fine-tuning)</b></a><a class="pn next" href="context-compaction.pro.html" rel="next"><small>下一个 ›</small><b>🗜️ 上下文压缩</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

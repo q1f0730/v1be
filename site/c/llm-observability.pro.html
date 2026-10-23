@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="大模型可观测 (Tracing) 专业模式：大模型可观测（LLM Observability）是在传统日志、指标、链路追踪之上，记录每次模型调用和 Agent 步骤的输入输出、token 用量、延迟、成本">
+<title>🎓 大模型可观测 (Tracing) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="llm-observability" data-answer="0" data-prev="llm-as-a-judge.pro.html" data-next="benchmarks-and-swe-bench.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#ai">🔥 进阶 · 🤖 AI 与提示词</a><span>›</span><a href="llm-observability.html">大模型可观测 (Tracing)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.404 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="llm-as-a-judge.pro.html" rel="prev"><small>‹ 上一个</small><b>⚖️ AI 当裁判 (LLM-as-Judge)</b></a><a class="pn next" href="benchmarks-and-swe-bench.pro.html" rel="next"><small>下一个 ›</small><b>🏆 基准测试与 SWE-bench</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔭</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>大模型可观测 (Tracing)</h1><p class="en">LLM Observability</p>
+    <div class="hbtns"><a class="prosw back" href="llm-observability.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">大模型可观测（LLM Observability）是在传统日志、指标、链路追踪之上，记录每次模型调用和 Agent 步骤的输入输出、token 用量、延迟、成本、工具调用与评测分数，以 trace/span 形式串起来。它解决的是 LLM 应用不确定、难调试、成本难控的问题。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>埋点：通过 SDK 自动插桩或手动创建 span，包住模型调用、检索、工具调用等步骤。</p></li><li><span class="sn">2</span><p>记录属性：模型名、参数、输入输出 token 数、耗时、错误、提示词版本等写入 span 属性。</p></li><li><span class="sn">3</span><p>串联链路：同一次用户请求的所有步骤共享 trace ID，形成父子关系的调用树。</p></li><li><span class="sn">4</span><p>导出与存储：经 OTLP 等协议发送到后端（如 Langfuse、Phoenix 或通用 APM）。</p></li><li><span class="sn">5</span><p>分析与闭环：按成本、延迟、错误聚合看板；抽样 trace 做人工或自动评测，反哺提示词。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>Trace / Span</dt><dd>一次请求的完整链路及其中每个步骤的计时单元，可嵌套。</dd></div><div class="term"><dt>GenAI 语义约定 (GenAI Semantic Conventions)</dt><dd>OpenTelemetry 为生成式 AI 定义的 gen_ai.* 属性命名规范。</dd></div><div class="term"><dt>OTLP</dt><dd>OpenTelemetry 的标准传输协议，用于导出 trace、指标和日志。</dd></div><div class="term"><dt>首 token 延迟 (TTFT)</dt><dd>从发出请求到收到第一个输出 token 的时间，影响流式体验。</dd></div><div class="term"><dt>会话 (Session)</dt><dd>把同一用户多轮对话的多个 trace 归为一组便于回放。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>手动为 LLM 调用建 span</span><em>python</em><button class="ccopy">复制</button></div><pre><code>from openai import OpenAI
+from opentelemetry import trace
+
+tracer = trace.get_tracer(&quot;my-llm-app&quot;)
+client = OpenAI()
+
+def ask(question: str) -&gt; str:
+    # 一个 span 对应一次模型调用，属性名遵循 gen_ai.* 约定
+    with tracer.start_as_current_span(&quot;chat gpt-4o-mini&quot;) as span:
+        span.set_attribute(&quot;gen_ai.operation.name&quot;, &quot;chat&quot;)
+        span.set_attribute(&quot;gen_ai.request.model&quot;, &quot;gpt-4o-mini&quot;)
+        resp = client.chat.completions.create(
+            model=&quot;gpt-4o-mini&quot;,
+            messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: question}],
+        )
+        span.set_attribute(&quot;gen_ai.response.model&quot;, resp.model)
+        span.set_attribute(&quot;gen_ai.usage.input_tokens&quot;, resp.usage.prompt_tokens)
+        span.set_attribute(&quot;gen_ai.usage.output_tokens&quot;, resp.usage.completion_tokens)
+        return resp.choices[0].message.content</code></pre></div><p class="cnote">需另行配置 TracerProvider 与导出器；属性名采用 OTel GenAI 约定以便跨后端通用。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">LLM 应用关键观测指标</h3><div class="tw"><table><thead><tr><th>指标</th><th>含义</th><th>用途</th></tr></thead><tbody><tr><td data-h="指标">token 用量</td><td data-h="含义">输入/输出 token 数</td><td data-h="用途">成本核算、发现提示词膨胀</td></tr><tr><td data-h="指标">TTFT / 总延迟</td><td data-h="含义">首 token 与完整响应耗时</td><td data-h="用途">体验 SLO、模型选型</td></tr><tr><td data-h="指标">工具调用次数</td><td data-h="含义">Agent 每轮调用工具数</td><td data-h="用途">发现死循环与低效规划</td></tr><tr><td data-h="指标">评测分数</td><td data-h="含义">裁判或用户反馈打分</td><td data-h="用途">质量回归监控</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>专用 LLM 观测平台</h4><p><b class="k-p">优点</b>提示词、评测、会话回放开箱即用</p><p><b class="k-c">代价</b>多一套系统，与现有 APM 割裂</p><p><b class="k-w">适用</b>LLM 是产品核心、需频繁调提示词</p></div><div class="trd"><h4>沿用通用 APM + OTel</h4><p><b class="k-p">优点</b>与服务链路统一，复用告警体系</p><p><b class="k-c">代价</b>提示词管理和评测要自己补</p><p><b class="k-w">适用</b>LLM 只是系统中的一环</p></div><div class="trd"><h4>只打日志</h4><p><b class="k-p">优点</b>零依赖，最快上手</p><p><b class="k-c">代价</b>无法串联多步，难做聚合分析</p><p><b class="k-w">适用</b>原型期、调用量很小</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>把完整提示词和用户隐私原文无脱敏写入 trace</p><p class="fix"><b>✓</b>对敏感字段脱敏或只存哈希，按合规要求设置保留期</p></li><li><p class="bad"><b>✗</b>只记录最终回答，Agent 中间步骤不可见</p><p class="fix"><b>✓</b>为检索、每次工具调用、每轮规划都建子 span</p></li><li><p class="bad"><b>✗</b>不记录提示词和模型版本，质量下降无从对比</p><p class="fix"><b>✓</b>把 prompt 版本、模型名作为 span 属性，支持按版本切片</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每次模型调用都有 span 与 token 数</span></label></li><li><label><input type="checkbox"><span>Agent 每个工具调用可见</span></label></li><li><label><input type="checkbox"><span>trace 中敏感数据已脱敏</span></label></li><li><label><input type="checkbox"><span>有按模型/功能的成本看板</span></label></li><li><label><input type="checkbox"><span>延迟与错误率有告警阈值</span></label></li><li><label><input type="checkbox"><span>提示词与模型版本可追溯</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>LLM 可观测和传统 APM 有什么不同？</summary><p>传统 APM 关注延迟、错误率、吞吐；LLM 还要看输入输出内容、token 与成本、提示词版本和输出质量。输出不确定，所以需要回放具体 trace 并结合评测打分，而不仅仅看指标。</p></details><details class="iv"><summary>Agent 跑了 40 步才失败，怎么定位？</summary><p>打开该请求的 trace 树，按 span 看每轮规划输出和工具调用参数/结果，找到首次偏离的步骤；对比成功 trace 的同一步。常见原因是工具返回过长被截断、错误信息未回传给模型、上下文溢出。</p></details><details class="iv"><summary>为什么推荐 OpenTelemetry 约定？</summary><p>统一 gen_ai.* 属性名后，埋点与后端解耦，换观测平台不必改代码，且 LLM span 能与 HTTP、数据库 span 处在同一条链路。注意该约定截至 2026 年仍在演进，属性名可能调整。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://opentelemetry.io/docs/specs/semconv/gen-ai/" target="_blank" rel="noopener"><b>OpenTelemetry GenAI Semantic Conventions</b><small>opentelemetry.io ↗</small></a></li><li><a href="https://langfuse.com/docs" target="_blank" rel="noopener"><b>Langfuse 文档</b><small>langfuse.com ↗</small></a></li><li><a href="https://github.com/Arize-ai/phoenix" target="_blank" rel="noopener"><b>Arize Phoenix (GitHub)</b><small>github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="llm-as-a-judge.pro.html" rel="prev"><small>‹ 上一个</small><b>⚖️ AI 当裁判 (LLM-as-Judge)</b></a><a class="pn next" href="benchmarks-and-swe-bench.pro.html" rel="next"><small>下一个 ›</small><b>🏆 基准测试与 SWE-bench</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

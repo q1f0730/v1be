@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="实体标签与协商缓存 专业模式：ETag（实体标签）是服务器为资源某个具体版本生成的不透明标识，放在响应头中。客户端之后带 If-None-Match 发起条件请求，若版本未变服务器返回 30">
+<title>🎓 实体标签与协商缓存 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="etags" data-answer="0" data-prev="cache-control-headers.pro.html" data-next="dead-letter-queues.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#cache">🔮 高级 · ⚡ 缓存与队列</a><span>›</span><a href="etags.html">实体标签与协商缓存</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.278 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="cache-control-headers.pro.html" rel="prev"><small>‹ 上一个</small><b>🏷️ HTTP缓存控制头</b></a><a class="pn next" href="dead-letter-queues.pro.html" rel="next"><small>下一个 ›</small><b>📮 死信队列 (DLQ)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔖</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>⚡ 缓存与队列</span><span>⏱ 约 10 分钟</span></div>
+    <h1>实体标签与协商缓存</h1><p class="en">ETags</p>
+    <div class="hbtns"><a class="prosw back" href="etags.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">ETag（实体标签）是服务器为资源某个具体版本生成的不透明标识，放在响应头中。客户端之后带 If-None-Match 发起条件请求，若版本未变服务器返回 304 Not Modified 而不传正文，从而节省带宽；带 If-Match 写入时可实现乐观并发控制。它是 HTTP 协商缓存的核心机制（RFC 9110）。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>服务器返回资源时生成 ETag（内容哈希、版本号或修改时间与大小的组合）。</p></li><li><span class="sn">2</span><p>客户端缓存响应及其 ETag；缓存过期或要求验证时，请求带 If-None-Match: 该 ETag。</p></li><li><span class="sn">3</span><p>服务器比较当前 ETag：相同则返回 304 无正文，不同则返回 200 和新内容。</p></li><li><span class="sn">4</span><p>写请求带 If-Match: 该 ETag，版本不符时服务器返回 412，防止覆盖他人修改。</p></li><li><span class="sn">5</span><p>弱 ETag（W/ 前缀）表示语义等价即可，适合压缩等字节不同但内容相同的情况。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>强 ETag (Strong ETag)</dt><dd>字节级完全相同才匹配。</dd></div><div class="term"><dt>弱 ETag (Weak ETag)</dt><dd>以 W/ 开头，语义等价即视为相同。</dd></div><div class="term"><dt>If-None-Match</dt><dd>条件读：ETag 不匹配时才返回完整内容。</dd></div><div class="term"><dt>304 Not Modified</dt><dd>资源未变，客户端继续使用本地缓存。</dd></div><div class="term"><dt>If-Match / 412</dt><dd>条件写：版本不匹配时返回 412 Precondition Failed。</dd></div><div class="term"><dt>Last-Modified</dt><dd>基于修改时间的验证器，精度只到秒。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>条件读与条件写</span><em>http</em><button class="ccopy">复制</button></div><pre><code># 1. 首次请求：服务器返回 ETag
+GET /api/articles/7 HTTP/1.1
+
+HTTP/1.1 200 OK
+ETag: &quot;a1b2c3&quot;
+Cache-Control: no-cache
+Content-Type: application/json
+
+{&quot;id&quot;: 7, &quot;title&quot;: &quot;Hello&quot;, &quot;version&quot;: 3}
+
+# 2. 再次请求：带上 ETag 做验证，未变则无正文
+GET /api/articles/7 HTTP/1.1
+If-None-Match: &quot;a1b2c3&quot;
+
+HTTP/1.1 304 Not Modified
+ETag: &quot;a1b2c3&quot;
+
+# 3. 更新时带 If-Match，被他人抢先修改则失败
+PUT /api/articles/7 HTTP/1.1
+If-Match: &quot;a1b2c3&quot;
+Content-Type: application/json
+
+{&quot;title&quot;: &quot;Hello, world&quot;}
+
+HTTP/1.1 412 Precondition Failed</code></pre></div><p class="cnote">If-None-Match 省带宽，If-Match 防覆盖；同一个 ETag 同时服务缓存与并发控制。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">两种验证器对比</h3><div class="tw"><table><thead><tr><th>验证器</th><th>请求头</th><th>精度</th><th>注意点</th></tr></thead><tbody><tr><td data-h="验证器">ETag</td><td data-h="请求头">If-None-Match / If-Match</td><td data-h="精度">任意（取决于生成方式）</td><td data-h="注意点">多实例需生成规则一致</td></tr><tr><td data-h="验证器">Last-Modified</td><td data-h="请求头">If-Modified-Since</td><td data-h="精度">秒级</td><td data-h="注意点">一秒内多次修改无法区分</td></tr><tr><td data-h="验证器">弱 ETag</td><td data-h="请求头">If-None-Match</td><td data-h="精度">语义等价</td><td data-h="注意点">不能用于 If-Match 条件写</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>内容哈希 ETag</h4><p><b class="k-p">优点</b>准确，与部署实例无关</p><p><b class="k-c">代价</b>需读取并计算整个内容</p><p><b class="k-w">适用</b>中小响应、静态文件</p></div><div class="trd"><h4>版本号 ETag</h4><p><b class="k-p">优点</b>无需计算，天然支持并发控制</p><p><b class="k-c">代价</b>需维护版本字段</p><p><b class="k-w">适用</b>数据库资源的 API</p></div><div class="trd"><h4>修改时间+大小</h4><p><b class="k-p">优点</b>计算便宜</p><p><b class="k-c">代价</b>多机时间或文件属性可能不一致</p><p><b class="k-w">适用</b>单机静态文件服务</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>多台服务器生成的 ETag 不一致，验证总是失败</p><p class="fix"><b>✓</b>基于内容或版本生成，不依赖 inode 等本机属性</p></li><li><p class="bad"><b>✗</b>开启压缩后强 ETag 与原始内容不匹配</p><p class="fix"><b>✓</b>为不同编码使用不同 ETag，或使用弱 ETag</p></li><li><p class="bad"><b>✗</b>框架对动态响应自动生成哈希 ETag，仍要完整计算响应</p><p class="fix"><b>✓</b>对大响应用版本号提前判断，跳过生成正文</p></li><li><p class="bad"><b>✗</b>用弱 ETag 做 If-Match 并发控制</p><p class="fix"><b>✓</b>条件写使用强 ETag 或显式版本号</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>ETag 在多实例间生成一致</span></label></li><li><label><input type="checkbox"><span>返回 304 时不带正文</span></label></li><li><label><input type="checkbox"><span>写接口支持 If-Match 与 412</span></label></li><li><label><input type="checkbox"><span>压缩与 ETag 的交互已验证</span></label></li><li><label><input type="checkbox"><span>CDN 透传或正确处理 ETag</span></label></li><li><label><input type="checkbox"><span>大响应能在生成正文前判断是否未变</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>ETag 和 Last-Modified 都有时用哪个？</summary><p>按 RFC 9110，服务器收到 If-None-Match 时应优先使用它，忽略 If-Modified-Since。ETag 更精确，能区分一秒内的多次修改，也能表达内容回滚到旧版本的情况；Last-Modified 作为兼容补充。</p></details><details class="iv"><summary>强弱 ETag 的区别与用途？</summary><p>强 ETag 要求字节完全相同，可用于条件写、分段请求；弱 ETag 以 W/ 开头，只要语义等价即可匹配，适合压缩、空白差异等场景，只能用于缓存验证，不能用于 If-Match 写入。</p></details><details class="iv"><summary>API 中如何用 ETag 防止并发覆盖？</summary><p>GET 返回基于版本号的 ETag；客户端 PUT/PATCH 带 If-Match；服务端在同一条 UPDATE 中校验版本，不符返回 412；客户端重新获取最新资源后合并修改再提交。缺少 If-Match 时可返回 428 强制要求。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.rfc-editor.org/rfc/rfc9110" target="_blank" rel="noopener"><b>RFC 9110: HTTP Semantics</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag" target="_blank" rel="noopener"><b>MDN: ETag</b><small>developer.mozilla.org ↗</small></a></li><li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-None-Match" target="_blank" rel="noopener"><b>MDN: If-None-Match</b><small>developer.mozilla.org ↗</small></a></li><li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/304" target="_blank" rel="noopener"><b>MDN: 304 Not Modified</b><small>developer.mozilla.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="cache-control-headers.pro.html" rel="prev"><small>‹ 上一个</small><b>🏷️ HTTP缓存控制头</b></a><a class="pn next" href="dead-letter-queues.pro.html" rel="next"><small>下一个 ›</small><b>📮 死信队列 (DLQ)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="授权码证明密钥 (PKCE) 专业模式：PKCE（Proof Key for Code Exchange，RFC 7636）是 OAuth 2.0 授权码流程的扩展：客户端为每次授权生成随机 code">
+<title>🎓 授权码证明密钥 (PKCE) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="pkce" data-answer="0" data-prev="sso-saml.pro.html" data-next="sast-and-dast.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sec">🔮 高级 · 🛡️ 安全防线</a><span>›</span><a href="pkce.html">授权码证明密钥 (PKCE)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.393 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="sso-saml.pro.html" rel="prev"><small>‹ 上一个</small><b>🎫 单点登录 (SSO / SAML)</b></a><a class="pn next" href="sast-and-dast.pro.html" rel="next"><small>下一个 ›</small><b>🔬 静态与动态安全测试 (SAST / DAST)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🧪</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>授权码证明密钥 (PKCE)</h1><p class="en">PKCE</p>
+    <div class="hbtns"><a class="prosw back" href="pkce.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">PKCE（Proof Key for Code Exchange，RFC 7636）是 OAuth 2.0 授权码流程的扩展：客户端为每次授权生成随机 code_verifier，授权请求只发送其哈希 code_challenge，用授权码换令牌时再提交原文，授权服务器比对后才发放令牌。它属于身份认证协议层，防止授权码被截获后冒用；RFC 9700（OAuth 2.0 安全最佳实践）建议所有客户端使用。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>客户端生成高熵随机字符串 code_verifier（43–128 个字符），保存在本地会话中。</p></li><li><span class="sn">2</span><p>计算 code_challenge = BASE64URL(SHA256(code_verifier))，method 为 S256。</p></li><li><span class="sn">3</span><p>授权请求携带 code_challenge 与 code_challenge_method，授权服务器将其与签发的授权码绑定。</p></li><li><span class="sn">4</span><p>回调拿到授权码后，客户端在令牌请求中提交 code 与原始 code_verifier。</p></li><li><span class="sn">5</span><p>授权服务器重新计算哈希并比对，一致才签发令牌；截获授权码者因没有 verifier 无法兑换。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>code_verifier</dt><dd>客户端每次授权生成的随机密钥原文，只在换令牌时发送。</dd></div><div class="term"><dt>code_challenge</dt><dd>verifier 的 SHA-256 哈希经 Base64URL 编码，在授权请求中发送。</dd></div><div class="term"><dt>S256 / plain</dt><dd>两种转换方法；plain 直接发原文，仅在无法计算 SHA-256 时使用。</dd></div><div class="term"><dt>公共客户端 (Public Client)</dt><dd>无法安全保存密钥的客户端，如 SPA、移动 App。</dd></div><div class="term"><dt>授权码拦截攻击</dt><dd>恶意应用或日志截获重定向中的授权码并抢先兑换令牌。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>浏览器生成 PKCE 参数</span><em>javascript</em><button class="ccopy">复制</button></div><pre><code>// 生成 code_verifier（32 字节随机数 → 43 个 Base64URL 字符）
+function base64url(bytes) {
+  return btoa(String.fromCharCode(...new Uint8Array(bytes)))
+    .replace(/\+/g, &quot;-&quot;).replace(/\//g, &quot;_&quot;).replace(/=+$/, &quot;&quot;);
+}
+const verifier = base64url(crypto.getRandomValues(new Uint8Array(32)));
+
+// code_challenge = BASE64URL(SHA256(verifier))
+const digest = await crypto.subtle.digest(&quot;SHA-256&quot;, new TextEncoder().encode(verifier));
+const challenge = base64url(digest);
+sessionStorage.setItem(&quot;pkce_verifier&quot;, verifier);
+
+const url = new URL(&quot;https://auth.example.com/authorize&quot;);
+url.search = new URLSearchParams({
+  response_type: &quot;code&quot;, client_id: &quot;my-spa&quot;,
+  redirect_uri: &quot;https://app.example.com/callback&quot;,
+  scope: &quot;openid profile&quot;, state: crypto.randomUUID(),
+  code_challenge: challenge, code_challenge_method: &quot;S256&quot;,
+}).toString();
+location.assign(url);
+// 回调后 POST /token 时附带 code 和 code_verifier=sessionStorage 中的值</code></pre></div><p class="cnote">演示原理；生产中建议使用 oauth4webapi 等成熟库，并校验 state 防 CSRF。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">OAuth 客户端与 PKCE</h3><div class="tw"><table><thead><tr><th>客户端类型</th><th>能否保存密钥</th><th>建议</th></tr></thead><tbody><tr><td data-h="客户端类型">服务端 Web 应用</td><td data-h="能否保存密钥">能（机密客户端）</td><td data-h="建议">client_secret + PKCE</td></tr><tr><td data-h="客户端类型">单页应用 SPA</td><td data-h="能否保存密钥">不能</td><td data-h="建议">授权码 + PKCE，禁止隐式流程</td></tr><tr><td data-h="客户端类型">移动/桌面 App</td><td data-h="能否保存密钥">不能</td><td data-h="建议">授权码 + PKCE，使用系统浏览器</td></tr><tr><td data-h="客户端类型">CLI / 设备</td><td data-h="能否保存密钥">不能</td><td data-h="建议">PKCE 或设备授权流程</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>授权码 + PKCE</h4><p><b class="k-p">优点</b>防截获，无需前端存密钥</p><p><b class="k-c">代价</b>多一步实现，依赖授权服务器支持</p><p><b class="k-w">适用</b>所有新客户端的默认选择</p></div><div class="trd"><h4>隐式流程 (Implicit)</h4><p><b class="k-p">优点</b>实现简单</p><p><b class="k-c">代价</b>令牌暴露在 URL，已不推荐</p><p><b class="k-w">适用</b>不应再用于新项目</p></div><div class="trd"><h4>BFF 代管令牌</h4><p><b class="k-p">优点</b>令牌不进浏览器，降低 XSS 窃取风险</p><p><b class="k-c">代价</b>需要后端组件与会话</p><p><b class="k-w">适用</b>安全要求高的 SPA</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>使用 plain 方法或固定的 verifier</p><p class="fix"><b>✓</b>始终使用 S256，每次授权重新生成随机 verifier</p></li><li><p class="bad"><b>✗</b>以为有了 PKCE 就不需要 state</p><p class="fix"><b>✓</b>PKCE 防授权码冒用，state（或 nonce）仍用于防 CSRF 与关联请求</p></li><li><p class="bad"><b>✗</b>在 SPA 或 App 中内嵌 client_secret</p><p class="fix"><b>✓</b>公共客户端不使用密钥，依靠 PKCE 与精确的重定向 URI</p></li><li><p class="bad"><b>✗</b>用不安全的随机数生成 verifier</p><p class="fix"><b>✓</b>使用 crypto.getRandomValues 等密码学安全随机源</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>授权码流程启用 PKCE 且方法为 S256</span></label></li><li><label><input type="checkbox"><span>verifier 每次随机生成且只存本地会话</span></label></li><li><label><input type="checkbox"><span>同时校验 state/nonce</span></label></li><li><label><input type="checkbox"><span>授权服务器对公共客户端强制 PKCE</span></label></li><li><label><input type="checkbox"><span>重定向 URI 精确匹配</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>PKCE 为什么能防授权码拦截？</summary><p>攻击者截获的只是授权码；换令牌需要原始 verifier，而授权请求中只出现了它的 SHA-256 哈希，哈希不可逆，攻击者无法构造 verifier，因此无法兑换令牌。</p></details><details class="iv"><summary>机密客户端还需要 PKCE 吗？</summary><p>需要。RFC 9700 建议所有客户端使用 PKCE：它还能防授权码注入攻击，即攻击者把自己的授权码注入受害者会话。OAuth 2.1 草案也将其设为授权码流程的必选项。</p></details><details class="iv"><summary>PKCE 能防 XSS 窃取令牌吗？</summary><p>不能。PKCE 保护的是授权码兑换环节；令牌一旦进入浏览器，XSS 仍可读取。应配合 CSP、短期令牌、刷新令牌轮换或 BFF 模式。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://datatracker.ietf.org/doc/html/rfc7636" target="_blank" rel="noopener"><b>RFC 7636：PKCE</b><small>datatracker.ietf.org ↗</small></a></li><li><a href="https://datatracker.ietf.org/doc/html/rfc9700" target="_blank" rel="noopener"><b>RFC 9700：OAuth 2.0 Security Best Current Practice</b><small>datatracker.ietf.org ↗</small></a></li><li><a href="https://oauth.net/2/pkce/" target="_blank" rel="noopener"><b>oauth.net：PKCE</b><small>oauth.net ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="sso-saml.pro.html" rel="prev"><small>‹ 上一个</small><b>🎫 单点登录 (SSO / SAML)</b></a><a class="pn next" href="sast-and-dast.pro.html" rel="next"><small>下一个 ›</small><b>🔬 静态与动态安全测试 (SAST / DAST)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

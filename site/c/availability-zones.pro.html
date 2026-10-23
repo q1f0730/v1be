@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="可用区 (AZ) 专业模式：可用区（Availability Zone, AZ）是云厂商在同一地理区域（Region）内划分的、拥有独立供电、制冷和网络的一个或多个数据中心集合。可用区之间">
+<title>🎓 可用区 (AZ) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="availability-zones" data-answer="0" data-prev="failover.pro.html" data-next="single-points-of-failure.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sre">🔮 高级 · 🩺 高可用 SRE</a><span>›</span><a href="availability-zones.html">可用区 (AZ)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.297 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="failover.pro.html" rel="prev"><small>‹ 上一个</small><b>🔀 故障自动转移</b></a><a class="pn next" href="single-points-of-failure.pro.html" rel="next"><small>下一个 ›</small><b>🎯 单点故障 (SPOF)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🏢</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>可用区 (AZ)</h1><p class="en">Availability Zones</p>
+    <div class="hbtns"><a class="prosw back" href="availability-zones.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">可用区（Availability Zone, AZ）是云厂商在同一地理区域（Region）内划分的、拥有独立供电、制冷和网络的一个或多个数据中心集合。可用区之间通过低延迟专线互联，但故障相互隔离。它是云基础设施的故障域单位：把实例和数据分布到多个可用区，可以在单个机房级故障时保持服务可用。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>一个区域包含多个可用区，各可用区物理隔离，降低火灾、断电等同时影响多个可用区的概率。</p></li><li><span class="sn">2</span><p>可用区之间有高带宽、低延迟网络，适合同步复制和跨区负载均衡。</p></li><li><span class="sn">3</span><p>应用把副本分布在多个可用区，负载均衡器跨区分发流量并剔除故障区的后端。</p></li><li><span class="sn">4</span><p>托管数据库的多可用区部署在另一可用区维护备库，主库故障时自动切换。</p></li><li><span class="sn">5</span><p>容量规划按失去任意一个可用区后，剩余可用区仍能承载峰值流量来确定副本数。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>区域 (Region)</dt><dd>云厂商的独立地理区域，包含多个可用区。</dd></div><div class="term"><dt>多可用区部署 (Multi-AZ)</dt><dd>把同一服务的副本放到多个可用区以容忍单区故障。</dd></div><div class="term"><dt>拓扑分布约束 (Topology Spread Constraints)</dt><dd>Kubernetes 中让 Pod 按区域等拓扑均匀分布的调度规则。</dd></div><div class="term"><dt>跨区流量费 (Inter-AZ Data Transfer)</dt><dd>部分云厂商对可用区之间的数据传输计费。</dd></div><div class="term"><dt>静态稳定性 (Static Stability)</dt><dd>某个可用区故障时，无需临时扩容或变更也能继续工作。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Pod 跨可用区均匀分布</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code>apiVersion: apps/v1
+kind: Deployment
+metadata: { name: api }
+spec:
+  replicas: 6
+  selector: { matchLabels: { app: api } }
+  template:
+    metadata: { labels: { app: api } }
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1                               # 各区副本数最多差 1
+          topologyKey: topology.kubernetes.io/zone # 按可用区分布
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector: { matchLabels: { app: api } }
+      containers:
+        - name: api
+          image: example/api:1.0</code></pre></div><p class="cnote">用拓扑分布约束把 6 个副本均匀放到各可用区，单区故障时仍有其余副本。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">故障域层级</h3><div class="tw"><table><thead><tr><th>层级</th><th>典型故障</th><th>容错手段</th></tr></thead><tbody><tr><td data-h="层级">单台主机</td><td data-h="典型故障">硬件故障、内核崩溃</td><td data-h="容错手段">多副本、反亲和</td></tr><tr><td data-h="层级">可用区</td><td data-h="典型故障">机房断电、网络中断</td><td data-h="容错手段">多可用区部署</td></tr><tr><td data-h="层级">区域</td><td data-h="典型故障">大范围灾害、区域级服务故障</td><td data-h="容错手段">多区域部署与灾备</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>单可用区</h4><p><b class="k-p">优点</b>延迟最低，无跨区费用</p><p><b class="k-c">代价</b>机房级故障即全停</p><p><b class="k-w">适用</b>开发测试、可中断的批处理</p></div><div class="trd"><h4>多可用区</h4><p><b class="k-p">优点</b>容忍单区故障，成本适中</p><p><b class="k-c">代价</b>跨区流量费、部署更复杂</p><p><b class="k-w">适用</b>生产服务的基本要求</p></div><div class="trd"><h4>多区域</h4><p><b class="k-p">优点</b>容忍区域级故障</p><p><b class="k-c">代价</b>成本高，数据一致性难</p><p><b class="k-w">适用</b>关键业务或合规要求</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>副本数为 3 但调度后全在一个可用区。</p><p class="fix"><b>✓</b>配置拓扑分布约束或反亲和，并在部署后核查。</p></li><li><p class="bad"><b>✗</b>应用多可用区，但数据库或 NAT 网关只在一个可用区。</p><p class="fix"><b>✓</b>逐个检查依赖组件的可用区分布。</p></li><li><p class="bad"><b>✗</b>两个区各承载 50% 峰值，一个区故障后另一个被压垮。</p><p class="fix"><b>✓</b>按 N-1 可用区仍能承载峰值来规划容量。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>计算、数据库、网关都跨至少两个可用区</span></label></li><li><label><input type="checkbox"><span>副本调度受拓扑约束保障</span></label></li><li><label><input type="checkbox"><span>失去一个可用区后容量足够</span></label></li><li><label><input type="checkbox"><span>做过单可用区故障演练</span></label></li><li><label><input type="checkbox"><span>评估过跨可用区流量成本</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么多可用区不等于高可用？</summary><p>还要看所有依赖是否同样跨区、容量是否足以承载失去一个区后的流量、故障检测与切换是否自动可靠，以及是否存在共享的控制面依赖。任何一环单区部署都会成为单点。</p></details><details class="iv"><summary>什么是静态稳定性？</summary><p>系统在某个可用区故障时，不需要依赖控制面去临时启动新资源或修改配置就能继续服务，例如提前在每个区预置足够容量。因为故障期间控制面本身也可能不可用。</p></details><details class="iv"><summary>跨可用区同步复制有什么代价？</summary><p>每次写入都要等待另一个区确认，增加写延迟；还会产生跨区数据传输费用；备区故障时可能影响主库写入，需要设计降级为异步的策略。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html" target="_blank" rel="noopener"><b>AWS EC2 文档：区域与可用区</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://learn.microsoft.com/en-us/azure/reliability/availability-zones-overview" target="_blank" rel="noopener"><b>Azure：What are availability zones?</b><small>learn.microsoft.com ↗</small></a></li><li><a href="https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/" target="_blank" rel="noopener"><b>Kubernetes：Pod Topology Spread Constraints</b><small>kubernetes.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="failover.pro.html" rel="prev"><small>‹ 上一个</small><b>🔀 故障自动转移</b></a><a class="pn next" href="single-points-of-failure.pro.html" rel="next"><small>下一个 ›</small><b>🎯 单点故障 (SPOF)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

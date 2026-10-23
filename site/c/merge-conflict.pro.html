@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="合并冲突 专业模式：合并冲突（Merge Conflict）发生在 Git 无法自动整合两条分支对同一文件同一区域的不同修改时，或一方修改、另一方删除同一文件时。Git 会暂停操作">
+<title>🎓 合并冲突 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l1" id="main" data-slug="merge-conflict" data-answer="0" data-prev="pull-request.pro.html" data-next="input-validation.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l1.html#git">🌱 初级 · 🌿 Git 协作</a><span>›</span><a href="merge-conflict.html">合并冲突</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.46 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="pull-request.pro.html" rel="prev"><small>‹ 上一个</small><b>🙋 合并请求 (PR)</b></a><a class="pn next" href="input-validation.pro.html" rel="next"><small>下一个 ›</small><b>📏 输入验证</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">⚔️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌱 初级</span><span>🌿 Git 协作</span><span>⏱ 约 10 分钟</span></div>
+    <h1>合并冲突</h1><p class="en">Merge Conflict</p>
+    <div class="hbtns"><a class="prosw back" href="merge-conflict.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">合并冲突（Merge Conflict）发生在 Git 无法自动整合两条分支对同一文件同一区域的不同修改时，或一方修改、另一方删除同一文件时。Git 会暂停操作，在文件中插入冲突标记，由人判断保留哪一方或如何组合。冲突本身不是错误，而是需要人类判断语义的信号。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>找共同祖先：合并时 Git 找到两条分支的共同祖先提交（merge base）。</p></li><li><span class="sn">2</span><p>三方比较：分别比较祖先与双方版本，只有一方改动的区域自动采纳。</p></li><li><span class="sn">3</span><p>检测冲突：双方都改了同一区域且内容不同，Git 标记为冲突并暂停合并。</p></li><li><span class="sn">4</span><p>插入标记：在文件中用 &lt;&lt;&lt;&lt;&lt;&lt;&lt;、=======、&gt;&gt;&gt;&gt;&gt;&gt;&gt; 包围双方版本，等待解决。</p></li><li><span class="sn">5</span><p>完成合并：手动编辑为正确内容，git add 标记已解决，再提交或继续 rebase。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>三方合并 (Three-way Merge)</dt><dd>基于共同祖先与两方版本进行比较合并。</dd></div><div class="term"><dt>合并基点 (Merge Base)</dt><dd>两条分支最近的共同祖先提交。</dd></div><div class="term"><dt>ours / theirs</dt><dd>冲突中的当前分支版本与被合入的版本。</dd></div><div class="term"><dt>diff3 / zdiff3</dt><dd>冲突标记中额外显示祖先版本的样式，便于理解原意。</dd></div><div class="term"><dt>rerere</dt><dd>记录冲突解决方式，再遇相同冲突时自动复用。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>解决冲突流程</span><em>bash</em><button class="ccopy">复制</button></div><pre><code>git merge origin/main
+# CONFLICT (content): Merge conflict in src/config.ts
+
+git status                 # 列出所有冲突文件
+
+# 文件中的冲突标记（启用 diff3 后会多出祖先版本）：
+# &lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+# const TIMEOUT = 5000;
+# ||||||| base
+# const TIMEOUT = 3000;
+# =======
+# const TIMEOUT = 3000; const RETRIES = 3;
+# &gt;&gt;&gt;&gt;&gt;&gt;&gt; origin/main
+
+# 编辑为正确的组合结果，删除所有标记后：
+git add src/config.ts
+npm test                   # 解决后务必跑测试
+git commit                 # rebase 中则用 git rebase --continue
+
+# 放弃本次合并，回到合并前
+git merge --abort
+
+# 推荐配置：显示祖先版本、记住解决方式
+git config --global merge.conflictStyle zdiff3
+git config --global rerere.enabled true</code></pre></div><p class="cnote">看懂祖先版本才能判断双方意图；解决后跑测试，因为无文本冲突不代表语义正确。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">冲突类型与处理</h3><div class="tw"><table><thead><tr><th>类型</th><th>原因</th><th>处理方式</th></tr></thead><tbody><tr><td data-h="类型">内容冲突</td><td data-h="原因">双方改了同一行区域</td><td data-h="处理方式">理解双方意图后手动组合</td></tr><tr><td data-h="类型">修改/删除冲突</td><td data-h="原因">一方修改、一方删除文件</td><td data-h="处理方式">决定保留修改或确认删除</td></tr><tr><td data-h="类型">锁文件冲突</td><td data-h="原因">双方都改了依赖</td><td data-h="处理方式">以一方为准后重新安装生成锁文件</td></tr><tr><td data-h="类型">语义冲突</td><td data-h="原因">无文本冲突但逻辑互相破坏</td><td data-h="处理方式">依靠测试与评审发现</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>手动逐块解决</h4><p><b class="k-p">优点</b>精确，理解每处改动</p><p><b class="k-c">代价</b>冲突多时耗时</p><p><b class="k-w">适用</b>业务逻辑冲突</p></div><div class="trd"><h4>整体采用一方（--ours/--theirs）</h4><p><b class="k-p">优点</b>快</p><p><b class="k-c">代价</b>可能丢失另一方的重要修改</p><p><b class="k-w">适用</b>生成文件或确定以一方为准</p></div><div class="trd"><h4>让 AI 协助解决</h4><p><b class="k-p">优点</b>能快速理解双方并给出组合</p><p><b class="k-c">代价</b>可能误合并逻辑</p><p><b class="k-w">适用</b>冲突多但有测试兜底</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>冲突标记残留在代码里被提交</p><p class="fix"><b>✓</b>提交前搜索 &lt;&lt;&lt;&lt;&lt;&lt;&lt; 标记，并让构建和测试兜底</p></li><li><p class="bad"><b>✗</b>手动合并 package-lock.json 等锁文件</p><p class="fix"><b>✓</b>选定一方的清单后重新运行安装生成锁文件</p></li><li><p class="bad"><b>✗</b>解决冲突后不跑测试直接提交</p><p class="fix"><b>✓</b>合并后运行完整测试，防止语义冲突</p></li><li><p class="bad"><b>✗</b>长期分支积累大量冲突</p><p class="fix"><b>✓</b>缩短分支寿命，频繁同步主干</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>无残留冲突标记</span></label></li><li><label><input type="checkbox"><span>锁文件通过重新安装生成</span></label></li><li><label><input type="checkbox"><span>合并后测试全部通过</span></label></li><li><label><input type="checkbox"><span>不确定处已与相关作者确认</span></label></li><li><label><input type="checkbox"><span>启用 zdiff3 显示祖先版本</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>没有文本冲突就说明合并正确吗？</summary><p>不是。语义冲突时两边改动在不同行，Git 能自动合并，但组合后逻辑错误，例如一方重命名函数、另一方新增了对旧函数名的调用。只能靠编译、类型检查和测试发现，所以合并后必须跑完整测试。</p></details><details class="iv"><summary>rebase 时的 ours/theirs 为什么容易混淆？</summary><p>rebase 是把你的提交逐个重放到目标分支上，此时「当前」是目标分支，所以 ours 指上游，theirs 才是你正在重放的提交，与 merge 时正好相反。解决时最好看内容而非依赖这两个名字。</p></details><details class="iv"><summary>如何从流程上减少冲突？</summary><p>小而频繁的 PR、短生命周期分支、经常同步主干、明确模块归属、格式化工具统一风格避免格式噪声冲突、把容易冲突的生成文件排除在手工编辑之外，并行 Agent 尽量分配到不同文件或模块。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging" target="_blank" rel="noopener"><b>Pro Git: Basic Branching and Merging</b><small>git-scm.com ↗</small></a></li><li><a href="https://git-scm.com/docs/git-merge" target="_blank" rel="noopener"><b>Git 文档: git-merge（冲突说明）</b><small>git-scm.com ↗</small></a></li><li><a href="https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/addressing-merge-conflicts/resolving-a-merge-conflict-using-the-command-line" target="_blank" rel="noopener"><b>GitHub Docs: Resolving a merge conflict using the command line</b><small>docs.github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="pull-request.pro.html" rel="prev"><small>‹ 上一个</small><b>🙋 合并请求 (PR)</b></a><a class="pn next" href="input-validation.pro.html" rel="next"><small>下一个 ›</small><b>📏 输入验证</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

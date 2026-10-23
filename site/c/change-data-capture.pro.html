@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="变更数据捕获 (CDC) 专业模式：变更数据捕获（CDC）是从源数据库持续捕获行级插入、更新、删除事件，并以有序事件流的形式发送给下游系统的技术。主流方式是读取数据库的事务日志（如 Postgre">
+<title>🎓 变更数据捕获 (CDC) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="change-data-capture" data-answer="0" data-prev="postgres-vacuum.pro.html" data-next="outbox-pattern.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#db">🔥 进阶 · 🗄️ 数据库</a><span>›</span><a href="change-data-capture.html">变更数据捕获 (CDC)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.419 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="postgres-vacuum.pro.html" rel="prev"><small>‹ 上一个</small><b>🧹 PostgreSQL空间回收</b></a><a class="pn next" href="outbox-pattern.pro.html" rel="next"><small>下一个 ›</small><b>📮 事务性发件箱模式</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📸</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>变更数据捕获 (CDC)</h1><p class="en">Change Data Capture</p>
+    <div class="hbtns"><a class="prosw back" href="change-data-capture.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">变更数据捕获（CDC）是从源数据库持续捕获行级插入、更新、删除事件，并以有序事件流的形式发送给下游系统的技术。主流方式是读取数据库的事务日志（如 PostgreSQL WAL、MySQL binlog），用于数据同步到搜索引擎、数仓、缓存失效和微服务间事件传递。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>开启日志：数据库配置为输出足够信息，如 PostgreSQL wal_level=logical，MySQL binlog 行格式。</p></li><li><span class="sn">2</span><p>初始快照：连接器首次启动时对现有数据做一致性快照，记录对应的日志位点。</p></li><li><span class="sn">3</span><p>流式读取：之后从该位点持续读取事务日志，解析成包含前后镜像的变更事件。</p></li><li><span class="sn">4</span><p>发布事件：按表或主键把事件写入 Kafka 等消息系统，保持同一主键的顺序。</p></li><li><span class="sn">5</span><p>位点管理：定期提交已处理的日志位点（如复制槽 LSN），故障重启后从位点续传。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>WAL / binlog</dt><dd>数据库的事务日志，记录所有已提交的数据变更。</dd></div><div class="term"><dt>逻辑解码 (Logical Decoding)</dt><dd>PostgreSQL 把 WAL 解析成行级逻辑变更的机制。</dd></div><div class="term"><dt>复制槽 (Replication Slot)</dt><dd>记录消费位点的服务端对象，保证所需 WAL 不被删除。</dd></div><div class="term"><dt>LSN (Log Sequence Number)</dt><dd>WAL 中的位置编号，用于标识消费进度。</dd></div><div class="term"><dt>Debezium</dt><dd>基于 Kafka Connect 的开源 CDC 平台，支持多种数据库。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Debezium PG 连接器</span><em>json</em><button class="ccopy">复制</button></div><pre><code>{
+  &quot;name&quot;: &quot;orders-cdc&quot;,
+  &quot;config&quot;: {
+    &quot;connector.class&quot;: &quot;io.debezium.connector.postgresql.PostgresConnector&quot;,
+    &quot;plugin.name&quot;: &quot;pgoutput&quot;,
+    &quot;database.hostname&quot;: &quot;pg.internal&quot;,
+    &quot;database.port&quot;: &quot;5432&quot;,
+    &quot;database.user&quot;: &quot;cdc_user&quot;,
+    &quot;database.password&quot;: &quot;${file:/secrets/pg.properties:password}&quot;,
+    &quot;database.dbname&quot;: &quot;shop&quot;,
+    &quot;topic.prefix&quot;: &quot;shop&quot;,
+    &quot;table.include.list&quot;: &quot;public.orders,public.order_items&quot;,
+    &quot;slot.name&quot;: &quot;debezium_orders&quot;
+  }
+}</code></pre></div><p class="cnote">提交到 Kafka Connect 后，变更写入 shop.public.orders 等主题；密码用配置提供器引用。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">CDC 实现方式对比</h3><div class="tw"><table><thead><tr><th>方式</th><th>原理</th><th>局限</th></tr></thead><tbody><tr><td data-h="方式">基于日志</td><td data-h="原理">读取 WAL/binlog</td><td data-h="局限">需数据库权限与配置，运维复杂</td></tr><tr><td data-h="方式">基于查询轮询</td><td data-h="原理">按 updated_at 定期查询</td><td data-h="局限">捕获不到删除，有延迟和负载</td></tr><tr><td data-h="方式">基于触发器</td><td data-h="原理">触发器写变更表</td><td data-h="局限">增加写入开销，侵入业务库</td></tr><tr><td data-h="方式">应用双写</td><td data-h="原理">代码同时写库和发消息</td><td data-h="局限">无法保证原子性，易不一致</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>日志 CDC（Debezium）</h4><p><b class="k-p">优点</b>捕获全部变更含删除，低侵入</p><p><b class="k-c">代价</b>需维护连接器和复制槽</p><p><b class="k-w">适用</b>数据同步、事件驱动集成</p></div><div class="trd"><h4>轮询 updated_at</h4><p><b class="k-p">优点</b>实现简单，无需特殊权限</p><p><b class="k-c">代价</b>漏删除，难做到实时</p><p><b class="k-w">适用</b>小规模、可容忍延迟</p></div><div class="trd"><h4>Outbox + CDC</h4><p><b class="k-p">优点</b>发布领域事件而非表结构变更</p><p><b class="k-c">代价</b>需要业务写 outbox 表</p><p><b class="k-w">适用</b>微服务对外发布事件</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>连接器停了很久，复制槽滞留导致 WAL 堆积撑满磁盘</p><p class="fix"><b>✓</b>监控复制槽延迟和 WAL 大小，设置 max_slot_wal_keep_size 等上限</p></li><li><p class="bad"><b>✗</b>下游直接依赖源表结构，源库改表即下游崩</p><p class="fix"><b>✓</b>对外发布稳定的事件契约，或使用 Outbox 模式与 Schema Registry</p></li><li><p class="bad"><b>✗</b>假设事件只投递一次，下游非幂等</p><p class="fix"><b>✓</b>按主键和 LSN 做幂等写入，容忍重复事件</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>日志级别与权限已配置</span></label></li><li><label><input type="checkbox"><span>复制槽延迟有监控告警</span></label></li><li><label><input type="checkbox"><span>WAL 保留有上限</span></label></li><li><label><input type="checkbox"><span>下游消费幂等</span></label></li><li><label><input type="checkbox"><span>表结构变更有兼容策略</span></label></li><li><label><input type="checkbox"><span>初始快照过程已演练</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么基于日志的 CDC 优于轮询？</summary><p>日志包含所有已提交变更（含删除和中间状态），按提交顺序排列，延迟低，且不对业务表发额外查询；轮询依赖 updated_at，捕获不到物理删除，可能漏掉同一周期内的多次变更。</p></details><details class="iv"><summary>CDC 能保证 exactly-once 吗？</summary><p>通常是至少一次：连接器在提交位点前崩溃会重放部分事件。端到端精确一次需下游幂等或事务性写入配合。设计上应假设会收到重复事件，用主键加版本或 LSN 去重。</p></details><details class="iv"><summary>PostgreSQL 复制槽有什么风险？</summary><p>复制槽会阻止服务端删除消费者尚未确认的 WAL，消费者停止后 WAL 持续累积可能撑满磁盘，还会拖住 VACUUM 清理边界。需监控槽延迟、及时删除废弃槽并设置 WAL 保留上限。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://debezium.io/documentation/reference/stable/connectors/postgresql.html" target="_blank" rel="noopener"><b>Debezium PostgreSQL Connector</b><small>debezium.io ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/logicaldecoding.html" target="_blank" rel="noopener"><b>PostgreSQL: Logical Decoding</b><small>postgresql.org ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Change_data_capture" target="_blank" rel="noopener"><b>Change data capture (Wikipedia)</b><small>en.wikipedia.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="postgres-vacuum.pro.html" rel="prev"><small>‹ 上一个</small><b>🧹 PostgreSQL空间回收</b></a><a class="pn next" href="outbox-pattern.pro.html" rel="next"><small>下一个 ›</small><b>📮 事务性发件箱模式</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

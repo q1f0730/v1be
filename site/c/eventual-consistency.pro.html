@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="最终一致性 专业模式：最终一致性（Eventual Consistency）是一种弱一致性模型：如果不再有新的更新，所有副本最终会收敛到相同的值，但在收敛前不同副本、不同读请求可能看">
+<title>🎓 最终一致性 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="eventual-consistency" data-answer="0" data-prev="cap-theorem.pro.html" data-next="strong-consistency.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#dist">🔥 进阶 · 🕸️ 分布式</a><span>›</span><a href="eventual-consistency.html">最终一致性</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.429 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="cap-theorem.pro.html" rel="prev"><small>‹ 上一个</small><b>⚖️ CAP定理</b></a><a class="pn next" href="strong-consistency.pro.html" rel="next"><small>下一个 ›</small><b>🎯 强一致性 / 线性一致性</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">⏳</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>最终一致性</h1><p class="en">Eventual Consistency</p>
+    <div class="hbtns"><a class="prosw back" href="eventual-consistency.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">最终一致性（Eventual Consistency）是一种弱一致性模型：如果不再有新的更新，所有副本最终会收敛到相同的值，但在收敛前不同副本、不同读请求可能看到不同版本。它以放宽读到最新值的保证为代价，换取更高可用性、更低延迟和跨地域扩展能力。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>写入：先在一个或部分副本成功即返回，不等待其余所有副本确认。</p></li><li><span class="sn">2</span><p>后台异步复制：通过复制日志、gossip 协议等把更新传播到其他副本。</p></li><li><span class="sn">3</span><p>陈旧读：传播期间读请求可能落到尚未更新的副本，读到更新前的旧值。</p></li><li><span class="sn">4</span><p>冲突处理：并发写同一数据时，用最后写入胜出、版本向量或 CRDT 决定合并结果。</p></li><li><span class="sn">5</span><p>修复机制：读修复、反熵（Merkle 树比对）等手段持续纠正副本差异。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>复制延迟 (Replication Lag)</dt><dd>写入到所有副本可见之间的时间差。</dd></div><div class="term"><dt>读己之写 (Read-your-writes)</dt><dd>会话保证：用户总能读到自己刚写入的数据。</dd></div><div class="term"><dt>最后写入胜出 (LWW)</dt><dd>按时间戳保留最新写入的冲突解决策略，可能丢更新。</dd></div><div class="term"><dt>CRDT</dt><dd>可无协调合并且保证收敛的复制数据类型。</dd></div><div class="term"><dt>反熵 (Anti-entropy)</dt><dd>副本间后台比对并同步差异数据的过程。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>DynamoDB 两种读</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import boto3
+
+table = boto3.resource(&quot;dynamodb&quot;).Table(&quot;orders&quot;)
+
+table.put_item(Item={&quot;order_id&quot;: &quot;1001&quot;, &quot;status&quot;: &quot;PAID&quot;})
+
+# 默认：最终一致读，成本低，可能读到写入前的旧值
+r1 = table.get_item(Key={&quot;order_id&quot;: &quot;1001&quot;})
+
+# 强一致读：返回读取前所有成功写入的结果
+# 读容量消耗更高，且不支持全局二级索引
+r2 = table.get_item(Key={&quot;order_id&quot;: &quot;1001&quot;}, ConsistentRead=True)
+
+print(r1.get(&quot;Item&quot;), r2.get(&quot;Item&quot;))</code></pre></div><p class="cnote">同一张表可按请求选择一致性；支付后立刻展示状态的页面适合用强一致读。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见会话一致性保证</h3><div class="tw"><table><thead><tr><th>保证</th><th>含义</th><th>常见实现</th></tr></thead><tbody><tr><td data-h="保证">读己之写</td><td data-h="含义">自己写的数据自己能读到</td><td data-h="常见实现">写后短期读主或粘性会话</td></tr><tr><td data-h="保证">单调读</td><td data-h="含义">不会先读到新值再读到旧值</td><td data-h="常见实现">会话固定到同一副本</td></tr><tr><td data-h="保证">单调写</td><td data-h="含义">同一客户端写入按顺序生效</td><td data-h="常见实现">客户端序号</td></tr><tr><td data-h="保证">因果一致</td><td data-h="含义">有因果关系的操作顺序一致</td><td data-h="常见实现">版本向量、混合逻辑时钟</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>最终一致</h4><p><b class="k-p">优点</b>高可用、低延迟、易跨地域</p><p><b class="k-c">代价</b>需处理陈旧读与冲突</p><p><b class="k-w">适用</b>点赞数、动态、商品浏览</p></div><div class="trd"><h4>强一致</h4><p><b class="k-p">优点</b>语义简单，不会读到旧值</p><p><b class="k-c">代价</b>延迟高，分区时可能不可用</p><p><b class="k-w">适用</b>余额、库存扣减、唯一性约束</p></div><div class="trd"><h4>会话一致</h4><p><b class="k-p">优点</b>兼顾用户体验与性能</p><p><b class="k-c">代价</b>跨用户仍可能不一致</p><p><b class="k-w">适用</b>用户编辑自己的资料</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>用户提交后立即刷新列表，看不到刚写的数据</p><p class="fix"><b>✓</b>写后读走主库/强一致读，或前端乐观更新</p></li><li><p class="bad"><b>✗</b>用 LWW 合并并发更新，依赖不同步的时钟丢数据</p><p class="fix"><b>✓</b>使用版本号或 CRDT，关键数据避免 LWW</p></li><li><p class="bad"><b>✗</b>把最终一致当成很快就一致，未监控复制延迟</p><p class="fix"><b>✓</b>监控复制延迟并设定告警阈值与降级策略</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>区分了需强一致的操作</span></label></li><li><label><input type="checkbox"><span>关键页面实现读己之写</span></label></li><li><label><input type="checkbox"><span>监控复制延迟</span></label></li><li><label><input type="checkbox"><span>并发冲突有明确合并策略</span></label></li><li><label><input type="checkbox"><span>消费者容忍乱序与重复</span></label></li><li><label><input type="checkbox"><span>业务方理解可能的陈旧窗口</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>最终一致有多「最终」？</summary><p>模型本身不承诺时限，只保证停止写入后会收敛。实际收敛时间取决于复制延迟、网络和故障恢复，正常多在毫秒到秒级，故障时可能更久。工程上要测量并监控，而不是假设立即一致。</p></details><details class="iv"><summary>如何在最终一致系统里保证用户体验？</summary><p>提供会话级保证：写后读主或强一致读实现读己之写；会话粘到同一副本保证单调读；前端乐观更新；关键操作用条件写或版本号防覆盖。</p></details><details class="iv"><summary>CRDT 为什么能无冲突合并？</summary><p>CRDT 把合并定义为满足交换律、结合律和幂等律的操作（如取最大值、集合并），因此无论更新以何种顺序、重复多少次到达，各副本最终状态一致，不需要中心协调。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.allthingsdistributed.com/2008/12/eventually_consistent.html" target="_blank" rel="noopener"><b>Eventually Consistent (Werner Vogels)</b><small>allthingsdistributed.com ↗</small></a></li><li><a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadConsistency.html" target="_blank" rel="noopener"><b>DynamoDB read consistency</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type" target="_blank" rel="noopener"><b>CRDT (Wikipedia)</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://jepsen.io/consistency" target="_blank" rel="noopener"><b>Jepsen: Consistency Models</b><small>jepsen.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="cap-theorem.pro.html" rel="prev"><small>‹ 上一个</small><b>⚖️ CAP定理</b></a><a class="pn next" href="strong-consistency.pro.html" rel="next"><small>下一个 ›</small><b>🎯 强一致性 / 线性一致性</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="命令查询职责分离 专业模式：命令查询职责分离（CQRS）是一种架构模式：把修改状态的命令（Command）和读取数据的查询（Query）拆成两套模型，必要时使用不同的存储。写模型专注业务规">
+<title>🎓 命令查询职责分离 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="cqrs" data-answer="0" data-prev="two-phase-commit.pro.html" data-next="event-sourcing.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#dist">🔥 进阶 · 🕸️ 分布式</a><span>›</span><a href="cqrs.html">命令查询职责分离</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.440 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="two-phase-commit.pro.html" rel="prev"><small>‹ 上一个</small><b>💍 两阶段提交 (2PC)</b></a><a class="pn next" href="event-sourcing.pro.html" rel="next"><small>下一个 ›</small><b>📜 事件溯源</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🍽️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>命令查询职责分离</h1><p class="en">CQRS</p>
+    <div class="hbtns"><a class="prosw back" href="cqrs.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">命令查询职责分离（CQRS）是一种架构模式：把修改状态的命令（Command）和读取数据的查询（Query）拆成两套模型，必要时使用不同的存储。写模型专注业务规则和一致性，读模型按页面或查询需求反规范化，从而分别优化和扩展。读模型通常通过事件异步更新，因此存在同步延迟。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>命令端：接收意图明确的命令，校验业务规则后修改写模型，不返回查询数据。</p></li><li><span class="sn">2</span><p>发布变化：写入成功后发出领域事件，可通过 Outbox 或 CDC 可靠投递。</p></li><li><span class="sn">3</span><p>投影：订阅事件的投影程序把变化写入一个或多个反规范化的读模型。</p></li><li><span class="sn">4</span><p>查询端：直接读取为查询定制的读模型，例如搜索索引、缓存或宽表。</p></li><li><span class="sn">5</span><p>一致性：读模型相对写模型有延迟，界面需按最终一致设计或做读己之写处理。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>命令 (Command)</dt><dd>表达改变状态意图的请求，如 PlaceOrder，可被拒绝。</dd></div><div class="term"><dt>查询 (Query)</dt><dd>只读请求，不产生副作用。</dd></div><div class="term"><dt>读模型 / 投影 (Projection)</dt><dd>由事件推导出的、为特定查询优化的数据视图。</dd></div><div class="term"><dt>反规范化 (Denormalization)</dt><dd>冗余存储数据以减少查询时的关联计算。</dd></div><div class="term"><dt>投影重建 (Replay)</dt><dd>从头重放事件以重新生成或修复读模型。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>命令与投影分离</span><em>typescript</em><button class="ccopy">复制</button></div><pre><code>type OrderPlaced = { type: &quot;OrderPlaced&quot;; orderId: string; userId: string; total: number };
+
+// 写模型：只关心业务规则
+const orders = new Map&lt;string, { status: string; total: number }&gt;();
+const bus: Array&lt;(e: OrderPlaced) =&gt; void&gt; = [];
+
+function placeOrder(cmd: { orderId: string; userId: string; total: number }) {
+  if (cmd.total &lt;= 0) throw new Error(&quot;金额必须为正&quot;);      // 业务校验
+  if (orders.has(cmd.orderId)) throw new Error(&quot;订单已存在&quot;);
+  orders.set(cmd.orderId, { status: &quot;PLACED&quot;, total: cmd.total });
+  bus.forEach((h) =&gt; h({ type: &quot;OrderPlaced&quot;, ...cmd }));  // 发布事件
+}
+
+// 读模型：按「用户订单汇总」页面定制
+const userSummary = new Map&lt;string, { count: number; spent: number }&gt;();
+bus.push((e) =&gt; {
+  const s = userSummary.get(e.userId) ?? { count: 0, spent: 0 };
+  userSummary.set(e.userId, { count: s.count + 1, spent: s.spent + e.total });
+});
+
+placeOrder({ orderId: &quot;o1&quot;, userId: &quot;u1&quot;, total: 99 });
+console.log(userSummary.get(&quot;u1&quot;));   // { count: 1, spent: 99 }</code></pre></div><p class="cnote">进程内演示；生产中事件经消息系统异步传递，读模型存于独立存储。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">读写两侧对比</h3><div class="tw"><table><thead><tr><th>维度</th><th>命令端</th><th>查询端</th></tr></thead><tbody><tr><td data-h="维度">数据模型</td><td data-h="命令端">规范化、聚合边界清晰</td><td data-h="查询端">反规范化、按页面定制</td></tr><tr><td data-h="维度">一致性</td><td data-h="命令端">强一致、校验不变量</td><td data-h="查询端">最终一致</td></tr><tr><td data-h="维度">扩展方式</td><td data-h="命令端">按写入量扩展</td><td data-h="查询端">按读取量独立扩展</td></tr><tr><td data-h="维度">典型存储</td><td data-h="命令端">关系型数据库、事件存储</td><td data-h="查询端">搜索引擎、缓存、宽表</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>完整 CQRS（分离存储）</h4><p><b class="k-p">优点</b>读写独立优化与扩展</p><p><b class="k-c">代价</b>同步延迟、组件多、调试难</p><p><b class="k-w">适用</b>读写负载差异大、查询复杂</p></div><div class="trd"><h4>同库读写模型分离</h4><p><b class="k-p">优点</b>代码清晰，无同步延迟</p><p><b class="k-c">代价</b>扩展受限于单库</p><p><b class="k-w">适用</b>想理清复杂领域逻辑</p></div><div class="trd"><h4>传统 CRUD</h4><p><b class="k-p">优点</b>简单直接，团队熟悉</p><p><b class="k-c">代价</b>复杂查询与业务规则混杂</p><p><b class="k-w">适用</b>大多数普通业务系统</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>简单 CRUD 系统也上 CQRS，复杂度远超收益</p><p class="fix"><b>✓</b>只在复杂领域或读写差异显著的子系统中使用</p></li><li><p class="bad"><b>✗</b>用户提交后马上查询，读模型还没更新</p><p class="fix"><b>✓</b>返回命令结果给前端乐观展示，或关键页面读写模型</p></li><li><p class="bad"><b>✗</b>投影非幂等，事件重放后数据翻倍</p><p class="fix"><b>✓</b>投影按事件 ID 或版本幂等处理，支持安全重建</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>确认复杂度带来实际收益</span></label></li><li><label><input type="checkbox"><span>事件可靠投递到投影</span></label></li><li><label><input type="checkbox"><span>投影幂等且可重建</span></label></li><li><label><input type="checkbox"><span>监控读模型同步延迟</span></label></li><li><label><input type="checkbox"><span>界面处理最终一致</span></label></li><li><label><input type="checkbox"><span>读模型 schema 有版本管理</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>CQRS 一定要配合事件溯源吗？</summary><p>不需要。CQRS 只要求读写模型分离，写端可以是普通关系表，通过 Outbox 或 CDC 更新读模型。事件溯源与 CQRS 常一起使用，因为事件流天然适合投影，但两者可以独立采用。</p></details><details class="iv"><summary>CQRS 带来的最大挑战是什么？</summary><p>读写之间的最终一致：用户可能看不到刚做的修改；还要处理投影失败、重放、事件版本演进和多个读模型的运维。调试时需要跨组件追踪一次变更的完整路径。</p></details><details class="iv"><summary>什么场景适合 CQRS？</summary><p>读写比例悬殊、查询形态多样（列表、搜索、报表）、业务规则复杂需要清晰写模型、或读写需独立扩展的子系统。不应作为整个系统的默认架构，而是局部使用。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://martinfowler.com/bliki/CQRS.html" target="_blank" rel="noopener"><b>CQRS (Martin Fowler)</b><small>martinfowler.com ↗</small></a></li><li><a href="https://learn.microsoft.com/en-us/azure/architecture/patterns/cqrs" target="_blank" rel="noopener"><b>CQRS pattern (Azure Architecture Center)</b><small>learn.microsoft.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="two-phase-commit.pro.html" rel="prev"><small>‹ 上一个</small><b>💍 两阶段提交 (2PC)</b></a><a class="pn next" href="event-sourcing.pro.html" rel="next"><small>下一个 ›</small><b>📜 事件溯源</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

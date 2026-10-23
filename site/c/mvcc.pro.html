@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="多版本并发控制 (MVCC) 专业模式：多版本并发控制（MVCC）是数据库的并发控制机制：写操作创建数据的新版本而不覆盖旧版本，每个事务基于自己的快照读取可见版本，从而读不阻塞写、写不阻塞读。Post">
+<title>🎓 多版本并发控制 (MVCC) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="mvcc" data-answer="0" data-prev="schema-evolution.pro.html" data-next="write-ahead-log.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#db">🔥 进阶 · 🗄️ 数据库</a><span>›</span><a href="mvcc.html">多版本并发控制 (MVCC)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.465 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="schema-evolution.pro.html" rel="prev"><small>‹ 上一个</small><b>🧬 数据模式演进 (Schema Registry)</b></a><a class="pn next" href="write-ahead-log.pro.html" rel="next"><small>下一个 ›</small><b>📝 预写日志 (WAL)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📸</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>多版本并发控制 (MVCC)</h1><p class="en">MVCC</p>
+    <div class="hbtns"><a class="prosw back" href="mvcc.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">多版本并发控制（MVCC）是数据库的并发控制机制：写操作创建数据的新版本而不覆盖旧版本，每个事务基于自己的快照读取可见版本，从而读不阻塞写、写不阻塞读。PostgreSQL、MySQL InnoDB、Oracle 等主流数据库都采用 MVCC，它是实现读已提交、可重复读、快照隔离的基础。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>每个版本记录创建它的事务 ID 和删除它的事务 ID（PostgreSQL 为元组的 xmin/xmax）；InnoDB 在行上保存最近修改的事务 ID 与指向 undo 日志的回滚指针。</p></li><li><span class="sn">2</span><p>事务开始或语句开始时获取快照，记录当时哪些事务已提交、哪些仍活跃。</p></li><li><span class="sn">3</span><p>读取时沿版本链找到对当前快照可见的版本：PostgreSQL 在堆中保留多个元组，InnoDB 通过 undo 日志重建旧版本。</p></li><li><span class="sn">4</span><p>写写冲突仍需行锁：两个事务改同一行时后者等待，在可重复读级别下可能因更新冲突而失败重试。</p></li><li><span class="sn">5</span><p>不再被任何快照需要的旧版本由后台清理：PostgreSQL 的 VACUUM、InnoDB 的 purge 线程。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>快照 (Snapshot)</dt><dd>某一时刻已提交事务集合的视图，决定事务能看到哪些版本。</dd></div><div class="term"><dt>死元组 (Dead Tuple)</dt><dd>PostgreSQL 中已被更新或删除、对所有事务都不可见的旧行版本。</dd></div><div class="term"><dt>读视图 (Read View)</dt><dd>InnoDB 中判断版本可见性的结构，记录活跃事务 ID 范围。</dd></div><div class="term"><dt>写偏斜 (Write Skew)</dt><dd>快照隔离下两个事务读同一数据、各改不同行，合起来违反约束的异常。</dd></div><div class="term"><dt>事务 ID 回卷 (XID Wraparound)</dt><dd>PostgreSQL 32 位事务 ID 用尽的风险，需通过 VACUUM 冻结旧元组避免。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>观察 PostgreSQL 的版本与膨胀</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- 每行的系统列：xmin 为创建它的事务 ID
+SELECT xmin, xmax, id, balance FROM accounts WHERE id = 1;
+
+UPDATE accounts SET balance = balance - 10 WHERE id = 1;
+-- 再查：xmin 变了，说明是新元组；旧元组成为死元组
+SELECT xmin, xmax, id, balance FROM accounts WHERE id = 1;
+
+-- 各表死元组数量与最近一次自动清理时间
+SELECT relname, n_live_tup, n_dead_tup, last_autovacuum
+FROM pg_stat_user_tables
+ORDER BY n_dead_tup DESC LIMIT 5;
+
+-- 找出长时间未结束的事务：它们会阻止旧版本被清理
+SELECT pid, state, now() - xact_start AS xact_age, left(query, 60)
+FROM pg_stat_activity
+WHERE xact_start IS NOT NULL
+ORDER BY xact_start LIMIT 5;</code></pre></div><p class="cnote">处于 idle in transaction 的会话持有旧快照，是表膨胀的常见元凶，可配置 idle_in_transaction_session_timeout。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">PostgreSQL 与 InnoDB 实现差异</h3><div class="tw"><table><thead><tr><th>维度</th><th>PostgreSQL</th><th>MySQL InnoDB</th></tr></thead><tbody><tr><td data-h="维度">旧版本存放</td><td data-h="PostgreSQL">与新版本同在堆表中</td><td data-h="MySQL InnoDB">undo 日志中</td></tr><tr><td data-h="维度">更新方式</td><td data-h="PostgreSQL">插入新元组，旧元组标记失效</td><td data-h="MySQL InnoDB">原地更新，旧值写入 undo</td></tr><tr><td data-h="维度">清理机制</td><td data-h="PostgreSQL">VACUUM / autovacuum</td><td data-h="MySQL InnoDB">purge 线程清理 undo</td></tr><tr><td data-h="维度">主要风险</td><td data-h="PostgreSQL">表膨胀、XID 回卷</td><td data-h="MySQL InnoDB">长事务导致 undo 增长</td></tr><tr><td data-h="维度">默认隔离级别</td><td data-h="PostgreSQL">读已提交</td><td data-h="MySQL InnoDB">可重复读</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>MVCC</h4><p><b class="k-p">优点</b>读写互不阻塞，读多场景并发高</p><p><b class="k-c">代价</b>需存储旧版本并后台清理</p><p><b class="k-w">适用</b>绝大多数 OLTP 业务</p></div><div class="trd"><h4>两阶段锁 (2PL)</h4><p><b class="k-p">优点</b>可直接实现可串行化，无旧版本存储</p><p><b class="k-c">代价</b>读写互相阻塞，易死锁</p><p><b class="k-w">适用</b>冲突极少或需严格串行化的老系统</p></div><div class="trd"><h4>MVCC + 可串行化快照隔离 (SSI)</h4><p><b class="k-p">优点</b>在 MVCC 上消除写偏斜</p><p><b class="k-c">代价</b>可能出现序列化失败需应用重试</p><p><b class="k-w">适用</b>强一致业务规则且能处理重试</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>连接池中事务开启后长时间不提交</p><p class="fix"><b>✓</b>设置事务和空闲事务超时，监控 xact_start 最老的会话</p></li><li><p class="bad"><b>✗</b>以为可重复读能防止所有并发异常</p><p class="fix"><b>✓</b>识别写偏斜场景，用 SELECT ... FOR UPDATE 或可串行化级别</p></li><li><p class="bad"><b>✗</b>大批量更新全表，瞬间产生大量死元组</p><p class="fix"><b>✓</b>分批更新，并在之后观察 autovacuum 或手动 VACUUM</p></li><li><p class="bad"><b>✗</b>关闭 autovacuum 以「提升性能」</p><p class="fix"><b>✓</b>保持开启并按表调优阈值，否则膨胀与回卷风险更大</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>监控最老事务年龄与 idle in transaction 会话</span></label></li><li><label><input type="checkbox"><span>配置事务与空闲事务超时</span></label></li><li><label><input type="checkbox"><span>关注高频更新表的死元组比例</span></label></li><li><label><input type="checkbox"><span>autovacuum 参数按大表单独调优</span></label></li><li><label><input type="checkbox"><span>监控 PostgreSQL 事务 ID 年龄</span></label></li><li><label><input type="checkbox"><span>关键业务约束评估写偏斜风险</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>MVCC 下为什么读不阻塞写？</summary><p>写入不覆盖旧数据而是生成新版本，读事务依据自己的快照选择可见版本，所以不需要等写事务释放锁；写事务也不必等读者结束。只有两个事务同时写同一行时才需要行锁协调。</p></details><details class="iv"><summary>PostgreSQL 表膨胀的根因和处理？</summary><p>UPDATE/DELETE 留下死元组，若存在长事务或复制槽持有旧快照，VACUUM 无法回收，表与索引持续变大。处理：找出并结束长事务，调优 autovacuum，必要时在线重整（如 pg_repack 扩展）或 VACUUM FULL（会锁表）。</p></details><details class="iv"><summary>快照隔离下的写偏斜如何发生？</summary><p>例如规定至少一名医生值班，两个事务都读到两人在岗，各自把不同的人改为休息并提交，结果无人值班。两者改的是不同行，没有写写冲突。解决：对相关行加锁、用约束物化冲突，或使用可串行化隔离级别。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.postgresql.org/docs/current/mvcc-intro.html" target="_blank" rel="noopener"><b>PostgreSQL: Concurrency Control (MVCC)</b><small>postgresql.org ↗</small></a></li><li><a href="https://dev.mysql.com/doc/refman/8.0/en/innodb-multi-versioning.html" target="_blank" rel="noopener"><b>MySQL: InnoDB Multi-Versioning</b><small>dev.mysql.com ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/routine-vacuuming.html" target="_blank" rel="noopener"><b>PostgreSQL: Routine Vacuuming</b><small>postgresql.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="schema-evolution.pro.html" rel="prev"><small>‹ 上一个</small><b>🧬 数据模式演进 (Schema Registry)</b></a><a class="pn next" href="write-ahead-log.pro.html" rel="next"><small>下一个 ›</small><b>📝 预写日志 (WAL)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

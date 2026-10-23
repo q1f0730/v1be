@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="数据库范式化 专业模式：范式化（Normalization）是关系数据库的建模方法：依据函数依赖把数据拆分到多个表，使每个事实只存储一次，以消除冗余带来的更新、插入、删除异常。常用范式">
+<title>🎓 数据库范式化 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="normalization" data-answer="0" data-prev="pessimistic-locking.pro.html" data-next="denormalization.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#db">🔮 高级 · 🗄️ 数据库</a><span>›</span><a href="normalization.html">数据库范式化</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.244 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="pessimistic-locking.pro.html" rel="prev"><small>‹ 上一个</small><b>🚪 悲观并发控制</b></a><a class="pn next" href="denormalization.pro.html" rel="next"><small>下一个 ›</small><b>☂️ 数据库反范式化</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🗂️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>数据库范式化</h1><p class="en">Normalization</p>
+    <div class="hbtns"><a class="prosw back" href="normalization.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">范式化（Normalization）是关系数据库的建模方法：依据函数依赖把数据拆分到多个表，使每个事实只存储一次，以消除冗余带来的更新、插入、删除异常。常用范式依次为 1NF、2NF、3NF 和 BCNF，OLTP 系统通常以 3NF 为设计基线。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>识别实体和属性，找出函数依赖：哪些属性由哪些属性唯一决定。</p></li><li><span class="sn">2</span><p>1NF：每个字段只存原子值，不在一列里塞列表或重复列组。</p></li><li><span class="sn">3</span><p>2NF：在 1NF 基础上，非主属性必须依赖整个复合主键，而非其中一部分。</p></li><li><span class="sn">4</span><p>3NF：非主属性不能传递依赖于主键（如 订单→客户→客户城市），应拆到客户表。</p></li><li><span class="sn">5</span><p>拆分后通过外键关联，查询时用 JOIN 组合，约束保证引用完整性。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>函数依赖 (Functional Dependency)</dt><dd>A 的值确定则 B 的值唯一确定，记作 A→B。</dd></div><div class="term"><dt>候选键 (Candidate Key)</dt><dd>能唯一标识一行的最小属性集合。</dd></div><div class="term"><dt>传递依赖 (Transitive Dependency)</dt><dd>A→B 且 B→C，C 间接依赖 A。</dd></div><div class="term"><dt>更新异常 (Update Anomaly)</dt><dd>同一事实存多处，只改一处导致不一致。</dd></div><div class="term"><dt>BCNF</dt><dd>每个决定因素都是候选键，比 3NF 更严格。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>从宽表拆到 3NF</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- 反例：客户信息随每个订单重复存储
+-- orders_flat(order_id, customer_email, customer_name, customer_city,
+--             product_sku, product_name, unit_price, qty)
+
+-- 拆分后：每个事实只存一次
+CREATE TABLE customers (
+  id    bigint PRIMARY KEY,
+  email text UNIQUE NOT NULL,
+  name  text NOT NULL,
+  city  text
+);
+CREATE TABLE products (
+  sku   text PRIMARY KEY,
+  name  text NOT NULL,
+  price numeric(10,2) NOT NULL          -- 当前标价
+);
+CREATE TABLE orders (
+  id          bigint PRIMARY KEY,
+  customer_id bigint NOT NULL REFERENCES customers(id),
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE order_items (
+  order_id   bigint REFERENCES orders(id),
+  sku        text REFERENCES products(sku),
+  qty        int NOT NULL CHECK (qty &gt; 0),
+  unit_price numeric(10,2) NOT NULL,    -- 下单时成交价，是独立事实
+  PRIMARY KEY (order_id, sku)
+);</code></pre></div><p class="cnote">客户改城市只改一行；成交价属于订单明细的事实，保留在明细表并非冗余。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">范式要求速查</h3><div class="tw"><table><thead><tr><th>范式</th><th>要求</th><th>消除的问题</th></tr></thead><tbody><tr><td data-h="范式">1NF</td><td data-h="要求">字段原子、无重复组</td><td data-h="消除的问题">无法按单个值查询与约束</td></tr><tr><td data-h="范式">2NF</td><td data-h="要求">非主属性完全依赖整个主键</td><td data-h="消除的问题">复合主键下的部分依赖冗余</td></tr><tr><td data-h="范式">3NF</td><td data-h="要求">无传递依赖</td><td data-h="消除的问题">间接属性重复存储</td></tr><tr><td data-h="范式">BCNF</td><td data-h="要求">所有决定因素都是候选键</td><td data-h="消除的问题">3NF 下残留的少数异常</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>严格 3NF</h4><p><b class="k-p">优点</b>写入一致、无更新异常</p><p><b class="k-c">代价</b>查询需多表 JOIN</p><p><b class="k-w">适用</b>OLTP 核心业务表</p></div><div class="trd"><h4>适度反范式</h4><p><b class="k-p">优点</b>读路径快、查询简单</p><p><b class="k-c">代价</b>需同步冗余，可能不一致</p><p><b class="k-w">适用</b>读远多于写的热点查询</p></div><div class="trd"><h4>JSON 列存半结构化</h4><p><b class="k-p">优点</b>模式灵活</p><p><b class="k-c">代价</b>约束弱，难做引用完整性</p><p><b class="k-w">适用</b>属性多变、少被关联查询</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>把订单成交价也规范化成引用商品当前价</p><p class="fix"><b>✓</b>区分“当前值”和“历史事实”，历史事实应快照</p></li><li><p class="bad"><b>✗</b>逗号分隔字符串存多个标签</p><p class="fix"><b>✓</b>建关联表，支持索引与约束</p></li><li><p class="bad"><b>✗</b>为范式而范式，拆出大量一对一小表</p><p class="fix"><b>✓</b>按访问模式与依赖关系合理合并</p></li><li><p class="bad"><b>✗</b>拆表后外键列不建索引</p><p class="fix"><b>✓</b>为外键列建索引，保证 JOIN 与删除性能</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个字段存原子值</span></label></li><li><label><input type="checkbox"><span>非主属性完全依赖主键</span></label></li><li><label><input type="checkbox"><span>无明显传递依赖</span></label></li><li><label><input type="checkbox"><span>历史快照数据与当前数据区分清楚</span></label></li><li><label><input type="checkbox"><span>外键约束与索引齐全</span></label></li><li><label><input type="checkbox"><span>有意的冗余已记录原因</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>3NF 和 BCNF 的区别？</summary><p>3NF 允许“非候选键决定主属性”的依赖存在，BCNF 不允许，要求每个非平凡函数依赖的左边都是超键。实践中多数 3NF 设计已满足 BCNF，差异只在存在多个重叠候选键时出现。</p></details><details class="iv"><summary>订单表里存商品名算违反范式吗？</summary><p>取决于语义。如果它代表“下单时的商品名”，是订单的历史事实，商品改名不应影响旧订单，存下来是正确建模；如果只是为了少一次 JOIN 而复制当前名称，就是反范式冗余，需要同步机制。</p></details><details class="iv"><summary>让 AI 生成数据库表结构时要检查什么？</summary><p>看是否有重复存储的属性和列表型字段；外键与唯一约束是否齐全；历史数据是否被错误引用为当前值；索引是否覆盖外键和常用查询；命名是否一致。AI 常给出能跑但冗余的宽表。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://en.wikipedia.org/wiki/Database_normalization" target="_blank" rel="noopener"><b>Wikipedia: Database normalization</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Third_normal_form" target="_blank" rel="noopener"><b>Wikipedia: Third normal form</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://learn.microsoft.com/en-us/office/troubleshoot/access/database-normalization-description" target="_blank" rel="noopener"><b>Microsoft Learn: Database normalization description</b><small>learn.microsoft.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="pessimistic-locking.pro.html" rel="prev"><small>‹ 上一个</small><b>🚪 悲观并发控制</b></a><a class="pn next" href="denormalization.pro.html" rel="next"><small>下一个 ›</small><b>☂️ 数据库反范式化</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

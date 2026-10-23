@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="两阶段提交 (2PC) 专业模式：两阶段提交（Two-Phase Commit，2PC）是让多个参与者（数据库、资源管理器）对一个分布式事务达成要么全部提交、要么全部回滚的原子提交协议。由协调者">
+<title>🎓 两阶段提交 (2PC) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="two-phase-commit" data-answer="0" data-prev="bloom-filters.pro.html" data-next="cqrs.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#dist">🔥 进阶 · 🕸️ 分布式</a><span>›</span><a href="two-phase-commit.html">两阶段提交 (2PC)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.439 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="bloom-filters.pro.html" rel="prev"><small>‹ 上一个</small><b>🧾 布隆过滤器</b></a><a class="pn next" href="cqrs.pro.html" rel="next"><small>下一个 ›</small><b>🍽️ 命令查询职责分离</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">💍</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>两阶段提交 (2PC)</h1><p class="en">Two-Phase Commit</p>
+    <div class="hbtns"><a class="prosw back" href="two-phase-commit.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">两阶段提交（Two-Phase Commit，2PC）是让多个参与者（数据库、资源管理器）对一个分布式事务达成要么全部提交、要么全部回滚的原子提交协议。由协调者先询问所有参与者能否提交（准备阶段），全部同意后再统一下达提交（提交阶段）。它保证原子性，但存在阻塞和性能问题。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>准备阶段：协调者向所有参与者发送 prepare 请求，要求各自做好提交准备。</p></li><li><span class="sn">2</span><p>参与者投票：把事务数据和准备状态持久化并保持锁，然后回复同意或拒绝。</p></li><li><span class="sn">3</span><p>决策：全部同意则协调者记录提交决定；任一拒绝或超时则决定回滚整个事务。</p></li><li><span class="sn">4</span><p>提交阶段：协调者把决定发给所有参与者，参与者执行提交或回滚并释放锁。</p></li><li><span class="sn">5</span><p>阻塞问题：参与者投同意后若协调者宕机，只能持锁等待协调者恢复后的决定。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>协调者 (Coordinator)</dt><dd>驱动协议、收集投票并做出最终提交或回滚决定的角色。</dd></div><div class="term"><dt>参与者 (Participant)</dt><dd>持有部分事务数据、参与投票并执行决定的资源管理器。</dd></div><div class="term"><dt>不确定状态 (In-doubt)</dt><dd>已投同意但未收到最终决定，必须等待而不能自行决定。</dd></div><div class="term"><dt>XA</dt><dd>X/Open 定义的分布式事务接口标准，多种数据库支持。</dd></div><div class="term"><dt>Saga</dt><dd>用一系列本地事务加补偿操作替代分布式原子提交的模式。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>PostgreSQL 的准备事务</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- 需先设置 max_prepared_transactions &gt; 0（默认 0，修改需重启）
+-- 参与者 1（库 A）：执行本地操作后进入准备状态
+BEGIN;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+PREPARE TRANSACTION &#x27;tx-20261020-001&#x27;;   -- 持久化，连接断开也不丢
+
+-- 参与者 2（库 B）
+BEGIN;
+UPDATE accounts SET balance = balance + 100 WHERE id = 9;
+PREPARE TRANSACTION &#x27;tx-20261020-001&#x27;;
+
+-- 协调者：两边都准备成功后，分别下达提交
+COMMIT PREPARED &#x27;tx-20261020-001&#x27;;
+-- 任一方失败则对已准备的一方执行：
+-- ROLLBACK PREPARED &#x27;tx-20261020-001&#x27;;
+
+-- 排查遗留的不确定事务（会一直持有锁）
+SELECT gid, prepared, database FROM pg_prepared_xacts;</code></pre></div><p class="cnote">数据库只提供参与者能力，协调者逻辑需由事务管理器实现；遗留准备事务会阻塞清理。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">分布式事务方案对比</h3><div class="tw"><table><thead><tr><th>方案</th><th>一致性</th><th>主要代价</th></tr></thead><tbody><tr><td data-h="方案">2PC / XA</td><td data-h="一致性">原子提交（强）</td><td data-h="主要代价">阻塞、持锁时间长、性能低</td></tr><tr><td data-h="方案">3PC</td><td data-h="一致性">减少部分阻塞</td><td data-h="主要代价">假设网络有界，实践少用</td></tr><tr><td data-h="方案">Saga</td><td data-h="一致性">最终一致</td><td data-h="主要代价">需设计补偿，存在中间状态</td></tr><tr><td data-h="方案">Outbox + 消息</td><td data-h="一致性">最终一致</td><td data-h="主要代价">异步延迟，消费者需幂等</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>2PC</h4><p><b class="k-p">优点</b>真正的原子性，编程模型简单</p><p><b class="k-c">代价</b>协调者故障会阻塞，吞吐受限</p><p><b class="k-w">适用</b>少量参与者、低频关键操作</p></div><div class="trd"><h4>Saga</h4><p><b class="k-p">优点</b>无全局锁，可用性高</p><p><b class="k-c">代价</b>补偿逻辑复杂，中间状态可见</p><p><b class="k-w">适用</b>跨微服务的长业务流程</p></div><div class="trd"><h4>重新划分边界</h4><p><b class="k-p">优点</b>变成单库本地事务，最简单</p><p><b class="k-c">代价</b>需调整服务或数据归属</p><p><b class="k-w">适用</b>强一致数据可归到同一服务</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>协调者不持久化决定，宕机恢复后不知该提交还是回滚</p><p class="fix"><b>✓</b>协调者在发出提交前把决定写入持久日志</p></li><li><p class="bad"><b>✗</b>遗留的准备事务长期持锁，阻塞其他写入与 VACUUM</p><p class="fix"><b>✓</b>监控 pg_prepared_xacts，建立超时人工处理流程</p></li><li><p class="bad"><b>✗</b>在高并发微服务调用链上使用 2PC，延迟和锁争用飙升</p><p class="fix"><b>✓</b>改用 Saga 或 Outbox，或把强一致数据合并到同一服务</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>协调者决定已持久化</span></label></li><li><label><input type="checkbox"><span>参与者支持准备事务</span></label></li><li><label><input type="checkbox"><span>有不确定事务的监控</span></label></li><li><label><input type="checkbox"><span>超时与恢复流程已演练</span></label></li><li><label><input type="checkbox"><span>评估了锁持有时长</span></label></li><li><label><input type="checkbox"><span>考虑过 Saga 等替代方案</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>2PC 为什么是阻塞协议？</summary><p>参与者投同意后就放弃了单方面回滚的权利，必须等待协调者决定；若协调者此时宕机，参与者不知道其他人的投票，既不能提交也不能回滚，只能持锁等待协调者恢复，期间相关数据不可用。</p></details><details class="iv"><summary>2PC 和 Raft 等共识算法有什么区别？</summary><p>2PC 解决原子提交：所有参与者都必须同意，任一否决即回滚，不容忍参与者故障。共识解决多副本对同一值达成一致，只需多数派，能容忍少数故障。可以用共识复制协调者状态来缓解 2PC 的阻塞。</p></details><details class="iv"><summary>微服务里为什么很少用 2PC？</summary><p>各服务通常使用不同存储，未必支持 XA；2PC 要求所有参与者同步在线并持锁，降低可用性和吞吐，服务间耦合紧。实践中多用 Saga、Outbox 实现最终一致，或调整边界避免跨服务强一致。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.postgresql.org/docs/current/sql-prepare-transaction.html" target="_blank" rel="noopener"><b>PostgreSQL: PREPARE TRANSACTION</b><small>postgresql.org ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Two-phase_commit_protocol" target="_blank" rel="noopener"><b>Two-phase commit protocol - Wikipedia</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://microservices.io/patterns/data/saga.html" target="_blank" rel="noopener"><b>Pattern: Saga</b><small>microservices.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="bloom-filters.pro.html" rel="prev"><small>‹ 上一个</small><b>🧾 布隆过滤器</b></a><a class="pn next" href="cqrs.pro.html" rel="next"><small>下一个 ›</small><b>🍽️ 命令查询职责分离</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

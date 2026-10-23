@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="OIDC身份认证层 专业模式：OpenID Connect（OIDC）是构建在 OAuth 2.0 之上的身份认证层。OAuth 只解决“授权访问资源”，OIDC 额外定义了 ID Toke">
+<title>🎓 OIDC身份认证层 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="openid-connect" data-answer="0" data-prev="bcrypt-and-argon2.pro.html" data-next="session-fixation.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sec">🔮 高级 · 🛡️ 安全防线</a><span>›</span><a href="openid-connect.html">OIDC身份认证层</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.228 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="bcrypt-and-argon2.pro.html" rel="prev"><small>‹ 上一个</small><b>🐢 抗暴力破解慢哈希</b></a><a class="pn next" href="session-fixation.pro.html" rel="next"><small>下一个 ›</small><b>🎟️ 会话固定攻击</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🪪</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>OIDC身份认证层</h1><p class="en">OpenID Connect</p>
+    <div class="hbtns"><a class="prosw back" href="openid-connect.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">OpenID Connect（OIDC）是构建在 OAuth 2.0 之上的身份认证层。OAuth 只解决“授权访问资源”，OIDC 额外定义了 ID Token、UserInfo 端点和发现机制，让客户端以标准方式确认“登录的是谁”，是“用 Google/企业 SSO 登录”的底层协议。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>客户端在授权请求中带上 scope=openid，并附 state、nonce，以及推荐的 PKCE 参数。</p></li><li><span class="sn">2</span><p>用户在身份提供方（OP）完成认证与同意，OP 通过 redirect_uri 回传一次性授权码 code。</p></li><li><span class="sn">3</span><p>客户端在后端用 code（加 code_verifier 或客户端密钥）向 token 端点换取 ID Token 与 Access Token。</p></li><li><span class="sn">4</span><p>客户端校验 ID Token：签名（用 JWKS 公钥）、iss、aud、exp、nonce，全部通过才建立本地会话。</p></li><li><span class="sn">5</span><p>需要更多资料时，用 Access Token 调用 UserInfo 端点；端点地址可从发现文档自动获取。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>身份提供方 (OpenID Provider, OP)</dt><dd>负责认证用户并签发 ID Token 的服务，如 Google、Okta、Keycloak。</dd></div><div class="term"><dt>依赖方 (Relying Party, RP)</dt><dd>接入 OIDC 登录、信任 OP 断言的应用。</dd></div><div class="term"><dt>ID Token</dt><dd>OP 签名的 JWT，包含 iss、sub、aud、exp、nonce 等身份声明。</dd></div><div class="term"><dt>nonce</dt><dd>客户端生成并在 ID Token 中回显的随机值，用于防重放。</dd></div><div class="term"><dt>发现文档 (Discovery)</dt><dd>/.well-known/openid-configuration，列出各端点与支持的算法。</dd></div><div class="term"><dt>JWKS</dt><dd>OP 公布的 JSON Web Key 集合，用于验证 ID Token 签名。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>授权码 + PKCE 流程</span><em>http</em><button class="ccopy">复制</button></div><pre><code># 1) 浏览器跳转到授权端点（地址取自发现文档）
+GET /authorize?response_type=code
+    &amp;client_id=my-app
+    &amp;redirect_uri=https%3A%2F%2Fapp.example.com%2Fcallback
+    &amp;scope=openid%20profile%20email
+    &amp;state=af0ifjsldkj
+    &amp;nonce=n-0S6_WzA2Mj
+    &amp;code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM
+    &amp;code_challenge_method=S256 HTTP/1.1
+Host: idp.example.com
+
+# 2) 回调拿到 code 后，后端换 token
+POST /token HTTP/1.1
+Host: idp.example.com
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=authorization_code&amp;code=SplxlOBeZQQYbYS6WxSbIA
+&amp;redirect_uri=https%3A%2F%2Fapp.example.com%2Fcallback
+&amp;client_id=my-app&amp;code_verifier=dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk
+
+# 3) 响应含 id_token（JWT）、access_token、expires_in</code></pre></div><p class="cnote">scope 中的 openid 让 OAuth 流程变成 OIDC 登录；PKCE 防授权码被截获后滥用。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">OAuth2 与 OIDC 分工</h3><div class="tw"><table><thead><tr><th>维度</th><th>OAuth 2.0</th><th>OpenID Connect</th></tr></thead><tbody><tr><td data-h="维度">目的</td><td data-h="OAuth 2.0">委托授权访问资源</td><td data-h="OpenID Connect">认证用户身份</td></tr><tr><td data-h="维度">核心凭证</td><td data-h="OAuth 2.0">Access Token</td><td data-h="OpenID Connect">ID Token（JWT）</td></tr><tr><td data-h="维度">Token 受众</td><td data-h="OAuth 2.0">资源服务器</td><td data-h="OpenID Connect">客户端本身（aud=client_id）</td></tr><tr><td data-h="维度">标准化用户信息</td><td data-h="OAuth 2.0">无</td><td data-h="OpenID Connect">标准 claims + UserInfo 端点</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>授权码 + PKCE</h4><p><b class="k-p">优点</b>token 不经浏览器地址栏，安全性最高</p><p><b class="k-c">代价</b>需后端或 PKCE 支持，步骤较多</p><p><b class="k-w">适用</b>Web、SPA、移动端的默认选择</p></div><div class="trd"><h4>隐式流程 (Implicit)</h4><p><b class="k-p">优点</b>纯前端、无需后端换 token</p><p><b class="k-c">代价</b>token 暴露在 URL，已不推荐</p><p><b class="k-w">适用</b>仅维护老系统</p></div><div class="trd"><h4>托管 IdP（Auth0/Cognito 等）</h4><p><b class="k-p">优点</b>省去自建，MFA、社交登录开箱即用</p><p><b class="k-c">代价</b>按 MAU 计费，有锁定风险</p><p><b class="k-w">适用</b>团队小、要快速上线</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>拿 Access Token 当登录凭证，不校验 ID Token</p><p class="fix"><b>✓</b>登录只认校验通过的 ID Token，Access Token 只用于调 API</p></li><li><p class="bad"><b>✗</b>只解码 JWT 不验签，或不检查 aud</p><p class="fix"><b>✓</b>用 JWKS 验签，并校验 iss、aud、exp、nonce</p></li><li><p class="bad"><b>✗</b>用 email 作为用户主键</p><p class="fix"><b>✓</b>用 iss + sub 组合做唯一标识，email 可能变化或未验证</p></li><li><p class="bad"><b>✗</b>缺少 state 校验，回调可被 CSRF</p><p class="fix"><b>✓</b>生成随机 state 存会话，回调时严格比对</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>使用授权码流程并启用 PKCE（S256）</span></label></li><li><label><input type="checkbox"><span>ID Token 验签并校验 iss/aud/exp/nonce</span></label></li><li><label><input type="checkbox"><span>用户唯一键为 iss + sub</span></label></li><li><label><input type="checkbox"><span>redirect_uri 精确匹配白名单</span></label></li><li><label><input type="checkbox"><span>JWKS 有缓存且支持密钥轮换</span></label></li><li><label><input type="checkbox"><span>登出流程覆盖本地会话与 IdP 会话</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>OIDC 比纯 OAuth“登录”多解决了什么？</summary><p>纯 OAuth 的 Access Token 面向资源服务器，客户端无法可靠判断用户是谁、token 是否发给自己。OIDC 增加签名的 ID Token（aud 指向客户端、含 nonce 防重放）、标准 claims、UserInfo 与发现机制，使认证可互操作。</p></details><details class="iv"><summary>ID Token 需要校验哪些字段？</summary><p>签名（按 kid 从 JWKS 取公钥，限制 alg）；iss 等于预期 OP；aud 包含本 client_id；exp 未过期、iat 合理；nonce 与发起时一致；如用到还要看 azp、auth_time、acr。</p></details><details class="iv"><summary>SPA 为什么推荐 BFF 而非前端存 token？</summary><p>前端存 token 易被 XSS 窃取。BFF（Backend for Frontend）由后端完成授权码交换并持有 token，浏览器只拿 HttpOnly 会话 Cookie，攻击面更小，刷新令牌也不暴露给 JS。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://openid.net/specs/openid-connect-core-1_0.html" target="_blank" rel="noopener"><b>OpenID Connect Core 1.0</b><small>openid.net ↗</small></a></li><li><a href="https://openid.net/specs/openid-connect-discovery-1_0.html" target="_blank" rel="noopener"><b>OpenID Connect Discovery 1.0</b><small>openid.net ↗</small></a></li><li><a href="https://www.rfc-editor.org/rfc/rfc7636" target="_blank" rel="noopener"><b>RFC 7636: PKCE</b><small>rfc-editor.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="bcrypt-and-argon2.pro.html" rel="prev"><small>‹ 上一个</small><b>🐢 抗暴力破解慢哈希</b></a><a class="pn next" href="session-fixation.pro.html" rel="next"><small>下一个 ›</small><b>🎟️ 会话固定攻击</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

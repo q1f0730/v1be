@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="数据库索引 专业模式：数据库索引（Index）是为加速按特定列查找而额外维护的数据结构，最常见的是 B-tree（B 树），此外还有哈希、GIN、GiST 等类型。它属于数据库存储与">
+<title>🎓 数据库索引 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="indexes" data-answer="0" data-prev="crud.pro.html" data-next="n-plus-1-queries.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#db">🌊 中级 · 🗄️ 数据库</a><span>›</span><a href="indexes.html">数据库索引</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.123 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="crud.pro.html" rel="prev"><small>‹ 上一个</small><b>🔁 增删改查 (CRUD)</b></a><a class="pn next" href="n-plus-1-queries.pro.html" rel="next"><small>下一个 ›</small><b>🏃 N+1查询问题</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📑</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>数据库索引</h1><p class="en">Indexes</p>
+    <div class="hbtns"><a class="prosw back" href="indexes.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">数据库索引（Index）是为加速按特定列查找而额外维护的数据结构，最常见的是 B-tree（B 树），此外还有哈希、GIN、GiST 等类型。它属于数据库存储与查询优化层，以额外的存储空间和写入开销，换取查询从全表扫描变为对数级查找，是解决慢查询最常用的手段。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>创建索引时，数据库按索引列的值排序构建 B-tree，叶子节点保存键值与行位置。</p></li><li><span class="sn">2</span><p>查询时优化器根据统计信息评估成本，选择索引扫描、仅索引扫描或全表扫描。</p></li><li><span class="sn">3</span><p>复合索引按列顺序排序，遵循最左前缀原则：(a, b) 可服务 a 或 a+b 条件，难以单独服务 b。</p></li><li><span class="sn">4</span><p>每次 INSERT、UPDATE、DELETE 都需同步维护所有相关索引，索引越多写入越慢。</p></li><li><span class="sn">5</span><p>通过 EXPLAIN ANALYZE 查看实际执行计划和耗时，验证索引是否被使用。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>B-tree</dt><dd>平衡多路搜索树，支持等值、范围查询和排序，默认索引类型。</dd></div><div class="term"><dt>复合索引 (Composite Index)</dt><dd>包含多列的索引，列顺序决定能服务的查询。</dd></div><div class="term"><dt>覆盖索引 (Covering Index)</dt><dd>索引包含查询所需全部列，无需回表读取。</dd></div><div class="term"><dt>选择性 (Selectivity)</dt><dd>列中不同值的比例，选择性越高索引越有效。</dd></div><div class="term"><dt>全表扫描 (Seq Scan)</dt><dd>逐行读取整张表，数据大时很慢。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>用 EXPLAIN 验证索引</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- 慢查询：按用户查最近订单
+EXPLAIN ANALYZE
+SELECT id, amount, created_at FROM orders
+WHERE user_id = 42
+ORDER BY created_at DESC
+LIMIT 20;
+-- 无索引时计划通常为 Seq Scan + Sort
+
+-- 复合索引：等值列在前，排序列在后
+CREATE INDEX CONCURRENTLY idx_orders_user_created
+  ON orders (user_id, created_at DESC);
+
+-- 再次 EXPLAIN ANALYZE，计划应变为 Index Scan，且无需单独排序
+
+-- 部分索引：只索引未完成订单，体积更小
+CREATE INDEX idx_orders_pending ON orders (created_at)
+  WHERE status = &#x27;pending&#x27;;
+
+-- 查看未被使用的索引（PostgreSQL 统计视图）
+SELECT indexrelname, idx_scan FROM pg_stat_user_indexes ORDER BY idx_scan;</code></pre></div><p class="cnote">PostgreSQL 语法；CONCURRENTLY 建索引不阻塞写入，但不能在事务块内执行。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">PG 常用索引类型</h3><div class="tw"><table><thead><tr><th>类型</th><th>适用查询</th><th>示例</th></tr></thead><tbody><tr><td data-h="类型">B-tree</td><td data-h="适用查询">等值、范围、排序</td><td data-h="示例">WHERE created_at &gt; ...</td></tr><tr><td data-h="类型">Hash</td><td data-h="适用查询">仅等值</td><td data-h="示例">WHERE token = ...</td></tr><tr><td data-h="类型">GIN</td><td data-h="适用查询">数组、JSONB、全文检索</td><td data-h="示例">WHERE tags @&gt; &#x27;{ai}&#x27;</td></tr><tr><td data-h="类型">GiST/BRIN</td><td data-h="适用查询">地理空间 / 超大有序表</td><td data-h="示例">范围查询、时序数据</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>为高频查询建精准复合索引</h4><p><b class="k-p">优点</b>查询快，可覆盖排序</p><p><b class="k-c">代价</b>写入变慢、占空间</p><p><b class="k-w">适用</b>读多写少的热点查询</p></div><div class="trd"><h4>少建索引</h4><p><b class="k-p">优点</b>写入快</p><p><b class="k-c">代价</b>查询可能全表扫描</p><p><b class="k-w">适用</b>写入密集的日志类表</p></div><div class="trd"><h4>部分索引/表达式索引</h4><p><b class="k-p">优点</b>体积小、针对性强</p><p><b class="k-c">代价</b>查询条件必须匹配</p><p><b class="k-w">适用</b>只查询特定子集</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>给每一列都建单列索引</p><p class="fix"><b>✓</b>按实际查询模式建复合索引，删除无用索引</p></li><li><p class="bad"><b>✗</b>在索引列上套函数，如 WHERE lower(email)=...</p><p class="fix"><b>✓</b>建立表达式索引或存储规范化后的值</p></li><li><p class="bad"><b>✗</b>复合索引列顺序随意</p><p class="fix"><b>✓</b>等值条件列在前，范围和排序列在后</p></li><li><p class="bad"><b>✗</b>生产大表直接 CREATE INDEX 锁表</p><p class="fix"><b>✓</b>PostgreSQL 使用 CREATE INDEX CONCURRENTLY</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>外键列与高频过滤列已建索引</span></label></li><li><label><input type="checkbox"><span>慢查询用 EXPLAIN ANALYZE 验证</span></label></li><li><label><input type="checkbox"><span>复合索引顺序符合查询</span></label></li><li><label><input type="checkbox"><span>定期清理未使用索引</span></label></li><li><label><input type="checkbox"><span>大表在线建索引不锁写</span></label></li><li><label><input type="checkbox"><span>AI 建议的索引先在生产规模数据上验证</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么建了索引查询还是不走？</summary><p>可能原因：条件选择性低，优化器认为全表扫描更便宜；在索引列上用了函数或隐式类型转换；复合索引没有满足最左前缀；使用前导通配符 LIKE &#x27;%x&#x27;；统计信息过时。应通过 EXPLAIN 和更新统计信息逐一排查。</p></details><details class="iv"><summary>复合索引的最左前缀原则是什么？</summary><p>复合索引按第一列排序，第一列相同再按第二列排序。因此 (a, b, c) 能高效服务 a、a+b、a+b+c 的条件，而单独查 b 或 c 时，B-tree 无法利用顺序定位。设计时通常把等值过滤列放前面，范围或排序列放后面。</p></details><details class="iv"><summary>索引是不是越多越好？</summary><p>不是。每个索引都占用存储，并在每次写入时需要维护，降低 INSERT、UPDATE 性能；过多索引也会增加优化器的选择负担。应根据真实查询模式建立少量精准的索引，并定期清理从未被使用的索引。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.postgresql.org/docs/current/indexes.html" target="_blank" rel="noopener"><b>PostgreSQL Docs: Indexes</b><small>postgresql.org ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/using-explain.html" target="_blank" rel="noopener"><b>PostgreSQL Docs: Using EXPLAIN</b><small>postgresql.org ↗</small></a></li><li><a href="https://use-the-index-luke.com/" target="_blank" rel="noopener"><b>Use The Index, Luke</b><small>use-the-index-luke.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="crud.pro.html" rel="prev"><small>‹ 上一个</small><b>🔁 增删改查 (CRUD)</b></a><a class="pn next" href="n-plus-1-queries.pro.html" rel="next"><small>下一个 ›</small><b>🏃 N+1查询问题</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

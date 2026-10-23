@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="思考预算 (Reasoning Effort) 专业模式：思考预算（Reasoning Effort / Thinking Budget）是推理模型的 API 参数，控制模型给出答案前生成多少内部推理 Token。Op">
+<title>🎓 思考预算 (Reasoning Effort) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="reasoning-effort" data-answer="0" data-prev="grounding-and-citations.pro.html" data-next="diffusion-models.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#ai">🌊 中级 · 🤖 AI 与提示词</a><span>›</span><a href="reasoning-effort.html">思考预算 (Reasoning Effort)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.158 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="grounding-and-citations.pro.html" rel="prev"><small>‹ 上一个</small><b>📎 有据生成与引用溯源</b></a><a class="pn next" href="diffusion-models.pro.html" rel="next"><small>下一个 ›</small><b>🎨 扩散模型 (图像 / 视频生成)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🧠</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>思考预算 (Reasoning Effort)</h1><p class="en">Reasoning Effort / Thinking Budget</p>
+    <div class="hbtns"><a class="prosw back" href="reasoning-effort.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">思考预算（Reasoning Effort / Thinking Budget）是推理模型的 API 参数，控制模型给出答案前生成多少内部推理 Token。OpenAI 用档位（如 low/medium/high），Anthropic 用 budget_tokens，Gemini 也有 thinking budget。它是在质量、延迟与成本之间调节的推理层旋钮。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>推理模型在输出答案前先生成思考内容（可能隐藏、摘要或部分可见），用于分解问题、尝试与自检。</p></li><li><span class="sn">2</span><p>档位或预算限制思考 Token 的数量上限或倾向；预算越高，复杂任务上通常越准，但延迟与费用上升。</p></li><li><span class="sn">3</span><p>思考 Token 计入输出 Token 计费，并占用 max_tokens 等输出额度。</p></li><li><span class="sn">4</span><p>模型不一定用满预算：简单问题即使设高档也可能很快结束。</p></li><li><span class="sn">5</span><p>应用层可按任务难度路由档位，或先低档尝试、失败后升档重试。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>推理 Token (Reasoning Tokens)</dt><dd>模型内部思考产生的 Token，按输出计费。</dd></div><div class="term"><dt>reasoning effort</dt><dd>OpenAI 推理模型的档位参数，控制推理投入程度。</dd></div><div class="term"><dt>budget_tokens</dt><dd>Anthropic 扩展思考的预算参数，须小于 max_tokens。</dd></div><div class="term"><dt>测试时计算 (Test-time Compute)</dt><dd>推理阶段投入更多计算以换取更好结果的思路。</dd></div><div class="term"><dt>交错思考 (Interleaved Thinking)</dt><dd>在工具调用之间穿插思考，部分模型支持。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>两家 API 设置思考预算</span><em>python</em><button class="ccopy">复制</button></div><pre><code># pip install openai anthropic
+from openai import OpenAI
+import anthropic
+
+# OpenAI Responses API：用档位控制
+oa = OpenAI()
+r = oa.responses.create(
+    model=&quot;o4-mini&quot;,                 # 换成你在用的推理模型
+    reasoning={&quot;effort&quot;: &quot;low&quot;},     # 简单任务用低档
+    input=&quot;把 &#x27;hello world&#x27; 转成驼峰命名&quot;,
+)
+print(r.output_text)
+print(&quot;推理 tokens:&quot;, r.usage.output_tokens_details.reasoning_tokens)
+
+# Anthropic：用 budget_tokens 控制扩展思考
+an = anthropic.Anthropic()
+m = an.messages.create(
+    model=&quot;claude-sonnet-4-5&quot;,
+    max_tokens=16000,                               # 必须大于思考预算
+    thinking={&quot;type&quot;: &quot;enabled&quot;, &quot;budget_tokens&quot;: 8000},
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;分析这段并发代码可能的死锁原因…&quot;}],
+)
+for b in m.content:
+    print(b.type)   # 先出现 thinking 块，再出现 text 块</code></pre></div><p class="cnote">参数名与取值因厂商和模型而异，以所用模型文档为准；思考 Token 同样计费。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">各家参数对照</h3><div class="tw"><table><thead><tr><th>厂商</th><th>参数</th><th>形式</th></tr></thead><tbody><tr><td data-h="厂商">OpenAI</td><td data-h="参数">reasoning.effort / reasoning_effort</td><td data-h="形式">档位</td></tr><tr><td data-h="厂商">Anthropic</td><td data-h="参数">thinking.budget_tokens</td><td data-h="形式">Token 数（有最小值）</td></tr><tr><td data-h="厂商">Google Gemini</td><td data-h="参数">thinking budget 配置</td><td data-h="形式">Token 数，部分模型可关闭</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>低档/小预算</h4><p><b class="k-p">优点</b>快、便宜</p><p><b class="k-c">代价</b>复杂任务准确率下降</p><p><b class="k-w">适用</b>格式转换、简单问答、高并发</p></div><div class="trd"><h4>高档/大预算</h4><p><b class="k-p">优点</b>复杂推理更可靠</p><p><b class="k-c">代价</b>延迟高、费用高</p><p><b class="k-w">适用</b>疑难调试、数学、架构设计</p></div><div class="trd"><h4>按难度动态路由</h4><p><b class="k-p">优点</b>整体性价比最好</p><p><b class="k-c">代价</b>需要分类器或升档逻辑</p><p><b class="k-w">适用</b>任务难度分布广的产品</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>所有请求一律最高档</p><p class="fix"><b>✓</b>按任务评测各档位的准确率与成本，选拐点</p></li><li><p class="bad"><b>✗</b>max_tokens 不足，思考耗尽额度导致无回答</p><p class="fix"><b>✓</b>为思考与最终回答都预留输出空间</p></li><li><p class="bad"><b>✗</b>把思考内容当作可靠解释直接展示给用户</p><p class="fix"><b>✓</b>思考内容不保证忠实于真实计算过程，只展示最终答案或摘要</p></li><li><p class="bad"><b>✗</b>对交互式场景开高档，用户等待过久</p><p class="fix"><b>✓</b>交互用低档并流式输出，后台任务再用高档</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>按任务类型设置默认档位</span></label></li><li><label><input type="checkbox"><span>输出上限已为思考预留空间</span></label></li><li><label><input type="checkbox"><span>监控推理 Token 用量与费用</span></label></li><li><label><input type="checkbox"><span>有低档失败后升档的策略</span></label></li><li><label><input type="checkbox"><span>交互场景评估了首字延迟</span></label></li><li><label><input type="checkbox"><span>确认目标模型支持该参数</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>思考预算和 max_tokens 的关系？</summary><p>思考 Token 属于输出，占用输出额度并计费。Anthropic 要求 budget_tokens 小于 max_tokens；OpenAI 推理模型应通过 max_completion_tokens/max_output_tokens 为推理与回答共同留足空间，否则可能推理用尽额度而无可见回答。</p></details><details class="iv"><summary>如何为产品选择默认档位？</summary><p>用代表性任务集在各档位上测准确率、延迟与成本，找收益拐点；交互式路径偏低档，离线或高价值任务偏高档；再用路由或失败升档机制处理难例，并持续监控。</p></details><details class="iv"><summary>为什么更多思考不一定更好？</summary><p>简单任务上收益饱和，只增加延迟与费用；过度思考可能偏离或产生过度复杂的方案；有研究报告在某些任务上更长推理反而降低准确率。应以评测数据为准。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking" target="_blank" rel="noopener"><b>Anthropic：Extended thinking</b><small>docs.anthropic.com ↗</small></a></li><li><a href="https://platform.openai.com/docs/guides/reasoning" target="_blank" rel="noopener"><b>OpenAI：Reasoning models guide</b><small>platform.openai.com ↗</small></a></li><li><a href="https://ai.google.dev/gemini-api/docs/thinking" target="_blank" rel="noopener"><b>Gemini API：Thinking</b><small>ai.google.dev ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="grounding-and-citations.pro.html" rel="prev"><small>‹ 上一个</small><b>📎 有据生成与引用溯源</b></a><a class="pn next" href="diffusion-models.pro.html" rel="next"><small>下一个 ›</small><b>🎨 扩散模型 (图像 / 视频生成)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

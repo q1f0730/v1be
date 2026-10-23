@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="模型蒸馏 专业模式：模型蒸馏（Knowledge Distillation）是一种模型压缩与迁移方法：用大模型（教师）的输出分布或生成结果作为监督信号训练小模型（学生），让学生以更">
+<title>🎓 模型蒸馏 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="distillation" data-answer="0" data-prev="rlhf.pro.html" data-next="parallel-agents-and-worktrees.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#ai">🔥 进阶 · 🤖 AI 与提示词</a><span>›</span><a href="distillation.html">模型蒸馏</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.407 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="rlhf.pro.html" rel="prev"><small>‹ 上一个</small><b>👍 人类反馈强化学习 (RLHF)</b></a><a class="pn next" href="parallel-agents-and-worktrees.pro.html" rel="next"><small>下一个 ›</small><b>👯 并行智能体与 Git Worktree</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">⚗️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>模型蒸馏</h1><p class="en">Distillation</p>
+    <div class="hbtns"><a class="prosw back" href="distillation.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">模型蒸馏（Knowledge Distillation）是一种模型压缩与迁移方法：用大模型（教师）的输出分布或生成结果作为监督信号训练小模型（学生），让学生以更少参数和更低推理成本逼近教师效果。它常用于端侧部署、降本提速，以及把强模型能力迁移到专用小模型。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>准备教师：选定效果好的大模型，冻结参数，只用于产生监督信号。</p></li><li><span class="sn">2</span><p>产生软标签：对训练样本用带温度 T 的 softmax 得到概率分布，保留类别间相似度信息。</p></li><li><span class="sn">3</span><p>或生成数据：在 LLM 场景常让教师生成回答/推理过程，作为学生的 SFT 数据（序列级蒸馏）。</p></li><li><span class="sn">4</span><p>训练学生：损失通常为软标签 KL 散度（乘 T²）与真实标签交叉熵的加权和。</p></li><li><span class="sn">5</span><p>评估部署：对比学生与教师在目标任务上的差距、延迟与成本，必要时再量化。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>软标签 (Soft Targets)</dt><dd>教师输出的完整概率分布，比 one-hot 标签包含更多信息。</dd></div><div class="term"><dt>温度 (Temperature)</dt><dd>softmax 前除以 T，T 越大分布越平滑，暴露更多次要类别信息。</dd></div><div class="term"><dt>暗知识 (Dark Knowledge)</dt><dd>教师对错误类别的相对概率中隐含的相似性知识。</dd></div><div class="term"><dt>序列级蒸馏 (Sequence-level KD)</dt><dd>用教师生成的完整输出序列作为学生的训练目标。</dd></div><div class="term"><dt>量化 (Quantization)</dt><dd>降低权重数值精度以压缩模型，常与蒸馏配合使用。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>经典蒸馏损失</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import torch.nn.functional as F
+
+def kd_loss(student_logits, teacher_logits, labels, T=2.0, alpha=0.5):
+    # 软标签部分：学生与教师在温度 T 下的 KL 散度
+    soft = F.kl_div(
+        F.log_softmax(student_logits / T, dim=-1),
+        F.softmax(teacher_logits / T, dim=-1),
+        reduction=&quot;batchmean&quot;,
+    ) * (T * T)          # 乘 T^2，保持梯度量级与温度无关
+    # 硬标签部分：与真实标签的交叉熵
+    hard = F.cross_entropy(student_logits, labels)
+    return alpha * soft + (1 - alpha) * hard
+
+# 训练循环中：教师 no_grad 前向，学生正常反向传播</code></pre></div><p class="cnote">Hinton 等提出的经典形式；T 与 alpha 是需要调的超参数。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">蒸馏方式对比</h3><div class="tw"><table><thead><tr><th>方式</th><th>监督信号</th><th>需要教师什么</th></tr></thead><tbody><tr><td data-h="方式">Logit 蒸馏</td><td data-h="监督信号">教师输出概率分布</td><td data-h="需要教师什么">能拿到 logits（白盒）</td></tr><tr><td data-h="方式">特征蒸馏</td><td data-h="监督信号">中间层表示</td><td data-h="需要教师什么">能访问内部结构</td></tr><tr><td data-h="方式">序列级/数据蒸馏</td><td data-h="监督信号">教师生成的文本</td><td data-h="需要教师什么">只需 API 输出（黑盒）</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>蒸馏小模型</h4><p><b class="k-p">优点</b>推理快、成本低、可私有部署</p><p><b class="k-c">代价</b>能力上限受限，泛化可能下降</p><p><b class="k-w">适用</b>任务明确、调用量大</p></div><div class="trd"><h4>直接调用大模型</h4><p><b class="k-p">优点</b>能力最强，无需训练</p><p><b class="k-c">代价</b>单次成本和延迟高，依赖供应方</p><p><b class="k-w">适用</b>任务多变、量小</p></div><div class="trd"><h4>量化/剪枝</h4><p><b class="k-p">优点</b>无需重新设计训练流程</p><p><b class="k-c">代价</b>压缩幅度有限，可能掉点</p><p><b class="k-w">适用</b>已有模型只需提速</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>用闭源模型输出蒸馏但忽视服务条款</p><p class="fix"><b>✓</b>先核对模型提供方的使用条款是否允许用输出训练其他模型</p></li><li><p class="bad"><b>✗</b>教师数据覆盖面窄，学生在分布外样本上崩</p><p class="fix"><b>✓</b>按真实线上分布采样提示，覆盖长尾和边界情况</p></li><li><p class="bad"><b>✗</b>只在训练集分布上评估学生效果</p><p class="fix"><b>✓</b>保留独立测试集，并与教师逐项对比失败案例</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>教师与学生效果差距已量化</span></label></li><li><label><input type="checkbox"><span>训练数据覆盖线上分布</span></label></li><li><label><input type="checkbox"><span>符合教师模型的使用条款</span></label></li><li><label><input type="checkbox"><span>延迟与成本收益已测</span></label></li><li><label><input type="checkbox"><span>有分布外样本测试</span></label></li><li><label><input type="checkbox"><span>失败时可回退到大模型</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么软标签比硬标签更有用？</summary><p>硬标签只说明正确类别；软标签还体现教师认为哪些错误类别更相近，例如 2 像 3 而不像狗，这类相似结构提供了更多梯度信息，学生用更少数据学到更好的决策边界。</p></details><details class="iv"><summary>损失里为什么要乘 T²？</summary><p>温度 T 下软标签梯度大约按 1/T² 缩小，乘 T² 可使软损失的梯度量级在不同温度下大致不变，便于与硬标签损失按 alpha 组合，避免调温度时还要重调权重。</p></details><details class="iv"><summary>LLM 时代的蒸馏和经典蒸馏有何不同？</summary><p>大模型多通过 API 提供，拿不到 logits，常用教师生成的回答和推理链做 SFT（数据蒸馏）。重点转向提示多样性、数据筛选与质量控制，以及合规问题，而非损失函数设计。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://arxiv.org/abs/1503.02531" target="_blank" rel="noopener"><b>Distilling the Knowledge in a Neural Network</b><small>arxiv.org ↗</small></a></li><li><a href="https://arxiv.org/abs/1910.01108" target="_blank" rel="noopener"><b>DistilBERT</b><small>arxiv.org ↗</small></a></li><li><a href="https://arxiv.org/abs/1606.07947" target="_blank" rel="noopener"><b>Sequence-Level Knowledge Distillation</b><small>arxiv.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="rlhf.pro.html" rel="prev"><small>‹ 上一个</small><b>👍 人类反馈强化学习 (RLHF)</b></a><a class="pn next" href="parallel-agents-and-worktrees.pro.html" rel="next"><small>下一个 ›</small><b>👯 并行智能体与 Git Worktree</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

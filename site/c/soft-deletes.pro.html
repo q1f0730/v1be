@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="软删除 / 逻辑删除 专业模式：软删除（Soft Delete）是用标记列（如 deleted_at 时间戳或 is_deleted 布尔）代替物理 DELETE 的数据建模模式，查询时默认过">
+<title>🎓 软删除 / 逻辑删除 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="soft-deletes" data-answer="0" data-prev="unique-constraints.pro.html" data-next="uuids-vs-auto-increment.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#db">🌊 中级 · 🗄️ 数据库</a><span>›</span><a href="soft-deletes.html">软删除 / 逻辑删除</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.130 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="unique-constraints.pro.html" rel="prev"><small>‹ 上一个</small><b>🆔 唯一性约束</b></a><a class="pn next" href="uuids-vs-auto-increment.pro.html" rel="next"><small>下一个 ›</small><b>🎫 UUID与自增主键</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🗃️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>软删除 / 逻辑删除</h1><p class="en">Soft Deletes</p>
+    <div class="hbtns"><a class="prosw back" href="soft-deletes.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">软删除（Soft Delete）是用标记列（如 deleted_at 时间戳或 is_deleted 布尔）代替物理 DELETE 的数据建模模式，查询时默认过滤已删除行。它属于应用数据模型层，用于误删恢复、审计留痕和保持引用关系，但会把「过滤已删除」的责任扩散到每一条查询。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>表中增加 deleted_at 列，默认 NULL 表示有效，删除操作改为 UPDATE 写入当前时间。</p></li><li><span class="sn">2</span><p>所有读取查询追加 WHERE deleted_at IS NULL，通常由 ORM 全局作用域或视图统一处理。</p></li><li><span class="sn">3</span><p>唯一约束与索引改为只覆盖有效行（部分索引），避免已删除数据占用唯一键。</p></li><li><span class="sn">4</span><p>恢复操作把 deleted_at 置回 NULL；关联数据需要按业务规则同步删除或恢复。</p></li><li><span class="sn">5</span><p>定期任务把超过保留期的软删除数据物理清理或归档，满足存储与合规要求。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>硬删除 (Hard Delete)</dt><dd>执行 DELETE 物理移除行，无法通过应用恢复。</dd></div><div class="term"><dt>墓碑标记 (Tombstone)</dt><dd>标识数据已删除但仍保留记录的标志。</dd></div><div class="term"><dt>全局作用域 (Global Scope)</dt><dd>ORM 自动给查询附加过滤条件的机制。</dd></div><div class="term"><dt>归档表 (Archive Table)</dt><dd>把删除数据移入的独立表，主表保持干净。</dd></div><div class="term"><dt>被遗忘权 (Right to Erasure)</dt><dd>GDPR 第 17 条，用户可要求删除个人数据。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>软删除的完整配套</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>ALTER TABLE posts ADD COLUMN deleted_at timestamptz;
+
+-- 删除 = 打标记
+UPDATE posts SET deleted_at = now() WHERE id = 42;
+
+-- 视图统一过滤，业务代码查视图而不是原表
+CREATE VIEW active_posts AS
+  SELECT * FROM posts WHERE deleted_at IS NULL;
+
+-- 唯一约束只针对有效行
+CREATE UNIQUE INDEX posts_slug_active_uniq
+  ON posts (slug) WHERE deleted_at IS NULL;
+
+-- 常用查询的索引也加同样条件，体积更小
+CREATE INDEX posts_author_active_idx
+  ON posts (author_id, created_at) WHERE deleted_at IS NULL;
+
+-- 定期清理：保留 30 天后物理删除（分批执行）
+DELETE FROM posts
+WHERE id IN (SELECT id FROM posts
+             WHERE deleted_at &lt; now() - interval &#x27;30 days&#x27; LIMIT 1000);</code></pre></div><p class="cnote">软删除要配套视图/作用域、部分索引和定期清理，否则会慢慢污染查询与约束。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">删除策略对比</h3><div class="tw"><table><thead><tr><th>策略</th><th>可恢复</th><th>查询复杂度</th><th>合规删除</th></tr></thead><tbody><tr><td data-h="策略">硬删除</td><td data-h="可恢复">仅靠备份</td><td data-h="查询复杂度">低</td><td data-h="合规删除">容易</td></tr><tr><td data-h="策略">deleted_at 标记</td><td data-h="可恢复">是</td><td data-h="查询复杂度">每条查询要过滤</td><td data-h="合规删除">需额外清理</td></tr><tr><td data-h="策略">移入归档表</td><td data-h="可恢复">是</td><td data-h="查询复杂度">主表无需过滤</td><td data-h="合规删除">归档表需清理</td></tr><tr><td data-h="策略">事件溯源/审计日志</td><td data-h="可恢复">可重建</td><td data-h="查询复杂度">高</td><td data-h="合规删除">需专门处理</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>deleted_at 列</h4><p><b class="k-p">优点</b>实现简单，可记录删除时间</p><p><b class="k-c">代价</b>漏写过滤即泄露已删数据</p><p><b class="k-w">适用</b>需快速撤销删除的业务数据</p></div><div class="trd"><h4>归档表</h4><p><b class="k-p">优点</b>主表查询与约束保持简单</p><p><b class="k-c">代价</b>删除需跨表事务，恢复较麻烦</p><p><b class="k-w">适用</b>删除频繁、主表查询量大</p></div><div class="trd"><h4>硬删除 + 审计日志</h4><p><b class="k-p">优点</b>数据干净，合规处理直接</p><p><b class="k-c">代价</b>恢复需从日志或备份重建</p><p><b class="k-w">适用</b>个人敏感数据、合规优先</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>原生 SQL、报表、JOIN 中忘记过滤已删除行</p><p class="fix"><b>✓</b>统一通过视图或 ORM 作用域访问，并在审查中检查原生 SQL</p></li><li><p class="bad"><b>✗</b>普通唯一索引导致删除后无法复用同名</p><p class="fix"><b>✓</b>使用 WHERE deleted_at IS NULL 的部分唯一索引</p></li><li><p class="bad"><b>✗</b>把软删除当成满足用户删除请求</p><p class="fix"><b>✓</b>个人数据按隐私法规要求做硬删除或匿名化</p></li><li><p class="bad"><b>✗</b>父记录软删除，子记录仍在列表中显示</p><p class="fix"><b>✓</b>明确级联规则，查询时同时检查父记录状态</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有读取路径都过滤已删除行</span></label></li><li><label><input type="checkbox"><span>唯一索引改为部分索引</span></label></li><li><label><input type="checkbox"><span>有恢复入口与权限控制</span></label></li><li><label><input type="checkbox"><span>有超期物理清理任务</span></label></li><li><label><input type="checkbox"><span>个人数据删除流程符合隐私法规</span></label></li><li><label><input type="checkbox"><span>AI 新增查询已核对删除过滤条件</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>软删除对索引和性能有什么影响？</summary><p>已删除行仍占表与索引空间，过滤条件让普通索引效率下降。应把常用索引和唯一索引改为 WHERE deleted_at IS NULL 的部分索引，并定期物理清理，控制表膨胀。</p></details><details class="iv"><summary>软删除和 GDPR 删除权冲突吗？</summary><p>可能冲突。软删除数据仍是可识别的个人数据，收到删除请求通常需要硬删除或不可逆匿名化，并覆盖备份、日志和下游副本的处理策略。</p></details><details class="iv"><summary>deleted_at 和 is_deleted 布尔选哪个？</summary><p>deleted_at 能同时表达状态与时间，便于按保留期清理和审计，部分索引条件同样简单；布尔字段信息量少。一般推荐时间戳，必要时另加 deleted_by 记录操作人。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.postgresql.org/docs/current/indexes-partial.html" target="_blank" rel="noopener"><b>PostgreSQL 文档：Partial Indexes</b><small>postgresql.org ↗</small></a></li><li><a href="https://laravel.com/docs/eloquent#soft-deleting" target="_blank" rel="noopener"><b>Laravel 文档：Soft Deleting</b><small>laravel.com ↗</small></a></li><li><a href="https://gdpr-info.eu/art-17-gdpr/" target="_blank" rel="noopener"><b>GDPR 第 17 条：Right to erasure</b><small>gdpr-info.eu ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="unique-constraints.pro.html" rel="prev"><small>‹ 上一个</small><b>🆔 唯一性约束</b></a><a class="pn next" href="uuids-vs-auto-increment.pro.html" rel="next"><small>下一个 ›</small><b>🎫 UUID与自增主键</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

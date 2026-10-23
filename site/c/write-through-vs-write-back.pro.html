@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="直写与异步回写 专业模式：直写（Write-Through）与回写（Write-Back，也称 Write-Behind）是缓存的两种写策略。直写在写缓存的同时同步写入后端存储，完成后才">
+<title>🎓 直写与异步回写 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="write-through-vs-write-back" data-answer="0" data-prev="cache-warming.pro.html" data-next="redis-eviction-policies.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#cache">🔮 高级 · ⚡ 缓存与队列</a><span>›</span><a href="write-through-vs-write-back.html">直写与异步回写</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.275 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="cache-warming.pro.html" rel="prev"><small>‹ 上一个</small><b>🥟 缓存预热</b></a><a class="pn next" href="redis-eviction-policies.pro.html" rel="next"><small>下一个 ›</small><b>🗑️ Redis内存淘汰策略</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📒</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>⚡ 缓存与队列</span><span>⏱ 约 10 分钟</span></div>
+    <h1>直写与异步回写</h1><p class="en">Write-Through vs Write-Back</p>
+    <div class="hbtns"><a class="prosw back" href="write-through-vs-write-back.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">直写（Write-Through）与回写（Write-Back，也称 Write-Behind）是缓存的两种写策略。直写在写缓存的同时同步写入后端存储，完成后才返回；回写只写缓存并标记为脏数据，稍后异步批量写回。前者一致性好但写延迟高，后者写入快、能合并写，但缓存故障时可能丢数据。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>直写：写请求同时更新缓存与持久存储，两者都成功才返回，缓存与存储保持一致。</p></li><li><span class="sn">2</span><p>回写：写请求只更新缓存并记录脏标记，不等待持久存储，立即返回。</p></li><li><span class="sn">3</span><p>回写的后台任务按时间或数量阈值，把脏数据批量刷入存储；同一键多次写只刷最后一次。</p></li><li><span class="sn">4</span><p>回写在刷盘前若缓存节点崩溃，未持久化的写入会丢失，需要复制或日志保护。</p></li><li><span class="sn">5</span><p>另有绕写（Write-Around）：写只进存储不进缓存，避免一次性数据污染缓存。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>脏数据 (Dirty Data)</dt><dd>已在缓存修改、尚未写回存储的数据。</dd></div><div class="term"><dt>写合并 (Write Coalescing)</dt><dd>同一键多次写入只持久化最后一次。</dd></div><div class="term"><dt>绕写 (Write-Around)</dt><dd>写操作绕过缓存，只写存储。</dd></div><div class="term"><dt>刷新 (Flush)</dt><dd>把脏数据写回持久存储的动作。</dd></div><div class="term"><dt>掉电保护 (Battery-backed Cache)</dt><dd>存储控制器用电池或电容保护回写缓存。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>两种写策略的最小实现</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import threading
+
+class WriteThrough:
+    def __init__(self, cache: dict, db: dict):
+        self.cache, self.db = cache, db
+    def put(self, k, v):
+        self.db[k] = v          # 先写持久层，失败则抛错、不更新缓存
+        self.cache[k] = v       # 两者都成功才返回
+
+class WriteBack:
+    def __init__(self, cache: dict, db: dict):
+        self.cache, self.db = cache, db
+        self.dirty, self.lock = {}, threading.Lock()
+    def put(self, k, v):
+        self.cache[k] = v       # 只写缓存，立即返回
+        with self.lock:
+            self.dirty[k] = v   # 同一键多次写会被合并
+    def flush(self):            # 由定时器或阈值触发
+        with self.lock:
+            batch, self.dirty = self.dirty, {}
+        self.db.update(batch)   # 批量落库；flush 前进程崩溃，这批数据就丢了
+
+wb = WriteBack({}, {})
+for i in range(1000):
+    wb.put(&quot;view:42&quot;, i)        # 1000 次写
+wb.flush()
+print(wb.db)                    # {&#x27;view:42&#x27;: 999}，只落库 1 次</code></pre></div><p class="cnote">回写把 1000 次写合并为 1 次落库，代价是 flush 前崩溃会丢数据。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">写策略对比</h3><div class="tw"><table><thead><tr><th>策略</th><th>写延迟</th><th>数据丢失风险</th><th>适用</th></tr></thead><tbody><tr><td data-h="策略">直写</td><td data-h="写延迟">高（含存储写）</td><td data-h="数据丢失风险">低</td><td data-h="适用">订单、账户等关键数据</td></tr><tr><td data-h="策略">回写</td><td data-h="写延迟">低（仅缓存）</td><td data-h="数据丢失风险">有（未刷盘部分）</td><td data-h="适用">计数、浏览量、指标</td></tr><tr><td data-h="策略">绕写</td><td data-h="写延迟">存储写延迟</td><td data-h="数据丢失风险">低</td><td data-h="适用">写多读少、一次性数据</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>直写</h4><p><b class="k-p">优点</b>缓存与存储一致，故障不丢写</p><p><b class="k-c">代价</b>写延迟叠加，写放大</p><p><b class="k-w">适用</b>写入必须可靠且立即可读</p></div><div class="trd"><h4>回写</h4><p><b class="k-p">优点</b>写快、合并写、削峰</p><p><b class="k-c">代价</b>可能丢数据，一致性弱</p><p><b class="k-w">适用</b>可容忍少量丢失的高频写</p></div><div class="trd"><h4>绕写 + 读时填充</h4><p><b class="k-p">优点</b>避免缓存被写污染</p><p><b class="k-c">代价</b>刚写入的数据首读未命中</p><p><b class="k-w">适用</b>写后很少立即读取</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>用回写缓存存支付状态等关键数据</p><p class="fix"><b>✓</b>关键数据直写持久层，回写只用于可丢数据</p></li><li><p class="bad"><b>✗</b>直写时先写缓存再写库，库失败后缓存是脏的</p><p class="fix"><b>✓</b>先写持久层，成功后再更新缓存或删除缓存</p></li><li><p class="bad"><b>✗</b>回写队列无上限，存储故障时内存被撑爆</p><p class="fix"><b>✓</b>设置脏数据上限与背压，超限时降级为直写</p></li><li><p class="bad"><b>✗</b>忽略操作系统页缓存也是回写</p><p class="fix"><b>✓</b>需要持久性时显式 fsync 或使用数据库事务</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>按数据重要性选择写策略</span></label></li><li><label><input type="checkbox"><span>回写有刷新周期与脏数据上限</span></label></li><li><label><input type="checkbox"><span>回写缓存有复制或日志保护</span></label></li><li><label><input type="checkbox"><span>直写先写持久层</span></label></li><li><label><input type="checkbox"><span>能评估最坏情况下丢失多少数据</span></label></li><li><label><input type="checkbox"><span>存储故障时有降级路径</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>回写缓存如何降低数据丢失风险？</summary><p>缩短刷新间隔、限制脏数据量；缓存节点做主从复制；先写追加日志（类似 WAL）再更新内存；硬件层面用电池或电容保护的控制器缓存。本质是在写性能与可丢失窗口之间选择。</p></details><details class="iv"><summary>浏览量计数适合哪种策略？</summary><p>适合回写：写入极高频且同一键反复更新，合并后批量落库能大幅降低数据库写压力；偶尔丢失几秒计数业务上可接受。可用 Redis INCR 累加，定时把增量批量写回数据库。</p></details><details class="iv"><summary>数据库本身用的是哪种策略？</summary><p>多数数据库的缓冲池对数据页是回写：修改先在内存中，后台刷脏页。持久性靠预写日志保证：提交时日志先落盘，崩溃后重放日志恢复。这样兼得回写的性能与直写般的可靠性。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://en.wikipedia.org/wiki/Cache_(computing)#Writing_policies" target="_blank" rel="noopener"><b>Wikipedia: Cache (computing) — Writing policies</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/Strategies.html" target="_blank" rel="noopener"><b>Amazon ElastiCache: Caching strategies</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://aws.amazon.com/caching/best-practices/" target="_blank" rel="noopener"><b>AWS: Caching Best Practices</b><small>aws.amazon.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="cache-warming.pro.html" rel="prev"><small>‹ 上一个</small><b>🥟 缓存预热</b></a><a class="pn next" href="redis-eviction-policies.pro.html" rel="next"><small>下一个 ›</small><b>🗑️ Redis内存淘汰策略</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

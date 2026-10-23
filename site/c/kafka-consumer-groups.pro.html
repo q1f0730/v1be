@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="Kafka消费者组 专业模式：Kafka 消费者组（Consumer Group）是一组共享同一 group.id 的消费者，共同消费一个或多个主题：每个分区在同一时刻只分配给组内一个消费者">
+<title>🎓 Kafka消费者组 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="kafka-consumer-groups" data-answer="0" data-prev="message-ordering.pro.html" data-next="partition-keys.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#cache">🔥 进阶 · ⚡ 缓存与队列</a><span>›</span><a href="kafka-consumer-groups.html">Kafka消费者组</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.426 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="message-ordering.pro.html" rel="prev"><small>‹ 上一个</small><b>🔢 消息顺序性保证</b></a><a class="pn next" href="partition-keys.pro.html" rel="next"><small>下一个 ›</small><b>🏷️ 消息分区路由键</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">👥</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>⚡ 缓存与队列</span><span>⏱ 约 10 分钟</span></div>
+    <h1>Kafka消费者组</h1><p class="en">Kafka Consumer Groups</p>
+    <div class="hbtns"><a class="prosw back" href="kafka-consumer-groups.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">Kafka 消费者组（Consumer Group）是一组共享同一 group.id 的消费者，共同消费一个或多个主题：每个分区在同一时刻只分配给组内一个消费者，从而实现并行处理与负载均衡；不同组相互独立，各自维护消费进度，实现同一数据被多个系统分别消费。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>加入组：消费者以相同 group.id 订阅主题，由组协调器（Group Coordinator）管理成员。</p></li><li><span class="sn">2</span><p>分区分配：按分配策略把分区分给各成员，同一分区只属于组内一个消费者。</p></li><li><span class="sn">3</span><p>拉取处理：每个消费者只从分配给自己的分区批量拉取消息并在本地处理。</p></li><li><span class="sn">4</span><p>提交位点：处理后把偏移量提交到内部主题 __consumer_offsets，记录组的进度。</p></li><li><span class="sn">5</span><p>再平衡：成员加入、离开或超时时重新分配分区，新的所有者从已提交位点继续。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>消费位点 (Offset)</dt><dd>消费者组在每个分区已处理到的位置。</dd></div><div class="term"><dt>消费滞后 (Consumer Lag)</dt><dd>分区最新位点与组已提交位点的差值，表示积压。</dd></div><div class="term"><dt>再平衡 (Rebalance)</dt><dd>组成员变化时重新分配分区的过程。</dd></div><div class="term"><dt>协作式再平衡 (Cooperative Rebalancing)</dt><dd>增量迁移分区，避免全部成员同时停止消费。</dd></div><div class="term"><dt>静态成员 (Static Membership)</dt><dd>配置 group.instance.id，短暂重启不触发再平衡。</dd></div><div class="term"><dt>max.poll.interval.ms</dt><dd>两次 poll 最大间隔，超出则被视为失效并触发再平衡。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>查看与重置消费进度</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 查看组内每个分区的当前位点、最新位点和滞后（LAG）
+kafka-consumer-groups.sh --bootstrap-server kafka:9092 \
+  --describe --group order-service
+
+# 列出所有消费者组
+kafka-consumer-groups.sh --bootstrap-server kafka:9092 --list
+
+# 先预演：把位点重置到某个时间点（不加 --execute 只显示结果）
+kafka-consumer-groups.sh --bootstrap-server kafka:9092 \
+  --group order-service --topic orders \
+  --reset-offsets --to-datetime 2026-10-20T00:00:00.000 --dry-run
+
+# 确认后执行（需先停掉该组所有消费者）
+kafka-consumer-groups.sh --bootstrap-server kafka:9092 \
+  --group order-service --topic orders \
+  --reset-offsets --to-datetime 2026-10-20T00:00:00.000 --execute</code></pre></div><p class="cnote">LAG 是最重要的健康指标；重置位点用于回放数据或跳过坏消息，务必先预演。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">分配策略对比</h3><div class="tw"><table><thead><tr><th>策略</th><th>行为</th><th>适用</th></tr></thead><tbody><tr><td data-h="策略">Range</td><td data-h="行为">按主题连续分段分配</td><td data-h="适用">需同主题间分区对齐时</td></tr><tr><td data-h="策略">RoundRobin</td><td data-h="行为">轮询均匀分配</td><td data-h="适用">订阅主题一致、求均衡</td></tr><tr><td data-h="策略">Sticky</td><td data-h="行为">尽量保留原分配</td><td data-h="适用">减少再平衡后的迁移</td></tr><tr><td data-h="策略">CooperativeSticky</td><td data-h="行为">增量再平衡</td><td data-h="适用">避免全组停顿，推荐默认考虑</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>增加组内消费者</h4><p><b class="k-p">优点</b>提高并行度</p><p><b class="k-c">代价</b>超过分区数的消费者会空闲</p><p><b class="k-w">适用</b>分区数大于当前消费者数</p></div><div class="trd"><h4>增加分区数</h4><p><b class="k-p">优点</b>提高并行上限</p><p><b class="k-c">代价</b>改变 key 映射，影响顺序</p><p><b class="k-w">适用</b>消费者数已达分区数上限</p></div><div class="trd"><h4>单消费者内多线程</h4><p><b class="k-p">优点</b>不增分区也能提速</p><p><b class="k-c">代价</b>位点提交与顺序管理更复杂</p><p><b class="k-w">适用</b>处理耗时长、无严格顺序要求</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>消费者数多于分区数，以为能继续提升吞吐</p><p class="fix"><b>✓</b>并行上限等于分区数，需要时先增加分区</p></li><li><p class="bad"><b>✗</b>单条处理过慢超过 max.poll.interval.ms，反复再平衡</p><p class="fix"><b>✓</b>减小 max.poll.records、异步处理或调大间隔</p></li><li><p class="bad"><b>✗</b>自动提交位点，处理未完成即提交，崩溃后丢消息</p><p class="fix"><b>✓</b>关闭自动提交，处理成功后手动提交</p></li><li><p class="bad"><b>✗</b>滚动发布时频繁触发全组再平衡，消费停顿</p><p class="fix"><b>✓</b>使用协作式分配策略，并配置静态成员</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>消费者数不超过分区数</span></label></li><li><label><input type="checkbox"><span>监控各分区 LAG 并告警</span></label></li><li><label><input type="checkbox"><span>处理成功后再提交位点</span></label></li><li><label><input type="checkbox"><span>处理耗时小于 poll 间隔</span></label></li><li><label><input type="checkbox"><span>使用协作式再平衡</span></label></li><li><label><input type="checkbox"><span>位点重置流程有预演</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么组内消费者数超过分区数没有意义？</summary><p>同一分区在同一时刻只能被组内一个消费者消费，以保证分区内有序和位点管理简单，所以多出的消费者分不到分区而空闲，只能作为热备。并行度上限由分区数决定。</p></details><details class="iv"><summary>再平衡为什么会造成消费停顿？</summary><p>传统 eager 协议下所有成员先撤销全部分区再重新分配，期间整组停止消费。协作式再平衡只迁移需要变化的分区；静态成员避免短暂重启触发再平衡；新一代组协议（KIP-848）把分配移到 broker 端进一步改善。</p></details><details class="iv"><summary>消费滞后持续增长，怎么排查？</summary><p>先看是否所有分区都滞后：全部滞后多为处理能力不足，可增加消费者/分区或优化处理逻辑；个别分区滞后多为热点 key 或某消费者卡住；再看是否频繁再平衡、下游依赖变慢。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://kafka.apache.org/documentation/" target="_blank" rel="noopener"><b>Apache Kafka Documentation</b><small>kafka.apache.org ↗</small></a></li><li><a href="https://docs.confluent.io/platform/current/clients/consumer.html" target="_blank" rel="noopener"><b>Confluent: Kafka Consumer</b><small>docs.confluent.io ↗</small></a></li><li><a href="https://cwiki.apache.org/confluence/display/KAFKA/KIP-848%3A+The+Next+Generation+of+the+Consumer+Rebalance+Protocol" target="_blank" rel="noopener"><b>KIP-848: Next Generation Consumer Rebalance Protocol</b><small>cwiki.apache.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="message-ordering.pro.html" rel="prev"><small>‹ 上一个</small><b>🔢 消息顺序性保证</b></a><a class="pn next" href="partition-keys.pro.html" rel="next"><small>下一个 ›</small><b>🏷️ 消息分区路由键</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

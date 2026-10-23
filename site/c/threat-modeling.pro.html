@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="威胁建模 专业模式：威胁建模（Threat Modeling）是在设计阶段系统性识别安全威胁的结构化方法：画出系统的数据流和信任边界，按 STRIDE 等框架逐项分析攻击者可能做什">
+<title>🎓 威胁建模 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="threat-modeling" data-answer="0" data-prev="timing-attacks.pro.html" data-next="sharding.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#sec">🔥 进阶 · 🛡️ 安全防线</a><span>›</span><a href="threat-modeling.html">威胁建模</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.414 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="timing-attacks.pro.html" rel="prev"><small>‹ 上一个</small><b>⏱️ 时序侧信道攻击</b></a><a class="pn next" href="sharding.pro.html" rel="next"><small>下一个 ›</small><b>🍕 数据库水平分片</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🗺️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>威胁建模</h1><p class="en">Threat Modeling</p>
+    <div class="hbtns"><a class="prosw back" href="threat-modeling.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">威胁建模（Threat Modeling）是在设计阶段系统性识别安全威胁的结构化方法：画出系统的数据流和信任边界，按 STRIDE 等框架逐项分析攻击者可能做什么，评估风险并确定缓解措施。它把安全前移到写代码之前，比上线后修补成本低得多。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>明确范围：我们在构建什么？画数据流图，标出组件、数据存储、外部实体。</p></li><li><span class="sn">2</span><p>标信任边界：用户与服务、服务与第三方、内网与公网之间的权限与信任变化处。</p></li><li><span class="sn">3</span><p>识别威胁：在每条跨边界的数据流上，按 STRIDE 六类逐项提问可能出什么问题。</p></li><li><span class="sn">4</span><p>评估与缓解：按可能性和影响排序，为每个威胁确定缓解、接受、转移或规避。</p></li><li><span class="sn">5</span><p>验证与迭代：缓解措施落到任务和测试中；架构变化时更新模型并复审。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>STRIDE</dt><dd>仿冒、篡改、抵赖、信息泄露、拒绝服务、权限提升六类威胁。</dd></div><div class="term"><dt>数据流图 (DFD)</dt><dd>用进程、数据存储、外部实体和数据流描述系统的图。</dd></div><div class="term"><dt>信任边界 (Trust Boundary)</dt><dd>数据或调用跨越不同信任级别的分界线。</dd></div><div class="term"><dt>攻击面 (Attack Surface)</dt><dd>攻击者可以接触和尝试利用的所有入口集合。</dd></div><div class="term"><dt>攻击树 (Attack Tree)</dt><dd>把攻击目标逐层分解为子目标与手段的树状模型。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>威胁登记表示例</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code># threats.yaml：随设计文档一起入库、一起评审
+system: 文件分享服务
+boundaries:
+  - 浏览器 -&gt; API 网关（公网）
+  - API -&gt; 对象存储（内网）
+threats:
+  - id: T1
+    stride: Spoofing
+    flow: 浏览器 -&gt; API
+    desc: 攻击者重放窃取的会话令牌
+    mitigation: 短期令牌 + HttpOnly/Secure Cookie + 绑定刷新令牌
+    status: planned
+  - id: T2
+    stride: Information disclosure
+    flow: API -&gt; 对象存储
+    desc: 可猜测的文件 URL 导致越权下载
+    mitigation: 短时效签名 URL，按用户校验所有权
+    status: done
+  - id: T3
+    stride: Denial of service
+    flow: 浏览器 -&gt; API
+    desc: 超大文件上传耗尽存储与带宽
+    mitigation: 大小上限、配额、按用户限流
+    status: accepted-risk</code></pre></div><p class="cnote">每条威胁对应数据流、STRIDE 类别、缓解与状态，可追踪到任务。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">STRIDE 与安全属性</h3><div class="tw"><table><thead><tr><th>威胁</th><th>破坏的属性</th><th>典型缓解</th></tr></thead><tbody><tr><td data-h="威胁">仿冒 Spoofing</td><td data-h="破坏的属性">身份认证</td><td data-h="典型缓解">MFA、强会话管理</td></tr><tr><td data-h="威胁">篡改 Tampering</td><td data-h="破坏的属性">完整性</td><td data-h="典型缓解">签名、校验、最小写权限</td></tr><tr><td data-h="威胁">抵赖 Repudiation</td><td data-h="破坏的属性">不可抵赖性</td><td data-h="典型缓解">审计日志、防篡改日志</td></tr><tr><td data-h="威胁">信息泄露 Info Disclosure</td><td data-h="破坏的属性">机密性</td><td data-h="典型缓解">加密、访问控制</td></tr><tr><td data-h="威胁">权限提升 Elevation</td><td data-h="破坏的属性">授权</td><td data-h="典型缓解">最小权限、服务端鉴权</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>STRIDE 逐项分析</h4><p><b class="k-p">优点</b>系统全面，易教易推广</p><p><b class="k-c">代价</b>组件多时工作量大，易流于形式</p><p><b class="k-w">适用</b>新系统或重大架构变更</p></div><div class="trd"><h4>攻击树</h4><p><b class="k-p">优点</b>聚焦高价值目标，深入具体路径</p><p><b class="k-c">代价</b>依赖分析者经验，覆盖面窄</p><p><b class="k-w">适用</b>关键资产、支付等高风险点</p></div><div class="trd"><h4>轻量问答式评审</h4><p><b class="k-p">优点</b>成本低，可纳入每次设计评审</p><p><b class="k-c">代价</b>深度有限</p><p><b class="k-w">适用</b>日常功能迭代</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>系统上线后才做威胁建模，只能补丁式修复</p><p class="fix"><b>✓</b>在设计评审阶段完成，并作为开工前置条件</p></li><li><p class="bad"><b>✗</b>做一次就归档，架构变了模型没更新</p><p class="fix"><b>✓</b>新增外部依赖、数据流或权限时触发复审</p></li><li><p class="bad"><b>✗</b>列出一堆威胁但没有负责人和跟踪</p><p class="fix"><b>✓</b>每条威胁转成工单，有缓解状态与验收测试</p></li><li><p class="bad"><b>✗</b>只关注外部攻击者，忽略内部人员与供应链</p><p class="fix"><b>✓</b>把内部角色、CI/CD、第三方依赖也画进数据流</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>数据流图覆盖所有外部交互</span></label></li><li><label><input type="checkbox"><span>信任边界已标注</span></label></li><li><label><input type="checkbox"><span>每条跨边界流做了 STRIDE</span></label></li><li><label><input type="checkbox"><span>高风险威胁有负责人</span></label></li><li><label><input type="checkbox"><span>缓解措施有对应测试</span></label></li><li><label><input type="checkbox"><span>架构变化触发复审</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>威胁建模的四个核心问题是什么？</summary><p>我们在构建什么？可能出什么问题？我们打算怎么应对？我们做得够好吗？对应画模型、识别威胁、确定缓解、验证复盘四步，是 Shostack 等人推广的通用框架，与具体方法无关。</p></details><details class="iv"><summary>为 LLM Agent 应用做威胁建模要额外注意什么？</summary><p>把模型视为不可信组件：外部内容可能携带提示注入；工具调用是新的权限提升路径；输出可能泄露上下文中的敏感数据。重点画出模型可调用的工具和可读取的数据，以及不可信输入的来源。</p></details><details class="iv"><summary>如何避免威胁建模流于形式？</summary><p>限定范围、按变更触发而非按周期；用模板和检查清单降低门槛；产出必须落为可跟踪的工单和测试；邀请开发、运维、安全共同参与，让一线工程师成为主要建模者。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Threat_Modeling_Cheat_Sheet.html" target="_blank" rel="noopener"><b>OWASP Threat Modeling Cheat Sheet</b><small>cheatsheetseries.owasp.org ↗</small></a></li><li><a href="https://www.threatmodelingmanifesto.org/" target="_blank" rel="noopener"><b>Threat Modeling Manifesto</b><small>threatmodelingmanifesto.org ↗</small></a></li><li><a href="https://learn.microsoft.com/en-us/azure/security/develop/threat-modeling-tool-threats" target="_blank" rel="noopener"><b>Microsoft Threat Modeling Tool: STRIDE</b><small>learn.microsoft.com ↗</small></a></li><li><a href="https://owasp.org/www-project-threat-dragon/" target="_blank" rel="noopener"><b>OWASP Threat Dragon</b><small>owasp.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="timing-attacks.pro.html" rel="prev"><small>‹ 上一个</small><b>⏱️ 时序侧信道攻击</b></a><a class="pn next" href="sharding.pro.html" rel="next"><small>下一个 ›</small><b>🍕 数据库水平分片</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

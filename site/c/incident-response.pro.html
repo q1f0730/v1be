@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="安全与故障事件响应 专业模式：事件响应（Incident Response）是在线上故障或安全事件发生时，按预定角色、流程和沟通机制进行检测、分级、处置、恢复与复盘的体系。它属于运维与组织流">
+<title>🎓 安全与故障事件响应 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="incident-response" data-answer="0" data-prev="error-budgets.pro.html" data-next="on-call.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sre">🔮 高级 · 🩺 高可用 SRE</a><span>›</span><a href="incident-response.html">安全与故障事件响应</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.303 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="error-budgets.pro.html" rel="prev"><small>‹ 上一个</small><b>🪙 错误预算机制</b></a><a class="pn next" href="on-call.pro.html" rel="next"><small>下一个 ›</small><b>📟 工程师轮值待命</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🚨</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>安全与故障事件响应</h1><p class="en">Incident Response</p>
+    <div class="hbtns"><a class="prosw back" href="incident-response.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">事件响应（Incident Response）是在线上故障或安全事件发生时，按预定角色、流程和沟通机制进行检测、分级、处置、恢复与复盘的体系。它属于运维与组织流程层，目标是缩短影响时长并降低混乱：明确谁指挥、谁操作、谁对外沟通，优先止血恢复服务，再追查根因。安全事件另有 NIST 等框架规范。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>检测：告警、用户反馈或监控发现异常，值班人员确认并宣告事件。</p></li><li><span class="sn">2</span><p>分级：按影响范围和严重度定级，决定召集哪些人、通报频率与对外沟通。</p></li><li><span class="sn">3</span><p>组织：指定事件指挥官（IC）、操作负责人、沟通负责人，开专用频道并记录时间线。</p></li><li><span class="sn">4</span><p>缓解：优先止血，如回滚、切流、扩容、关闭功能开关，而非当场查清根因。</p></li><li><span class="sn">5</span><p>收尾：确认恢复后宣布结束，保留时间线，安排无指责复盘与改进项。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>事件指挥官 (Incident Commander)</dt><dd>负责整体协调和决策的人，通常不亲自动手修复。</dd></div><div class="term"><dt>严重级别 (Severity / SEV)</dt><dd>按影响划分的事件等级，决定响应规模与时限。</dd></div><div class="term"><dt>缓解 (Mitigation)</dt><dd>先降低或消除用户影响的措施，与根因修复分开。</dd></div><div class="term"><dt>状态页 (Status Page)</dt><dd>对外公布服务状态和事件进展的页面。</dd></div><div class="term"><dt>MTTD / MTTR</dt><dd>平均检测时间与平均恢复时间，衡量响应效率。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>事件宣告模板</span><em>text</em><button class="ccopy">复制</button></div><pre><code>[事件宣告] SEV-2 | 2026-10-20 14:05 CST
+影响：部分用户下单失败，错误率约为平时数倍（以看板为准）
+范围：订单服务，华东区域；支付与登录正常
+开始时间：约 13:52（首个告警）
+角色：
+  IC（指挥）      ：@alice
+  Ops（操作）     ：@bob
+  Comms（对外沟通）：@carol
+当前假设：13:45 的订单服务发布引入问题
+当前动作：回滚到上一版本（进行中）
+下次更新：14:20 或有重大进展时
+协作频道：#inc-20261020-orders
+时间线文档：&lt;链接&gt;</code></pre></div><p class="cnote">宣告时说清影响、角色、动作与下次更新时间，让所有人在同一页面上。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">一种常见的分级示例</h3><div class="tw"><table><thead><tr><th>级别</th><th>典型影响</th><th>响应要求</th></tr></thead><tbody><tr><td data-h="级别">SEV-1</td><td data-h="典型影响">核心功能大面积不可用或数据泄露</td><td data-h="响应要求">立即全员响应，高层知会，对外通告</td></tr><tr><td data-h="级别">SEV-2</td><td data-h="典型影响">核心功能部分受损</td><td data-h="响应要求">值班加相关团队，定时更新</td></tr><tr><td data-h="级别">SEV-3</td><td data-h="典型影响">非核心功能受损，有绕行方案</td><td data-h="响应要求">工作时间处理</td></tr><tr><td data-h="级别">SEV-4</td><td data-h="典型影响">轻微问题，无用户影响</td><td data-h="响应要求">进入常规工单</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>先回滚再排查</h4><p><b class="k-p">优点</b>恢复最快</p><p><b class="k-c">代价</b>可能丢失现场证据</p><p><b class="k-w">适用</b>故障与最近变更相关</p></div><div class="trd"><h4>在线排查修复</h4><p><b class="k-p">优点</b>保留现场，可能找到真因</p><p><b class="k-c">代价</b>影响持续时间长</p><p><b class="k-w">适用</b>无法回滚或原因明显</p></div><div class="trd"><h4>宁可高定级</h4><p><b class="k-p">优点</b>资源到位快</p><p><b class="k-c">代价</b>偶尔打扰多余人员</p><p><b class="k-w">适用</b>影响不明时</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>多人同时在生产环境各自操作，互相干扰。</p><p class="fix"><b>✓</b>由 IC 统一分派，操作前在频道里说明。</p></li><li><p class="bad"><b>✗</b>把时间花在找根因，用户持续受影响。</p><p class="fix"><b>✓</b>先缓解止血，根因留到复盘。</p></li><li><p class="bad"><b>✗</b>对内对外长时间没有更新，支持团队和用户焦虑。</p><p class="fix"><b>✓</b>设定固定更新节奏，由沟通负责人发布。</p></li><li><p class="bad"><b>✗</b>事件结束没记录时间线，复盘全凭回忆。</p><p class="fix"><b>✓</b>响应过程中专人实时记录关键时间点和动作。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>有清晰的分级标准与宣告方式</span></label></li><li><label><input type="checkbox"><span>IC、操作、沟通角色定义明确</span></label></li><li><label><input type="checkbox"><span>回滚、切流、功能开关可快速执行</span></label></li><li><label><input type="checkbox"><span>对内对外通报模板与节奏已约定</span></label></li><li><label><input type="checkbox"><span>事件后必有复盘与跟进项</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么事件指挥官通常不亲自修复？</summary><p>修复需要专注，指挥需要全局视角。IC 负责判断优先级、分派任务、协调资源和沟通节奏，避免多人重复操作或遗漏；一旦 IC 埋头调试，就没人掌握全局，响应容易失控。</p></details><details class="iv"><summary>缓解和根因修复为什么要分开？</summary><p>用户关心的是尽快恢复。回滚、切流、降级往往几分钟就能止血，而找到根因可能要几小时甚至几天。先缓解缩短影响时长，再在复盘中彻底解决。</p></details><details class="iv"><summary>AI 编程工具在事件响应中能做什么？</summary><p>可以帮助快速检索日志与最近变更、生成回滚命令、整理时间线和起草通告；但生产操作应由人确认，Agent 的权限需最小化，所有操作要在事件频道留痕。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://sre.google/sre-book/managing-incidents/" target="_blank" rel="noopener"><b>Google SRE Book：Managing Incidents</b><small>sre.google ↗</small></a></li><li><a href="https://response.pagerduty.com/" target="_blank" rel="noopener"><b>PagerDuty Incident Response 文档</b><small>response.pagerduty.com ↗</small></a></li><li><a href="https://csrc.nist.gov/pubs/sp/800/61/r3/final" target="_blank" rel="noopener"><b>NIST SP 800-61 Rev. 3</b><small>csrc.nist.gov ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="error-budgets.pro.html" rel="prev"><small>‹ 上一个</small><b>🪙 错误预算机制</b></a><a class="pn next" href="on-call.pro.html" rel="next"><small>下一个 ›</small><b>📟 工程师轮值待命</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

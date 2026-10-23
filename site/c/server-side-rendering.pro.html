@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="服务端渲染 (SSR) 专业模式：服务端渲染（SSR，Server-Side Rendering）指在每次请求时由服务器运行组件代码、获取数据并生成完整 HTML 返回，浏览器先显示内容，再加载">
+<title>🎓 服务端渲染 (SSR) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="server-side-rendering" data-answer="0" data-prev="client-side-rendering.pro.html" data-next="bundler.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#fe">🌊 中级 · 🎨 前端工程</a><span>›</span><a href="server-side-rendering.html">服务端渲染 (SSR)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.176 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="client-side-rendering.pro.html" rel="prev"><small>‹ 上一个</small><b>🧑‍🍳 客户端渲染 (CSR)</b></a><a class="pn next" href="bundler.pro.html" rel="next"><small>下一个 ›</small><b>📦 打包工具 (Vite / webpack)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🍱</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🎨 前端工程</span><span>⏱ 约 10 分钟</span></div>
+    <h1>服务端渲染 (SSR)</h1><p class="en">Server-Side Rendering</p>
+    <div class="hbtns"><a class="prosw back" href="server-side-rendering.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">服务端渲染（SSR，Server-Side Rendering）指在每次请求时由服务器运行组件代码、获取数据并生成完整 HTML 返回，浏览器先显示内容，再加载 JS 进行水合（Hydration）使页面可交互。Next.js、Nuxt、Remix 等框架提供 SSR，可与静态生成、流式渲染、服务端组件组合，兼顾首屏、SEO 与交互。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>请求到达服务器，框架匹配路由并在服务端执行数据获取与组件渲染。</p></li><li><span class="sn">2</span><p>生成的 HTML 返回浏览器（可流式分块发送），用户在 JS 加载前就能看到内容。</p></li><li><span class="sn">3</span><p>浏览器下载 JS 后执行水合：复用已有 DOM，绑定事件处理器并恢复组件状态。</p></li><li><span class="sn">4</span><p>服务端与客户端首轮渲染结果必须一致，否则出现水合不匹配警告或界面跳变。</p></li><li><span class="sn">5</span><p>可在 CDN 或框架层缓存渲染结果，按时间或事件重新验证，降低服务器压力。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>水合 (Hydration)</dt><dd>客户端 JS 接管服务端生成的 HTML，使其可交互。</dd></div><div class="term"><dt>TTFB (Time to First Byte)</dt><dd>从请求到收到首字节的时间，SSR 中受服务端渲染耗时影响。</dd></div><div class="term"><dt>流式 SSR (Streaming SSR)</dt><dd>分块发送 HTML，先出外壳，慢数据部分后到。</dd></div><div class="term"><dt>增量静态再生 (ISR)</dt><dd>静态页面按时间间隔或按需在后台重新生成。</dd></div><div class="term"><dt>水合不匹配 (Hydration Mismatch)</dt><dd>服务端与客户端渲染结果不一致导致的错误。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Next.js 服务端渲染详情页</span><em>typescript</em><button class="ccopy">复制</button></div><pre><code>// app/products/[id]/page.tsx（Next.js App Router，默认是服务端组件）
+import type { Metadata } from &quot;next&quot;;
+
+type Props = { params: Promise&lt;{ id: string }&gt; }; // Next.js 15 起 params 为 Promise
+
+async function getProduct(id: string) {
+  const res = await fetch(`https://api.example.com/products/${id}`, {
+    next: { revalidate: 60 }, // 缓存 60 秒后重新验证；要每次请求都渲染可用 cache: &quot;no-store&quot;
+  });
+  if (!res.ok) throw new Error(&quot;商品获取失败&quot;);
+  return res.json();
+}
+
+// 服务端生成 title/description，利于 SEO
+export async function generateMetadata({ params }: Props): Promise&lt;Metadata&gt; {
+  const { id } = await params;
+  const p = await getProduct(id);
+  return { title: p.name, description: p.summary };
+}
+
+export default async function ProductPage({ params }: Props) {
+  const { id } = await params;
+  const p = await getProduct(id);
+  return (
+    &lt;main&gt;
+      &lt;h1&gt;{p.name}&lt;/h1&gt;
+      &lt;p&gt;{p.summary}&lt;/p&gt;
+    &lt;/main&gt;
+  );
+}</code></pre></div><p class="cnote">组件在服务器执行，可直接 await 数据；不要在这里访问 window 等浏览器 API。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">渲染策略对比</h3><div class="tw"><table><thead><tr><th>策略</th><th>HTML 生成时机</th><th>首屏</th><th>适合</th></tr></thead><tbody><tr><td data-h="策略">CSR</td><td data-h="HTML 生成时机">浏览器运行时</td><td data-h="首屏">慢</td><td data-h="适合">登录后应用</td></tr><tr><td data-h="策略">SSR</td><td data-h="HTML 生成时机">每次请求</td><td data-h="首屏">快，TTFB 受服务端影响</td><td data-h="适合">个性化、实时数据页</td></tr><tr><td data-h="策略">SSG</td><td data-h="HTML 生成时机">构建时</td><td data-h="首屏">最快（CDN）</td><td data-h="适合">文档、博客</td></tr><tr><td data-h="策略">ISR</td><td data-h="HTML 生成时机">构建时 + 后台再生</td><td data-h="首屏">快</td><td data-h="适合">商品页等准静态内容</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>SSR</h4><p><b class="k-p">优点</b>首屏快、SEO 好、数据实时</p><p><b class="k-c">代价</b>服务器成本与 TTFB 增加，需处理水合</p><p><b class="k-w">适用</b>个性化或频繁变化且需收录</p></div><div class="trd"><h4>SSG/ISR</h4><p><b class="k-p">优点</b>CDN 分发、成本低、极快</p><p><b class="k-c">代价</b>数据有延迟，构建或再生需管理</p><p><b class="k-w">适用</b>内容更新不频繁的页面</p></div><div class="trd"><h4>CSR</h4><p><b class="k-p">优点</b>服务器压力最小</p><p><b class="k-c">代价</b>首屏与 SEO 弱</p><p><b class="k-w">适用</b>无需收录的交互应用</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>渲染期间访问 window、localStorage 导致服务端报错</p><p class="fix"><b>✓</b>浏览器专属逻辑放到 useEffect 或客户端组件中</p></li><li><p class="bad"><b>✗</b>渲染中使用 Date.now()、随机数造成水合不匹配</p><p class="fix"><b>✓</b>由服务端生成值传给客户端，或只在客户端挂载后渲染</p></li><li><p class="bad"><b>✗</b>每个请求都串行调用多个慢接口，TTFB 很高</p><p class="fix"><b>✓</b>并行获取、加缓存，配合流式渲染先出外壳</p></li><li><p class="bad"><b>✗</b>把含用户私有数据的 SSR 页面放进共享缓存</p><p class="fix"><b>✓</b>个性化响应设置 private 或 no-store，避免串号</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>渲染代码不依赖浏览器 API</span></label></li><li><label><input type="checkbox"><span>无水合不匹配警告</span></label></li><li><label><input type="checkbox"><span>数据获取并行且有缓存策略</span></label></li><li><label><input type="checkbox"><span>个性化页面不进共享缓存</span></label></li><li><label><input type="checkbox"><span>每页输出正确的 meta 信息</span></label></li><li><label><input type="checkbox"><span>监控 TTFB 与服务端错误</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>SSR 为什么还需要水合？</summary><p>服务端只输出静态 HTML，没有事件处理器与组件状态。浏览器需下载组件 JS，在已有 DOM 上重新执行渲染逻辑并绑定事件，页面才可交互。水合期间页面可见但可能暂不可交互。</p></details><details class="iv"><summary>如何降低 SSR 的 TTFB？</summary><p>并行化数据获取、对上游加缓存；使用流式 SSR 先发送外壳；对可共享页面使用 CDN 缓存或 ISR；把非关键内容延后到客户端或 Suspense 边界；把渲染部署到更靠近用户或数据的区域。</p></details><details class="iv"><summary>什么是水合不匹配，怎么排查？</summary><p>服务端与客户端首次渲染输出不同，如使用当前时间、随机 ID、浏览器专属 API 或依赖用户时区格式化。框架会警告并可能重新渲染。排查方法：定位警告节点，消除非确定性输入，或改为挂载后渲染。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://web.dev/articles/rendering-on-the-web" target="_blank" rel="noopener"><b>web.dev：Rendering on the Web</b><small>web.dev ↗</small></a></li><li><a href="https://nextjs.org/docs" target="_blank" rel="noopener"><b>Next.js 文档</b><small>nextjs.org ↗</small></a></li><li><a href="https://react.dev/reference/react-dom/client/hydrateRoot" target="_blank" rel="noopener"><b>React 文档：hydrateRoot</b><small>react.dev ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="client-side-rendering.pro.html" rel="prev"><small>‹ 上一个</small><b>🧑‍🍳 客户端渲染 (CSR)</b></a><a class="pn next" href="bundler.pro.html" rel="next"><small>下一个 ›</small><b>📦 打包工具 (Vite / webpack)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

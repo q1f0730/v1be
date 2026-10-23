@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="分布式锁 专业模式：分布式锁是在多个进程或机器之间协调对共享资源互斥访问的机制，常基于 Redis、etcd、ZooKeeper 或数据库实现。它分为两类用途：提升效率（避免重复工">
+<title>🎓 分布式锁 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="distributed-locks" data-answer="0" data-prev="clock-skew.pro.html" data-next="consistent-hashing.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#dist">🔥 进阶 · 🕸️ 分布式</a><span>›</span><a href="distributed-locks.html">分布式锁</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.436 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="clock-skew.pro.html" rel="prev"><small>‹ 上一个</small><b>🕰️ 时钟偏斜</b></a><a class="pn next" href="consistent-hashing.pro.html" rel="next"><small>下一个 ›</small><b>🍎 一致性哈希</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔐</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>分布式锁</h1><p class="en">Distributed Locks</p>
+    <div class="hbtns"><a class="prosw back" href="distributed-locks.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">分布式锁是在多个进程或机器之间协调对共享资源互斥访问的机制，常基于 Redis、etcd、ZooKeeper 或数据库实现。它分为两类用途：提升效率（避免重复工作，偶尔失效可接受）和保证正确性（绝不能并发）。后者必须考虑进程停顿、时钟和网络问题，通常需要防护令牌配合。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>加锁：在共享存储中原子地创建锁记录，写入唯一持有者标识并设置过期时间。</p></li><li><span class="sn">2</span><p>持有：获得锁的客户端执行临界区操作；执行时间较长时需在过期前续期。</p></li><li><span class="sn">3</span><p>释放：只有持有者才能删除锁，删除前需原子比对自己的标识，避免误删他人的锁。</p></li><li><span class="sn">4</span><p>失效：持有者崩溃后锁按过期时间自动释放，其他客户端随后可以获取。</p></li><li><span class="sn">5</span><p>防护：存储按顺序发放递增令牌，下游资源拒绝令牌更小的写入请求。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>互斥 (Mutual Exclusion)</dt><dd>同一时刻只有一个持有者能进入临界区。</dd></div><div class="term"><dt>锁过期 (TTL)</dt><dd>防止持有者崩溃导致死锁的自动释放时间。</dd></div><div class="term"><dt>防护令牌 (Fencing Token)</dt><dd>随每次加锁递增的编号，下游据此拒绝过期持有者。</dd></div><div class="term"><dt>Redlock</dt><dd>Redis 作者提出的多实例加锁算法，其安全性有争议。</dd></div><div class="term"><dt>看门狗续期 (Watchdog)</dt><dd>后台定时延长锁过期时间，避免任务未完成锁就过期。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Redis 单实例锁</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import uuid, redis
+
+r = redis.Redis(host=&quot;localhost&quot;, port=6379)
+
+# 释放脚本：值匹配才删除，比较与删除在 Redis 中原子执行
+RELEASE = &quot;&quot;&quot;
+if redis.call(&#x27;get&#x27;, KEYS[1]) == ARGV[1] then
+  return redis.call(&#x27;del&#x27;, KEYS[1])
+end
+return 0
+&quot;&quot;&quot;
+
+def acquire(name: str, ttl_ms: int = 30000):
+    token = str(uuid.uuid4())                  # 唯一持有者标识
+    ok = r.set(f&quot;lock:{name}&quot;, token, nx=True, px=ttl_ms)  # 不存在才设置，带过期
+    return token if ok else None
+
+def release(name: str, token: str) -&gt; bool:
+    return r.eval(RELEASE, 1, f&quot;lock:{name}&quot;, token) == 1
+
+t = acquire(&quot;daily-report&quot;)
+if t:
+    try:
+        pass                                   # 临界区：生成日报
+    finally:
+        release(&quot;daily-report&quot;, t)</code></pre></div><p class="cnote">适合效率型场景；若需正确性保证，应配合防护令牌或改用共识存储。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">实现方式对比</h3><div class="tw"><table><thead><tr><th>实现</th><th>可靠性</th><th>适用</th></tr></thead><tbody><tr><td data-h="实现">Redis 单实例 SET NX PX</td><td data-h="可靠性">主从切换时可能丢锁</td><td data-h="适用">避免重复执行等效率型</td></tr><tr><td data-h="实现">etcd / ZooKeeper</td><td data-h="可靠性">基于共识，较可靠</td><td data-h="适用">正确性要求高的协调</td></tr><tr><td data-h="实现">数据库行锁/唯一约束</td><td data-h="可靠性">依赖数据库事务</td><td data-h="适用">业务已在同一数据库</td></tr><tr><td data-h="实现">Redlock</td><td data-h="可靠性">有争议，依赖时钟假设</td><td data-h="适用">需审慎评估</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>Redis 锁</h4><p><b class="k-p">优点</b>性能高、实现简单</p><p><b class="k-c">代价</b>故障转移时锁可能丢失</p><p><b class="k-w">适用</b>偶发重复可接受</p></div><div class="trd"><h4>etcd/ZK 锁</h4><p><b class="k-p">优点</b>强一致、会话失效自动释放</p><p><b class="k-c">代价</b>延迟较高，需运维共识集群</p><p><b class="k-w">适用</b>必须严格互斥</p></div><div class="trd"><h4>不加锁+幂等/乐观并发</h4><p><b class="k-p">优点</b>无锁开销，不怕持有者停顿</p><p><b class="k-c">代价</b>需要设计版本号或唯一键</p><p><b class="k-w">适用</b>可改造为条件写的场景</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>用 DEL 直接释放，误删已被别人重新获取的锁</p><p class="fix"><b>✓</b>释放时用脚本比对持有者标识后再删除</p></li><li><p class="bad"><b>✗</b>SETNX 与 EXPIRE 分两步执行，中间崩溃形成永久锁</p><p class="fix"><b>✓</b>使用 SET key value NX PX ttl 一条命令原子完成</p></li><li><p class="bad"><b>✗</b>GC 停顿超过 TTL，两个客户端同时进入临界区</p><p class="fix"><b>✓</b>下游使用防护令牌校验，或改用条件写入</p></li><li><p class="bad"><b>✗</b>用分布式锁保护本可用数据库约束解决的问题</p><p class="fix"><b>✓</b>优先用唯一约束、乐观锁等存储自带机制</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>加锁一条命令原子完成</span></label></li><li><label><input type="checkbox"><span>释放前比对持有者标识</span></label></li><li><label><input type="checkbox"><span>TTL 大于正常执行时间</span></label></li><li><label><input type="checkbox"><span>长任务有续期机制</span></label></li><li><label><input type="checkbox"><span>正确性场景使用防护令牌</span></label></li><li><label><input type="checkbox"><span>锁获取失败有重试与退避</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Redis 分布式锁有哪些坑？</summary><p>SETNX 与过期分开设置导致死锁；释放时不校验持有者误删；主从异步复制下主节点宕机，锁未同步到新主即丢失；客户端停顿超过 TTL 后锁被他人获取却仍在执行。前两个可修复，后两个需要防护令牌或换共识存储。</p></details><details class="iv"><summary>什么是防护令牌，为什么需要？</summary><p>锁服务每次授予锁时返回单调递增的编号，客户端访问共享资源时附带编号，资源方记录见过的最大编号并拒绝更小的。这样即使旧持有者因停顿以为自己仍持锁，其写入也会被拒绝。</p></details><details class="iv"><summary>Redlock 的争议点是什么？</summary><p>Kleppmann 认为它依赖时钟漂移有界、进程停顿可控等时序假设，且不提供防护令牌，用于正确性场景不安全；antirez 认为在合理假设下可用。共识是：正确性关键场景应使用共识系统加防护令牌。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://redis.io/docs/latest/develop/clients/patterns/distributed-locks/" target="_blank" rel="noopener"><b>Redis: Distributed Locks</b><small>redis.io ↗</small></a></li><li><a href="https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html" target="_blank" rel="noopener"><b>How to do distributed locking (Martin Kleppmann)</b><small>martin.kleppmann.com ↗</small></a></li><li><a href="http://antirez.com/news/101" target="_blank" rel="noopener"><b>Is Redlock safe? (antirez)</b><small>antirez.com ↗</small></a></li><li><a href="https://redis.io/docs/latest/commands/set/" target="_blank" rel="noopener"><b>Redis SET 命令</b><small>redis.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="clock-skew.pro.html" rel="prev"><small>‹ 上一个</small><b>🕰️ 时钟偏斜</b></a><a class="pn next" href="consistent-hashing.pro.html" rel="next"><small>下一个 ›</small><b>🍎 一致性哈希</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

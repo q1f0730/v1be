@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="查询改写与 HyDE 专业模式：查询改写（Query Rewriting）是在检索前用规则或 LLM 把用户原始问题转换为更适合检索的形式，包括补全多轮对话中的指代、纠错与规范化、扩展同义词、">
+<title>🎓 查询改写与 HyDE · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="query-rewriting" data-answer="0" data-prev="rag-evaluation.pro.html" data-next="graphrag.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#ai">🔥 进阶 · 🤖 AI 与提示词</a><span>›</span><a href="query-rewriting.html">查询改写与 HyDE</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.452 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="rag-evaluation.pro.html" rel="prev"><small>‹ 上一个</small><b>📝 RAG 评测 (召回率 / 忠实度)</b></a><a class="pn next" href="graphrag.pro.html" rel="next"><small>下一个 ›</small><b>🕸️ 知识图谱增强检索 (GraphRAG)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">✍️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>查询改写与 HyDE</h1><p class="en">Query Rewriting &amp; HyDE</p>
+    <div class="hbtns"><a class="prosw back" href="query-rewriting.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">查询改写（Query Rewriting）是在检索前用规则或 LLM 把用户原始问题转换为更适合检索的形式，包括补全多轮对话中的指代、纠错与规范化、扩展同义词、拆分子问题、生成多个查询变体等。HyDE（Hypothetical Document Embeddings）是其中一种：先让模型生成假设答案，再用其嵌入去检索真实文档。它属于 RAG 的检索前处理层。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>接收用户问题与对话历史，判断是否需要改写（如含代词、过短、包含多个子问题）。</p></li><li><span class="sn">2</span><p>上下文改写：结合历史把问题改为独立完整的问题，如「它多少钱」→「X 产品的价格是多少」。</p></li><li><span class="sn">3</span><p>多查询/分解：生成若干同义改写或子问题，分别检索后合并结果（可用 RRF 融合排名）。</p></li><li><span class="sn">4</span><p>HyDE：让 LLM 写一段假设性答案文档，用它的向量检索，因为答案与文档在嵌入空间中更接近。</p></li><li><span class="sn">5</span><p>检索结果进入重排与生成；原问题仍用于最终回答，避免改写偏离用户意图。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>独立问题改写 (Standalone Question)</dt><dd>把依赖上下文的追问改写成无需历史即可理解的问题。</dd></div><div class="term"><dt>HyDE</dt><dd>用 LLM 生成的假设文档的嵌入进行检索。</dd></div><div class="term"><dt>多查询检索 (Multi-Query)</dt><dd>生成多个查询变体并合并检索结果，提升召回。</dd></div><div class="term"><dt>Step-back Prompting</dt><dd>先提出更抽象的上位问题检索背景知识。</dd></div><div class="term"><dt>RRF (Reciprocal Rank Fusion)</dt><dd>按排名倒数融合多路检索结果的简单方法。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>独立问题改写与 HyDE</span><em>python</em><button class="ccopy">复制</button></div><pre><code>from openai import OpenAI
+client = OpenAI()
+MODEL = &quot;gpt-4o-mini&quot;   # 示例，可换成任意聊天模型
+
+def ask(prompt: str) -&gt; str:
+    r = client.chat.completions.create(model=MODEL, temperature=0,
+        messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: prompt}])
+    return r.choices[0].message.content.strip()
+
+def standalone(history: str, question: str) -&gt; str:
+    return ask(f&quot;对话历史：\n{history}\n\n把最后的问题改写为不依赖历史、&quot;
+               f&quot;可独立检索的完整问题，只输出问题。\n问题：{question}&quot;)
+
+def hyde_vector(question: str) -&gt; list[float]:
+    fake_doc = ask(f&quot;写一段可能出现在帮助文档中的段落来回答：{question}&quot;)
+    emb = client.embeddings.create(model=&quot;text-embedding-3-small&quot;, input=fake_doc)
+    return emb.data[0].embedding   # 用它去向量库检索真实文档
+
+q = standalone(&quot;用户：你们的 Pro 套餐包含什么？\n助手：包含……&quot;, &quot;它多少钱？&quot;)
+vec = hyde_vector(q)
+# hits = vector_db.search(vec, top_k=5)   # 检索后仍用原问题生成最终回答</code></pre></div><p class="cnote">改写解决指代与口语问题；HyDE 以答案风格文本检索，代价是多一次 LLM 调用与延迟。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见改写策略</h3><div class="tw"><table><thead><tr><th>策略</th><th>解决的问题</th><th>代价</th></tr></thead><tbody><tr><td data-h="策略">独立问题改写</td><td data-h="解决的问题">多轮对话中的指代</td><td data-h="代价">一次 LLM 调用</td></tr><tr><td data-h="策略">多查询 + 融合</td><td data-h="解决的问题">措辞与文档不匹配，召回低</td><td data-h="代价">多次检索，成本增加</td></tr><tr><td data-h="策略">子问题分解</td><td data-h="解决的问题">复合、多跳问题</td><td data-h="代价">检索次数多，需合并</td></tr><tr><td data-h="策略">HyDE</td><td data-h="解决的问题">问题短、与文档表述差异大</td><td data-h="代价">可能引入幻觉内容的偏差</td></tr><tr><td data-h="策略">关键词/同义词扩展</td><td data-h="解决的问题">专有名词、缩写</td><td data-h="代价">可能引入噪音</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>规则改写（同义词表、纠错）</h4><p><b class="k-p">优点</b>快、确定、无额外调用</p><p><b class="k-c">代价</b>覆盖有限，维护词表</p><p><b class="k-w">适用</b>领域术语固定</p></div><div class="trd"><h4>LLM 改写</h4><p><b class="k-p">优点</b>灵活理解意图与上下文</p><p><b class="k-c">代价</b>增加延迟与成本，可能曲解</p><p><b class="k-w">适用</b>多轮对话、口语化输入</p></div><div class="trd"><h4>不改写，靠混合检索 + 重排</h4><p><b class="k-p">优点</b>架构简单</p><p><b class="k-c">代价</b>指代与多跳问题仍难</p><p><b class="k-w">适用</b>单轮、问题规范的场景</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>改写后丢失用户的限定条件（时间、版本）</p><p class="fix"><b>✓</b>提示中要求保留实体与约束，并抽样检查改写结果</p></li><li><p class="bad"><b>✗</b>用改写后的问题生成最终回答</p><p class="fix"><b>✓</b>改写只用于检索，生成时使用原问题与对话上下文</p></li><li><p class="bad"><b>✗</b>HyDE 用于模型完全不了解的私有领域</p><p class="fix"><b>✓</b>假设答案可能方向错误，需评测，必要时与原查询检索结果融合</p></li><li><p class="bad"><b>✗</b>所有问题都改写，徒增延迟</p><p class="fix"><b>✓</b>先判断是否需要改写，或并行检索原问题与改写版本</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>多轮对话启用独立问题改写</span></label></li><li><label><input type="checkbox"><span>改写提示要求保留实体与约束</span></label></li><li><label><input type="checkbox"><span>原问题与改写结果均记录日志</span></label></li><li><label><input type="checkbox"><span>用评测集对比改写前后的召回率</span></label></li><li><label><input type="checkbox"><span>延迟预算包含改写调用</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>HyDE 为什么能提升检索？</summary><p>短问题与长文档在嵌入空间里分布不同；LLM 生成的假设答案在形式和用词上更像真实文档，用其向量检索更容易命中相关段落。即使内容有误，相关性信号往往仍有效。</p></details><details class="iv"><summary>多查询检索如何合并结果？</summary><p>每个查询变体各自检索，再去重合并；常用 RRF 按各列表中的排名倒数求和排序，无需分数归一化。最后可交给重排模型精排。</p></details><details class="iv"><summary>查询改写会不会带来风险？</summary><p>可能曲解意图、丢失约束或引入不存在的实体，导致检索偏离；也增加延迟与成本。需要日志记录改写结果、评测对比，并在不确定时回退到原问题检索。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://arxiv.org/abs/2212.10496" target="_blank" rel="noopener"><b>HyDE：Precise Zero-Shot Dense Retrieval (arXiv 2212.10496)</b><small>arxiv.org ↗</small></a></li><li><a href="https://arxiv.org/abs/2305.14283" target="_blank" rel="noopener"><b>Query Rewriting for Retrieval-Augmented LLMs (arXiv 2305.14283)</b><small>arxiv.org ↗</small></a></li><li><a href="https://arxiv.org/abs/2310.06117" target="_blank" rel="noopener"><b>Step-Back Prompting (arXiv 2310.06117)</b><small>arxiv.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="rag-evaluation.pro.html" rel="prev"><small>‹ 上一个</small><b>📝 RAG 评测 (召回率 / 忠实度)</b></a><a class="pn next" href="graphrag.pro.html" rel="next"><small>下一个 ›</small><b>🕸️ 知识图谱增强检索 (GraphRAG)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="克隆 / 推送 / 拉取 专业模式：克隆（Clone）、推送（Push）、拉取（Pull）是本地仓库与远程仓库同步的三种操作：clone 复制整个远程仓库到本地；push 把本地新提交上传到远程分">
+<title>🎓 克隆 / 推送 / 拉取 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l1" id="main" data-slug="clone-push-pull" data-answer="0" data-prev="branch.pro.html" data-next="pull-request.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l1.html#git">🌱 初级 · 🌿 Git 协作</a><span>›</span><a href="clone-push-pull.html">克隆 / 推送 / 拉取</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.44 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="branch.pro.html" rel="prev"><small>‹ 上一个</small><b>🌿 分支 (Branch)</b></a><a class="pn next" href="pull-request.pro.html" rel="next"><small>下一个 ›</small><b>🙋 合并请求 (PR)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔄</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌱 初级</span><span>🌿 Git 协作</span><span>⏱ 约 10 分钟</span></div>
+    <h1>克隆 / 推送 / 拉取</h1><p class="en">Clone / Push / Pull</p>
+    <div class="hbtns"><a class="prosw back" href="clone-push-pull.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">克隆（Clone）、推送（Push）、拉取（Pull）是本地仓库与远程仓库同步的三种操作：clone 复制整个远程仓库到本地；push 把本地新提交上传到远程分支；pull 等于 fetch（下载远程新提交）加 merge 或 rebase（整合到当前分支）。分清 fetch 与 pull 是避免意外合并的关键。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>克隆：下载全部对象与引用，创建远程跟踪分支（如 origin/main），并检出默认分支。</p></li><li><span class="sn">2</span><p>获取：git fetch 下载远程新提交并更新 origin/* 跟踪分支，不改动你的工作区。</p></li><li><span class="sn">3</span><p>整合：pull 在 fetch 后把 origin/分支合并或变基到当前分支，可能产生冲突。</p></li><li><span class="sn">4</span><p>推送：push 把本地提交上传，并要求远程分支能快进到新提交，否则拒绝。</p></li><li><span class="sn">5</span><p>鉴权：通过 SSH 密钥或 HTTPS 加令牌认证，远程据此检查读写权限。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>origin</dt><dd>克隆时默认给远程仓库起的名字。</dd></div><div class="term"><dt>远程跟踪分支 (origin/main)</dt><dd>本地记录的远程分支状态，fetch 时更新。</dd></div><div class="term"><dt>非快进拒绝 (non-fast-forward)</dt><dd>远程有你没有的提交时，push 被拒绝。</dd></div><div class="term"><dt>--force-with-lease</dt><dd>比 --force 更安全的强推，远程被他人更新时会拒绝。</dd></div><div class="term"><dt>浅克隆 (Shallow Clone)</dt><dd>只下载最近若干提交，如 --depth 1，节省时间。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>同步流程与常见报错</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 克隆（SSH 方式需先把公钥添加到 GitHub）
+git clone git@github.com:owner/repo.git
+git clone --depth 1 https://github.com/owner/repo.git   # 只要最新代码
+
+# 安全的同步方式：先看再合
+git fetch origin
+git log --oneline HEAD..origin/main   # 远程有哪些我没有的提交
+git pull --rebase                     # 把我的提交放到远程最新提交之后
+
+# 推送并设置上游
+git push -u origin feat/search
+
+# 报错 rejected (non-fast-forward)：远程有新提交
+git pull --rebase &amp;&amp; git push
+
+# 个人分支 rebase 后需要强推时，用更安全的方式
+git push --force-with-lease
+
+# 设置 pull 默认使用 rebase（个人偏好）
+git config --global pull.rebase true</code></pre></div><p class="cnote">fetch 只下载不改动工作区，适合先查看；push 被拒绝通常是因为远程领先，先整合再推送。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">pull 的整合方式</h3><div class="tw"><table><thead><tr><th>方式</th><th>命令</th><th>结果</th><th>适合</th></tr></thead><tbody><tr><td data-h="方式">merge（默认之一）</td><td data-h="命令">git pull --no-rebase</td><td data-h="结果">生成合并提交</td><td data-h="适合">共享分支、保留真实历史</td></tr><tr><td data-h="方式">rebase</td><td data-h="命令">git pull --rebase</td><td data-h="结果">本地提交重放到远程之后</td><td data-h="适合">个人分支，追求线性历史</td></tr><tr><td data-h="方式">仅快进</td><td data-h="命令">git pull --ff-only</td><td data-h="结果">无法快进就失败</td><td data-h="适合">主分支，只想同步不想合并</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>SSH 认证</h4><p><b class="k-p">优点</b>配置一次长期免密，安全</p><p><b class="k-c">代价</b>需要生成和管理密钥</p><p><b class="k-w">适用</b>个人开发机</p></div><div class="trd"><h4>HTTPS + 令牌</h4><p><b class="k-p">优点</b>穿透防火墙，权限粒度细</p><p><b class="k-c">代价</b>令牌需安全存储与轮换</p><p><b class="k-w">适用</b>CI、受限网络</p></div><div class="trd"><h4>gh auth login</h4><p><b class="k-p">优点</b>交互式完成认证与凭证配置</p><p><b class="k-c">代价</b>依赖 GitHub CLI</p><p><b class="k-w">适用</b>使用 GitHub 的开发者</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>工作区有未提交改动时直接 pull，产生混乱冲突</p><p class="fix"><b>✓</b>先提交或 git stash，再 pull</p></li><li><p class="bad"><b>✗</b>push 被拒就用 --force，覆盖了同事的提交</p><p class="fix"><b>✓</b>先 pull 整合；必须强推时用 --force-with-lease</p></li><li><p class="bad"><b>✗</b>在 main 上 pull 意外产生合并提交</p><p class="fix"><b>✓</b>主分支用 git pull --ff-only</p></li><li><p class="bad"><b>✗</b>HTTPS 推送时输入 GitHub 账号密码失败</p><p class="fix"><b>✓</b>GitHub 不再接受密码进行 Git 操作，改用令牌或 SSH</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>认证方式为 SSH 或令牌</span></label></li><li><label><input type="checkbox"><span>pull 前工作区干净</span></label></li><li><label><input type="checkbox"><span>主分支同步使用 --ff-only</span></label></li><li><label><input type="checkbox"><span>禁止对共享分支 --force</span></label></li><li><label><input type="checkbox"><span>CI 中使用浅克隆加速</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>git fetch 和 git pull 的区别？</summary><p>fetch 只下载远程新提交并更新远程跟踪分支，不改动本地分支和工作区，可以先审查再决定如何整合；pull 是 fetch 加 merge 或 rebase 的组合，会直接修改当前分支，可能触发冲突。</p></details><details class="iv"><summary>--force 与 --force-with-lease 的区别？</summary><p>--force 无条件用本地覆盖远程分支，会抹掉他人新推的提交；--force-with-lease 先检查远程分支是否仍是你上次获取时的状态，若已被他人更新则拒绝，从而避免误覆盖。</p></details><details class="iv"><summary>CI 为什么常用浅克隆？</summary><p>CI 通常只需要最新代码来构建和测试，浅克隆（--depth 1）只下载最近提交，显著减少时间和带宽。但需要完整历史的操作（如 git describe 计算版本、按变更范围测试）要加深克隆深度。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes" target="_blank" rel="noopener"><b>Pro Git: Working with Remotes</b><small>git-scm.com ↗</small></a></li><li><a href="https://git-scm.com/docs/git-pull" target="_blank" rel="noopener"><b>Git 文档: git-pull</b><small>git-scm.com ↗</small></a></li><li><a href="https://docs.github.com/en/authentication/connecting-to-github-with-ssh" target="_blank" rel="noopener"><b>GitHub Docs: Connecting to GitHub with SSH</b><small>docs.github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="branch.pro.html" rel="prev"><small>‹ 上一个</small><b>🌿 分支 (Branch)</b></a><a class="pn next" href="pull-request.pro.html" rel="next"><small>下一个 ›</small><b>🙋 合并请求 (PR)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

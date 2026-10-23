@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="语义缓存 专业模式：语义缓存（Semantic Caching）是面向 LLM 应用的缓存方式：把用户查询转为嵌入向量，在缓存中按向量相似度查找语义相近的历史查询，若相似度超过阈值">
+<title>🎓 语义缓存 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="semantic-caching" data-answer="0" data-prev="pub-sub.pro.html" data-next="event-streaming.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#cache">🔮 高级 · ⚡ 缓存与队列</a><span>›</span><a href="semantic-caching.html">语义缓存</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.356 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="pub-sub.pro.html" rel="prev"><small>‹ 上一个</small><b>📢 发布订阅 (Pub/Sub)</b></a><a class="pn next" href="event-streaming.pro.html" rel="next"><small>下一个 ›</small><b>🌊 事件流平台 (Kafka)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🧠</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>⚡ 缓存与队列</span><span>⏱ 约 10 分钟</span></div>
+    <h1>语义缓存</h1><p class="en">Semantic Caching</p>
+    <div class="hbtns"><a class="prosw back" href="semantic-caching.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">语义缓存（Semantic Caching）是面向 LLM 应用的缓存方式：把用户查询转为嵌入向量，在缓存中按向量相似度查找语义相近的历史查询，若相似度超过阈值，就直接返回其已缓存的回答，跳过模型调用。它比精确匹配缓存命中率高，可降低成本与延迟，但有误命中、跨用户泄露和过时风险；它不同于厂商的提示缓存。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>收到查询后先做规范化（去空白、统一大小写），并判断是否属于可缓存类别（排除个性化、实时数据类问题）。</p></li><li><span class="sn">2</span><p>用嵌入模型把查询编码为向量，在向量索引中做最近邻搜索。</p></li><li><span class="sn">3</span><p>若最相似条目的相似度高于阈值（且满足元数据过滤，如语言、租户、模型版本），返回其缓存回答。</p></li><li><span class="sn">4</span><p>未命中则调用大模型生成回答，把“查询向量 + 回答 + 元数据”写入缓存，并设置 TTL。</p></li><li><span class="sn">5</span><p>持续监控命中率与误命中，抽样人工评估，按业务调节阈值与可缓存范围。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>相似度阈值 (Similarity Threshold)</dt><dd>判定命中的最低相似度，过低会误命中。</dd></div><div class="term"><dt>余弦相似度 (Cosine Similarity)</dt><dd>比较两个向量方向的指标，常用于语义相似度。</dd></div><div class="term"><dt>误命中 (False Hit)</dt><dd>语义相近但意图不同的查询被错误复用回答。</dd></div><div class="term"><dt>提示缓存 (Prompt Caching)</dt><dd>厂商复用相同前缀的计算结果，输出仍由模型实时生成。</dd></div><div class="term"><dt>缓存分区 (Cache Partitioning)</dt><dd>按用户、租户或场景隔离缓存，防止数据串用。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>最小语义缓存实现</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import numpy as np
+from openai import OpenAI
+
+client = OpenAI()
+EMB_MODEL = &quot;text-embedding-3-small&quot;   # 以官方文档为准
+THRESHOLD = 0.95                      # 需按业务评测调整
+cache: list[tuple[np.ndarray, str]] = []  # 生产中用向量数据库并设 TTL
+
+def embed(text: str) -&gt; np.ndarray:
+    v = client.embeddings.create(model=EMB_MODEL, input=text).data[0].embedding
+    v = np.array(v)
+    return v / np.linalg.norm(v)          # 归一化后点积即余弦相似度
+
+def answer(question: str, call_llm) -&gt; str:
+    q = embed(question)
+    if cache:
+        sims = [float(q @ v) for v, _ in cache]
+        best = int(np.argmax(sims))
+        if sims[best] &gt;= THRESHOLD:       # 命中：直接复用
+            return cache[best][1]
+    reply = call_llm(question)            # 未命中：调用模型
+    cache.append((q, reply))
+    return reply</code></pre></div><p class="cnote">演示嵌入—相似度—阈值判定的核心流程；生产中需向量索引、TTL、按租户隔离与可缓存性判断。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">三种缓存对比</h3><div class="tw"><table><thead><tr><th>类型</th><th>匹配方式</th><th>缓存内容</th><th>主要风险</th></tr></thead><tbody><tr><td data-h="类型">精确匹配缓存</td><td data-h="匹配方式">查询字符串完全相同</td><td data-h="缓存内容">最终回答</td><td data-h="主要风险">命中率低</td></tr><tr><td data-h="类型">语义缓存</td><td data-h="匹配方式">嵌入相似度超过阈值</td><td data-h="缓存内容">最终回答</td><td data-h="主要风险">误命中、跨用户泄露</td></tr><tr><td data-h="类型">提示缓存（厂商侧）</td><td data-h="匹配方式">提示前缀完全相同</td><td data-h="缓存内容">中间计算（KV）</td><td data-h="主要风险">几乎无正确性风险，只省成本与延迟</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>高阈值语义缓存</h4><p><b class="k-p">优点</b>误命中少</p><p><b class="k-c">代价</b>命中率有限</p><p><b class="k-w">适用</b>通用客服、FAQ 类问答</p></div><div class="trd"><h4>低阈值语义缓存</h4><p><b class="k-p">优点</b>命中率高、更省钱</p><p><b class="k-c">代价</b>答非所问风险上升</p><p><b class="k-w">适用</b>只适合低风险、答案高度一致的场景</p></div><div class="trd"><h4>只用精确缓存 + 提示缓存</h4><p><b class="k-p">优点</b>零正确性风险</p><p><b class="k-c">代价</b>节省有限</p><p><b class="k-w">适用</b>回答高度个性化或要求严格准确</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>缓存涉及个人数据或订单状态的回答，返回给其他用户</p><p class="fix"><b>✓</b>排除个性化问题，或按用户/租户分区缓存</p></li><li><p class="bad"><b>✗</b>阈值凭感觉设定</p><p class="fix"><b>✓</b>用标注的相似/不相似查询对评测，选择误命中可接受的阈值</p></li><li><p class="bad"><b>✗</b>模型或提示词升级后仍复用旧回答</p><p class="fix"><b>✓</b>把模型与提示词版本写入元数据，变更时失效旧缓存</p></li><li><p class="bad"><b>✗</b>忽视时效性，过期政策仍被复用</p><p class="fix"><b>✓</b>设置 TTL，知识更新时清除相关缓存</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>明确可缓存与不可缓存的问题类型</span></label></li><li><label><input type="checkbox"><span>阈值经评测确定</span></label></li><li><label><input type="checkbox"><span>缓存按租户或用户隔离</span></label></li><li><label><input type="checkbox"><span>元数据包含模型与提示词版本</span></label></li><li><label><input type="checkbox"><span>设置 TTL 与主动失效</span></label></li><li><label><input type="checkbox"><span>监控命中率并抽检误命中</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>语义缓存和厂商的 Prompt Caching 有何不同？</summary><p>语义缓存在应用层运行，命中时完全跳过模型调用，直接返回旧回答，节省最多但可能答错。Prompt Caching 由模型服务商提供，复用相同提示前缀的计算，模型仍实时生成新回答，只降低成本与首字延迟，不影响正确性。</p></details><details class="iv"><summary>如何设置相似度阈值？</summary><p>收集真实查询，标注“应命中”和“不应命中”的查询对，在不同阈值下计算误命中率和命中率，选择业务可接受的点。不同嵌入模型的分数分布不同，阈值不可直接照搬，且需随模型更换重新校准。</p></details><details class="iv"><summary>语义缓存有哪些安全与隐私风险？</summary><p>若缓存不分区，用户 A 的个性化回答可能被用户 B 的相似问题命中，造成数据泄露；攻击者也可能通过构造查询探测缓存内容。应只缓存通用知识类回答，按租户隔离，并对敏感信息做过滤。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://github.com/zilliztech/GPTCache" target="_blank" rel="noopener"><b>GPTCache (GitHub)</b><small>github.com ↗</small></a></li><li><a href="https://docs.redisvl.com/en/latest/user_guide/03_llmcache.html" target="_blank" rel="noopener"><b>RedisVL：LLM 语义缓存</b><small>docs.redisvl.com ↗</small></a></li><li><a href="https://platform.openai.com/docs/guides/embeddings" target="_blank" rel="noopener"><b>OpenAI：Embeddings 指南</b><small>platform.openai.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="pub-sub.pro.html" rel="prev"><small>‹ 上一个</small><b>📢 发布订阅 (Pub/Sub)</b></a><a class="pn next" href="event-streaming.pro.html" rel="next"><small>下一个 ›</small><b>🌊 事件流平台 (Kafka)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

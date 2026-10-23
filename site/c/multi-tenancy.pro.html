@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="多租户架构 专业模式：多租户（Multi-Tenancy）是让一套应用实例与基础设施同时服务多个客户（租户）的架构方式，是 SaaS 的基础。核心问题是在隔离性、成本与运维复杂度之间">
+<title>🎓 多租户架构 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="multi-tenancy" data-answer="0" data-prev="hexagonal-architecture.pro.html" data-next="lakehouse.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#arch">🔥 进阶 · 🏛️ 架构设计</a><span>›</span><a href="multi-tenancy.html">多租户架构</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.461 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="hexagonal-architecture.pro.html" rel="prev"><small>‹ 上一个</small><b>⬡ 六边形架构 / 整洁架构</b></a><a class="pn next" href="lakehouse.pro.html" rel="next"><small>下一个 ›</small><b>🏞️ 湖仓一体 (Iceberg / Delta Lake)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🏢</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🏛️ 架构设计</span><span>⏱ 约 10 分钟</span></div>
+    <h1>多租户架构</h1><p class="en">Multi-Tenancy</p>
+    <div class="hbtns"><a class="prosw back" href="multi-tenancy.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">多租户（Multi-Tenancy）是让一套应用实例与基础设施同时服务多个客户（租户）的架构方式，是 SaaS 的基础。核心问题是在隔离性、成本与运维复杂度之间取舍：数据、计算、配置和故障影响面都要按租户隔离，同时尽量共享资源以降低单租户成本。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>身份层在认证时确定租户上下文（如 JWT 中的 tenant_id），并在请求整个生命周期中传递。</p></li><li><span class="sn">2</span><p>数据层选择隔离模型：共享库共享表加 tenant_id（池化）、每租户独立 schema、或每租户独立数据库（孤岛）。</p></li><li><span class="sn">3</span><p>在共享表模式下，用数据库行级安全（RLS）或数据访问层强制附加租户过滤，避免依赖每条查询手写条件。</p></li><li><span class="sn">4</span><p>计算与配额层按租户限流、设置资源上限，缓解吵闹邻居（Noisy Neighbor）问题。</p></li><li><span class="sn">5</span><p>运维层支持按租户迁移、备份恢复、计量计费，并可把大客户迁到独立资源（混合模型）。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>租户 (Tenant)</dt><dd>共享系统中逻辑隔离的一个客户单位，通常是一家组织。</dd></div><div class="term"><dt>孤岛/池化 (Silo/Pool)</dt><dd>AWS SaaS 文献中的术语：资源按租户独占或在租户间共享。</dd></div><div class="term"><dt>行级安全 (RLS)</dt><dd>数据库按策略自动过滤行，PostgreSQL 通过 CREATE POLICY 实现。</dd></div><div class="term"><dt>吵闹邻居 (Noisy Neighbor)</dt><dd>某租户过量使用共享资源，拖慢同一资源上的其他租户。</dd></div><div class="term"><dt>租户上下文 (Tenant Context)</dt><dd>贯穿请求、日志、缓存键和异步任务的当前租户标识。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>PostgreSQL RLS 租户隔离</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>CREATE TABLE invoices (
+  id         bigserial PRIMARY KEY,
+  tenant_id  uuid    NOT NULL,
+  amount     numeric NOT NULL
+);
+CREATE INDEX ON invoices (tenant_id);
+
+ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE invoices FORCE ROW LEVEL SECURITY;  -- 表属主也受约束
+
+CREATE POLICY tenant_isolation ON invoices
+  USING (tenant_id = current_setting(&#x27;app.tenant_id&#x27;)::uuid)
+  WITH CHECK (tenant_id = current_setting(&#x27;app.tenant_id&#x27;)::uuid);
+
+-- 应用每个事务开头设置租户（连接池下务必用 SET LOCAL）
+BEGIN;
+SET LOCAL app.tenant_id = &#x27;6f1c2a8e-0000-4000-8000-000000000001&#x27;;
+SELECT * FROM invoices;          -- 只返回该租户的行
+COMMIT;</code></pre></div><p class="cnote">超级用户和带 BYPASSRLS 的角色会绕过策略，应用应使用普通角色连接。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">数据隔离模型对比</h3><div class="tw"><table><thead><tr><th>模型</th><th>隔离强度</th><th>单租户成本</th><th>运维复杂度</th></tr></thead><tbody><tr><td data-h="模型">共享表 + tenant_id</td><td data-h="隔离强度">依赖应用/RLS</td><td data-h="单租户成本">最低</td><td data-h="运维复杂度">低，但迁移单租户难</td></tr><tr><td data-h="模型">每租户 schema</td><td data-h="隔离强度">中</td><td data-h="单租户成本">中</td><td data-h="运维复杂度">迁移脚本需跑 N 次</td></tr><tr><td data-h="模型">每租户数据库</td><td data-h="隔离强度">强</td><td data-h="单租户成本">高</td><td data-h="运维复杂度">连接数与运维随租户增长</td></tr><tr><td data-h="模型">混合（大客户独立）</td><td data-h="隔离强度">按层级</td><td data-h="单租户成本">按套餐区分</td><td data-h="运维复杂度">需要支持两种路径</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>池化（共享表）</h4><p><b class="k-p">优点</b>资源利用率高，上线新租户零成本</p><p><b class="k-c">代价</b>一个漏洞可能跨租户泄露</p><p><b class="k-w">适用</b>大量中小租户的 SaaS</p></div><div class="trd"><h4>孤岛（独立库/集群）</h4><p><b class="k-p">优点</b>强隔离，便于满足合规与数据驻留</p><p><b class="k-c">代价</b>成本高，版本与迁移管理复杂</p><p><b class="k-w">适用</b>大客户、强监管行业</p></div><div class="trd"><h4>混合分层</h4><p><b class="k-p">优点</b>按套餐平衡成本与隔离</p><p><b class="k-c">代价</b>代码与运维要同时支持多模式</p><p><b class="k-w">适用</b>客户规模差异大的成长期产品</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>缓存键、对象存储路径没带租户前缀</p><p class="fix"><b>✓</b>租户 ID 进入所有缓存键、存储路径和搜索索引的命名</p></li><li><p class="bad"><b>✗</b>后台任务和消息消费丢失租户上下文</p><p class="fix"><b>✓</b>消息体携带 tenant_id，消费者显式设置上下文后再访问数据</p></li><li><p class="bad"><b>✗</b>连接池里用 SET 设置租户，串到下个请求</p><p class="fix"><b>✓</b>在事务内用 SET LOCAL，或每次借出连接时重置</p></li><li><p class="bad"><b>✗</b>租户 ID 取自请求参数而非认证令牌</p><p class="fix"><b>✓</b>以服务端校验过的身份为准，忽略客户端传入的租户字段</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>租户上下文来源于认证结果而非请求参数</span></label></li><li><label><input type="checkbox"><span>共享表启用 RLS 或统一数据访问层过滤</span></label></li><li><label><input type="checkbox"><span>缓存、文件、搜索、日志都按租户隔离</span></label></li><li><label><input type="checkbox"><span>有跨租户访问的自动化测试用例</span></label></li><li><label><input type="checkbox"><span>按租户限流与配额，监控吵闹邻居</span></label></li><li><label><input type="checkbox"><span>支持按租户导出、删除与恢复数据</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>共享表模式下如何保证不跨租户泄露？</summary><p>多层防御：认证令牌确定租户；数据访问层或 ORM 全局作用域自动加过滤；数据库 RLS 作为最后一道防线，并启用 FORCE 让属主也受约束；缓存与文件路径带租户前缀；再用两个租户互访的集成测试持续回归。</p></details><details class="iv"><summary>如何处理吵闹邻居？</summary><p>先可观测：按租户统计请求量、慢查询和资源占用。再控制：按租户限流、队列分级、查询超时和配额。最后隔离：把重度租户迁到独立的数据库分片或计算池。计费模型也可引导用量。</p></details><details class="iv"><summary>每租户一库的模型主要痛点是什么？</summary><p>数据库数量随租户线性增长，连接池、监控、备份成本上升；每次 schema 迁移要对所有库执行并处理部分失败；跨租户分析需要额外汇总管道。适合租户少而价值高的场景。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.aws.amazon.com/whitepapers/latest/saas-tenant-isolation-strategies/saas-tenant-isolation-strategies.html" target="_blank" rel="noopener"><b>AWS Whitepaper: SaaS Tenant Isolation Strategies</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/ddl-rowsecurity.html" target="_blank" rel="noopener"><b>PostgreSQL: Row Security Policies</b><small>postgresql.org ↗</small></a></li><li><a href="https://learn.microsoft.com/en-us/azure/architecture/guide/multitenant/overview" target="_blank" rel="noopener"><b>Azure: Multitenant architecture guide</b><small>learn.microsoft.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="hexagonal-architecture.pro.html" rel="prev"><small>‹ 上一个</small><b>⬡ 六边形架构 / 整洁架构</b></a><a class="pn next" href="lakehouse.pro.html" rel="next"><small>下一个 ›</small><b>🏞️ 湖仓一体 (Iceberg / Delta Lake)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="eBPF 内核可编程 专业模式：eBPF（extended Berkeley Packet Filter）是 Linux 内核中的沙箱化虚拟机，可在不改内核源码、不加载内核模块的前提下，把经过">
+<title>🎓 eBPF 内核可编程 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="ebpf" data-answer="0" data-prev="burn-rate-alerts.pro.html" data-next="">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#sre">🔥 进阶 · 🩺 高可用 SRE</a><span>›</span><a href="ebpf.html">eBPF 内核可编程</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.500 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="burn-rate-alerts.pro.html" rel="prev"><small>‹ 上一个</small><b>🔥 错误预算燃烧率告警</b></a><span class="pn next none"></span></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🐝</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>eBPF 内核可编程</h1><p class="en">eBPF</p>
+    <div class="hbtns"><a class="prosw back" href="ebpf.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">eBPF（extended Berkeley Packet Filter）是 Linux 内核中的沙箱化虚拟机，可在不改内核源码、不加载内核模块的前提下，把经过验证的小程序挂到内核或用户态事件上运行。它位于内核层，广泛用于可观测性、网络数据面和运行时安全，是 Cilium、Falco、bpftrace 等工具的基石。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>用受限 C 或 bpftrace 等高级语言编写程序，由 Clang/LLVM 编译为 eBPF 字节码。</p></li><li><span class="sn">2</span><p>用户态加载器通过 bpf() 系统调用提交字节码，并声明程序类型（kprobe、tracepoint、XDP、tc、LSM 等）。</p></li><li><span class="sn">3</span><p>验证器（Verifier）静态分析所有路径：确保会终止、内存访问有界、只调用允许的辅助函数，否则拒绝加载。</p></li><li><span class="sn">4</span><p>通过验证的字节码由 JIT 编译为本机指令，挂载到对应钩子，事件发生时在内核上下文执行。</p></li><li><span class="sn">5</span><p>程序通过 Map（哈希表、数组、环形缓冲区等）存取状态，并与用户态程序交换数据。</p></li><li><span class="sn">6</span><p>借助 BTF 与 CO-RE（一次编译，到处运行），同一份程序可适配不同内核版本的结构体布局。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>验证器 (Verifier)</dt><dd>加载前对 eBPF 程序做静态检查的内核组件，保证安全与终止。</dd></div><div class="term"><dt>BPF Map</dt><dd>内核中的键值存储，供 eBPF 程序保存状态并与用户态共享数据。</dd></div><div class="term"><dt>kprobe / uprobe</dt><dd>动态挂载到内核函数或用户态函数入口/返回处的探针，接口不稳定。</dd></div><div class="term"><dt>跟踪点 (Tracepoint)</dt><dd>内核预定义的静态探测点，接口比 kprobe 更稳定。</dd></div><div class="term"><dt>XDP (eXpress Data Path)</dt><dd>在网卡驱动收包最早阶段运行 eBPF，用于高性能过滤与转发。</dd></div><div class="term"><dt>CO-RE / BTF</dt><dd>借助内核类型信息 BTF 在加载时重定位字段，实现跨内核版本运行。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>bpftrace 排查常用命令</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 需要 root；内核需开启 BPF，建议带 BTF（存在 /sys/kernel/btf/vmlinux）
+ls /sys/kernel/btf/vmlinux
+
+# 列出可用的系统调用跟踪点
+sudo bpftrace -l &#x27;tracepoint:syscalls:sys_enter_open*&#x27;
+
+# 统计哪些进程在发起 TCP 主动连接（Ctrl-C 结束后打印）
+sudo bpftrace -e &#x27;kprobe:tcp_connect { @[comm] = count(); }&#x27;
+
+# 实时打印进程打开的文件
+sudo bpftrace -e &#x27;tracepoint:syscalls:sys_enter_openat {
+  printf(&quot;%-16s %s\n&quot;, comm, str(args.filename));
+}&#x27;
+
+# 查看当前已加载的 eBPF 程序
+sudo bpftool prog list</code></pre></div><p class="cnote">无需改应用即可观测；较老 bpftrace 版本中 args.filename 需写成 args-&gt;filename。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见程序类型与用途</h3><div class="tw"><table><thead><tr><th>挂载点</th><th>运行位置</th><th>典型用途</th></tr></thead><tbody><tr><td data-h="挂载点">kprobe / uprobe</td><td data-h="运行位置">内核/用户态任意函数</td><td data-h="典型用途">临时排障、性能分析</td></tr><tr><td data-h="挂载点">tracepoint</td><td data-h="运行位置">内核静态探测点</td><td data-h="典型用途">稳定的系统调用与调度观测</td></tr><tr><td data-h="挂载点">XDP</td><td data-h="运行位置">网卡驱动收包入口</td><td data-h="典型用途">DDoS 过滤、负载均衡</td></tr><tr><td data-h="挂载点">tc</td><td data-h="运行位置">内核流量控制层</td><td data-h="典型用途">容器网络策略、流量整形</td></tr><tr><td data-h="挂载点">LSM</td><td data-h="运行位置">Linux 安全模块钩子</td><td data-h="典型用途">运行时安全策略执行</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>现成工具 (bpftrace/BCC/Cilium)</h4><p><b class="k-p">优点</b>上手快，覆盖常见场景，社区维护</p><p><b class="k-c">代价</b>定制能力有限，部分工具依赖内核头或编译器</p><p><b class="k-w">适用</b>排障、监控和标准网络策略</p></div><div class="trd"><h4>自研 libbpf + CO-RE 程序</h4><p><b class="k-p">优点</b>开销低、可深度定制、可分发单一二进制</p><p><b class="k-c">代价</b>受验证器限制，开发调试门槛高</p><p><b class="k-w">适用</b>产品化的观测或安全 Agent</p></div><div class="trd"><h4>应用内埋点 (OpenTelemetry)</h4><p><b class="k-p">优点</b>有业务语义，跨平台，不需特权</p><p><b class="k-c">代价</b>要改代码和重新发布</p><p><b class="k-w">适用</b>需要业务级链路追踪与指标</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>依赖 kprobe 挂载的内核函数，升级内核后失效</p><p class="fix"><b>✓</b>优先使用 tracepoint 或稳定钩子，并在目标内核版本矩阵上测试</p></li><li><p class="bad"><b>✗</b>在高频事件上做大量 printf 输出</p><p class="fix"><b>✓</b>在内核侧用 Map 聚合，只向用户态输出汇总或采样结果</p></li><li><p class="bad"><b>✗</b>在容器里随意授予 privileged 运行 eBPF 工具</p><p class="fix"><b>✓</b>按需授予 CAP_BPF、CAP_PERFMON 等最小能力，并审计加载的程序</p></li><li><p class="bad"><b>✗</b>以为 eBPF 能看到 TLS 明文流量</p><p class="fix"><b>✓</b>内核网络层只见密文，需 uprobe 挂到 TLS 库函数上才能取明文</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>确认目标内核版本与 BTF 支持情况</span></label></li><li><label><input type="checkbox"><span>优先用稳定钩子，记录依赖的内核函数</span></label></li><li><label><input type="checkbox"><span>评估高频事件下的 CPU 开销并采样</span></label></li><li><label><input type="checkbox"><span>运行权限最小化，避免 privileged 容器</span></label></li><li><label><input type="checkbox"><span>在与生产同版本内核的测试机上验证</span></label></li><li><label><input type="checkbox"><span>用 bpftool 盘点已加载程序与 Map</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>eBPF 如何保证不把内核搞崩？</summary><p>核心是验证器：加载前遍历所有执行路径，检查有界循环与终止、寄存器与指针类型、内存访问边界、栈大小和可调用的辅助函数，任何不安全路径都拒绝加载。程序只能通过辅助函数和 Map 与内核交互，再加上加载需要特权能力。</p></details><details class="iv"><summary>kprobe 和 tracepoint 怎么选？</summary><p>tracepoint 是内核维护者定义的静态探测点，参数格式相对稳定，开销较低，适合长期运行的工具；kprobe 可挂到几乎任意内核函数，灵活但依赖内部实现，函数被内联或改名就失效，适合临时排障。生产工具优先 tracepoint，缺口再用 kprobe。</p></details><details class="iv"><summary>eBPF 可观测性与 Service Mesh Sidecar 比优势在哪？</summary><p>eBPF 在内核层采集，对应用透明，无需每个 Pod 注入 Sidecar 代理，减少额外的网络跳数与资源开销。代价是缺乏应用层语义（如 TLS 内的 HTTP 细节需额外 uprobe），且依赖内核版本和特权部署。Cilium 等项目正是用它替代部分 Sidecar 功能。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://ebpf.io/what-is-ebpf/" target="_blank" rel="noopener"><b>ebpf.io: What is eBPF?</b><small>ebpf.io ↗</small></a></li><li><a href="https://docs.kernel.org/bpf/" target="_blank" rel="noopener"><b>Linux Kernel Docs: BPF Documentation</b><small>docs.kernel.org ↗</small></a></li><li><a href="https://docs.kernel.org/bpf/verifier.html" target="_blank" rel="noopener"><b>Linux Kernel Docs: eBPF Verifier</b><small>docs.kernel.org ↗</small></a></li><li><a href="https://github.com/bpftrace/bpftrace" target="_blank" rel="noopener"><b>GitHub: bpftrace/bpftrace</b><small>github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="burn-rate-alerts.pro.html" rel="prev"><small>‹ 上一个</small><b>🔥 错误预算燃烧率告警</b></a><span class="pn next none"></span></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

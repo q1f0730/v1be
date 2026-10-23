@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="二分定位 (Bisect) 专业模式：git bisect 是 Git 内置的二分查找工具，用于在提交历史中定位首个引入问题的提交。用户标记一个已知好的提交和一个已知坏的提交，Git 每次检出中间的">
+<title>🎓 二分定位 (Bisect) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="git-bisect" data-answer="0" data-prev="server-state-caching.pro.html" data-next="trunk-based-development.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#git">🔮 高级 · 🌿 Git 协作</a><span>›</span><a href="git-bisect.html">二分定位 (Bisect)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.381 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="server-state-caching.pro.html" rel="prev"><small>‹ 上一个</small><b>🗃️ 服务端状态缓存 (TanStack Query / SWR)</b></a><a class="pn next" href="trunk-based-development.pro.html" rel="next"><small>下一个 ›</small><b>🌲 主干开发 (Trunk-Based)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔎</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🌿 Git 协作</span><span>⏱ 约 10 分钟</span></div>
+    <h1>二分定位 (Bisect)</h1><p class="en">Git Bisect</p>
+    <div class="hbtns"><a class="prosw back" href="git-bisect.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">git bisect 是 Git 内置的二分查找工具，用于在提交历史中定位首个引入问题的提交。用户标记一个已知好的提交和一个已知坏的提交，Git 每次检出中间的提交供测试，根据结果缩小一半范围，N 个提交约需 log₂N 次测试。它属于版本控制与调试层，可配合脚本 git bisect run 完全自动化。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>git bisect start 开启会话，git bisect bad 标记当前（或指定）坏提交，git bisect good &lt;rev&gt; 标记已知好提交。</p></li><li><span class="sn">2</span><p>Git 检出两者之间大约中点的提交，进入分离 HEAD 状态，等待判断。</p></li><li><span class="sn">3</span><p>开发者测试后执行 good 或 bad；无法测试（如编译失败）时执行 skip。</p></li><li><span class="sn">4</span><p>重复直到范围缩小到一个提交，Git 输出 first bad commit 及其信息。</p></li><li><span class="sn">5</span><p>git bisect reset 结束会话并回到开始前的分支；git bisect log 可保存过程并 replay 重放。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>二分查找 (Binary Search)</dt><dd>每次排除一半候选，复杂度为对数级。</dd></div><div class="term"><dt>git bisect run</dt><dd>传入脚本自动判断：退出码 0 为好，125 为跳过，1–127 其他值为坏。</dd></div><div class="term"><dt>git bisect skip</dt><dd>跳过无法判断的提交，可能导致结果给出一个范围。</dd></div><div class="term"><dt>回归 (Regression)</dt><dd>以前正常的功能在某次变更后出错。</dd></div><div class="term"><dt>分离 HEAD (Detached HEAD)</dt><dd>HEAD 直接指向某个提交而非分支，bisect 期间处于此状态。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>用脚本自动二分</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 当前版本有 Bug，v1.4.0 时是正常的
+git bisect start
+git bisect bad HEAD
+git bisect good v1.4.0
+
+# 写一个判断脚本：退出码 0=好，1=坏，125=无法测试跳过
+cat &gt; /tmp/check.sh &lt;&lt;&#x27;EOF&#x27;
+#!/bin/sh
+npm ci --silent || exit 125        # 依赖装不上就跳过这个提交
+npx vitest run tests/login.test.ts  # 测试通过返回 0，失败返回非 0
+EOF
+chmod +x /tmp/check.sh
+
+# 全自动二分，结束时打印 first bad commit
+git bisect run /tmp/check.sh
+
+# 查看过程并结束会话，回到原分支
+git bisect log
+git bisect reset</code></pre></div><p class="cnote">测试脚本放在仓库外，避免检出旧提交时脚本消失；依赖安装失败用 125 跳过。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">bisect 常用命令</h3><div class="tw"><table><thead><tr><th>命令</th><th>作用</th><th>备注</th></tr></thead><tbody><tr><td data-h="命令">start / reset</td><td data-h="作用">开始 / 结束会话</td><td data-h="备注">reset 回到原分支</td></tr><tr><td data-h="命令">good / bad</td><td data-h="作用">标记好坏</td><td data-h="备注">可用 old/new 自定义术语</td></tr><tr><td data-h="命令">skip</td><td data-h="作用">跳过当前提交</td><td data-h="备注">过多会降低精度</td></tr><tr><td data-h="命令">run &lt;cmd&gt;</td><td data-h="作用">脚本自动判断</td><td data-h="备注">按退出码决定结果</td></tr><tr><td data-h="命令">log / replay</td><td data-h="作用">保存与重放过程</td><td data-h="备注">误标时可修正后重放</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>手动 bisect</h4><p><b class="k-p">优点</b>无需写脚本，适合 UI 类问题</p><p><b class="k-c">代价</b>每步需人工判断，易误标</p><p><b class="k-w">适用</b>难以自动化验证的 Bug</p></div><div class="trd"><h4>git bisect run</h4><p><b class="k-p">优点</b>全自动、可复现</p><p><b class="k-c">代价</b>需要可靠的判断脚本</p><p><b class="k-w">适用</b>能用测试或命令复现的 Bug</p></div><div class="trd"><h4>阅读 git log/blame 推断</h4><p><b class="k-p">优点</b>快，无需检出</p><p><b class="k-c">代价</b>多因素问题容易判断错</p><p><b class="k-w">适用</b>范围很小或线索明确</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>把测试脚本放在仓库内，检出旧提交时脚本不存在</p><p class="fix"><b>✓</b>脚本放仓库外，或在脚本里从固定路径读取测试</p></li><li><p class="bad"><b>✗</b>构建失败的提交被标记为 bad，误导结果</p><p class="fix"><b>✓</b>用退出码 125 / git bisect skip 跳过</p></li><li><p class="bad"><b>✗</b>测试本身不稳定（flaky），结果随机</p><p class="fix"><b>✓</b>先保证复现脚本稳定，必要时多跑几次再判断</p></li><li><p class="bad"><b>✗</b>结束后忘记 git bisect reset，仍在分离 HEAD</p><p class="fix"><b>✓</b>完成后立即 reset，或先用 bisect log 保存记录</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>确认有稳定的复现方法</span></label></li><li><label><input type="checkbox"><span>找到确定的好提交与坏提交</span></label></li><li><label><input type="checkbox"><span>判断脚本位于仓库外</span></label></li><li><label><input type="checkbox"><span>无法构建的提交用 125 跳过</span></label></li><li><label><input type="checkbox"><span>结束后 reset 并记录 first bad commit</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>git bisect run 如何根据退出码判断？</summary><p>退出码 0 表示好；125 表示无法测试，跳过；1 到 127 之间除 125 外表示坏；大于 127 或小于 0 会中止二分。脚本应只在确实复现 Bug 时返回非 0。</p></details><details class="iv"><summary>为什么保持小提交有助于 bisect？</summary><p>二分定位的粒度是提交；一个提交混了大量改动，定位后仍要在大 diff 里找原因。原子化、能独立构建的小提交让定位结果直接指向根因。</p></details><details class="iv"><summary>合并提交多的历史能用 bisect 吗？</summary><p>能。Git 会在提交图上选择中点；可用 --first-parent 只沿主干的第一父提交二分，先定位到哪次合并引入问题，再进入该分支细查。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://git-scm.com/docs/git-bisect" target="_blank" rel="noopener"><b>Git 官方文档：git-bisect</b><small>git-scm.com ↗</small></a></li><li><a href="https://git-scm.com/book/en/v2/Git-Tools-Debugging-with-Git" target="_blank" rel="noopener"><b>Pro Git：Debugging with Git</b><small>git-scm.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="server-state-caching.pro.html" rel="prev"><small>‹ 上一个</small><b>🗃️ 服务端状态缓存 (TanStack Query / SWR)</b></a><a class="pn next" href="trunk-based-development.pro.html" rel="next"><small>下一个 ›</small><b>🌲 主干开发 (Trunk-Based)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

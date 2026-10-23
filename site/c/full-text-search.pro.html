@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="全文检索 专业模式：全文检索（Full-Text Search）是对自然语言文本按“词”建立倒排索引并按相关性排序返回结果的技术。它解决 LIKE 模糊匹配无法用索引、不懂词形、无">
+<title>🎓 全文检索 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="full-text-search" data-answer="0" data-prev="cascading-deletes.pro.html" data-next="read-replicas.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#db">🔮 高级 · 🗄️ 数据库</a><span>›</span><a href="full-text-search.html">全文检索</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.247 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="cascading-deletes.pro.html" rel="prev"><small>‹ 上一个</small><b>🁢 级联删除</b></a><a class="pn next" href="read-replicas.pro.html" rel="next"><small>下一个 ›</small><b>🖼️ 只读副本</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔎</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>全文检索</h1><p class="en">Full-Text Search</p>
+    <div class="hbtns"><a class="prosw back" href="full-text-search.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">全文检索（Full-Text Search）是对自然语言文本按“词”建立倒排索引并按相关性排序返回结果的技术。它解决 LIKE 模糊匹配无法用索引、不懂词形、无法排序的问题。可用数据库内置能力，也可用 Elasticsearch、OpenSearch、Meilisearch 等专用引擎。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>分析（Analysis）：把文本切分为词元，做小写化、去停用词、词干还原；中文需要专门分词。</p></li><li><span class="sn">2</span><p>建立倒排索引：记录每个词出现在哪些文档、出现位置与频率。</p></li><li><span class="sn">3</span><p>查询时对检索词做同样的分析，在倒排表中查找并按布尔逻辑合并文档集合。</p></li><li><span class="sn">4</span><p>相关性排序：按 TF-IDF、BM25 等模型给文档打分，可叠加字段权重和新鲜度。</p></li><li><span class="sn">5</span><p>结果返回时可生成高亮片段；索引需随数据写入同步或异步更新。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>倒排索引 (Inverted Index)</dt><dd>从词到包含它的文档列表的映射结构。</dd></div><div class="term"><dt>分析器 (Analyzer)</dt><dd>分词器与过滤器的组合，决定文本如何变成词元。</dd></div><div class="term"><dt>词干还原 (Stemming)</dt><dd>把 running、runs 归一为 run 等词根。</dd></div><div class="term"><dt>BM25</dt><dd>主流相关性评分模型，考虑词频饱和与文档长度。</dd></div><div class="term"><dt>tsvector / tsquery</dt><dd>PostgreSQL 中已分析的文档与查询类型。</dd></div><div class="term"><dt>ngram 分词</dt><dd>按固定长度切分字符序列，常用于中日韩文本。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>PostgreSQL 全文检索</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- 用生成列维护 tsvector（PostgreSQL 12+），标题权重高于正文
+ALTER TABLE articles ADD COLUMN search tsvector
+  GENERATED ALWAYS AS (
+    setweight(to_tsvector(&#x27;english&#x27;, coalesce(title, &#x27;&#x27;)), &#x27;A&#x27;) ||
+    setweight(to_tsvector(&#x27;english&#x27;, coalesce(body,  &#x27;&#x27;)), &#x27;B&#x27;)
+  ) STORED;
+
+-- GIN 倒排索引
+CREATE INDEX articles_search_idx ON articles USING GIN (search);
+
+-- 支持类似搜索引擎的语法：引号短语、OR、减号排除
+SELECT id, title,
+       ts_rank(search, q) AS rank,
+       ts_headline(&#x27;english&#x27;, body, q) AS snippet
+FROM articles,
+     websearch_to_tsquery(&#x27;english&#x27;, &#x27;&quot;connection pool&quot; -mysql&#x27;) AS q
+WHERE search @@ q
+ORDER BY rank DESC
+LIMIT 20;
+
+-- 注意：内置配置不会切分中文，中文需 zhparser/pg_jieba 等扩展</code></pre></div><p class="cnote">生成列自动随写入更新；GIN 索引加速 @@ 匹配，ts_rank 排序、ts_headline 高亮。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">方案选型</h3><div class="tw"><table><thead><tr><th>方案</th><th>中文支持</th><th>优势</th><th>局限</th></tr></thead><tbody><tr><td data-h="方案">PostgreSQL FTS</td><td data-h="中文支持">需扩展分词</td><td data-h="优势">与业务数据同库同事务</td><td data-h="局限">相关性与聚合能力有限</td></tr><tr><td data-h="方案">MySQL FULLTEXT</td><td data-h="中文支持">内置 ngram 解析器</td><td data-h="优势">零部署</td><td data-h="局限">排序可调性弱</td></tr><tr><td data-h="方案">Elasticsearch/OpenSearch</td><td data-h="中文支持">需中文分词插件</td><td data-h="优势">相关性、聚合、扩展性强</td><td data-h="局限">额外集群与同步链路</td></tr><tr><td data-h="方案">Meilisearch</td><td data-h="中文支持">内置多语言分词</td><td data-h="优势">开箱即用、容错拼写</td><td data-h="局限">大规模与复杂查询受限</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>数据库内置全文检索</h4><p><b class="k-p">优点</b>无同步延迟，运维简单</p><p><b class="k-c">代价</b>高级相关性调优能力弱</p><p><b class="k-w">适用</b>数据量中等、需求简单</p></div><div class="trd"><h4>专用搜索引擎</h4><p><b class="k-p">优点</b>相关性、分面、高亮能力完善</p><p><b class="k-c">代价</b>需维护索引同步与一致性</p><p><b class="k-w">适用</b>搜索是核心功能</p></div><div class="trd"><h4>向量/混合检索</h4><p><b class="k-p">优点</b>理解语义近义表达</p><p><b class="k-c">代价</b>成本高，精确匹配反而变弱</p><p><b class="k-w">适用</b>问答、RAG 与关键词互补</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>用 LIKE &#x27;%关键词%&#x27; 扛搜索</p><p class="fix"><b>✓</b>改用全文索引；模糊子串可考虑 pg_trgm</p></li><li><p class="bad"><b>✗</b>中文直接用 english/simple 配置</p><p class="fix"><b>✓</b>接入中文分词扩展，或用 ngram 解析器</p></li><li><p class="bad"><b>✗</b>查询和索引使用不同分析配置</p><p class="fix"><b>✓</b>两端使用同一语言配置与分析器</p></li><li><p class="bad"><b>✗</b>搜索引擎与数据库不同步，删除后仍能搜到</p><p class="fix"><b>✓</b>用 CDC 或可靠事件同步，并定期全量校对</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>确认目标语言的分词方案</span></label></li><li><label><input type="checkbox"><span>索引与查询使用同一分析配置</span></label></li><li><label><input type="checkbox"><span>相关性排序经过真实查询评估</span></label></li><li><label><input type="checkbox"><span>索引更新链路可靠并有延迟监控</span></label></li><li><label><input type="checkbox"><span>支持高亮与无结果时的兜底</span></label></li><li><label><input type="checkbox"><span>有查询日志用于迭代调优</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>倒排索引为什么比 LIKE 快？</summary><p>LIKE &#x27;%x%&#x27; 前缀不确定，B-tree 无法使用，只能逐行扫描比较。倒排索引预先把词映射到文档列表，查询只需查几个词条的列表并做交并集，复杂度与命中量相关，而不是与全表大小相关。</p></details><details class="iv"><summary>BM25 相比 TF-IDF 改进了什么？</summary><p>BM25 引入词频饱和：同一词出现很多次后得分增长趋缓（参数 k1）；并做文档长度归一化（参数 b），避免长文档仅因词多而占优。它是 Lucene 系引擎目前的默认相似度模型。</p></details><details class="iv"><summary>全文检索和向量检索怎么结合？</summary><p>关键词检索擅长精确术语、编号、名称，向量检索擅长语义近似。常见做法是两路召回后融合排序（如 RRF 倒数排名融合），再用重排模型精排。RAG 系统中混合检索通常比单一方式召回更稳。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.postgresql.org/docs/current/textsearch.html" target="_blank" rel="noopener"><b>PostgreSQL: Full Text Search</b><small>postgresql.org ↗</small></a></li><li><a href="https://dev.mysql.com/doc/refman/8.0/en/fulltext-search-ngram.html" target="_blank" rel="noopener"><b>MySQL: ngram Full-Text Parser</b><small>dev.mysql.com ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Okapi_BM25" target="_blank" rel="noopener"><b>Wikipedia: Okapi BM25</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Inverted_index" target="_blank" rel="noopener"><b>Wikipedia: Inverted index</b><small>en.wikipedia.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="cascading-deletes.pro.html" rel="prev"><small>‹ 上一个</small><b>🁢 级联删除</b></a><a class="pn next" href="read-replicas.pro.html" rel="next"><small>下一个 ›</small><b>🖼️ 只读副本</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

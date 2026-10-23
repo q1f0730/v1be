@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="负载与压力测试 专业模式：负载测试（Load Testing）是用工具模拟大量并发用户或请求，测量系统在预期和极限负载下的吞吐、延迟、错误率与资源使用的性能测试。它属于发布前验证和容量规">
+<title>🎓 负载与压力测试 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="load-testing" data-answer="0" data-prev="cold-starts.pro.html" data-next="memory-leaks.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sre">🔮 高级 · 🩺 高可用 SRE</a><span>›</span><a href="load-testing.html">负载与压力测试</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.311 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="cold-starts.pro.html" rel="prev"><small>‹ 上一个</small><b>🥶 冷启动延迟</b></a><a class="pn next" href="memory-leaks.pro.html" rel="next"><small>下一个 ›</small><b>🍽️ 内存泄漏</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🏋️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>负载与压力测试</h1><p class="en">Load Testing</p>
+    <div class="hbtns"><a class="prosw back" href="load-testing.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">负载测试（Load Testing）是用工具模拟大量并发用户或请求，测量系统在预期和极限负载下的吞吐、延迟、错误率与资源使用的性能测试。它属于发布前验证和容量规划环节，常细分为基准、负载、压力、尖峰、浸泡等类型，用于找出容量拐点和瓶颈，并为自动扩缩容、限流阈值和 SLO 提供依据。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>明确目标：要验证的场景、预期峰值流量、延迟与错误率阈值，最好对齐 SLO。</p></li><li><span class="sn">2</span><p>编写脚本模拟真实用户行为，包括请求比例、思考时间、登录态和参数化数据。</p></li><li><span class="sn">3</span><p>在与生产相近的环境中按阶段加压，如逐步爬升、保持、再回落，或突然尖峰。</p></li><li><span class="sn">4</span><p>同时采集客户端指标和服务端指标，如 CPU、内存、连接数、数据库慢查询。</p></li><li><span class="sn">5</span><p>分析延迟开始急剧上升或错误出现的拐点，定位瓶颈，优化后回归测试。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>压力测试 (Stress Test)</dt><dd>超出预期负载直到系统失效，观察极限与失效方式。</dd></div><div class="term"><dt>浸泡测试 (Soak Test)</dt><dd>中等负载长时间运行，发现内存泄漏等渐进问题。</dd></div><div class="term"><dt>尖峰测试 (Spike Test)</dt><dd>负载瞬间暴涨，检验扩缩容与限流反应。</dd></div><div class="term"><dt>虚拟用户 (Virtual User, VU)</dt><dd>负载工具中模拟单个用户并发执行脚本的单元。</dd></div><div class="term"><dt>协调遗漏 (Coordinated Omission)</dt><dd>压测客户端因等待慢响应而少发请求，导致延迟被低估。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>k6 分阶段负载脚本</span><em>javascript</em><button class="ccopy">复制</button></div><pre><code>import http from &quot;k6/http&quot;;
+import { check, sleep } from &quot;k6&quot;;
+
+export const options = {
+  stages: [
+    { duration: &quot;2m&quot;, target: 100 },  // 2 分钟爬升到 100 个虚拟用户
+    { duration: &quot;5m&quot;, target: 100 },  // 保持 5 分钟
+    { duration: &quot;1m&quot;, target: 0 },    // 回落
+  ],
+  thresholds: {
+    http_req_duration: [&quot;p(95)&lt;500&quot;], // 95% 请求低于 500ms
+    http_req_failed: [&quot;rate&lt;0.01&quot;],   // 错误率低于 1%
+  },
+};
+
+export default function () {
+  const res = http.get(&quot;https://staging.example.com/api/products&quot;);
+  check(res, { &quot;status is 200&quot;: (r) =&gt; r.status === 200 });
+  sleep(1); // 模拟用户思考时间
+}</code></pre></div><p class="cnote">用 k6 run script.js 执行；阈值不达标时命令以非零码退出，可直接接入 CI。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见测试类型</h3><div class="tw"><table><thead><tr><th>类型</th><th>负载形态</th><th>主要目的</th></tr></thead><tbody><tr><td data-h="类型">基准/冒烟</td><td data-h="负载形态">极低负载</td><td data-h="主要目的">验证脚本与基础性能</td></tr><tr><td data-h="类型">负载测试</td><td data-h="负载形态">预期峰值并保持</td><td data-h="主要目的">验证能否满足 SLO</td></tr><tr><td data-h="类型">压力测试</td><td data-h="负载形态">持续加压超过峰值</td><td data-h="主要目的">找极限与失效方式</td></tr><tr><td data-h="类型">浸泡测试</td><td data-h="负载形态">中等负载数小时</td><td data-h="主要目的">发现泄漏与资源耗尽</td></tr><tr><td data-h="类型">尖峰测试</td><td data-h="负载形态">瞬间暴涨</td><td data-h="主要目的">检验扩缩容和限流</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>在预发环境压测</h4><p><b class="k-p">优点</b>不影响用户</p><p><b class="k-c">代价</b>规模与数据难以完全一致</p><p><b class="k-w">适用</b>常规发布前验证</p></div><div class="trd"><h4>生产环境压测</h4><p><b class="k-p">优点</b>结果最真实</p><p><b class="k-c">代价</b>有影响用户的风险，需隔离标记</p><p><b class="k-w">适用</b>大促前容量确认</p></div><div class="trd"><h4>开环到达率模型</h4><p><b class="k-p">优点</b>能反映真实到达流量，避免协调遗漏</p><p><b class="k-c">代价</b>需更多压测机资源</p><p><b class="k-w">适用</b>测延迟与过载行为</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>只压单个接口，没有模拟真实的请求组合。</p><p class="fix"><b>✓</b>按线上流量比例编排多场景脚本。</p></li><li><p class="bad"><b>✗</b>压测机自身 CPU 或带宽先打满，结果反映的是客户端瓶颈。</p><p class="fix"><b>✓</b>监控压测机资源，必要时分布式压测。</p></li><li><p class="bad"><b>✗</b>所有虚拟用户用同一账号和参数，缓存命中率虚高。</p><p class="fix"><b>✓</b>参数化数据，覆盖缓存未命中路径。</p></li><li><p class="bad"><b>✗</b>只看平均延迟。</p><p class="fix"><b>✓</b>关注 p95、p99 和错误率，并对齐 SLO。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>压测目标与通过标准事先写明</span></label></li><li><label><input type="checkbox"><span>脚本覆盖真实请求组合与数据</span></label></li><li><label><input type="checkbox"><span>同时采集服务端与依赖指标</span></label></li><li><label><input type="checkbox"><span>压测机资源不是瓶颈</span></label></li><li><label><input type="checkbox"><span>找到容量拐点并记录</span></label></li><li><label><input type="checkbox"><span>阈值已接入 CI 做回归</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>负载测试和压力测试有什么区别？</summary><p>负载测试在预期负载范围内验证系统是否满足性能目标；压力测试持续加压超出预期，直到出现失败，目的是找到极限、观察失效方式是否优雅以及能否恢复。两者回答的问题不同，通常都要做。</p></details><details class="iv"><summary>什么是协调遗漏，如何避免？</summary><p>闭环压测中，客户端要等上一个响应才发下一个请求，服务变慢时发出的请求也变少，慢的时段被少采样，延迟被低估。使用按固定到达率发请求的开环模型，或使用会做校正的工具。</p></details><details class="iv"><summary>如何从压测结果确定扩缩容阈值？</summary><p>找出单实例在满足延迟目标时能承受的最大吞吐和对应 CPU 或并发，留出余量作为扩缩容目标值；再结合实例启动时间，确保负载上升时新实例能在饱和前就绪。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://grafana.com/docs/k6/latest/" target="_blank" rel="noopener"><b>Grafana k6 文档</b><small>grafana.com ↗</small></a></li><li><a href="https://grafana.com/docs/k6/latest/testing-guides/test-types/" target="_blank" rel="noopener"><b>k6：Load test types</b><small>grafana.com ↗</small></a></li><li><a href="https://docs.locust.io/en/stable/" target="_blank" rel="noopener"><b>Locust 文档</b><small>docs.locust.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="cold-starts.pro.html" rel="prev"><small>‹ 上一个</small><b>🥶 冷启动延迟</b></a><a class="pn next" href="memory-leaks.pro.html" rel="next"><small>下一个 ›</small><b>🍽️ 内存泄漏</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

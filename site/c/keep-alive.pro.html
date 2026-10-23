@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="HTTP持久连接复用 专业模式：HTTP Keep-Alive（持久连接）指在同一条 TCP（及 TLS）连接上连续发送多个 HTTP 请求，而不是每个请求新建连接。HTTP/1.1 默认启用">
+<title>🎓 HTTP持久连接复用 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="keep-alive" data-answer="0" data-prev="dns-propagation.pro.html" data-next="http-2.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#net">🔮 高级 · 🌐 网络与 API</a><span>›</span><a href="keep-alive.html">HTTP持久连接复用</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.257 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="dns-propagation.pro.html" rel="prev"><small>‹ 上一个</small><b>📮 DNS缓存传播延迟</b></a><a class="pn next" href="http-2.pro.html" rel="next"><small>下一个 ›</small><b>🛣️ 第二代超文本传输协议</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📞</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>HTTP持久连接复用</h1><p class="en">Keep-Alive</p>
+    <div class="hbtns"><a class="prosw back" href="keep-alive.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">HTTP Keep-Alive（持久连接）指在同一条 TCP（及 TLS）连接上连续发送多个 HTTP 请求，而不是每个请求新建连接。HTTP/1.1 默认启用。它省去重复的 TCP 握手、TLS 握手与慢启动，显著降低延迟和服务器开销，但需要在客户端、代理和服务端之间协调空闲超时。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>首个请求完成 TCP 与 TLS 握手，响应后连接不关闭，进入空闲状态。</p></li><li><span class="sn">2</span><p>后续请求复用这条连接，跳过握手；HTTP/1.1 中同一连接上请求按顺序处理。</p></li><li><span class="sn">3</span><p>任一方发送 Connection: close 或空闲超过超时时间，连接被关闭。</p></li><li><span class="sn">4</span><p>客户端用连接池按主机维护多条空闲连接，请求时优先取出复用。</p></li><li><span class="sn">5</span><p>链路中各跳（客户端→负载均衡→后端）各自管理连接，超时需按链路协调。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>持久连接 (Persistent Connection)</dt><dd>一条连接承载多个请求/响应。</dd></div><div class="term"><dt>空闲超时 (Idle Timeout)</dt><dd>连接无请求多久后被关闭。</dd></div><div class="term"><dt>Connection: close</dt><dd>表示本次响应后关闭连接的头。</dd></div><div class="term"><dt>连接池 (Connection Pool / Agent)</dt><dd>客户端按主机复用空闲连接的组件。</dd></div><div class="term"><dt>TCP Keepalive</dt><dd>TCP 层探活机制，与 HTTP Keep-Alive 是两回事。</dd></div><div class="term"><dt>队头阻塞 (Head-of-line Blocking)</dt><dd>HTTP/1.1 同连接上前一个响应未完成，后面只能等。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Node 服务端与客户端复用</span><em>javascript</em><button class="ccopy">复制</button></div><pre><code>const http = require(&#x27;node:http&#x27;);
+
+// 服务端：空闲超时要大于前面负载均衡的空闲超时（AWS ALB 默认 60 秒）
+// 否则后端先关连接，均衡器复用到已关闭的连接会返回 502
+const server = http.createServer((req, res) =&gt; res.end(&#x27;ok&#x27;));
+server.keepAliveTimeout = 65_000;  // Node 默认值为 5 秒
+server.headersTimeout = 66_000;    // 旧版 Node 中需大于 keepAliveTimeout
+server.listen(3000);
+
+// 客户端：显式启用连接复用并限制每个主机的并发连接
+const agent = new http.Agent({ keepAlive: true, maxSockets: 50 });
+
+function ping() {
+  http.get({ host: &#x27;localhost&#x27;, port: 3000, path: &#x27;/&#x27;, agent }, (res) =&gt; {
+    res.resume();  // 必须读完响应体，连接才会被放回池中复用
+  });
+}
+ping(); ping(); // 第二次请求复用第一次的连接
+
+// Python 对应：requests.Session() 会自动复用连接</code></pre></div><p class="cnote">后端空闲超时大于上游；客户端用 Agent 复用，并读完响应体以归还连接。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见组件的空闲超时默认值</h3><div class="tw"><table><thead><tr><th>组件</th><th>参数</th><th>默认值</th></tr></thead><tbody><tr><td data-h="组件">Nginx</td><td data-h="参数">keepalive_timeout</td><td data-h="默认值">75 秒</td></tr><tr><td data-h="组件">Node.js http.Server</td><td data-h="参数">keepAliveTimeout</td><td data-h="默认值">5 秒</td></tr><tr><td data-h="组件">AWS ALB</td><td data-h="参数">连接空闲超时</td><td data-h="默认值">60 秒</td></tr><tr><td data-h="组件">Apache httpd</td><td data-h="参数">KeepAliveTimeout</td><td data-h="默认值">5 秒</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>长空闲超时</h4><p><b class="k-p">优点</b>复用率高，握手少</p><p><b class="k-c">代价</b>占用更多文件描述符与内存</p><p><b class="k-w">适用</b>客户端少、请求频繁</p></div><div class="trd"><h4>短空闲超时</h4><p><b class="k-p">优点</b>快速释放空闲资源</p><p><b class="k-c">代价</b>频繁重连，延迟上升</p><p><b class="k-w">适用</b>海量低频客户端</p></div><div class="trd"><h4>升级到 HTTP/2</h4><p><b class="k-p">优点</b>一条连接并发多请求</p><p><b class="k-c">代价</b>需 TLS 与组件支持</p><p><b class="k-w">适用</b>浏览器访问、多请求并发</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>后端空闲超时短于负载均衡，偶发 502</p><p class="fix"><b>✓</b>后端超时设为大于上游空闲超时</p></li><li><p class="bad"><b>✗</b>客户端没读完响应体，连接无法复用</p><p class="fix"><b>✓</b>总是消费或丢弃完整响应体</p></li><li><p class="bad"><b>✗</b>每次请求 new 一个 HTTP 客户端</p><p class="fix"><b>✓</b>全局复用客户端/Session 及其连接池</p></li><li><p class="bad"><b>✗</b>把 TCP keepalive 当作 HTTP keep-alive 调</p><p class="fix"><b>✓</b>区分两层，各自按需配置</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>各跳空闲超时按链路递增配置</span></label></li><li><label><input type="checkbox"><span>服务调用方复用全局客户端</span></label></li><li><label><input type="checkbox"><span>连接池大小有上限与监控</span></label></li><li><label><input type="checkbox"><span>代理到后端也启用长连接</span></label></li><li><label><input type="checkbox"><span>压测确认无偶发 502/ECONNRESET</span></label></li><li><label><input type="checkbox"><span>滚动发布时连接能平滑关闭</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么负载均衡后偶发 502？</summary><p>常见原因是后端空闲超时短于均衡器：后端关闭空闲连接的同时，均衡器正好在这条连接上转发新请求，收到 RST 就返回 502。把后端 keep-alive 超时设得比均衡器更长即可解决。</p></details><details class="iv"><summary>HTTP Keep-Alive 与 TCP Keepalive 的区别？</summary><p>HTTP Keep-Alive 指连接在请求之间保持打开以供复用，由应用层空闲超时控制。TCP Keepalive 是内核在长时间无数据时发送探测包，检测对端是否存活、维持 NAT 映射。两者独立。</p></details><details class="iv"><summary>有了 keep-alive 为什么还需要 HTTP/2？</summary><p>HTTP/1.1 持久连接上请求只能串行，前一个响应慢会阻塞后面（队头阻塞），浏览器只好对同一主机开多条连接。HTTP/2 在一条连接上多路复用多个流，并压缩头部。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Keep-Alive" target="_blank" rel="noopener"><b>MDN: Keep-Alive</b><small>developer.mozilla.org ↗</small></a></li><li><a href="https://www.rfc-editor.org/rfc/rfc9112" target="_blank" rel="noopener"><b>RFC 9112: HTTP/1.1</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://nodejs.org/api/http.html" target="_blank" rel="noopener"><b>Node.js: http 模块</b><small>nodejs.org ↗</small></a></li><li><a href="https://nginx.org/en/docs/http/ngx_http_core_module.html#keepalive_timeout" target="_blank" rel="noopener"><b>NGINX: keepalive_timeout</b><small>nginx.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="dns-propagation.pro.html" rel="prev"><small>‹ 上一个</small><b>📮 DNS缓存传播延迟</b></a><a class="pn next" href="http-2.pro.html" rel="next"><small>下一个 ›</small><b>🛣️ 第二代超文本传输协议</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

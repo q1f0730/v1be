@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="零样本提示 (Zero-shot) 专业模式：零样本提示（Zero-shot Prompting）指只给任务说明、不提供任何输入输出示例，依赖模型预训练与指令微调获得的泛化能力完成任务。它是提示工程的基线方">
+<title>🎓 零样本提示 (Zero-shot) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l1" id="main" data-slug="zero-shot-prompting" data-answer="0" data-prev="knowledge-cutoff.pro.html" data-next="max-output-tokens.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l1.html#ai">🌱 初级 · 🤖 AI 与提示词</a><span>›</span><a href="zero-shot-prompting.html">零样本提示 (Zero-shot)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.57 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="knowledge-cutoff.pro.html" rel="prev"><small>‹ 上一个</small><b>📅 知识截止日期</b></a><a class="pn next" href="max-output-tokens.pro.html" rel="next"><small>下一个 ›</small><b>✂️ 最大输出长度 (max_tokens)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🎯</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌱 初级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>零样本提示 (Zero-shot)</h1><p class="en">Zero-Shot Prompting</p>
+    <div class="hbtns"><a class="prosw back" href="zero-shot-prompting.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">零样本提示（Zero-shot Prompting）指只给任务说明、不提供任何输入输出示例，依赖模型预训练与指令微调获得的泛化能力完成任务。它是提示工程的基线方法：成本最低、最易维护；当输出格式或判定标准模糊时，再升级为少样本（Few-shot）、思维链或结构化输出约束。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>提示只包含角色/上下文、任务描述、约束与输出格式，不含示例对。</p></li><li><span class="sn">2</span><p>指令微调（Instruction Tuning）与 RLHF 让模型学会遵循自然语言指令，这是零样本可行的前提。</p></li><li><span class="sn">3</span><p>模型依据任务描述在其已学分布中匹配最相近的任务模式并生成结果。</p></li><li><span class="sn">4</span><p>可叠加零样本思维链（如加入「请逐步思考」）提升推理类任务表现，推理模型则通常内置此过程。</p></li><li><span class="sn">5</span><p>评估零样本基线后，若格式漂移或边界判定不稳，再引入示例、JSON Schema 或拆分任务。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>少样本 (Few-shot)</dt><dd>在提示中给出若干输入输出示例，让模型照样模仿。</dd></div><div class="term"><dt>上下文学习 (In-context Learning)</dt><dd>不更新权重，仅凭提示中的信息适应新任务的能力。</dd></div><div class="term"><dt>零样本思维链 (Zero-shot CoT)</dt><dd>不给示例，仅加入逐步推理指令以引导中间推理。</dd></div><div class="term"><dt>指令微调 (Instruction Tuning)</dt><dd>用大量指令-回答数据微调，使模型更会遵循指令。</dd></div><div class="term"><dt>基线 (Baseline)</dt><dd>最简单方案的效果，用于衡量后续复杂改进是否值得。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>零样本分类 + 固定格式</span><em>python</em><button class="ccopy">复制</button></div><pre><code># pip install openai
+from openai import OpenAI
+
+client = OpenAI()  # 读取环境变量 OPENAI_API_KEY
+
+review = &quot;物流很快，但包装有点破&quot;
+resp = client.chat.completions.create(
+    model=&quot;gpt-4o-mini&quot;,  # 换成你在用的模型
+    temperature=0,        # 分类任务降低随机性
+    messages=[
+        {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: &quot;你是电商评价分类器。&quot;},
+        {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: (
+            &quot;把评价分为 正面/中性/负面 之一。\n&quot;
+            &quot;判定标准：同时有褒贬时选 中性。\n&quot;
+            &quot;只输出类别，不要解释。\n&quot;
+            f&quot;评价：{review}&quot;
+        )},
+    ],
+)
+print(resp.choices[0].message.content)</code></pre></div><p class="cnote">零样本靠写清判定标准和输出格式取胜；没有示例时，边界规则必须用文字说明。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">提示方式选型</h3><div class="tw"><table><thead><tr><th>方式</th><th>Token 成本</th><th>稳定性</th><th>典型用途</th></tr></thead><tbody><tr><td data-h="方式">零样本</td><td data-h="Token 成本">最低</td><td data-h="稳定性">依赖指令清晰度</td><td data-h="典型用途">通用问答、常见分类</td></tr><tr><td data-h="方式">少样本</td><td data-h="Token 成本">中</td><td data-h="稳定性">格式更稳</td><td data-h="典型用途">特殊格式、风格模仿</td></tr><tr><td data-h="方式">零样本 + CoT</td><td data-h="Token 成本">中（输出变长）</td><td data-h="稳定性">推理更好</td><td data-h="典型用途">数学、多步推理</td></tr><tr><td data-h="方式">结构化输出</td><td data-h="Token 成本">低</td><td data-h="稳定性">格式可保证</td><td data-h="典型用途">需机器解析的结果</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>纯零样本</h4><p><b class="k-p">优点</b>提示短、易维护、成本低</p><p><b class="k-c">代价</b>边界与格式可能漂移</p><p><b class="k-w">适用</b>任务常见、标准清晰</p></div><div class="trd"><h4>加少量示例</h4><p><b class="k-p">优点</b>格式与判定更一致</p><p><b class="k-c">代价</b>占 Token，示例偏差会被放大</p><p><b class="k-w">适用</b>零样本评估不达标时</p></div><div class="trd"><h4>零样本 + Schema 约束</h4><p><b class="k-p">优点</b>格式由 API 保证</p><p><b class="k-c">代价</b>只管结构不管内容对错</p><p><b class="k-w">适用</b>结果要被程序解析</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>任务描述含糊（如「整理一下」）却期待特定格式</p><p class="fix"><b>✓</b>明确输出格式、字段与长度，必要时给 Schema</p></li><li><p class="bad"><b>✗</b>没测零样本基线就堆示例和复杂提示</p><p class="fix"><b>✓</b>先建小评测集测零样本，再按收益逐步加料</p></li><li><p class="bad"><b>✗</b>边界情况全靠模型猜</p><p class="fix"><b>✓</b>用规则写出边界判定（如褒贬并存归中性）</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>任务、约束、输出格式三者都写明</span></label></li><li><label><input type="checkbox"><span>边界情况有文字判定规则</span></label></li><li><label><input type="checkbox"><span>确定性任务已调低 temperature</span></label></li><li><label><input type="checkbox"><span>用小评测集测过零样本基线</span></label></li><li><label><input type="checkbox"><span>需解析的输出使用结构化输出</span></label></li><li><label><input type="checkbox"><span>提示已版本化，便于对比改动</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>零样本能力从何而来？</summary><p>预训练让模型见过海量任务形态；指令微调与人类反馈对齐让它学会把自然语言指令映射到相应行为。因此无需示例也能执行常见任务，但对罕见格式或私有标准仍需示例或约束。</p></details><details class="iv"><summary>什么时候从零样本升级到少样本？</summary><p>评测发现格式不稳定、边界判定不一致，或任务带有难以用文字描述的风格时。升级后要对比准确率与 Token 成本，并注意示例的分布、顺序和标签平衡，避免模型偏向某类。</p></details><details class="iv"><summary>对推理模型还需要「请逐步思考」吗？</summary><p>通常收益有限：推理模型已内置思考过程，部分厂商文档也建议直接给清晰目标而非手动写思维链。更有效的是给足上下文、明确约束和验收标准。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://arxiv.org/abs/2005.14165" target="_blank" rel="noopener"><b>Brown et al. 2020：Language Models are Few-Shot Learners</b><small>arxiv.org ↗</small></a></li><li><a href="https://arxiv.org/abs/2205.11916" target="_blank" rel="noopener"><b>Kojima et al. 2022：LLMs are Zero-Shot Reasoners</b><small>arxiv.org ↗</small></a></li><li><a href="https://www.promptingguide.ai/techniques/zeroshot" target="_blank" rel="noopener"><b>Prompt Engineering Guide：Zero-shot</b><small>promptingguide.ai ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="knowledge-cutoff.pro.html" rel="prev"><small>‹ 上一个</small><b>📅 知识截止日期</b></a><a class="pn next" href="max-output-tokens.pro.html" rel="next"><small>下一个 ›</small><b>✂️ 最大输出长度 (max_tokens)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

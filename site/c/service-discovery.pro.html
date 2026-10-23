@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="服务发现 专业模式：服务发现（Service Discovery）是在动态环境中把逻辑服务名解析为当前可用实例地址的机制，属于分布式系统的网络与控制面层。容器和自动扩缩让实例 IP">
+<title>🎓 服务发现 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="service-discovery" data-answer="0" data-prev="timeouts-and-deadlines.pro.html" data-next="static-site-generation.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#dist">🔮 高级 · 🕸️ 分布式</a><span>›</span><a href="service-discovery.html">服务发现</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.371 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="timeouts-and-deadlines.pro.html" rel="prev"><small>‹ 上一个</small><b>⏱️ 超时与截止时间传播</b></a><a class="pn next" href="static-site-generation.pro.html" rel="next"><small>下一个 ›</small><b>🏗️ 静态生成与增量再生 (SSG / ISR)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🧭</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>服务发现</h1><p class="en">Service Discovery</p>
+    <div class="hbtns"><a class="prosw back" href="service-discovery.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">服务发现（Service Discovery）是在动态环境中把逻辑服务名解析为当前可用实例地址的机制，属于分布式系统的网络与控制面层。容器和自动扩缩让实例 IP 随时变化，服务发现通过注册表、健康检查和解析（DNS、API 或代理）让调用方无需写死地址。Kubernetes Service、Consul、etcd 是常见实现。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>实例启动后注册到注册表（自注册或由平台/第三方代为注册），记录服务名、地址、端口与元数据。</p></li><li><span class="sn">2</span><p>注册表通过心跳、TTL 或主动健康检查维护实例状态，不健康实例被剔除。</p></li><li><span class="sn">3</span><p>客户端发现：调用方查询注册表获得实例列表，自行做负载均衡选择目标。</p></li><li><span class="sn">4</span><p>服务端发现：调用方请求一个稳定入口（负载均衡器、K8s Service 虚拟 IP、Sidecar 代理），由它转发。</p></li><li><span class="sn">5</span><p>Kubernetes 中 CoreDNS 把 Service 名解析为 ClusterIP，EndpointSlice 记录后端 Pod，kube-proxy 或 eBPF 负责转发。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>注册表 (Service Registry)</dt><dd>保存服务名到实例地址映射的数据库，需高可用。</dd></div><div class="term"><dt>客户端发现 (Client-side Discovery)</dt><dd>调用方直接查询注册表并自行负载均衡。</dd></div><div class="term"><dt>服务端发现 (Server-side Discovery)</dt><dd>调用方访问固定入口，由路由层选择实例。</dd></div><div class="term"><dt>EndpointSlice</dt><dd>Kubernetes 中记录 Service 后端 Pod 地址的资源。</dd></div><div class="term"><dt>Headless Service</dt><dd>不分配 ClusterIP 的 Service，DNS 直接返回各 Pod 地址。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Kubernetes Service 与 DNS 访问</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code># 为带 app=orders 标签的 Pod 提供稳定的服务名
+apiVersion: v1
+kind: Service
+metadata:
+  name: orders
+  namespace: shop
+spec:
+  selector:
+    app: orders        # 只把就绪（Ready）的匹配 Pod 加入后端
+  ports:
+    - port: 80
+      targetPort: 8080
+# 同命名空间内访问：http://orders
+# 跨命名空间访问：http://orders.shop.svc.cluster.local
+# Pod 扩缩或重建后 IP 变化，调用方地址不变</code></pre></div><p class="cnote">Service 以标签选择后端 Pod，结合 readiness 探针剔除未就绪实例，DNS 名保持不变。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">服务发现实现对比</h3><div class="tw"><table><thead><tr><th>实现</th><th>模式</th><th>特点</th></tr></thead><tbody><tr><td data-h="实现">Kubernetes Service + DNS</td><td data-h="模式">服务端发现</td><td data-h="特点">平台内置，零代码</td></tr><tr><td data-h="实现">Consul</td><td data-h="模式">注册表 + DNS/API</td><td data-h="特点">支持多数据中心与健康检查</td></tr><tr><td data-h="实现">etcd / ZooKeeper</td><td data-h="模式">强一致 KV 存储</td><td data-h="特点">常作底层，需自行封装</td></tr><tr><td data-h="实现">服务网格（Istio 等）</td><td data-h="模式">Sidecar 代理</td><td data-h="特点">附带重试、熔断、mTLS</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>DNS 解析</h4><p><b class="k-p">优点</b>通用、语言无关</p><p><b class="k-c">代价</b>TTL 与客户端缓存导致更新滞后</p><p><b class="k-w">适用</b>平台内服务调用</p></div><div class="trd"><h4>客户端发现 + SDK</h4><p><b class="k-p">优点</b>可做智能负载均衡</p><p><b class="k-c">代价</b>每种语言需 SDK，耦合注册表</p><p><b class="k-w">适用</b>单语言、需精细路由</p></div><div class="trd"><h4>服务网格</h4><p><b class="k-p">优点</b>统一流量治理与可观测</p><p><b class="k-c">代价</b>增加延迟与运维复杂度</p><p><b class="k-w">适用</b>大量微服务、多语言</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>代码或配置中写死 Pod/虚拟机 IP</p><p class="fix"><b>✓</b>通过服务名访问，地址交给平台解析</p></li><li><p class="bad"><b>✗</b>客户端长期缓存 DNS 结果，不随实例变化更新</p><p class="fix"><b>✓</b>遵守 TTL，长连接定期重建或使用支持重解析的客户端</p></li><li><p class="bad"><b>✗</b>只注册不做健康检查，故障实例仍接收流量</p><p class="fix"><b>✓</b>配置 readiness/健康检查，失败即摘除</p></li><li><p class="bad"><b>✗</b>注册表单点部署</p><p class="fix"><b>✓</b>注册表多副本、跨可用区部署，客户端有缓存兜底</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>服务间调用全部使用服务名</span></label></li><li><label><input type="checkbox"><span>实例有就绪/健康检查</span></label></li><li><label><input type="checkbox"><span>注册表或控制面高可用</span></label></li><li><label><input type="checkbox"><span>DNS 缓存与长连接策略已评估</span></label></li><li><label><input type="checkbox"><span>跨命名空间/集群访问规则明确</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>客户端发现与服务端发现的优缺点？</summary><p>客户端发现少一跳、可定制负载均衡，但每个语言要实现并与注册表耦合；服务端发现对调用方透明、语言无关，但多一个转发组件，需保证其高可用与性能。</p></details><details class="iv"><summary>Kubernetes 中访问一个 Service 发生了什么？</summary><p>Pod 通过 CoreDNS 把服务名解析为 ClusterIP；发往该 IP 的流量被 kube-proxy 规则（iptables/IPVS）或 eBPF 转换到 EndpointSlice 中某个就绪 Pod 的地址。</p></details><details class="iv"><summary>为什么基于 DNS 的发现会出现流量不均？</summary><p>客户端或运行时缓存 DNS 结果，长连接（HTTP/2、gRPC）建立后长期复用同一后端；新扩容实例收不到流量。需要客户端负载均衡、连接定期轮换或 L7 代理。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://kubernetes.io/docs/concepts/services-networking/service/" target="_blank" rel="noopener"><b>Kubernetes 文档：Service</b><small>kubernetes.io ↗</small></a></li><li><a href="https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/" target="_blank" rel="noopener"><b>Kubernetes 文档：DNS for Services and Pods</b><small>kubernetes.io ↗</small></a></li><li><a href="https://microservices.io/patterns/service-registry.html" target="_blank" rel="noopener"><b>microservices.io：Service registry</b><small>microservices.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="timeouts-and-deadlines.pro.html" rel="prev"><small>‹ 上一个</small><b>⏱️ 超时与截止时间传播</b></a><a class="pn next" href="static-site-generation.pro.html" rel="next"><small>下一个 ›</small><b>🏗️ 静态生成与增量再生 (SSG / ISR)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="特性开关 专业模式：特性开关（Feature Flags / Feature Toggles）是在运行时通过配置决定某段代码路径是否启用的技术，让「部署代码」与「发布功能」解耦。它">
+<title>🎓 特性开关 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="feature-flags" data-answer="0" data-prev="rollbacks.pro.html" data-next="staging-environments.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#devops">🌊 中级 · 🔭 可观测与交付</a><span>›</span><a href="feature-flags.html">特性开关</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.149 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="rollbacks.pro.html" rel="prev"><small>‹ 上一个</small><b>⏪ 版本快速回滚机制</b></a><a class="pn next" href="staging-environments.pro.html" rel="next"><small>下一个 ›</small><b>🎭 预发布/准生产环境</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🎚️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>特性开关</h1><p class="en">Feature Flags</p>
+    <div class="hbtns"><a class="prosw back" href="feature-flags.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">特性开关（Feature Flags / Feature Toggles）是在运行时通过配置决定某段代码路径是否启用的技术，让「部署代码」与「发布功能」解耦。它位于应用与发布管理层，支持灰度放量、A/B 实验、按用户或租户定向、紧急关停，也是主干开发（Trunk-Based Development）的配套手段。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>代码中在新功能入口处调用开关判断，传入用户 ID、地区、套餐等评估上下文。</p></li><li><span class="sn">2</span><p>开关定义存放在配置中心或开关服务，包含默认值、定向规则与放量百分比。</p></li><li><span class="sn">3</span><p>SDK 拉取或订阅规则并缓存在本地，判断在进程内完成，避免每次网络调用。</p></li><li><span class="sn">4</span><p>百分比放量通过对用户 ID 哈希分桶实现，保证同一用户结果稳定。</p></li><li><span class="sn">5</span><p>功能全量且稳定后，删除开关判断代码与配置，避免长期积累成技术债。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>发布开关 (Release Toggle)</dt><dd>短期存在，用于逐步放出未完成或新功能。</dd></div><div class="term"><dt>运维开关 (Ops Toggle / Kill Switch)</dt><dd>出现问题时快速关闭某功能或降级。</dd></div><div class="term"><dt>实验开关 (Experiment Toggle)</dt><dd>把用户分组做 A/B 测试。</dd></div><div class="term"><dt>定向规则 (Targeting Rule)</dt><dd>按属性决定哪些用户看到哪个变体。</dd></div><div class="term"><dt>OpenFeature</dt><dd>CNCF 下的厂商中立特性开关 API 标准。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>稳定哈希的百分比放量</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import hashlib
+
+FLAGS = {
+    &quot;new_checkout&quot;: {&quot;enabled&quot;: True, &quot;rollout&quot;: 20,  # 20% 用户
+                     &quot;allow&quot;: {&quot;tenant_internal&quot;}},   # 内部租户全开
+}
+
+def bucket(flag: str, user_id: str) -&gt; int:
+    &quot;&quot;&quot;同一用户对同一开关总落在同一个桶（0-99）&quot;&quot;&quot;
+    h = hashlib.sha256(f&quot;{flag}:{user_id}&quot;.encode()).hexdigest()
+    return int(h[:8], 16) % 100
+
+def is_enabled(flag: str, user_id: str, tenant: str) -&gt; bool:
+    cfg = FLAGS.get(flag)
+    if not cfg or not cfg[&quot;enabled&quot;]:   # 总开关，也是紧急关停入口
+        return False
+    if tenant in cfg[&quot;allow&quot;]:
+        return True
+    return bucket(flag, user_id) &lt; cfg[&quot;rollout&quot;]
+
+if is_enabled(&quot;new_checkout&quot;, user_id=&quot;u_42&quot;, tenant=&quot;acme&quot;):
+    pass  # 新结账流程
+else:
+    pass  # 旧流程</code></pre></div><p class="cnote">哈希里带上开关名，不同开关的放量人群互相独立；enabled 兼作紧急关停。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">开关类型与生命周期</h3><div class="tw"><table><thead><tr><th>类型</th><th>存续时间</th><th>变更频率</th><th>谁来控制</th></tr></thead><tbody><tr><td data-h="类型">发布开关</td><td data-h="存续时间">数天到数周</td><td data-h="变更频率">放量期间频繁</td><td data-h="谁来控制">研发</td></tr><tr><td data-h="类型">实验开关</td><td data-h="存续时间">数周</td><td data-h="变更频率">实验期内固定</td><td data-h="谁来控制">产品/数据</td></tr><tr><td data-h="类型">运维开关</td><td data-h="存续时间">长期</td><td data-h="变更频率">故障时</td><td data-h="谁来控制">SRE/值班</td></tr><tr><td data-h="类型">权限开关</td><td data-h="存续时间">长期</td><td data-h="变更频率">按客户</td><td data-h="谁来控制">商务/产品</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>配置文件/环境变量</h4><p><b class="k-p">优点</b>零依赖，简单</p><p><b class="k-c">代价</b>改动需重启或发布，无定向</p><p><b class="k-w">适用</b>少量全局开关</p></div><div class="trd"><h4>自建开关服务</h4><p><b class="k-p">优点</b>完全可控，数据不出域</p><p><b class="k-c">代价</b>需维护 UI、SDK、审计</p><p><b class="k-w">适用</b>有平台团队、合规要求高</p></div><div class="trd"><h4>托管开关平台</h4><p><b class="k-p">优点</b>定向、实验、审计开箱即用</p><p><b class="k-c">代价</b>费用与供应商依赖</p><p><b class="k-w">适用</b>希望快速获得完整能力</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>开关全量后从不清理，代码里分支越来越多</p><p class="fix"><b>✓</b>为发布开关设到期时间，全量后建任务删除</p></li><li><p class="bad"><b>✗</b>用随机数决定放量，用户每次刷新结果不同</p><p class="fix"><b>✓</b>对用户 ID 做稳定哈希分桶</p></li><li><p class="bad"><b>✗</b>开关服务不可用时功能行为未定义</p><p class="fix"><b>✓</b>SDK 本地缓存规则，并为每个开关设定安全默认值</p></li><li><p class="bad"><b>✗</b>开关嵌套组合太多，测试覆盖不到</p><p class="fix"><b>✓</b>限制同时存在的开关数量，关键组合写自动化测试</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个开关有负责人与到期时间</span></label></li><li><label><input type="checkbox"><span>开关服务故障时有安全默认值</span></label></li><li><label><input type="checkbox"><span>放量基于稳定哈希</span></label></li><li><label><input type="checkbox"><span>开关变更有审计日志</span></label></li><li><label><input type="checkbox"><span>关键功能有一键关停开关</span></label></li><li><label><input type="checkbox"><span>全量后清理开关代码</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>特性开关如何支持主干开发？</summary><p>未完成的功能也能合入主干并部署，只是开关关闭，不影响用户。这样避免长期分支带来的合并冲突，发布节奏与开发节奏解耦，同时可在生产上对内部人员先开启验证。</p></details><details class="iv"><summary>开关评估应该放在服务端还是客户端？</summary><p>服务端评估规则不外泄、结果可信；客户端评估响应快但规则与定向属性暴露给用户。敏感或付费功能必须服务端判定，前端开关仅用于展示层。</p></details><details class="iv"><summary>特性开关和 A/B 实验有什么关系？</summary><p>实验依赖开关做分组曝光，但还需要稳定分流、曝光埋点、指标统计与显著性分析。普通开关只决定开或关，实验关心的是不同变体对指标的因果影响。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://martinfowler.com/articles/feature-toggles.html" target="_blank" rel="noopener"><b>Martin Fowler：Feature Toggles</b><small>martinfowler.com ↗</small></a></li><li><a href="https://openfeature.dev/" target="_blank" rel="noopener"><b>OpenFeature 官网</b><small>openfeature.dev ↗</small></a></li><li><a href="https://trunkbaseddevelopment.com/feature-flags/" target="_blank" rel="noopener"><b>Trunk Based Development：Feature Flags</b><small>trunkbaseddevelopment.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="rollbacks.pro.html" rel="prev"><small>‹ 上一个</small><b>⏪ 版本快速回滚机制</b></a><a class="pn next" href="staging-environments.pro.html" rel="next"><small>下一个 ›</small><b>🎭 预发布/准生产环境</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

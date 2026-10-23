@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="内存泄漏 专业模式：内存泄漏（Memory Leak）指程序持续保留已不再需要的内存，使占用随运行时间单调增长，最终导致性能下降、频繁 GC 或被 OOM 终止。在 C/C++ 中">
+<title>🎓 内存泄漏 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="memory-leaks" data-answer="0" data-prev="load-testing.pro.html" data-next="oom-killer.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sre">🔮 高级 · 🩺 高可用 SRE</a><span>›</span><a href="memory-leaks.html">内存泄漏</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.312 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="load-testing.pro.html" rel="prev"><small>‹ 上一个</small><b>🏋️ 负载与压力测试</b></a><a class="pn next" href="oom-killer.pro.html" rel="next"><small>下一个 ›</small><b>🔪 内存溢出强制终结</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🍽️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>内存泄漏</h1><p class="en">Memory Leaks</p>
+    <div class="hbtns"><a class="prosw back" href="memory-leaks.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">内存泄漏（Memory Leak）指程序持续保留已不再需要的内存，使占用随运行时间单调增长，最终导致性能下降、频繁 GC 或被 OOM 终止。在 C/C++ 中常因忘记释放；在带垃圾回收的语言里，多因对象仍被意外引用，如无界缓存、未注销的监听器、全局集合和闭包。排查依赖堆快照对比和分配追踪。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>程序分配对象，并在某处保留引用，例如放进全局字典、缓存或事件监听列表。</p></li><li><span class="sn">2</span><p>业务上对象已不再使用，但引用仍在，垃圾回收器认为它可达，无法回收。</p></li><li><span class="sn">3</span><p>随请求或时间累积，常驻内存持续上升，GC 频率和停顿时间增加。</p></li><li><span class="sn">4</span><p>内存达到容器限制或系统上限，进程被 OOM Killer 杀掉或抛出内存溢出错误。</p></li><li><span class="sn">5</span><p>排查：在不同时刻取堆快照对比增长最多的对象类型，追溯保留它们的引用链。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>常驻内存 (RSS)</dt><dd>进程实际占用的物理内存，是观察泄漏的常用指标。</dd></div><div class="term"><dt>堆快照 (Heap Snapshot)</dt><dd>某时刻堆上所有对象及引用关系的记录，用于对比分析。</dd></div><div class="term"><dt>保留路径 (Retainer Path)</dt><dd>从 GC 根到某对象的引用链，解释它为何不能被回收。</dd></div><div class="term"><dt>弱引用 (Weak Reference)</dt><dd>不阻止对象被回收的引用，可用于缓存和映射。</dd></div><div class="term"><dt>内存碎片 (Fragmentation)</dt><dd>空闲内存分散导致 RSS 偏高，不一定是泄漏。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>tracemalloc 对比快照</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import tracemalloc
+
+_cache = {}  # 无界缓存：典型泄漏源
+
+def handle(request_id: int):
+    _cache[request_id] = &quot;x&quot; * 10_000  # 每个请求都存，从不清理
+
+tracemalloc.start()
+before = tracemalloc.take_snapshot()
+
+for i in range(5_000):
+    handle(i)
+
+after = tracemalloc.take_snapshot()
+# 按代码行统计增长最多的分配位置
+for stat in after.compare_to(before, &quot;lineno&quot;)[:3]:
+    print(stat)
+
+# 修复思路：用有上限的缓存，如 functools.lru_cache(maxsize=1024)
+# 或 cachetools.TTLCache，确保旧条目会被淘汰</code></pre></div><p class="cnote">对比前后快照，直接定位到持续分配却不释放的代码行。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见泄漏来源</h3><div class="tw"><table><thead><tr><th>来源</th><th>语言/环境</th><th>修复</th></tr></thead><tbody><tr><td data-h="来源">无界缓存或全局集合</td><td data-h="语言/环境">各类语言</td><td data-h="修复">设上限与过期，使用 LRU/TTL</td></tr><tr><td data-h="来源">未移除的事件监听器</td><td data-h="语言/环境">JavaScript/Node.js</td><td data-h="修复">组件销毁时 removeEventListener</td></tr><tr><td data-h="来源">未关闭的连接或文件句柄</td><td data-h="语言/环境">各类语言</td><td data-h="修复">使用 with/try-finally 或连接池</td></tr><tr><td data-h="来源">未释放的手动分配</td><td data-h="语言/环境">C/C++</td><td data-h="修复">RAII、智能指针、ASan/Valgrind 检测</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>定期重启进程</h4><p><b class="k-p">优点</b>立即缓解</p><p><b class="k-c">代价</b>掩盖问题，根因仍在</p><p><b class="k-w">适用</b>临时止血，排查期间</p></div><div class="trd"><h4>堆快照分析</h4><p><b class="k-p">优点</b>能定位根因</p><p><b class="k-c">代价</b>取快照有停顿，生产需谨慎</p><p><b class="k-w">适用</b>可复现或在预发环境</p></div><div class="trd"><h4>持续内存剖析</h4><p><b class="k-p">优点</b>线上长期可见</p><p><b class="k-c">代价</b>有一定性能开销</p><p><b class="k-w">适用</b>内存敏感的长期运行服务</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>看到内存升高就断定泄漏，实际是缓存预热或 GC 未触发。</p><p class="fix"><b>✓</b>观察长时间趋势和 GC 后的基线是否持续上升。</p></li><li><p class="bad"><b>✗</b>用定时重启长期掩盖泄漏。</p><p class="fix"><b>✓</b>重启只作临时措施，同时安排定位和修复。</p></li><li><p class="bad"><b>✗</b>把请求级数据挂在全局单例上。</p><p class="fix"><b>✓</b>请求数据随请求生命周期释放，全局对象只放共享只读数据。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>内存使用有长期趋势监控</span></label></li><li><label><input type="checkbox"><span>所有缓存都有大小上限或过期</span></label></li><li><label><input type="checkbox"><span>连接与文件句柄确保关闭</span></label></li><li><label><input type="checkbox"><span>浸泡测试覆盖长时间运行</span></label></li><li><label><input type="checkbox"><span>知道如何在本服务取堆快照</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>有 GC 的语言为什么还会内存泄漏？</summary><p>GC 只回收不可达对象。如果对象业务上已无用但仍被引用，比如放在全局字典、未注销的监听器、闭包捕获或无界缓存里，它就始终可达，不会被回收，内存持续增长。</p></details><details class="iv"><summary>线上怀疑内存泄漏，如何排查？</summary><p>先看监控确认 GC 后基线持续上升而非正常波动；找出与上升相关的版本或流量；在预发复现，间隔取两次以上堆快照对比增长对象；顺着保留路径找到持有引用的代码；修复后用浸泡测试验证。</p></details><details class="iv"><summary>内存上涨一定是泄漏吗？</summary><p>不一定。缓存预热、负载增加、GC 策略延迟回收、内存碎片或分配器不把内存归还系统都会让 RSS 偏高。判断泄漏要看负载稳定时内存是否无上限地持续增长。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.python.org/3/library/tracemalloc.html" target="_blank" rel="noopener"><b>Python 文档：tracemalloc</b><small>docs.python.org ↗</small></a></li><li><a href="https://nodejs.org/en/learn/diagnostics/memory" target="_blank" rel="noopener"><b>Node.js：Memory diagnostics</b><small>nodejs.org ↗</small></a></li><li><a href="https://developer.chrome.com/docs/devtools/memory-problems" target="_blank" rel="noopener"><b>Chrome DevTools：Fix memory problems</b><small>developer.chrome.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="load-testing.pro.html" rel="prev"><small>‹ 上一个</small><b>🏋️ 负载与压力测试</b></a><a class="pn next" href="oom-killer.pro.html" rel="next"><small>下一个 ›</small><b>🔪 内存溢出强制终结</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

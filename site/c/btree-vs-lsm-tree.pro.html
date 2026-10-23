@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="B+ 树与 LSM 树 专业模式：B+ 树与 LSM 树（Log-Structured Merge-Tree）是两类主流存储引擎索引结构。B+ 树原地更新有序页，读取路径短而稳定，代表为 Inn">
+<title>🎓 B+ 树与 LSM 树 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="btree-vs-lsm-tree" data-answer="0" data-prev="write-ahead-log.pro.html" data-next="expand-contract-migrations.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#db">🔥 进阶 · 🗄️ 数据库</a><span>›</span><a href="btree-vs-lsm-tree.html">B+ 树与 LSM 树</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.467 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="write-ahead-log.pro.html" rel="prev"><small>‹ 上一个</small><b>📝 预写日志 (WAL)</b></a><a class="pn next" href="expand-contract-migrations.pro.html" rel="next"><small>下一个 ›</small><b>🪗 扩展-收缩式零停机迁移</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🌳</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>B+ 树与 LSM 树</h1><p class="en">B+Tree vs LSM-Tree</p>
+    <div class="hbtns"><a class="prosw back" href="btree-vs-lsm-tree.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">B+ 树与 LSM 树（Log-Structured Merge-Tree）是两类主流存储引擎索引结构。B+ 树原地更新有序页，读取路径短而稳定，代表为 InnoDB、PostgreSQL 索引；LSM 树先把写入缓冲在内存，再顺序刷成不可变有序文件并后台合并，写吞吐高，代表为 RocksDB、Cassandra。选型本质是在读放大、写放大和空间放大之间取舍。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>B+ 树：数据按键有序存放在固定大小的页中，内部节点只存键与指针，叶子节点相互链接，便于范围扫描。</p></li><li><span class="sn">2</span><p>B+ 树写入需定位叶子页原地修改，页满则分裂；配合 WAL 保证崩溃一致，随机写较多。</p></li><li><span class="sn">3</span><p>LSM 树：写入先追加 WAL，再写入内存表（memtable）；内存表满后整体刷成磁盘上的有序文件（SSTable）。</p></li><li><span class="sn">4</span><p>LSM 读取需依次查内存表和多层 SSTable，通常借助每个文件的布隆过滤器跳过不含该键的文件。</p></li><li><span class="sn">5</span><p>LSM 后台合并（compaction）把多层文件归并，丢弃被覆盖的旧值与删除标记（tombstone），回收空间并控制读放大。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>写放大 (Write Amplification)</dt><dd>实际写入存储的数据量与用户写入数据量之比。</dd></div><div class="term"><dt>读放大 (Read Amplification)</dt><dd>完成一次查询需要读取的页或文件数量。</dd></div><div class="term"><dt>SSTable</dt><dd>按键排序且写入后不可变的磁盘文件，是 LSM 树的基本存储单元。</dd></div><div class="term"><dt>分层/分级合并 (Leveled/Tiered)</dt><dd>两种 compaction 策略，前者读与空间更优，后者写放大更低。</dd></div><div class="term"><dt>墓碑 (Tombstone)</dt><dd>LSM 中表示删除的标记，合并到最底层前不能丢弃。</dd></div><div class="term"><dt>填充因子 (Fill Factor)</dt><dd>B 树页预留空间比例，影响页分裂频率与空间利用率。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>极简 LSM 写读路径</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import bisect
+class TinyLSM:
+    &quot;&quot;&quot;教学示例：内存表 + 不可变有序段，省略 WAL 与布隆过滤器&quot;&quot;&quot;
+    def __init__(self, limit=3):
+        self.mem, self.segments, self.limit = {}, [], limit
+    def put(self, k, v):            # 删除可用 v=None 作为墓碑
+        self.mem[k] = v
+        if len(self.mem) &gt;= self.limit:
+            self.segments.append(sorted(self.mem.items()))  # 刷成有序段
+            self.mem = {}
+    def get(self, k):
+        if k in self.mem:
+            return self.mem[k]
+        for seg in reversed(self.segments):        # 新段优先
+            i = bisect.bisect_left(seg, (k,))
+            if i &lt; len(seg) and seg[i][0] == k:
+                return seg[i][1]
+        return None
+    def compact(self):              # 合并所有段，新值覆盖旧值，丢弃墓碑
+        merged = {}
+        for seg in self.segments:
+            merged.update(seg)
+        self.segments = [sorted((k, v) for k, v in merged.items() if v is not None)]
+db = TinyLSM()
+for i in range(7):
+    db.put(f&quot;k{i}&quot;, i)
+db.put(&quot;k1&quot;, None)
+db.put(&quot;k2&quot;, 20)
+print(db.get(&quot;k2&quot;), len(db.segments))   # 20 3</code></pre></div><p class="cnote">可见读要查多个段（读放大），合并会重写数据（写放大），这正是 LSM 的核心取舍。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">B+ 树与 LSM 树对比</h3><div class="tw"><table><thead><tr><th>维度</th><th>B+ 树</th><th>LSM 树</th></tr></thead><tbody><tr><td data-h="维度">写入模式</td><td data-h="B+ 树">原地更新，随机写多</td><td data-h="LSM 树">追加与顺序刷盘</td></tr><tr><td data-h="维度">点查</td><td data-h="B+ 树">路径固定、延迟稳定</td><td data-h="LSM 树">可能查多层，依赖布隆过滤器</td></tr><tr><td data-h="维度">范围扫描</td><td data-h="B+ 树">叶子链表，效率高</td><td data-h="LSM 树">需多路归并</td></tr><tr><td data-h="维度">空间</td><td data-h="B+ 树">页内有碎片</td><td data-h="LSM 树">合并前存在冗余旧值</td></tr><tr><td data-h="维度">性能抖动</td><td data-h="B+ 树">页分裂</td><td data-h="LSM 树">后台合并占用 IO 与 CPU</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>B+ 树引擎</h4><p><b class="k-p">优点</b>读延迟稳定，事务与范围查询成熟</p><p><b class="k-c">代价</b>高写入下随机 IO 与页分裂开销大</p><p><b class="k-w">适用</b>读多写少、OLTP 通用业务</p></div><div class="trd"><h4>LSM 分层合并</h4><p><b class="k-p">优点</b>写吞吐高，空间与读放大较可控</p><p><b class="k-c">代价</b>合并写放大较高</p><p><b class="k-w">适用</b>写多且仍有大量点查</p></div><div class="trd"><h4>LSM 分级合并</h4><p><b class="k-p">优点</b>写放大最低</p><p><b class="k-c">代价</b>空间放大和读放大较高</p><p><b class="k-w">适用</b>写入极多、读取较少，如时序与日志</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>LSM 引擎合并跟不上写入，触发写入降速</p><p class="fix"><b>✓</b>监控待合并量，预留 IO 余量，调整合并线程与策略</p></li><li><p class="bad"><b>✗</b>大量删除后空间不回收、范围扫描变慢</p><p class="fix"><b>✓</b>理解墓碑需合并到底层才清除，必要时手动触发范围合并</p></li><li><p class="bad"><b>✗</b>B+ 树主键用随机 UUID 导致频繁页分裂</p><p class="fix"><b>✓</b>使用有序 ID（如 UUIDv7、自增）减少随机插入</p></li><li><p class="bad"><b>✗</b>只看基准写吞吐就选 LSM</p><p class="fix"><b>✓</b>按真实读写比例、点查与范围查询分布压测</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>量化业务读写比例与查询模式</span></label></li><li><label><input type="checkbox"><span>压测包含合并或页分裂期间的尾延迟</span></label></li><li><label><input type="checkbox"><span>LSM 引擎监控待合并字节数与写停顿</span></label></li><li><label><input type="checkbox"><span>B+ 树表主键尽量有序</span></label></li><li><label><input type="checkbox"><span>评估空间放大对磁盘容量的影响</span></label></li><li><label><input type="checkbox"><span>确认所选引擎的事务与备份能力</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么 LSM 树写入快？</summary><p>写入只做 WAL 追加和内存表插入，内存表满后整体顺序写成有序文件，避免了 B+ 树定位叶子页后的随机写。代价是后台合并会多次重写数据（写放大），读取可能查多个文件（读放大）。</p></details><details class="iv"><summary>布隆过滤器在 LSM 中起什么作用？</summary><p>每个 SSTable 附带布隆过滤器，点查时先判断键是否可能在该文件中。结果为「不存在」时一定不在，可直接跳过读盘，显著降低读放大。它对范围查询帮助不大，前缀布隆过滤器可部分缓解。</p></details><details class="iv"><summary>什么是 RUM 猜想，它如何指导选型？</summary><p>RUM 猜想认为读开销（Read）、更新开销（Update）和内存或空间开销（Memory）三者不能同时最优，优化其二必然牺牲第三。B+ 树偏读，LSM 偏写，不同合并策略在写放大与空间放大间移动，选型要先明确主要瓶颈。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.cs.umb.edu/~poneil/lsmtree.pdf" target="_blank" rel="noopener"><b>O&#x27;Neil et al.: The Log-Structured Merge-Tree</b><small>cs.umb.edu ↗</small></a></li><li><a href="https://github.com/facebook/rocksdb/wiki/RocksDB-Overview" target="_blank" rel="noopener"><b>RocksDB Wiki: Overview</b><small>github.com ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/B%2B_tree" target="_blank" rel="noopener"><b>Wikipedia: B+ tree</b><small>en.wikipedia.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="write-ahead-log.pro.html" rel="prev"><small>‹ 上一个</small><b>📝 预写日志 (WAL)</b></a><a class="pn next" href="expand-contract-migrations.pro.html" rel="next"><small>下一个 ›</small><b>🪗 扩展-收缩式零停机迁移</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

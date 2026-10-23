@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="版本快速回滚机制 专业模式：回滚（Rollback）是在新版本发布后出现故障时，把系统快速恢复到上一个已知良好版本的操作。它属于发布与变更管理层，前提是制品不可变、版本可追溯、数据库变更向">
+<title>🎓 版本快速回滚机制 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="rollbacks" data-answer="0" data-prev="log-levels.pro.html" data-next="feature-flags.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#devops">🌊 中级 · 🔭 可观测与交付</a><span>›</span><a href="rollbacks.html">版本快速回滚机制</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.148 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="log-levels.pro.html" rel="prev"><small>‹ 上一个</small><b>🚨 日志级别规范</b></a><a class="pn next" href="feature-flags.pro.html" rel="next"><small>下一个 ›</small><b>🎚️ 特性开关</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">⏪</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>版本快速回滚机制</h1><p class="en">Rollbacks</p>
+    <div class="hbtns"><a class="prosw back" href="rollbacks.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">回滚（Rollback）是在新版本发布后出现故障时，把系统快速恢复到上一个已知良好版本的操作。它属于发布与变更管理层，前提是制品不可变、版本可追溯、数据库变更向后兼容。回滚速度直接决定故障的平均恢复时间（MTTR），是比「修好再发」更优先的止血手段。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>每次发布产出不可变制品（镜像标签或摘要），并记录对应的部署版本历史。</p></li><li><span class="sn">2</span><p>发布后持续监控错误率、延迟等关键指标，出现异常时人工或自动触发回滚。</p></li><li><span class="sn">3</span><p>部署平台把运行版本切回上一个制品，如滚动替换为旧镜像或把流量切回旧环境。</p></li><li><span class="sn">4</span><p>代码可直接回退，但数据库结构须兼容新旧两版；不可逆迁移需用前向修复。</p></li><li><span class="sn">5</span><p>回滚后确认指标恢复正常，冻结问题版本，复盘根因后再修复并重新上线。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>MTTR</dt><dd>平均恢复时间，从故障发生到服务恢复的时长。</dd></div><div class="term"><dt>不可变制品 (Immutable Artifact)</dt><dd>构建后不再修改的产物，用摘要唯一标识。</dd></div><div class="term"><dt>蓝绿部署 (Blue-Green)</dt><dd>新旧两套环境并存，切换流量实现秒级回滚。</dd></div><div class="term"><dt>金丝雀发布 (Canary)</dt><dd>先给小比例流量验证，异常即停止扩大。</dd></div><div class="term"><dt>前向修复 (Roll Forward)</dt><dd>不回退版本，而是快速发布修复版本。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Kubernetes 回滚操作</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 查看部署历史
+kubectl rollout history deployment/api
+
+# 查看某个版本的详细配置
+kubectl rollout history deployment/api --revision=7
+
+# 回滚到上一个版本
+kubectl rollout undo deployment/api
+
+# 回滚到指定版本
+kubectl rollout undo deployment/api --to-revision=7
+
+# 观察回滚进度，直到全部 Pod 就绪
+kubectl rollout status deployment/api --timeout=5m
+
+# 发布时用镜像摘要而非 latest，保证回滚目标确定
+kubectl set image deployment/api \
+  api=registry.example.com/api@sha256:&lt;digest&gt;</code></pre></div><p class="cnote">依赖保留的 ReplicaSet 历史（revisionHistoryLimit）；镜像用不可变摘要才能准确回到旧版。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">回滚方式对比</h3><div class="tw"><table><thead><tr><th>方式</th><th>回滚速度</th><th>资源成本</th><th>适用</th></tr></thead><tbody><tr><td data-h="方式">滚动回滚</td><td data-h="回滚速度">分钟级</td><td data-h="资源成本">低</td><td data-h="适用">常规无状态服务</td></tr><tr><td data-h="方式">蓝绿切换</td><td data-h="回滚速度">秒级</td><td data-h="资源成本">需双倍资源</td><td data-h="适用">关键服务</td></tr><tr><td data-h="方式">金丝雀中止</td><td data-h="回滚速度">秒级（影响面小）</td><td data-h="资源成本">中</td><td data-h="适用">高风险变更</td></tr><tr><td data-h="方式">特性开关关闭</td><td data-h="回滚速度">秒级</td><td data-h="资源成本">低</td><td data-h="适用">功能级问题</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>立即回滚</h4><p><b class="k-p">优点</b>止血最快，降低影响</p><p><b class="k-c">代价</b>新功能暂时下线</p><p><b class="k-w">适用</b>影响用户且根因不明</p></div><div class="trd"><h4>前向修复</h4><p><b class="k-p">优点</b>保留新功能与数据变更</p><p><b class="k-c">代价</b>修复期间持续受影响</p><p><b class="k-w">适用</b>数据已不可逆或修复极简单</p></div><div class="trd"><h4>关闭特性开关</h4><p><b class="k-p">优点</b>不动部署，粒度细</p><p><b class="k-c">代价</b>需事先接入开关</p><p><b class="k-w">适用</b>问题局限于某新功能</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>使用 latest 标签，回滚后拉到的仍是新镜像</p><p class="fix"><b>✓</b>用版本号或镜像摘要部署，禁止可变标签</p></li><li><p class="bad"><b>✗</b>迁移删除了旧列，代码回滚后直接报错</p><p class="fix"><b>✓</b>遵循扩展-收缩，破坏性迁移延后到确认稳定后执行</p></li><li><p class="bad"><b>✗</b>从未演练，真出事时不会操作或权限不足</p><p class="fix"><b>✓</b>定期演练回滚并写成 runbook，保证值班可执行</p></li><li><p class="bad"><b>✗</b>只回滚代码，忘了配置或开关也一起变了</p><p class="fix"><b>✓</b>配置与代码一同版本化，回滚时同步还原</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>制品不可变且可追溯</span></label></li><li><label><input type="checkbox"><span>数据库迁移兼容上一版本</span></label></li><li><label><input type="checkbox"><span>回滚命令或按钮有文档</span></label></li><li><label><input type="checkbox"><span>发布后有关键指标观察窗口</span></label></li><li><label><input type="checkbox"><span>回滚流程定期演练</span></label></li><li><label><input type="checkbox"><span>配置变更同样可回滚</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>数据库迁移和回滚如何协调？</summary><p>让每次迁移对新旧两个版本的代码都兼容：先加列、双写、回填，代码稳定后再删旧结构。这样代码可随时回滚而不受结构影响；真正不可逆的步骤单独发布并先备份。</p></details><details class="iv"><summary>什么时候该自动回滚？</summary><p>指标明确且与发布强相关时，如金丝雀阶段错误率或延迟显著高于基线，由发布系统自动中止并回退。自动化需设置观察窗口和阈值，避免噪声误触发。</p></details><details class="iv"><summary>回滚和前向修复如何选择？</summary><p>默认优先回滚止血；当回滚本身有风险（数据格式已变、外部系统已依赖新接口）或修复非常小且有把握时选择前向修复。关键在于事先评估每次发布的可回滚性。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-back-a-deployment" target="_blank" rel="noopener"><b>Kubernetes 文档：Deployments（Rolling Back）</b><small>kubernetes.io ↗</small></a></li><li><a href="https://kubernetes.io/docs/reference/kubectl/generated/kubectl_rollout/" target="_blank" rel="noopener"><b>kubectl rollout 参考</b><small>kubernetes.io ↗</small></a></li><li><a href="https://martinfowler.com/bliki/BlueGreenDeployment.html" target="_blank" rel="noopener"><b>Martin Fowler：BlueGreenDeployment</b><small>martinfowler.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="log-levels.pro.html" rel="prev"><small>‹ 上一个</small><b>🚨 日志级别规范</b></a><a class="pn next" href="feature-flags.pro.html" rel="next"><small>下一个 ›</small><b>🎚️ 特性开关</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

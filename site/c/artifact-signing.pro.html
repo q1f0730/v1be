@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="制品签名与溯源 (Sigstore / SLSA) 专业模式：制品签名与溯源是软件供应链完整性保障：签名证明制品（如容器镜像、二进制包）由可信身份发布且未被篡改；溯源证明（Provenance）记录它由哪个源码提交、在什么">
+<title>🎓 制品签名与溯源 (Sigstore / SLSA) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="artifact-signing" data-answer="0" data-prev="sbom.pro.html" data-next="mtls.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#sec">🔥 进阶 · 🛡️ 安全防线</a><span>›</span><a href="artifact-signing.html">制品签名与溯源 (Sigstore / SLSA)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.492 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="sbom.pro.html" rel="prev"><small>‹ 上一个</small><b>📋 软件物料清单 (SBOM)</b></a><a class="pn next" href="mtls.pro.html" rel="next"><small>下一个 ›</small><b>🤝 双向 TLS (mTLS)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔏</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>制品签名与溯源 (Sigstore / SLSA)</h1><p class="en">Artifact Signing</p>
+    <div class="hbtns"><a class="prosw back" href="artifact-signing.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">制品签名与溯源是软件供应链完整性保障：签名证明制品（如容器镜像、二进制包）由可信身份发布且未被篡改；溯源证明（Provenance）记录它由哪个源码提交、在什么构建平台、用什么流程构建。Sigstore 提供基于 OIDC 身份的免密钥签名与透明日志；SLSA 框架定义构建完整性的分级要求。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>CI 构建出制品后，以内容摘要（digest）而非可变标签作为签名对象。</p></li><li><span class="sn">2</span><p>Sigstore 免密钥模式下，Cosign 用 CI 的 OIDC 令牌向 Fulcio 申请短期证书，证书绑定工作流身份。</p></li><li><span class="sn">3</span><p>签名与证书记录写入 Rekor 透明日志，任何人可审计，私钥用后即弃，无需长期保管。</p></li><li><span class="sn">4</span><p>构建平台生成 in-toto 格式的 SLSA 溯源证明，包含源码仓库、提交、构建入口与参数，并同样签名附加到制品。</p></li><li><span class="sn">5</span><p>部署前由准入控制器或流水线校验签名身份与溯源内容，不满足策略的制品拒绝运行。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>Cosign</dt><dd>Sigstore 的签名与验证工具，支持容器镜像与任意文件。</dd></div><div class="term"><dt>Fulcio</dt><dd>Sigstore 的证书颁发机构，根据 OIDC 身份签发短期签名证书。</dd></div><div class="term"><dt>Rekor</dt><dd>Sigstore 的透明日志，记录签名事件，防止事后伪造或抵赖。</dd></div><div class="term"><dt>SLSA</dt><dd>Supply-chain Levels for Software Artifacts，按级别定义构建溯源与防篡改要求。</dd></div><div class="term"><dt>in-toto 证明 (Attestation)</dt><dd>描述制品相关声明（如溯源、SBOM）的签名元数据格式。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>GitHub Actions 签名并生成溯源</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code># .github/workflows/release.yml 片段；Action 版本以官方文档为准
+permissions:
+  contents: read
+  packages: write
+  id-token: write          # 允许获取 OIDC 令牌，用于免密钥签名
+  attestations: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: sigstore/cosign-installer@v3
+      - id: push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      - name: 用摘要签名（不要签可变标签）
+        run: cosign sign --yes ghcr.io/${{ github.repository }}@${{ steps.push.outputs.digest }}
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ghcr.io/${{ github.repository }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+# 验证：cosign verify ghcr.io/org/app@sha256:... \
+#   --certificate-identity-regexp &#x27;^https://github.com/org/app/&#x27; \
+#   --certificate-oidc-issuer https://token.actions.githubusercontent.com</code></pre></div><p class="cnote">推送到 GHCR 前需先登录（docker/login-action）；验证时必须同时限定签名身份与签发者。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">SLSA v1.0 构建轨道级别</h3><div class="tw"><table><thead><tr><th>级别</th><th>要求概要</th><th>防护效果</th></tr></thead><tbody><tr><td data-h="级别">Build L0</td><td data-h="要求概要">无要求</td><td data-h="防护效果">无保证</td></tr><tr><td data-h="级别">Build L1</td><td data-h="要求概要">存在溯源证明</td><td data-h="防护效果">知道制品如何构建，便于排查</td></tr><tr><td data-h="级别">Build L2</td><td data-h="要求概要">托管构建平台生成并签名溯源</td><td data-h="防护效果">防止构建后篡改制品或溯源</td></tr><tr><td data-h="级别">Build L3</td><td data-h="要求概要">构建平台加固，构建间隔离、签名密钥不可被构建访问</td><td data-h="防护效果">防止构建过程中被篡改</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>Sigstore 免密钥签名</h4><p><b class="k-p">优点</b>无需管理长期私钥，身份可审计</p><p><b class="k-c">代价</b>依赖 OIDC 与公共基础设施可用性</p><p><b class="k-w">适用</b>开源项目与云上 CI</p></div><div class="trd"><h4>KMS 托管密钥签名</h4><p><b class="k-p">优点</b>企业可控，可离线或私有部署</p><p><b class="k-c">代价</b>需要密钥轮换与权限管理</p><p><b class="k-w">适用</b>受监管或内网隔离环境</p></div><div class="trd"><h4>只依赖镜像仓库权限</h4><p><b class="k-p">优点</b>零额外工作</p><p><b class="k-c">代价</b>仓库凭证泄露即可推送恶意镜像</p><p><b class="k-w">适用</b>不推荐用于生产</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>对 latest 等可变标签签名或部署</p><p class="fix"><b>✓</b>以摘要签名，并在部署清单中引用摘要</p></li><li><p class="bad"><b>✗</b>验证时只检查有签名，不检查是谁签的</p><p class="fix"><b>✓</b>限定证书身份（仓库与工作流）与 OIDC 签发者</p></li><li><p class="bad"><b>✗</b>签名了却没有在部署侧强制验证</p><p class="fix"><b>✓</b>在集群准入（如 policy-controller、Kyverno）中强制校验</p></li><li><p class="bad"><b>✗</b>长期私钥存放在 CI 变量中</p><p class="fix"><b>✓</b>改用免密钥签名或 KMS，限制谁能触发签名工作流</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有发布制品按摘要签名</span></label></li><li><label><input type="checkbox"><span>生成并附加 SLSA 溯源证明</span></label></li><li><label><input type="checkbox"><span>部署侧强制验证签名身份与签发者</span></label></li><li><label><input type="checkbox"><span>部署清单引用镜像摘要而非标签</span></label></li><li><label><input type="checkbox"><span>签名工作流只在受保护分支触发</span></label></li><li><label><input type="checkbox"><span>定期演练验证失败时的阻断效果</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>免密钥签名如何证明是谁签的？</summary><p>签名时 CI 向 Fulcio 出示 OIDC 令牌，Fulcio 签发一张几分钟有效、内含身份信息（如仓库与工作流路径）的证书；签名事件写入 Rekor 透明日志并带时间戳。验证者校验证书链、身份字段与日志记录，即可确认签名在证书有效期内由该身份产生。</p></details><details class="iv"><summary>签名和溯源证明分别回答什么问题？</summary><p>签名回答「这个制品是否由可信身份发布且未被改动」；溯源回答「它是从哪份源码、在哪个平台、以什么步骤构建的」。只有签名时，攻击者若控制了签名身份仍可签恶意制品；溯源让验证方能进一步要求制品来自指定仓库与受保护分支。</p></details><details class="iv"><summary>为什么要用摘要而不是标签？</summary><p>标签是可变指针，同一标签可被重新推送指向不同内容；摘要是内容的哈希，内容一变摘要就变。对摘要签名、在部署中引用摘要，才能保证验证通过的正是被运行的那份内容，避免验证后被替换。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.sigstore.dev/" target="_blank" rel="noopener"><b>Sigstore Documentation</b><small>docs.sigstore.dev ↗</small></a></li><li><a href="https://slsa.dev/spec/v1.0/" target="_blank" rel="noopener"><b>SLSA Specification v1.0</b><small>slsa.dev ↗</small></a></li><li><a href="https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations/using-artifact-attestations-to-establish-provenance-for-builds" target="_blank" rel="noopener"><b>GitHub Docs: Using artifact attestations</b><small>docs.github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="sbom.pro.html" rel="prev"><small>‹ 上一个</small><b>📋 软件物料清单 (SBOM)</b></a><a class="pn next" href="mtls.pro.html" rel="next"><small>下一个 ›</small><b>🤝 双向 TLS (mTLS)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

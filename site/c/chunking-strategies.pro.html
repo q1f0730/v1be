@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="文档切块策略 (Chunking) 专业模式：文档切块（Chunking）是 RAG 索引阶段把长文档拆成适合嵌入与检索的片段的过程。块的大小、边界和附带的上下文决定了检索粒度：太大会稀释语义、挤占上下文窗">
+<title>🎓 文档切块策略 (Chunking) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="chunking-strategies" data-answer="0" data-prev="hybrid-search.pro.html" data-next="react-agent-pattern.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#ai">🔮 高级 · 🤖 AI 与提示词</a><span>›</span><a href="chunking-strategies.html">文档切块策略 (Chunking)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.335 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="hybrid-search.pro.html" rel="prev"><small>‹ 上一个</small><b>🔀 混合检索 (BM25 + 向量)</b></a><a class="pn next" href="react-agent-pattern.pro.html" rel="next"><small>下一个 ›</small><b>🔄 ReAct 推理-行动循环</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔪</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>文档切块策略 (Chunking)</h1><p class="en">Chunking Strategies</p>
+    <div class="hbtns"><a class="prosw back" href="chunking-strategies.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">文档切块（Chunking）是 RAG 索引阶段把长文档拆成适合嵌入与检索的片段的过程。块的大小、边界和附带的上下文决定了检索粒度：太大会稀释语义、挤占上下文窗口，太小会割裂含义、丢失指代。常见策略包括固定长度加重叠、递归按分隔符切分、按文档结构（标题、段落、代码块）切分、语义切分，以及父子块（检索小块、返回大块）。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>解析原始文档（PDF、HTML、Markdown），去除页眉页脚等噪声，尽量保留标题层级、表格与列表结构。</p></li><li><span class="sn">2</span><p>按策略确定边界：递归切分按段落→句子→字符逐级回退，尽量让每块不超过目标长度（以 token 或字符计）。</p></li><li><span class="sn">3</span><p>为相邻块设置重叠（如块长的 10%–20%），缓解边界处信息被截断的问题。</p></li><li><span class="sn">4</span><p>为每块附加元数据与上下文：来源、章节标题路径、页码，或用模型生成一句块级摘要（上下文化检索）。</p></li><li><span class="sn">5</span><p>对块计算嵌入并写入索引；检索时可返回命中块本身，或回溯其父块/相邻块以提供更完整的上下文。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>块大小 (Chunk Size)</dt><dd>每块的最大长度，常以 token 计，需小于嵌入模型输入上限。</dd></div><div class="term"><dt>重叠 (Chunk Overlap)</dt><dd>相邻块共享的内容长度，用于保留跨边界上下文。</dd></div><div class="term"><dt>递归字符切分 (Recursive Splitting)</dt><dd>按分隔符优先级逐级切分，尽量在自然边界断开。</dd></div><div class="term"><dt>语义切分 (Semantic Chunking)</dt><dd>根据相邻句子嵌入相似度的突变处切分。</dd></div><div class="term"><dt>父子块 (Parent-Child / Small-to-Big)</dt><dd>用小块检索以求精准，返回所属大块以求完整。</dd></div><div class="term"><dt>上下文化检索 (Contextual Retrieval)</dt><dd>为每块前置一段说明其在全文位置的上下文再嵌入。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>按标题 + 递归切分 Markdown</span><em>python</em><button class="ccopy">复制</button></div><pre><code>from langchain_text_splitters import (
+    MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter)
+
+md = open(&quot;handbook.md&quot;, encoding=&quot;utf-8&quot;).read()
+
+# 1. 先按标题切，标题路径进入元数据
+header_splitter = MarkdownHeaderTextSplitter(
+    headers_to_split_on=[(&quot;#&quot;, &quot;h1&quot;), (&quot;##&quot;, &quot;h2&quot;), (&quot;###&quot;, &quot;h3&quot;)])
+sections = header_splitter.split_text(md)
+
+# 2. 过长的章节再递归切分，带重叠
+splitter = RecursiveCharacterTextSplitter(
+    chunk_size=800, chunk_overlap=100,          # 按字符计；可改用 token 计数
+    separators=[&quot;\n\n&quot;, &quot;\n&quot;, &quot;。&quot;, &quot;！&quot;, &quot;？&quot;, &quot; &quot;, &quot;&quot;])
+chunks = splitter.split_documents(sections)
+
+# 3. 把标题路径拼到正文前，帮助嵌入理解上下文
+for c in chunks:
+    path = &quot; &gt; &quot;.join(v for k, v in c.metadata.items() if k.startswith(&quot;h&quot;))
+    c.page_content = f&quot;[{path}]\n{c.page_content}&quot;
+print(len(chunks), chunks[0].page_content[:120])</code></pre></div><p class="cnote">先按文档结构切，再按长度兜底，并把章节路径注入每块；中文分隔符需显式加入。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">切块策略对比</h3><div class="tw"><table><thead><tr><th>策略</th><th>优点</th><th>缺点</th><th>适用</th></tr></thead><tbody><tr><td data-h="策略">固定长度 + 重叠</td><td data-h="优点">简单、可预测</td><td data-h="缺点">常在句中断开</td><td data-h="适用">格式杂乱的纯文本</td></tr><tr><td data-h="策略">递归分隔符切分</td><td data-h="优点">多在自然边界断开</td><td data-h="缺点">不理解语义</td><td data-h="适用">通用默认方案</td></tr><tr><td data-h="策略">按文档结构切分</td><td data-h="优点">保留章节完整性</td><td data-h="缺点">章节长短不均</td><td data-h="适用">Markdown、HTML、技术文档</td></tr><tr><td data-h="策略">语义切分</td><td data-h="优点">话题边界更准确</td><td data-h="缺点">需额外嵌入计算，参数敏感</td><td data-h="适用">长篇叙述、对话记录</td></tr><tr><td data-h="策略">父子块</td><td data-h="优点">检索精准且上下文完整</td><td data-h="缺点">存储与实现更复杂</td><td data-h="适用">问答需要完整段落时</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>小块（约 100–300 token）</h4><p><b class="k-p">优点</b>检索精准，噪声少</p><p><b class="k-c">代价</b>易丢上下文与指代</p><p><b class="k-w">适用</b>事实型问答、FAQ</p></div><div class="trd"><h4>大块（约 800–1500 token）</h4><p><b class="k-p">优点</b>上下文完整</p><p><b class="k-c">代价</b>语义稀释，占用更多上下文</p><p><b class="k-w">适用</b>需要理解整段论述</p></div><div class="trd"><h4>小块检索 + 返回父块</h4><p><b class="k-p">优点</b>兼顾精准与完整</p><p><b class="k-c">代价</b>实现复杂、索引更大</p><p><b class="k-w">适用</b>对质量要求高的生产 RAG</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>所有文档统一一种块大小，从不评测</p><p class="fix"><b>✓</b>按文档类型分别设置，并用评测集比较不同参数</p></li><li><p class="bad"><b>✗</b>PDF 表格被拆成碎片，行列关系丢失</p><p class="fix"><b>✓</b>表格单独解析为 Markdown 或整表成块</p></li><li><p class="bad"><b>✗</b>块中缺少章节标题，“本条款”指代不明</p><p class="fix"><b>✓</b>在块前拼接标题路径或生成上下文摘要</p></li><li><p class="bad"><b>✗</b>块长度超过嵌入模型输入上限被静默截断</p><p class="fix"><b>✓</b>按 token 计数切分，并低于模型最大输入长度</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>按文档类型选择切分策略</span></label></li><li><label><input type="checkbox"><span>块大小按 token 计且低于嵌入上限</span></label></li><li><label><input type="checkbox"><span>设置合理重叠</span></label></li><li><label><input type="checkbox"><span>块附带来源与标题元数据</span></label></li><li><label><input type="checkbox"><span>表格、代码块单独处理</span></label></li><li><label><input type="checkbox"><span>用评测集比较不同切块参数</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>块大小如何选择？</summary><p>没有通用最优值。需要考虑嵌入模型的最佳输入长度、问题类型（事实型偏小块，综合型偏大块）、文档结构和上下文预算。实践中准备评测集，测试几组块大小与重叠的 Recall@K 和最终答案质量，选择最优组合。</p></details><details class="iv"><summary>为什么要加重叠，重叠越大越好吗？</summary><p>重叠让跨边界的句子在至少一个块中完整出现，减少截断带来的信息丢失。但重叠越大，冗余越多，索引变大、检索结果更容易重复，浪费上下文。通常取块长的一小部分并通过评测确认。</p></details><details class="iv"><summary>上下文化检索解决了什么问题？</summary><p>孤立的块常缺少主体信息，例如“该公司营收增长 3%”不知是哪家公司。为每块前置一段由模型生成的、说明其在原文中位置与主题的上下文，再做嵌入和 BM25 索引，可显著减少检索失败，代价是索引时的额外模型调用。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://python.langchain.com/docs/concepts/text_splitters/" target="_blank" rel="noopener"><b>LangChain：Text splitters</b><small>python.langchain.com ↗</small></a></li><li><a href="https://www.pinecone.io/learn/chunking-strategies/" target="_blank" rel="noopener"><b>Pinecone：Chunking Strategies</b><small>pinecone.io ↗</small></a></li><li><a href="https://www.anthropic.com/news/contextual-retrieval" target="_blank" rel="noopener"><b>Anthropic：Contextual Retrieval</b><small>anthropic.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="hybrid-search.pro.html" rel="prev"><small>‹ 上一个</small><b>🔀 混合检索 (BM25 + 向量)</b></a><a class="pn next" href="react-agent-pattern.pro.html" rel="next"><small>下一个 ›</small><b>🔄 ReAct 推理-行动循环</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

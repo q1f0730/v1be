@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="持久化执行 (Temporal) 专业模式：持久化执行（Durable Execution）是一种编程模型：开发者用普通代码编写长流程，运行时自动持久化每一步的执行进度与结果，进程崩溃、机器重启或等待数天">
+<title>🎓 持久化执行 (Temporal) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="durable-execution" data-answer="0" data-prev="crdts.pro.html" data-next="react-server-components.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#dist">🔥 进阶 · 🕸️ 分布式</a><span>›</span><a href="durable-execution.html">持久化执行 (Temporal)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.476 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="crdts.pro.html" rel="prev"><small>‹ 上一个</small><b>🧶 无冲突复制数据类型 (CRDT)</b></a><a class="pn next" href="react-server-components.pro.html" rel="next"><small>下一个 ›</small><b>⚛️ React 服务端组件 (RSC)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">💾</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>持久化执行 (Temporal)</h1><p class="en">Durable Execution</p>
+    <div class="hbtns"><a class="prosw back" href="durable-execution.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">持久化执行（Durable Execution）是一种编程模型：开发者用普通代码编写长流程，运行时自动持久化每一步的执行进度与结果，进程崩溃、机器重启或等待数天后，都能从中断处继续，好像代码从未停过。代表实现有 Temporal（源自 Uber Cadence）、AWS Step Functions、Restate、DBOS 等，常用于订单流程、数据管道和长时间运行的 AI Agent。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>工作流（Workflow）代码负责编排逻辑；有副作用的操作（调用 API、写库、调用 LLM）封装为活动（Activity）。</p></li><li><span class="sn">2</span><p>每次活动调度、完成、计时器触发和外部信号都作为事件追加到持久化的事件历史中。</p></li><li><span class="sn">3</span><p>Worker 崩溃后，新的 Worker 通过重放事件历史重新执行工作流代码：已完成的活动直接返回记录的结果，不会重复执行。</p></li><li><span class="sn">4</span><p>因此工作流代码必须确定性：不能直接读系统时间、随机数或做 IO，这些都应通过 SDK 接口或活动完成。</p></li><li><span class="sn">5</span><p>活动失败按重试策略自动重试；持久计时器可等待数天；信号和查询让外部与运行中的工作流交互，如人工审批。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>工作流 (Workflow)</dt><dd>确定性的编排代码，其执行状态由事件历史完全决定。</dd></div><div class="term"><dt>活动 (Activity)</dt><dd>执行副作用的普通函数，可独立设置超时与重试策略。</dd></div><div class="term"><dt>事件历史 (Event History)</dt><dd>工作流执行过程中所有事件的追加日志，用于重放恢复。</dd></div><div class="term"><dt>重放 (Replay)</dt><dd>按事件历史重新运行工作流代码以恢复内存状态，跳过已完成的活动。</dd></div><div class="term"><dt>信号 (Signal)</dt><dd>外部向运行中工作流发送的异步消息，如审批通过。</dd></div><div class="term"><dt>工作流版本化 (Versioning)</dt><dd>修改运行中工作流代码时保证旧执行重放仍确定的机制。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Temporal Python 工作流</span><em>python</em><button class="ccopy">复制</button></div><pre><code># pip install temporalio ；需连接 Temporal Server
+import asyncio
+from datetime import timedelta
+from temporalio import activity, workflow
+from temporalio.common import RetryPolicy
+
+@activity.defn
+async def call_llm(prompt: str) -&gt; str:
+    ...  # 真实的模型调用：有副作用，放在活动里
+    return &quot;summary&quot;
+
+@workflow.defn
+class ResearchAgent:
+    @workflow.run
+    async def run(self, topic: str) -&gt; str:
+        draft = await workflow.execute_activity(
+            call_llm, f&quot;研究 {topic}&quot;,
+            start_to_close_timeout=timedelta(minutes=5),
+            retry_policy=RetryPolicy(maximum_attempts=5),
+        )
+        # 持久计时器：等待 1 天后复查，期间 Worker 可重启
+        await asyncio.sleep(timedelta(days=1).total_seconds())
+        return await workflow.execute_activity(
+            call_llm, f&quot;复查并更新：{draft}&quot;,
+            start_to_close_timeout=timedelta(minutes=5),
+        )</code></pre></div><p class="cnote">工作流内的 asyncio.sleep 会被 SDK 转为持久计时器；工作流代码中不要直接做网络请求或读当前时间。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">长流程实现方式对比</h3><div class="tw"><table><thead><tr><th>方式</th><th>崩溃恢复</th><th>长时间等待</th><th>开发体验</th></tr></thead><tbody><tr><td data-h="方式">普通脚本/进程</td><td data-h="崩溃恢复">从头重跑</td><td data-h="长时间等待">难</td><td data-h="开发体验">最简单</td></tr><tr><td data-h="方式">队列 + 状态表</td><td data-h="崩溃恢复">手写状态机恢复</td><td data-h="长时间等待">需定时任务轮询</td><td data-h="开发体验">逻辑分散</td></tr><tr><td data-h="方式">DAG 编排（如 Airflow）</td><td data-h="崩溃恢复">按任务重跑</td><td data-h="长时间等待">按调度周期</td><td data-h="开发体验">适合批处理管道</td></tr><tr><td data-h="方式">持久化执行（如 Temporal）</td><td data-h="崩溃恢复">重放续跑</td><td data-h="长时间等待">原生持久计时器</td><td data-h="开发体验">用代码写流程，需遵守确定性</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>Temporal 等自托管/云服务</h4><p><b class="k-p">优点</b>能力完整，多语言 SDK，可观测性强</p><p><b class="k-c">代价</b>需运维服务端或付费，学习确定性约束</p><p><b class="k-w">适用</b>核心业务流程、长时间 Agent</p></div><div class="trd"><h4>云厂商状态机（如 Step Functions）</h4><p><b class="k-p">优点</b>全托管，与云服务集成好</p><p><b class="k-c">代价</b>用 JSON/DSL 描述流程，绑定厂商</p><p><b class="k-w">适用</b>流程相对固定且已深度使用该云</p></div><div class="trd"><h4>数据库驱动轻量方案（如 DBOS）</h4><p><b class="k-p">优点</b>复用现有 Postgres，部署简单</p><p><b class="k-c">代价</b>生态与规模能力需评估</p><p><b class="k-w">适用</b>中小规模、希望少引入组件</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>在工作流代码里直接调用 API 或 datetime.now()</p><p class="fix"><b>✓</b>副作用放进活动，时间和随机数使用 SDK 提供的确定性接口</p></li><li><p class="bad"><b>✗</b>直接修改运行中工作流的代码逻辑，重放时报不确定性错误</p><p class="fix"><b>✓</b>使用 SDK 的版本化或补丁机制，并保留旧分支直至旧执行结束</p></li><li><p class="bad"><b>✗</b>活动不幂等，重试导致重复扣款</p><p class="fix"><b>✓</b>活动使用幂等键，外部系统按键去重</p></li><li><p class="bad"><b>✗</b>在工作流中传递巨大的数据，事件历史膨胀</p><p class="fix"><b>✓</b>大数据放对象存储，工作流只传引用</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有副作用都在活动中执行</span></label></li><li><label><input type="checkbox"><span>活动设置超时与重试策略且幂等</span></label></li><li><label><input type="checkbox"><span>工作流代码变更遵循版本化流程</span></label></li><li><label><input type="checkbox"><span>事件历史大小受控，必要时 continue-as-new</span></label></li><li><label><input type="checkbox"><span>有工作流失败与卡住的告警</span></label></li><li><label><input type="checkbox"><span>人工审批等外部输入通过信号实现</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Temporal 如何做到崩溃后从断点继续？</summary><p>服务端持久化每个工作流的事件历史。Worker 恢复时重新执行工作流代码，遇到已记录完成的活动直接返回历史中的结果，而不是再次调用，从而重建到崩溃前的状态后继续执行。这要求工作流代码对相同历史产生相同的调度决策。</p></details><details class="iv"><summary>为什么持久化执行适合 AI Agent？</summary><p>Agent 任务可能持续数小时、调用大量昂贵的模型与工具、需要等待人工确认。持久化执行让每次模型调用成为可重试的活动，崩溃不重复计费，能持久等待人工信号，还能完整记录执行历史用于审计与调试。</p></details><details class="iv"><summary>工作流确定性约束具体指什么？</summary><p>给定相同事件历史，工作流代码必须做出相同的命令序列。因此不能在工作流中直接读系统时间、生成随机数、访问网络或文件、依赖全局可变状态或非确定性的迭代顺序。这些都应通过 SDK 的确定性 API 或放入活动。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.temporal.io/" target="_blank" rel="noopener"><b>Temporal Documentation</b><small>docs.temporal.io ↗</small></a></li><li><a href="https://docs.temporal.io/workflows" target="_blank" rel="noopener"><b>Temporal: Workflows</b><small>docs.temporal.io ↗</small></a></li><li><a href="https://github.com/temporalio/sdk-python" target="_blank" rel="noopener"><b>GitHub: temporalio/sdk-python</b><small>github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="crdts.pro.html" rel="prev"><small>‹ 上一个</small><b>🧶 无冲突复制数据类型 (CRDT)</b></a><a class="pn next" href="react-server-components.pro.html" rel="next"><small>下一个 ›</small><b>⚛️ React 服务端组件 (RSC)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

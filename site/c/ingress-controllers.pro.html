@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="K8s入口控制器 专业模式：Ingress 控制器是 Kubernetes 集群的 L7 入口组件：它监听 Ingress 资源中声明的域名、路径和 TLS 规则，配置底层反向代理（如 N">
+<title>🎓 K8s入口控制器 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="ingress-controllers" data-answer="0" data-prev="service-mesh.pro.html" data-next="exactly-once-semantics.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#net">🔥 进阶 · 🌐 网络与 API</a><span>›</span><a href="ingress-controllers.html">K8s入口控制器</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.423 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="service-mesh.pro.html" rel="prev"><small>‹ 上一个</small><b>🕸️ 服务网格</b></a><a class="pn next" href="exactly-once-semantics.pro.html" rel="next"><small>下一个 ›</small><b>1️⃣ 精确一次语义 (EOS)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🏥</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>K8s入口控制器</h1><p class="en">Ingress Controllers</p>
+    <div class="hbtns"><a class="prosw back" href="ingress-controllers.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">Ingress 控制器是 Kubernetes 集群的 L7 入口组件：它监听 Ingress 资源中声明的域名、路径和 TLS 规则，配置底层反向代理（如 NGINX、Envoy、Traefik），把外部 HTTP/HTTPS 请求路由到集群内的 Service。Ingress 资源只是规则，需控制器才生效。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>部署控制器：以 Deployment 运行代理，并通过 LoadBalancer 或 NodePort 暴露。</p></li><li><span class="sn">2</span><p>声明规则：用户创建 Ingress 资源，指定 ingressClassName、主机名、路径与后端 Service。</p></li><li><span class="sn">3</span><p>监听变化：控制器监听 Ingress、Service、Endpoint 与 Secret，生成代理配置并热加载。</p></li><li><span class="sn">4</span><p>处理请求：按 Host 与路径匹配规则，终止 TLS 后转发到后端 Pod。</p></li><li><span class="sn">5</span><p>扩展能力：通过注解或自定义资源配置重写、限流、认证等，各控制器语法不同。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>Ingress 资源</dt><dd>声明 HTTP 路由规则的 K8s API 对象，本身不处理流量。</dd></div><div class="term"><dt>IngressClass</dt><dd>指定由哪个控制器处理某个 Ingress，支持多控制器并存。</dd></div><div class="term"><dt>TLS 终止 (TLS Termination)</dt><dd>在入口处解密 HTTPS，后端可以使用明文或重新加密。</dd></div><div class="term"><dt>Gateway API</dt><dd>Ingress 的后继 API，角色分离、表达力更强、可移植性更好。</dd></div><div class="term"><dt>pathType</dt><dd>路径匹配方式：Exact、Prefix 或 ImplementationSpecific。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>带 TLS 的 Ingress</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code>apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web
+spec:
+  ingressClassName: nginx            # 由哪个控制器处理
+  tls:
+  - hosts: [&quot;app.example.com&quot;]
+    secretName: app-tls              # 证书存放在该 Secret
+  rules:
+  - host: app.example.com
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service: {name: api, port: {number: 8080}}
+      - path: /
+        pathType: Prefix
+        backend:
+          service: {name: frontend, port: {number: 80}}</code></pre></div><p class="cnote">同一域名按路径分流到两个 Service；证书可由 cert-manager 自动签发到该 Secret。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">入口方案对比</h3><div class="tw"><table><thead><tr><th>方案</th><th>层级</th><th>特点</th></tr></thead><tbody><tr><td data-h="方案">Service LoadBalancer</td><td data-h="层级">L4</td><td data-h="特点">每个服务一个负载均衡器，成本高</td></tr><tr><td data-h="方案">Ingress + 控制器</td><td data-h="层级">L7</td><td data-h="特点">共享入口，按域名/路径路由</td></tr><tr><td data-h="方案">Gateway API</td><td data-h="层级">L4/L7</td><td data-h="特点">角色分离，标准化高级路由</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>Ingress</h4><p><b class="k-p">优点</b>生态成熟，资料多</p><p><b class="k-c">代价</b>高级功能依赖各家注解，不可移植</p><p><b class="k-w">适用</b>简单的 HTTP 路由需求</p></div><div class="trd"><h4>Gateway API</h4><p><b class="k-p">优点</b>标准化流量切分、跨命名空间授权</p><p><b class="k-c">代价</b>需选择支持它的实现，迁移有成本</p><p><b class="k-w">适用</b>新集群或需要高级路由</p></div><div class="trd"><h4>云厂商 L7 负载均衡器</h4><p><b class="k-p">优点</b>托管、与云 WAF 等集成</p><p><b class="k-c">代价</b>绑定厂商，功能受产品限制</p><p><b class="k-w">适用</b>深度使用单一云</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>大量依赖某控制器的注解，换实现时全部重写</p><p class="fix"><b>✓</b>尽量用标准字段，复杂路由考虑 Gateway API</p></li><li><p class="bad"><b>✗</b>继续在新项目使用已退役的社区 ingress-nginx</p><p class="fix"><b>✓</b>该项目 2026 年 3 月起停止维护，应迁移到 Gateway API 或其他控制器</p></li><li><p class="bad"><b>✗</b>控制器只跑单副本，升级或节点故障时全站中断</p><p class="fix"><b>✓</b>多副本加 PodDisruptionBudget 与反亲和</p></li><li><p class="bad"><b>✗</b>未设置 ingressClassName，被意外的控制器接管</p><p class="fix"><b>✓</b>显式指定 ingressClassName 并配置默认类</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>显式指定 ingressClassName</span></label></li><li><label><input type="checkbox"><span>控制器多副本且有 PDB</span></label></li><li><label><input type="checkbox"><span>证书自动续期</span></label></li><li><label><input type="checkbox"><span>核实所用控制器仍在维护</span></label></li><li><label><input type="checkbox"><span>请求体大小与超时已配置</span></label></li><li><label><input type="checkbox"><span>入口访问日志与指标可见</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Ingress 和 Ingress Controller 的关系？</summary><p>Ingress 是声明式路由规则对象，只是数据；Ingress Controller 是实际运行的程序，监听这些对象并据此配置反向代理处理流量。集群没有控制器时，创建 Ingress 不会有任何效果。</p></details><details class="iv"><summary>为什么社区在推 Gateway API？</summary><p>Ingress 只覆盖基础 HTTP 路由，高级功能靠各家注解，不可移植；也没有角色划分。Gateway API 把基础设施（GatewayClass/Gateway）与应用路由（HTTPRoute）分离，原生支持流量切分、头部匹配和多协议。</p></details><details class="iv"><summary>ingress-nginx 退役对团队意味着什么？</summary><p>Kubernetes 社区宣布该项目 2026 年 3 月后不再发布版本和安全修复，现有部署仍可运行但风险逐步上升。应盘点使用的注解，选择替代实现并规划向 Gateway API 迁移。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://kubernetes.io/docs/concepts/services-networking/ingress/" target="_blank" rel="noopener"><b>Kubernetes: Ingress</b><small>kubernetes.io ↗</small></a></li><li><a href="https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/" target="_blank" rel="noopener"><b>Kubernetes: Ingress Controllers</b><small>kubernetes.io ↗</small></a></li><li><a href="https://gateway-api.sigs.k8s.io/" target="_blank" rel="noopener"><b>Gateway API</b><small>gateway-api.sigs.k8s.io ↗</small></a></li><li><a href="https://kubernetes.io/blog/2025/11/11/ingress-nginx-retirement/" target="_blank" rel="noopener"><b>Ingress NGINX Retirement (Kubernetes Blog)</b><small>kubernetes.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="service-mesh.pro.html" rel="prev"><small>‹ 上一个</small><b>🕸️ 服务网格</b></a><a class="pn next" href="exactly-once-semantics.pro.html" rel="next"><small>下一个 ›</small><b>1️⃣ 精确一次语义 (EOS)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

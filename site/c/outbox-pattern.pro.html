@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="事务性发件箱模式 专业模式：事务性发件箱（Transactional Outbox）是解决「更新数据库」与「发布消息」双写一致性的模式：业务数据与待发事件在同一个本地事务中写入数据库，事件">
+<title>🎓 事务性发件箱模式 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="outbox-pattern" data-answer="0" data-prev="change-data-capture.pro.html" data-next="nat-gateways.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#db">🔥 进阶 · 🗄️ 数据库</a><span>›</span><a href="outbox-pattern.html">事务性发件箱模式</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.420 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="change-data-capture.pro.html" rel="prev"><small>‹ 上一个</small><b>📸 变更数据捕获 (CDC)</b></a><a class="pn next" href="nat-gateways.pro.html" rel="next"><small>下一个 ›</small><b>🚪 网络地址转换网关</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📮</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>事务性发件箱模式</h1><p class="en">Outbox Pattern</p>
+    <div class="hbtns"><a class="prosw back" href="outbox-pattern.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">事务性发件箱（Transactional Outbox）是解决「更新数据库」与「发布消息」双写一致性的模式：业务数据与待发事件在同一个本地事务中写入数据库，事件存入 outbox 表；再由独立的中继进程（轮询或 CDC）把事件投递到消息系统。这样避免了提交成功但消息丢失，或消息发出但事务回滚。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>同一事务写入：业务表更新与 outbox 表插入事件在一个本地数据库事务中提交。</p></li><li><span class="sn">2</span><p>事件内容：outbox 行包含事件 ID、聚合类型与 ID、事件类型、负载和创建时间。</p></li><li><span class="sn">3</span><p>中继读取：轮询进程按顺序取未发送事件，或用 CDC 读取 outbox 表的变更日志。</p></li><li><span class="sn">4</span><p>投递消息：发送到 Kafka 等消息系统，成功后标记已发送或删除该行。</p></li><li><span class="sn">5</span><p>消费者去重：中继可能重复投递，消费者按事件 ID 幂等处理。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>双写问题 (Dual Write)</dt><dd>同时写数据库和消息系统，无法保证两者原子成功或失败。</dd></div><div class="term"><dt>消息中继 (Message Relay)</dt><dd>把 outbox 表中的事件搬运到消息代理的进程。</dd></div><div class="term"><dt>至少一次投递 (At-least-once)</dt><dd>消息保证送达但可能重复，需要消费者幂等。</dd></div><div class="term"><dt>SKIP LOCKED</dt><dd>行锁选项：跳过被其他事务锁定的行，便于多个中继并发取任务。</dd></div><div class="term"><dt>收件箱模式 (Inbox Pattern)</dt><dd>消费者记录已处理消息 ID，以实现幂等消费。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>写入与中继取件</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- 业务事务：订单与事件一起提交，要么都成功，要么都回滚
+BEGIN;
+INSERT INTO orders (id, user_id, amount) VALUES (1001, 7, 99.00);
+INSERT INTO outbox (id, aggregate_type, aggregate_id, event_type, payload)
+VALUES (gen_random_uuid(), &#x27;order&#x27;, &#x27;1001&#x27;, &#x27;OrderCreated&#x27;,
+        &#x27;{&quot;orderId&quot;:1001,&quot;amount&quot;:99.00}&#x27;);
+COMMIT;
+
+-- 中继进程：批量取未发送事件，多实例并发时互不抢同一行
+BEGIN;
+SELECT id, event_type, payload FROM outbox
+WHERE sent_at IS NULL
+ORDER BY created_at
+LIMIT 100
+FOR UPDATE SKIP LOCKED;
+-- ……逐条发送到消息队列，成功后：
+UPDATE outbox SET sent_at = now() WHERE id = ANY($1);
+COMMIT;</code></pre></div><p class="cnote">PostgreSQL 写法；中继发送后再标记，崩溃时会重发，故消费者需幂等。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">中继方式对比</h3><div class="tw"><table><thead><tr><th>方式</th><th>延迟</th><th>运维成本</th></tr></thead><tbody><tr><td data-h="方式">轮询 outbox 表</td><td data-h="延迟">取决于轮询间隔</td><td data-h="运维成本">低，但增加数据库查询负载</td></tr><tr><td data-h="方式">CDC 读日志（如 Debezium）</td><td data-h="延迟">低，接近实时</td><td data-h="运维成本">需维护连接器与复制槽</td></tr><tr><td data-h="方式">数据库触发通知</td><td data-h="延迟">较低</td><td data-h="运维成本">依赖特定数据库特性，可靠性需兜底</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>Outbox 模式</h4><p><b class="k-p">优点</b>本地事务保证不丢事件</p><p><b class="k-c">代价</b>多一张表和一个中继组件</p><p><b class="k-w">适用</b>服务需可靠发布领域事件</p></div><div class="trd"><h4>直接双写</h4><p><b class="k-p">优点</b>实现最简单</p><p><b class="k-c">代价</b>崩溃或网络故障时数据与消息不一致</p><p><b class="k-w">适用</b>可容忍偶发丢失的非关键通知</p></div><div class="trd"><h4>分布式事务（2PC）</h4><p><b class="k-p">优点</b>强一致</p><p><b class="k-c">代价</b>性能差，消息系统支持有限</p><p><b class="k-w">适用</b>极少数强一致且组件都支持时</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>先提交事务再发消息，期间进程崩溃导致事件永久丢失</p><p class="fix"><b>✓</b>事件写入 outbox 并与业务数据同事务提交</p></li><li><p class="bad"><b>✗</b>outbox 表只增不删，越来越大拖慢查询</p><p class="fix"><b>✓</b>发送后删除或定期清理，并为未发送条件建索引</p></li><li><p class="bad"><b>✗</b>消费者假设不会重复，重复事件导致重复扣款</p><p class="fix"><b>✓</b>消费者按事件 ID 去重，业务操作幂等</p></li><li><p class="bad"><b>✗</b>多中继并发且无锁，同一事件被并发发送</p><p class="fix"><b>✓</b>使用 SKIP LOCKED、单活中继或按分区分配</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>业务与 outbox 同一事务</span></label></li><li><label><input type="checkbox"><span>事件有全局唯一 ID</span></label></li><li><label><input type="checkbox"><span>中继有监控与积压告警</span></label></li><li><label><input type="checkbox"><span>outbox 定期清理</span></label></li><li><label><input type="checkbox"><span>消费者幂等</span></label></li><li><label><input type="checkbox"><span>事件格式有版本管理</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Outbox 解决了什么问题？为什么不直接发消息？</summary><p>解决双写原子性：数据库提交与消息发送分属两个系统，任何一步失败都会导致不一致。Outbox 把发消息变成写本地表，借助数据库事务保证与业务数据一起成功或失败，再异步可靠投递。</p></details><details class="iv"><summary>Outbox 能保证 exactly-once 吗？</summary><p>不能，中继在发送成功但标记前崩溃会重发，属于至少一次投递。要达到效果上的一次处理，需要消费者按事件 ID 幂等，比如用收件箱表记录已处理 ID 或使用唯一约束。</p></details><details class="iv"><summary>Outbox 中继如何保证顺序？</summary><p>按聚合 ID 作为消息 key 发送，使同一聚合的事件进同一分区；中继按创建顺序读取同一聚合的事件，失败时不跳过后续事件。全局顺序代价太高，一般只保证同一实体内有序。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://microservices.io/patterns/data/transactional-outbox.html" target="_blank" rel="noopener"><b>Pattern: Transactional outbox</b><small>microservices.io ↗</small></a></li><li><a href="https://debezium.io/documentation/reference/stable/transformations/outbox-event-router.html" target="_blank" rel="noopener"><b>Debezium Outbox Event Router</b><small>debezium.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="change-data-capture.pro.html" rel="prev"><small>‹ 上一个</small><b>📸 变更数据捕获 (CDC)</b></a><a class="pn next" href="nat-gateways.pro.html" rel="next"><small>下一个 ›</small><b>🚪 网络地址转换网关</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

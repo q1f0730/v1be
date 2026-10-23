@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="API版本控制策略 专业模式：API 版本控制（API Versioning）是在接口发生不兼容变更时，让新旧契约并存、客户端按自己的节奏迁移的策略。它属于 API 生命周期治理层，常见载体">
+<title>🎓 API版本控制策略 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="api-versioning" data-answer="0" data-prev="http-method-semantics.pro.html" data-next="openapi-specs.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#net">🌊 中级 · 🌐 网络与 API</a><span>›</span><a href="api-versioning.html">API版本控制策略</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.137 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="http-method-semantics.pro.html" rel="prev"><small>‹ 上一个</small><b>🚥 HTTP方法安全性与幂等性</b></a><a class="pn next" href="openapi-specs.pro.html" rel="next"><small>下一个 ›</small><b>📘 OpenAPI / Swagger规范</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🪟</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>API版本控制策略</h1><p class="en">API Versioning</p>
+    <div class="hbtns"><a class="prosw back" href="api-versioning.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">API 版本控制（API Versioning）是在接口发生不兼容变更时，让新旧契约并存、客户端按自己的节奏迁移的策略。它属于 API 生命周期治理层，常见载体有 URL 路径、请求头、查询参数或日期版本，配合弃用（Deprecation）与下线（Sunset）流程，避免一次改动打断所有调用方。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>先区分兼容变更（新增可选字段、新接口）与破坏性变更（删字段、改类型、改语义）。</p></li><li><span class="sn">2</span><p>兼容变更直接发布；只有破坏性变更才引入新版本，如 /v2 路径或新的版本头取值。</p></li><li><span class="sn">3</span><p>网关或路由层根据路径或头部把请求分发到对应版本的处理逻辑或适配层。</p></li><li><span class="sn">4</span><p>旧版本标记弃用，通过文档、响应头（Deprecation、Sunset）和邮件通知调用方。</p></li><li><span class="sn">5</span><p>持续监控旧版本调用量，降到可接受水平且过了公告期后再正式下线。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>破坏性变更 (Breaking Change)</dt><dd>让现有客户端代码出错或语义改变的修改。</dd></div><div class="term"><dt>Sunset 响应头</dt><dd>RFC 8594 定义，声明资源预计停止服务的时间。</dd></div><div class="term"><dt>Deprecation 响应头</dt><dd>RFC 9745 定义，标记资源已被弃用。</dd></div><div class="term"><dt>日期版本 (Date-based Versioning)</dt><dd>以发布日期作版本号，按账号固定默认版本。</dd></div><div class="term"><dt>容错读取 (Tolerant Reader)</dt><dd>客户端忽略未知字段，提升向前兼容。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Express 路径版本与弃用头</span><em>typescript</em><button class="ccopy">复制</button></div><pre><code>import express from &quot;express&quot;;
+
+const app = express();
+const v1 = express.Router();
+const v2 = express.Router();
+
+// v1：返回 name 单字段（已弃用）
+v1.get(&quot;/users/:id&quot;, (req, res) =&gt; {
+  res.set(&quot;Deprecation&quot;, &quot;@1767225600&quot;); // RFC 9745：弃用起始时间戳
+  res.set(&quot;Sunset&quot;, &quot;Thu, 01 Jul 2027 00:00:00 GMT&quot;);
+  res.set(&quot;Link&quot;, &#x27;&lt;/v2/users&gt;; rel=&quot;successor-version&quot;&#x27;);
+  res.json({ id: req.params.id, name: &quot;Ada Lovelace&quot; });
+});
+
+// v2：破坏性变更，拆为两个字段
+v2.get(&quot;/users/:id&quot;, (req, res) =&gt; {
+  res.json({ id: req.params.id, firstName: &quot;Ada&quot;, lastName: &quot;Lovelace&quot; });
+});
+
+app.use(&quot;/v1&quot;, v1);
+app.use(&quot;/v2&quot;, v2);
+app.listen(3000);</code></pre></div><p class="cnote">新旧版本并存，旧版本通过响应头告知弃用与下线时间及替代版本；日期为示例。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">版本载体对比</h3><div class="tw"><table><thead><tr><th>载体</th><th>示例</th><th>优点</th><th>缺点</th></tr></thead><tbody><tr><td data-h="载体">URL 路径</td><td data-h="示例">/v2/users</td><td data-h="优点">直观，易路由与缓存</td><td data-h="缺点">URI 不再纯粹表示资源</td></tr><tr><td data-h="载体">请求头</td><td data-h="示例">API-Version: 2</td><td data-h="优点">URI 稳定</td><td data-h="缺点">调试与浏览器访问不便</td></tr><tr><td data-h="载体">查询参数</td><td data-h="示例">?version=2</td><td data-h="优点">实现简单</td><td data-h="缺点">易被缓存层忽略或混淆</td></tr><tr><td data-h="载体">日期版本</td><td data-h="示例">2025-01-15</td><td data-h="优点">粒度细，可按账号固定</td><td data-h="缺点">服务端需维护大量转换</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>大版本整体切换 (/v1→/v2)</h4><p><b class="k-p">优点</b>边界清晰，易沟通</p><p><b class="k-c">代价</b>迁移成本集中，旧代码长期并存</p><p><b class="k-w">适用</b>公开 API、变更幅度大</p></div><div class="trd"><h4>日期版本 + 转换层</h4><p><b class="k-p">优点</b>小步演进，客户端按需升级</p><p><b class="k-c">代价</b>服务端需维护版本转换链</p><p><b class="k-w">适用</b>大型平台型 API</p></div><div class="trd"><h4>不版本化，只做兼容演进</h4><p><b class="k-p">优点</b>无多版本维护负担</p><p><b class="k-c">代价</b>设计受限，错误难以修正</p><p><b class="k-w">适用</b>内部 API 且调用方可同步升级</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>删除或重命名字段却不升版本</p><p class="fix"><b>✓</b>破坏性变更必须新版本；兼容期内新旧字段并存</p></li><li><p class="bad"><b>✗</b>每次小改都开新版本，版本爆炸</p><p class="fix"><b>✓</b>兼容变更直接发布，只为破坏性变更升版本</p></li><li><p class="bad"><b>✗</b>旧版本无限期保留，没人敢下线</p><p class="fix"><b>✓</b>制定弃用政策与时间表，按调用量监控推进下线</p></li><li><p class="bad"><b>✗</b>把枚举新增值当作兼容变更</p><p class="fix"><b>✓</b>客户端可能穷举匹配，新增枚举值需提前公告或视为破坏性</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>有书面的兼容/破坏性变更定义</span></label></li><li><label><input type="checkbox"><span>版本载体全站统一</span></label></li><li><label><input type="checkbox"><span>弃用版本返回 Deprecation/Sunset 头</span></label></li><li><label><input type="checkbox"><span>各版本调用量可监控</span></label></li><li><label><input type="checkbox"><span>OpenAPI 文档按版本发布</span></label></li><li><label><input type="checkbox"><span>契约测试覆盖旧版本行为</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>哪些变更算破坏性？</summary><p>删除或重命名字段、改变字段类型或含义、新增必填参数、收紧校验、改变错误码或默认行为、改变分页或排序语义。新增可选字段、新增接口一般兼容，但前提是客户端容忍未知字段。</p></details><details class="iv"><summary>日期版本是怎么运作的？</summary><p>每个账号固定一个默认 API 版本，请求可用头部覆盖。服务端内部只实现最新逻辑，再通过一系列版本转换把响应降级到客户端请求的版本，从而支持细粒度演进。</p></details><details class="iv"><summary>如何安全下线旧版本？</summary><p>提前公告弃用与日期，响应头提示，按调用方统计流量并逐一通知；临近下线可做短时「熔断演练」暴露未迁移者，最终返回 410 Gone 并提供迁移文档。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.rfc-editor.org/rfc/rfc8594" target="_blank" rel="noopener"><b>RFC 8594: The Sunset HTTP Header Field</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://www.rfc-editor.org/rfc/rfc9745" target="_blank" rel="noopener"><b>RFC 9745: The Deprecation HTTP Response Header Field</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://stripe.com/blog/api-versioning" target="_blank" rel="noopener"><b>Stripe 博客：APIs as infrastructure – versioning</b><small>stripe.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="http-method-semantics.pro.html" rel="prev"><small>‹ 上一个</small><b>🚥 HTTP方法安全性与幂等性</b></a><a class="pn next" href="openapi-specs.pro.html" rel="next"><small>下一个 ›</small><b>📘 OpenAPI / Swagger规范</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

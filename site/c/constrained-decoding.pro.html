@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="约束解码 (Grammar / JSON Schema) 专业模式：约束解码（Constrained Decoding）是在生成的每一步，根据语法或 JSON Schema 计算当前允许的 Token 集合，并把不允许 Toke">
+<title>🎓 约束解码 (Grammar / JSON Schema) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="constrained-decoding" data-answer="0" data-prev="paged-attention.pro.html" data-next="tensor-parallelism.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#llmops">🔥 进阶 · 🧠 模型工程与推理部署</a><span>›</span><a href="constrained-decoding.html">约束解码 (Grammar / JSON Schema)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.483 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="paged-attention.pro.html" rel="prev"><small>‹ 上一个</small><b>📑 分页注意力 (PagedAttention)</b></a><a class="pn next" href="tensor-parallelism.pro.html" rel="next"><small>下一个 ›</small><b>🧮 张量并行</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🚧</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🧠 模型工程与推理部署</span><span>⏱ 约 10 分钟</span></div>
+    <h1>约束解码 (Grammar / JSON Schema)</h1><p class="en">Constrained Decoding</p>
+    <div class="hbtns"><a class="prosw back" href="constrained-decoding.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">约束解码（Constrained Decoding）是在生成的每一步，根据语法或 JSON Schema 计算当前允许的 Token 集合，并把不允许 Token 的概率置零后再采样，从而保证输出在结构上必然合法。它是 OpenAI、Gemini 等结构化输出功能以及 Outlines、XGrammar、llama.cpp GBNF 等开源实现的基础。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>把 JSON Schema、正则表达式或上下文无关文法编译为有限状态机或下推自动机。</p></li><li><span class="sn">2</span><p>预先计算自动机状态与词表 Token 的对应关系，处理一个 Token 跨越多个语法符号的情况。</p></li><li><span class="sn">3</span><p>每生成一步，根据当前自动机状态得到合法 Token 掩码，把非法 Token 的 logit 设为负无穷。</p></li><li><span class="sn">4</span><p>在剩余 Token 上按原采样策略采样，并用所选 Token 推进自动机状态。</p></li><li><span class="sn">5</span><p>直到自动机进入接受状态才允许结束符，确保输出完整闭合；工程实现会缓存掩码以降低每步开销。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>Logit 掩码 (Logit Mask)</dt><dd>把不允许 Token 的分数置为负无穷，使其采样概率为零。</dd></div><div class="term"><dt>有限状态机 (FSM)</dt><dd>可表达正则语言的自动机，适合正则与扁平 JSON 约束。</dd></div><div class="term"><dt>下推自动机 (PDA)</dt><dd>带栈的自动机，可表达任意嵌套的上下文无关文法。</dd></div><div class="term"><dt>GBNF</dt><dd>llama.cpp 使用的文法描述格式，用于约束本地模型输出。</dd></div><div class="term"><dt>严格模式 (strict)</dt><dd>OpenAI 结构化输出中保证输出符合所给 JSON Schema 的开关。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>JSON Schema 结构化输出</span><em>python</em><button class="ccopy">复制</button></div><pre><code># pip install openai ；模型名以官方文档为准
+import json
+from openai import OpenAI
+
+client = OpenAI()
+schema = {
+    &quot;type&quot;: &quot;object&quot;,
+    &quot;properties&quot;: {
+        &quot;title&quot;:    {&quot;type&quot;: &quot;string&quot;},
+        &quot;priority&quot;: {&quot;type&quot;: &quot;string&quot;, &quot;enum&quot;: [&quot;low&quot;, &quot;medium&quot;, &quot;high&quot;]},
+        &quot;due_days&quot;: {&quot;type&quot;: &quot;integer&quot;},
+    },
+    &quot;required&quot;: [&quot;title&quot;, &quot;priority&quot;, &quot;due_days&quot;],
+    &quot;additionalProperties&quot;: False,          # 严格模式要求
+}
+
+resp = client.chat.completions.create(
+    model=&quot;gpt-4o-mini&quot;,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;从这句话提取任务：下周五前务必修好登录 Bug&quot;}],
+    response_format={&quot;type&quot;: &quot;json_schema&quot;,
+                     &quot;json_schema&quot;: {&quot;name&quot;: &quot;task&quot;, &quot;strict&quot;: True, &quot;schema&quot;: schema}},
+)
+task = json.loads(resp.choices[0].message.content)   # 结构合法
+assert 0 &lt;= task[&quot;due_days&quot;] &lt;= 30, &quot;内容是否合理仍需业务校验&quot;
+print(task)</code></pre></div><p class="cnote">约束只保证结构；字段值是否正确仍需校验。需处理模型拒答与输出被截断的情况。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">获得结构化输出的方式</h3><div class="tw"><table><thead><tr><th>方式</th><th>格式保证</th><th>实现位置</th><th>限制</th></tr></thead><tbody><tr><td data-h="方式">提示词要求 JSON</td><td data-h="格式保证">无保证</td><td data-h="实现位置">提示</td><td data-h="限制">偶发多余文字或缺字段</td></tr><tr><td data-h="方式">JSON 模式</td><td data-h="格式保证">合法 JSON</td><td data-h="实现位置">服务端</td><td data-h="限制">不保证符合具体 Schema</td></tr><tr><td data-h="方式">Schema 约束解码</td><td data-h="格式保证">符合 Schema</td><td data-h="实现位置">服务端解码器</td><td data-h="限制">支持的 Schema 关键字有限</td></tr><tr><td data-h="方式">工具/函数调用</td><td data-h="格式保证">参数符合定义</td><td data-h="实现位置">服务端</td><td data-h="限制">需按工具调用协议使用</td></tr><tr><td data-h="方式">事后校验 + 重试</td><td data-h="格式保证">最终可保证</td><td data-h="实现位置">客户端</td><td data-h="限制">增加延迟与成本</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>托管 API 的严格结构化输出</h4><p><b class="k-p">优点</b>零运维，格式基本可靠</p><p><b class="k-c">代价</b>Schema 特性有限制，绑定供应商</p><p><b class="k-w">适用</b>使用商业模型的生产系统</p></div><div class="trd"><h4>自托管 + XGrammar/Outlines</h4><p><b class="k-p">优点</b>支持正则与自定义文法，可控性强</p><p><b class="k-c">代价</b>需维护推理栈，复杂文法有编译开销</p><p><b class="k-w">适用</b>开源模型部署、需要特殊格式</p></div><div class="trd"><h4>提示 + Pydantic 校验重试</h4><p><b class="k-p">优点</b>通用，对任何模型可用</p><p><b class="k-c">代价</b>失败需重试，延迟不可控</p><p><b class="k-w">适用</b>模型或平台不支持约束解码</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>以为格式合法就等于内容正确</p><p class="fix"><b>✓</b>对字段值做业务校验，如范围、枚举含义与引用是否存在</p></li><li><p class="bad"><b>✗</b>Schema 过深或过于复杂，导致质量下降或不被支持</p><p class="fix"><b>✓</b>精简结构，字段命名语义清楚，必要时拆成多步</p></li><li><p class="bad"><b>✗</b>要求先输出答案字段再输出推理字段</p><p class="fix"><b>✓</b>需要推理时把推理字段放在答案字段之前</p></li><li><p class="bad"><b>✗</b>未处理 max_tokens 截断导致 JSON 不完整</p><p class="fix"><b>✓</b>设置足够的输出上限，并检查结束原因</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>使用平台的严格结构化输出而非仅提示</span></label></li><li><label><input type="checkbox"><span>Schema 在目标平台支持的关键字范围内</span></label></li><li><label><input type="checkbox"><span>解析后有业务层校验</span></label></li><li><label><input type="checkbox"><span>处理拒答、截断与解析失败</span></label></li><li><label><input type="checkbox"><span>字段顺序考虑推理在前</span></label></li><li><label><input type="checkbox"><span>用评测集比较约束前后的内容质量</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>约束解码如何保证 100% 符合 Schema？</summary><p>把 Schema 编译成自动机，每一步只允许能让当前前缀继续成为合法输出的 Token，非法 Token 概率被置零，结束符只有在结构完整时才允许。因此任何采样路径都必然产生合法结构，前提是输出没有被长度上限截断。</p></details><details class="iv"><summary>约束解码会影响模型输出质量吗？</summary><p>可能。掩码改变了模型原本的分布，若 Schema 与模型自然表达方式差异大，或强制在推理前输出结论，质量可能下降。缓解方式：字段语义清晰、先推理后答案、Schema 尽量简单，并用评测集对比。</p></details><details class="iv"><summary>为什么 Token 边界是约束解码实现的难点？</summary><p>文法定义在字符层面，而模型以子词 Token 生成，一个 Token 可能跨越多个语法符号或只覆盖半个关键字。实现需要把词表中的每个 Token 映射到自动机的状态转移，并缓存这些映射，否则每步检查整个词表会非常慢。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://platform.openai.com/docs/guides/structured-outputs" target="_blank" rel="noopener"><b>OpenAI: Structured Outputs</b><small>platform.openai.com ↗</small></a></li><li><a href="https://arxiv.org/abs/2307.09702" target="_blank" rel="noopener"><b>Willard &amp; Louf: Efficient Guided Generation (Outlines)</b><small>arxiv.org ↗</small></a></li><li><a href="https://arxiv.org/abs/2411.15100" target="_blank" rel="noopener"><b>XGrammar (arXiv:2411.15100)</b><small>arxiv.org ↗</small></a></li><li><a href="https://github.com/ggml-org/llama.cpp/blob/master/grammars/README.md" target="_blank" rel="noopener"><b>llama.cpp: GBNF Guide</b><small>github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="paged-attention.pro.html" rel="prev"><small>‹ 上一个</small><b>📑 分页注意力 (PagedAttention)</b></a><a class="pn next" href="tensor-parallelism.pro.html" rel="next"><small>下一个 ›</small><b>🧮 张量并行</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="显存 (VRAM) 专业模式：显存（VRAM）是 GPU 板载的高带宽内存，LLM 推理时需容纳模型权重、KV Cache、激活值与框架开销。它是本地与自建推理的首要约束：决定可运行的模型规">
+<title>🎓 显存 (VRAM) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l1" id="main" data-slug="gpu-vram" data-answer="0" data-prev="hugging-face.pro.html" data-next="ip-address.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l1.html#llmops">🌱 初级 · 🧠 模型工程与推理部署</a><span>›</span><a href="gpu-vram.html">显存 (VRAM)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.71 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="hugging-face.pro.html" rel="prev"><small>‹ 上一个</small><b>🤗 Hugging Face 模型社区</b></a><a class="pn next" href="ip-address.pro.html" rel="next"><small>下一个 ›</small><b>📍 IP 地址 (IPv4 / IPv6)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🎮</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌱 初级</span><span>🧠 模型工程与推理部署</span><span>⏱ 约 10 分钟</span></div>
+    <h1>显存 (VRAM)</h1><p class="en">GPU VRAM</p>
+    <div class="hbtns"><a class="prosw back" href="gpu-vram.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">显存（VRAM）是 GPU 板载的高带宽内存，LLM 推理时需容纳模型权重、KV Cache、激活值与框架开销。它是本地与自建推理的首要约束：决定可运行的模型规模、量化精度、上下文长度与并发数。显存带宽同样关键，解码阶段速度往往受限于读取权重的带宽。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>权重占用 ≈ 参数量 × 每参数字节数：FP16/BF16 为 2 字节，INT8 约 1 字节，4-bit 约 0.5 字节（另有少量量化元数据）。</p></li><li><span class="sn">2</span><p>KV Cache 每 Token 占用 ≈ 2 × 层数 × KV 头数 × 头维度 × 字节数，随上下文长度与并发线性增长。</p></li><li><span class="sn">3</span><p>激活值、CUDA 上下文与推理引擎预分配也需要空间；vLLM 等会按比例预留显存给 KV Cache。</p></li><li><span class="sn">4</span><p>显存不足时可量化、换小模型、缩短上下文、降低并发，或把部分层卸载到 CPU（速度显著下降）。</p></li><li><span class="sn">5</span><p>多卡可用张量并行切分权重；Apple 芯片等统一内存架构由 CPU 与 GPU 共享内存。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>KV Cache</dt><dd>缓存已处理 Token 的 Key/Value，避免重复计算，占用随上下文增长。</dd></div><div class="term"><dt>GQA (Grouped-Query Attention)</dt><dd>多个查询头共享 KV 头，显著减少 KV Cache 占用。</dd></div><div class="term"><dt>显存带宽 (Memory Bandwidth)</dt><dd>每秒可读写的数据量，常是解码速度瓶颈。</dd></div><div class="term"><dt>CPU 卸载 (Offloading)</dt><dd>把部分层放到内存由 CPU 计算，能跑但更慢。</dd></div><div class="term"><dt>OOM (Out of Memory)</dt><dd>显存分配失败，进程报错退出。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>估算推理所需显存</span><em>python</em><button class="ccopy">复制</button></div><pre><code>def estimate_vram_gb(params_b, bytes_per_param, layers, kv_heads,
+                     head_dim, ctx_len, batch=1, kv_bytes=2, overhead=1.2):
+    &quot;&quot;&quot;粗略估算：权重 + KV Cache，再乘开销系数&quot;&quot;&quot;
+    weights = params_b * 1e9 * bytes_per_param
+    # 每个 Token 的 KV：K 和 V 两份 × 层数 × KV 头数 × 头维度 × 字节数
+    kv_per_token = 2 * layers * kv_heads * head_dim * kv_bytes
+    kv_total = kv_per_token * ctx_len * batch
+    return (weights + kv_total) * overhead / 1024**3
+
+# 以 Llama 3 8B 的公开配置为例：32 层、8 个 KV 头、头维度 128
+for name, bpp in [(&quot;BF16&quot;, 2), (&quot;INT8&quot;, 1), (&quot;4-bit&quot;, 0.5)]:
+    gb = estimate_vram_gb(8, bpp, layers=32, kv_heads=8,
+                          head_dim=128, ctx_len=8192)
+    print(f&quot;{name}: 约 {gb:.1f} GB&quot;)
+
+# 实际占用用 nvidia-smi 查看：
+#   nvidia-smi --query-gpu=memory.used,memory.total --format=csv</code></pre></div><p class="cnote">该配置下每 Token KV 为 128 KiB，8K 上下文约 1 GiB；开销系数是经验假设，需实测校准。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">显存占用构成</h3><div class="tw"><table><thead><tr><th>组成</th><th>决定因素</th><th>如何压缩</th></tr></thead><tbody><tr><td data-h="组成">权重</td><td data-h="决定因素">参数量 × 精度</td><td data-h="如何压缩">量化、换小模型</td></tr><tr><td data-h="组成">KV Cache</td><td data-h="决定因素">层数、KV 头、上下文、并发</td><td data-h="如何压缩">GQA、KV 量化、缩短上下文</td></tr><tr><td data-h="组成">激活值</td><td data-h="决定因素">批大小、序列长度</td><td data-h="如何压缩">减小批次、分块计算</td></tr><tr><td data-h="组成">运行时开销</td><td data-h="决定因素">框架与 CUDA 上下文</td><td data-h="如何压缩">调整预分配比例</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>高精度 (BF16)</h4><p><b class="k-p">优点</b>效果最接近原模型</p><p><b class="k-c">代价</b>显存需求最大</p><p><b class="k-w">适用</b>显存充足、追求质量</p></div><div class="trd"><h4>4-bit 量化</h4><p><b class="k-p">优点</b>权重约降为 1/4，可上消费卡</p><p><b class="k-c">代价</b>有精度损失，部分任务明显</p><p><b class="k-w">适用</b>本地运行、资源受限</p></div><div class="trd"><h4>CPU/内存卸载</h4><p><b class="k-p">优点</b>小显存也能跑大模型</p><p><b class="k-c">代价</b>速度显著下降</p><p><b class="k-w">适用</b>偶尔使用、可容忍慢</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>只按权重估算显存，长上下文时 OOM</p><p class="fix"><b>✓</b>把 KV Cache 按最大上下文与并发计入预算</p></li><li><p class="bad"><b>✗</b>忽略显存带宽，只看容量选卡</p><p class="fix"><b>✓</b>解码速度主要看带宽，同时比较容量与带宽</p></li><li><p class="bad"><b>✗</b>同机其他进程占着显存不自知</p><p class="fix"><b>✓</b>部署前用 nvidia-smi 检查已用显存</p></li><li><p class="bad"><b>✗</b>推理引擎默认预占大部分显存，与其他服务冲突</p><p class="fix"><b>✓</b>调整引擎的显存占用比例参数</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>已估算权重 + KV Cache + 开销</span></label></li><li><label><input type="checkbox"><span>按最大上下文与并发留余量</span></label></li><li><label><input type="checkbox"><span>量化方案经过任务级评测</span></label></li><li><label><input type="checkbox"><span>部署前检查显存占用与其他进程</span></label></li><li><label><input type="checkbox"><span>监控显存使用与 OOM 事件</span></label></li><li><label><input type="checkbox"><span>评估过带宽对速度的影响</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么长上下文推理显存会暴涨？</summary><p>KV Cache 与上下文长度和并发数成正比：每个 Token 在每层都要缓存 K 和 V。长上下文或高并发下 KV Cache 可超过权重本身。缓解手段有 GQA/MQA、KV 量化、分页式 KV 管理、限制最大长度与前缀共享。</p></details><details class="iv"><summary>解码阶段为什么常被称为带宽受限？</summary><p>单请求自回归解码每生成一个 Token 都要读取全部权重，计算量相对数据搬运很小，瓶颈在显存带宽。因此批处理多个请求能提升吞吐，量化减少读取字节也能提速。</p></details><details class="iv"><summary>24 GB 显卡能否跑 32B 模型？</summary><p>BF16 权重约 64 GB，不行；4-bit 量化权重约 16 GB 出头，加上 KV Cache 与开销，短上下文下可能勉强可行，长上下文需进一步压缩或卸载。最终以实测为准。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://huggingface.co/docs/transformers/llm_tutorial_optimization" target="_blank" rel="noopener"><b>Transformers：Optimizing LLMs for Speed and Memory</b><small>huggingface.co ↗</small></a></li><li><a href="https://docs.vllm.ai/" target="_blank" rel="noopener"><b>vLLM 文档</b><small>docs.vllm.ai ↗</small></a></li><li><a href="https://docs.nvidia.com/deploy/nvidia-smi/index.html" target="_blank" rel="noopener"><b>NVIDIA：nvidia-smi 文档</b><small>docs.nvidia.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="hugging-face.pro.html" rel="prev"><small>‹ 上一个</small><b>🤗 Hugging Face 模型社区</b></a><a class="pn next" href="ip-address.pro.html" rel="next"><small>下一个 ›</small><b>📍 IP 地址 (IPv4 / IPv6)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

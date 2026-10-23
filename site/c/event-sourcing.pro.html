@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="事件溯源 专业模式：事件溯源（Event Sourcing）是一种持久化模式：不直接保存实体的当前状态，而是把每次状态变化作为不可变事件按顺序追加到事件存储中，当前状态通过按顺序重">
+<title>🎓 事件溯源 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="event-sourcing" data-answer="0" data-prev="cqrs.pro.html" data-next="multi-region.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#dist">🔥 进阶 · 🕸️ 分布式</a><span>›</span><a href="event-sourcing.html">事件溯源</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.441 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="cqrs.pro.html" rel="prev"><small>‹ 上一个</small><b>🍽️ 命令查询职责分离</b></a><a class="pn next" href="multi-region.pro.html" rel="next"><small>下一个 ›</small><b>🌏 跨地域多活/容灾</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📜</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>事件溯源</h1><p class="en">Event Sourcing</p>
+    <div class="hbtns"><a class="prosw back" href="event-sourcing.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">事件溯源（Event Sourcing）是一种持久化模式：不直接保存实体的当前状态，而是把每次状态变化作为不可变事件按顺序追加到事件存储中，当前状态通过按顺序重放事件得到。它天然提供完整审计历史和时间回溯能力，常与 CQRS 搭配，但带来事件版本演进和查询方面的复杂度。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>命令处理：加载实体的历史事件并重放出当前状态，再校验命令是否允许执行。</p></li><li><span class="sn">2</span><p>追加事件：校验通过后生成新事件，追加到该实体的事件流末尾，从不修改旧事件。</p></li><li><span class="sn">3</span><p>并发控制：追加时附带期望版本号，若事件流已被他人追加则冲突重试。</p></li><li><span class="sn">4</span><p>读取状态：按顺序折叠事件得到状态；事件过多时定期保存快照以加速加载。</p></li><li><span class="sn">5</span><p>下游投影：事件被订阅后构建各种读模型，也可以重放全部事件来重建读模型。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>事件流 (Event Stream)</dt><dd>同一实体（聚合）按顺序排列的全部事件。</dd></div><div class="term"><dt>事件存储 (Event Store)</dt><dd>只追加、按流和版本组织事件的持久化存储。</dd></div><div class="term"><dt>快照 (Snapshot)</dt><dd>某一版本时的状态缓存，加载时从快照之后开始重放。</dd></div><div class="term"><dt>乐观并发 (Optimistic Concurrency)</dt><dd>按期望版本追加，版本不符即拒绝，避免覆盖。</dd></div><div class="term"><dt>事件升级 (Upcasting)</dt><dd>读取时把旧版本事件转换为新结构的兼容手段。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>最小事件存储</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import json, sqlite3
+
+db = sqlite3.connect(&quot;:memory:&quot;)
+db.execute(&quot;&quot;&quot;CREATE TABLE events (
+  stream_id TEXT, version INTEGER, type TEXT, data TEXT,
+  PRIMARY KEY (stream_id, version))&quot;&quot;&quot;)   # 主键保证同版本只能写一次
+
+def append(stream, expected_version, type_, data):
+    # expected_version 不对会触发主键冲突 → 乐观并发失败
+    db.execute(&quot;INSERT INTO events VALUES (?,?,?,?)&quot;,
+               (stream, expected_version + 1, type_, json.dumps(data)))
+
+def load(stream):
+    balance, version = 0, 0
+    for v, t, d in db.execute(&quot;SELECT version, type, data FROM events &quot;
+                              &quot;WHERE stream_id=? ORDER BY version&quot;, (stream,)):
+        amt = json.loads(d)[&quot;amount&quot;]
+        balance += amt if t == &quot;Deposited&quot; else -amt   # 折叠事件得到状态
+        version = v
+    return balance, version
+
+append(&quot;acct-1&quot;, 0, &quot;Deposited&quot;, {&quot;amount&quot;: 100})
+append(&quot;acct-1&quot;, 1, &quot;Withdrawn&quot;, {&quot;amount&quot;: 30})
+print(load(&quot;acct-1&quot;))          # (70, 2)</code></pre></div><p class="cnote">用 (stream_id, version) 唯一约束实现乐观并发；状态由事件重放计算得出。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">状态存储 vs 事件溯源</h3><div class="tw"><table><thead><tr><th>维度</th><th>状态存储</th><th>事件溯源</th></tr></thead><tbody><tr><td data-h="维度">存什么</td><td data-h="状态存储">当前状态</td><td data-h="事件溯源">全部变化事件</td></tr><tr><td data-h="维度">历史审计</td><td data-h="状态存储">需额外审计表</td><td data-h="事件溯源">天然完整</td></tr><tr><td data-h="维度">查询</td><td data-h="状态存储">直接查询</td><td data-h="事件溯源">需投影成读模型</td></tr><tr><td data-h="维度">结构演进</td><td data-h="状态存储">迁移表结构</td><td data-h="事件溯源">需兼容旧事件版本</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>事件溯源</h4><p><b class="k-p">优点</b>完整审计、可回溯、易构建新视图</p><p><b class="k-c">代价</b>学习曲线陡，事件版本演进难</p><p><b class="k-w">适用</b>金融账务、审计要求高的核心域</p></div><div class="trd"><h4>状态存储+审计日志</h4><p><b class="k-p">优点</b>查询简单，团队熟悉</p><p><b class="k-c">代价</b>审计日志可能与状态不一致</p><p><b class="k-w">适用</b>多数业务系统</p></div><div class="trd"><h4>状态存储+CDC 事件</h4><p><b class="k-p">优点</b>低侵入地对外提供变化流</p><p><b class="k-c">代价</b>事件是表级变化而非业务语义</p><p><b class="k-w">适用</b>需要数据同步但不需完整溯源</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>直接修改或删除历史事件来纠错</p><p class="fix"><b>✓</b>追加补偿或更正事件，保持历史不可变</p></li><li><p class="bad"><b>✗</b>事件字段随意变更，旧事件无法反序列化</p><p class="fix"><b>✓</b>事件带版本号，新增字段向后兼容，必要时 upcasting</p></li><li><p class="bad"><b>✗</b>长生命周期实体每次加载重放上万事件</p><p class="fix"><b>✓</b>定期生成快照，从快照之后开始重放</p></li><li><p class="bad"><b>✗</b>把个人敏感数据直接写入不可变事件</p><p class="fix"><b>✓</b>敏感字段加密存储，删除时销毁密钥（加密擦除）</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>事件命名表达业务事实</span></label></li><li><label><input type="checkbox"><span>追加带期望版本号</span></label></li><li><label><input type="checkbox"><span>事件结构有版本策略</span></label></li><li><label><input type="checkbox"><span>长事件流有快照</span></label></li><li><label><input type="checkbox"><span>投影可重放重建</span></label></li><li><label><input type="checkbox"><span>敏感数据有擦除方案</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>事件溯源中如何处理并发写？</summary><p>每个事件流有单调版本号，写入时声明期望版本，存储层原子检查当前版本是否匹配，不匹配说明有人先写入，返回冲突；客户端重新加载最新状态、重新校验命令后再尝试追加。</p></details><details class="iv"><summary>事件结构变了怎么办？</summary><p>事件不可变，不能批量改写历史。常用做法：只做向后兼容的新增字段；为事件加版本号，读取时用 upcaster 把旧版本转成新结构；变化很大时定义新事件类型，必要时通过流复制迁移。</p></details><details class="iv"><summary>GDPR 删除请求和不可变事件冲突吗？</summary><p>有冲突。常见方案是加密擦除：每个用户的敏感字段用独立密钥加密，删除时销毁密钥使数据不可读；或把敏感数据放在事件之外的可删除存储，事件只保存引用。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://martinfowler.com/eaaDev/EventSourcing.html" target="_blank" rel="noopener"><b>Event Sourcing (Martin Fowler)</b><small>martinfowler.com ↗</small></a></li><li><a href="https://learn.microsoft.com/en-us/azure/architecture/patterns/event-sourcing" target="_blank" rel="noopener"><b>Event Sourcing pattern (Azure Architecture Center)</b><small>learn.microsoft.com ↗</small></a></li><li><a href="https://martinfowler.com/bliki/CQRS.html" target="_blank" rel="noopener"><b>CQRS (Martin Fowler)</b><small>martinfowler.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="cqrs.pro.html" rel="prev"><small>‹ 上一个</small><b>🍽️ 命令查询职责分离</b></a><a class="pn next" href="multi-region.pro.html" rel="next"><small>下一个 ›</small><b>🌏 跨地域多活/容灾</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

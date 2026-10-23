@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="指标监控 (Prometheus / Grafana) 专业模式：Prometheus 是 CNCF 毕业的开源监控系统与时序数据库，以拉取（pull）方式定期抓取目标暴露的指标，用 PromQL 查询，并通过 Alertma">
+<title>🎓 指标监控 (Prometheus / Grafana) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="prometheus-and-grafana" data-answer="0" data-prev="golden-signals.pro.html" data-next="llm-as-a-judge.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sre">🔮 高级 · 🩺 高可用 SRE</a><span>›</span><a href="prometheus-and-grafana.html">指标监控 (Prometheus / Grafana)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.402 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="golden-signals.pro.html" rel="prev"><small>‹ 上一个</small><b>🚥 四大黄金信号</b></a><a class="pn next" href="llm-as-a-judge.pro.html" rel="next"><small>下一个 ›</small><b>⚖️ AI 当裁判 (LLM-as-Judge)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📈</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>指标监控 (Prometheus / Grafana)</h1><p class="en">Prometheus &amp; Grafana</p>
+    <div class="hbtns"><a class="prosw back" href="prometheus-and-grafana.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">Prometheus 是 CNCF 毕业的开源监控系统与时序数据库，以拉取（pull）方式定期抓取目标暴露的指标，用 PromQL 查询，并通过 Alertmanager 发送告警；Grafana 是开源可视化平台，连接 Prometheus 等数据源构建看板。二者组合是云原生指标监控的事实标准，属于可观测性层中的指标（metrics）支柱。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>应用通过客户端库或 exporter 在 /metrics 端点以文本格式暴露计数器、仪表、直方图等指标。</p></li><li><span class="sn">2</span><p>Prometheus 按 scrape_interval 定期拉取各目标，目标来自静态配置或服务发现（如 Kubernetes）。</p></li><li><span class="sn">3</span><p>样本以「指标名 + 标签集」标识的时间序列存入本地 TSDB；记录规则可预计算常用查询。</p></li><li><span class="sn">4</span><p>告警规则持续计算 PromQL 表达式，条件持续满足 for 时长后发给 Alertmanager，由其去重、分组、路由到通知渠道。</p></li><li><span class="sn">5</span><p>Grafana 以 Prometheus 为数据源执行 PromQL，渲染图表与看板，也可配置自身的告警。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>时间序列 (Time Series)</dt><dd>由指标名和标签唯一标识的一串带时间戳的样本。</dd></div><div class="term"><dt>Counter / Gauge / Histogram</dt><dd>只增计数器 / 可增可减的瞬时值 / 分桶分布。</dd></div><div class="term"><dt>PromQL</dt><dd>Prometheus 查询语言，支持 rate、sum by、histogram_quantile 等。</dd></div><div class="term"><dt>Exporter</dt><dd>把第三方系统（如数据库、主机）的状态转换为 Prometheus 指标的程序。</dd></div><div class="term"><dt>基数 (Cardinality)</dt><dd>时间序列数量，由标签取值组合决定，过高会耗尽内存。</dd></div><div class="term"><dt>Alertmanager</dt><dd>接收告警并负责去重、分组、静默与通知路由的组件。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>抓取配置与告警规则</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code># prometheus.yml
+global:
+  scrape_interval: 15s
+rule_files: [&quot;alerts.yml&quot;]
+alerting:
+  alertmanagers:
+    - static_configs: [{ targets: [&quot;alertmanager:9093&quot;] }]
+scrape_configs:
+  - job_name: api
+    static_configs:
+      - targets: [&quot;api:3000&quot;]        # 应用暴露 http://api:3000/metrics
+---
+# alerts.yml
+groups:
+  - name: api
+    rules:
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_requests_total{job=&quot;api&quot;,status=~&quot;5..&quot;}[5m]))
+          / sum(rate(http_requests_total{job=&quot;api&quot;}[5m])) &gt; 0.05
+        for: 10m                       # 持续 10 分钟才触发，避免抖动
+        labels: { severity: page }
+        annotations:
+          summary: &quot;API 5xx 错误率超过 5%&quot;</code></pre></div><p class="cnote">两个文件以 --- 分隔仅为展示；阈值 5% 为示例，应按 SLO 设定。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">指标类型选择</h3><div class="tw"><table><thead><tr><th>类型</th><th>特点</th><th>典型指标</th><th>常用函数</th></tr></thead><tbody><tr><td data-h="类型">Counter</td><td data-h="特点">只增，重启归零</td><td data-h="典型指标">请求总数、错误总数</td><td data-h="常用函数">rate / increase</td></tr><tr><td data-h="类型">Gauge</td><td data-h="特点">可增可减的当前值</td><td data-h="典型指标">内存使用、队列长度</td><td data-h="常用函数">直接取值、avg_over_time</td></tr><tr><td data-h="类型">Histogram</td><td data-h="特点">按桶累计分布，可跨实例聚合</td><td data-h="典型指标">请求耗时、响应大小</td><td data-h="常用函数">histogram_quantile</td></tr><tr><td data-h="类型">Summary</td><td data-h="特点">客户端计算分位数</td><td data-h="典型指标">单实例耗时分位数</td><td data-h="常用函数">不可跨实例聚合分位数</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>自建 Prometheus + Grafana</h4><p><b class="k-p">优点</b>开源免费、生态完善、可控</p><p><b class="k-c">代价</b>需运维存储与高可用，长期存储需扩展</p><p><b class="k-w">适用</b>有运维能力、中等规模</p></div><div class="trd"><h4>托管服务（Grafana Cloud、云厂商托管 Prometheus）</h4><p><b class="k-p">优点</b>免运维、长期存储与高可用</p><p><b class="k-c">代价</b>按序列或样本计费</p><p><b class="k-w">适用</b>团队小、规模增长快</p></div><div class="trd"><h4>长期存储扩展（Thanos、Mimir 等）</h4><p><b class="k-p">优点</b>全局视图、长期保留、高可用</p><p><b class="k-c">代价</b>架构复杂</p><p><b class="k-w">适用</b>多集群、大规模</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>把用户 ID、请求 ID 等高基数值作为标签</p><p class="fix"><b>✓</b>标签只用有限取值（状态码、路由模板），高基数信息放日志或追踪</p></li><li><p class="bad"><b>✗</b>对 Counter 直接画图或求和</p><p class="fix"><b>✓</b>先用 rate() 或 increase() 计算速率再聚合</p></li><li><p class="bad"><b>✗</b>用 Summary 分位数做跨实例平均</p><p class="fix"><b>✓</b>需要聚合时使用 Histogram，再 histogram_quantile</p></li><li><p class="bad"><b>✗</b>告警不设 for 或阈值随意，频繁抖动</p><p class="fix"><b>✓</b>设置持续时间，按 SLO 定义阈值并做告警分级</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>应用暴露 /metrics 且指标命名规范</span></label></li><li><label><input type="checkbox"><span>标签基数受控</span></label></li><li><label><input type="checkbox"><span>关键服务有告警规则并路由到值班</span></label></li><li><label><input type="checkbox"><span>Prometheus 自身有监控与存储容量规划</span></label></li><li><label><input type="checkbox"><span>看板覆盖黄金信号</span></label></li><li><label><input type="checkbox"><span>长期存储与保留期按需配置</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Prometheus 为什么采用拉模式？</summary><p>由服务端控制抓取频率，目标是否存活一目了然（抓取失败即 up=0），便于本地调试直接访问 /metrics。短生命周期任务可借助 Pushgateway，但不适合作为通用推送通道。</p></details><details class="iv"><summary>rate() 和 irate() 有什么区别？</summary><p>rate 计算区间内的平均每秒增长率，平滑、适合告警与趋势；irate 只用区间内最后两个样本，反映瞬时变化，适合观察快速波动的图表，不适合告警。两者都会处理计数器重置。</p></details><details class="iv"><summary>高基数问题如何发现与治理？</summary><p>查看 TSDB 状态页或用 count by (__name__) 找序列最多的指标；删除或改写高基数标签，用 relabel 丢弃无用标签，必要时为每个目标设置样本数上限。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://prometheus.io/docs/introduction/overview/" target="_blank" rel="noopener"><b>Prometheus 文档：Overview</b><small>prometheus.io ↗</small></a></li><li><a href="https://prometheus.io/docs/practices/naming/" target="_blank" rel="noopener"><b>Prometheus 文档：Metric and label naming</b><small>prometheus.io ↗</small></a></li><li><a href="https://grafana.com/docs/grafana/latest/" target="_blank" rel="noopener"><b>Grafana 文档</b><small>grafana.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="golden-signals.pro.html" rel="prev"><small>‹ 上一个</small><b>🚥 四大黄金信号</b></a><a class="pn next" href="llm-as-a-judge.pro.html" rel="next"><small>下一个 ›</small><b>⚖️ AI 当裁判 (LLM-as-Judge)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

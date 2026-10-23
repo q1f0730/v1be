@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="策略即代码 (OPA) 专业模式：策略即代码（Policy as Code）把安全、合规与运维规则写成可版本化、可测试、可自动执行的代码，在 CI、部署准入和运行时由策略引擎统一判定。Open ">
+<title>🎓 策略即代码 (OPA) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="policy-as-code" data-answer="0" data-prev="kubernetes-operators.pro.html" data-next="platform-engineering.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#devops">🔥 进阶 · 🔭 可观测与交付</a><span>›</span><a href="policy-as-code.html">策略即代码 (OPA)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.471 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="kubernetes-operators.pro.html" rel="prev"><small>‹ 上一个</small><b>🧑‍🔧 K8s Operator 模式</b></a><a class="pn next" href="platform-engineering.pro.html" rel="next"><small>下一个 ›</small><b>🛤️ 平台工程 (内部开发者平台)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📜</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>策略即代码 (OPA)</h1><p class="en">Policy as Code</p>
+    <div class="hbtns"><a class="prosw back" href="policy-as-code.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">策略即代码（Policy as Code）把安全、合规与运维规则写成可版本化、可测试、可自动执行的代码，在 CI、部署准入和运行时由策略引擎统一判定。Open Policy Agent（OPA，CNCF 毕业项目）是通用策略引擎，使用声明式语言 Rego；Kubernetes 场景还常用基于 OPA 的 Gatekeeper 或 Kyverno。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>把规则写成策略文件，与代码一起放在 Git 中评审、测试和发布。</p></li><li><span class="sn">2</span><p>被检查对象以结构化数据（JSON/YAML）作为输入，如 Kubernetes 清单、Terraform 计划、API 请求。</p></li><li><span class="sn">3</span><p>策略引擎对输入求值，输出允许/拒绝及原因列表，业务系统只依据决策结果行动，实现决策与执行解耦。</p></li><li><span class="sn">4</span><p>在多个关口执行：本地与 CI 用 Conftest 检查配置，集群用准入控制器拦截，服务内部用 OPA 做授权。</p></li><li><span class="sn">5</span><p>通过审计模式先观察违规而不拦截，再逐步切换为强制执行。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>Rego</dt><dd>OPA 的声明式查询语言，规则描述在何种条件下产生决策。</dd></div><div class="term"><dt>策略决策点 (PDP)</dt><dd>负责计算策略结果的组件，如 OPA；执行点（PEP）据此放行或拒绝。</dd></div><div class="term"><dt>准入控制 (Admission Control)</dt><dd>Kubernetes 在对象持久化前调用 Webhook 校验或改写请求。</dd></div><div class="term"><dt>Conftest</dt><dd>用 Rego 策略测试结构化配置文件的命令行工具，常用于 CI。</dd></div><div class="term"><dt>审计模式 (Audit/Dry-run)</dt><dd>只记录违规不拦截，用于新策略上线前评估影响面。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Conftest 检查 K8s 清单</span><em>bash</em><button class="ccopy">复制</button></div><pre><code>mkdir -p policy
+cat &gt; policy/k8s.rego &lt;&lt;&#x27;EOF&#x27;
+package main
+import rego.v1
+
+deny contains msg if {
+  input.kind == &quot;Deployment&quot;
+  some c in input.spec.template.spec.containers
+  not c.securityContext.runAsNonRoot
+  msg := sprintf(&quot;容器 %s 必须设置 runAsNonRoot: true&quot;, [c.name])
+}
+
+deny contains msg if {
+  input.kind == &quot;Deployment&quot;
+  some c in input.spec.template.spec.containers
+  not c.resources.limits.memory
+  msg := sprintf(&quot;容器 %s 缺少内存上限&quot;, [c.name])
+}
+EOF
+
+# 在 CI 中执行：任一 deny 命中则返回非零退出码
+conftest test deploy/deployment.yaml --policy policy/</code></pre></div><p class="cnote">同一份 Rego 可在 CI 与集群准入两处复用；import rego.v1 兼容 OPA 1.0 语法。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见策略引擎对比</h3><div class="tw"><table><thead><tr><th>工具</th><th>语言</th><th>主要场景</th></tr></thead><tbody><tr><td data-h="工具">OPA</td><td data-h="语言">Rego</td><td data-h="主要场景">通用：API 授权、配置、Terraform</td></tr><tr><td data-h="工具">Gatekeeper</td><td data-h="语言">Rego（ConstraintTemplate）</td><td data-h="主要场景">Kubernetes 准入与审计</td></tr><tr><td data-h="工具">Kyverno</td><td data-h="语言">YAML 声明</td><td data-h="主要场景">Kubernetes 校验、改写与生成资源</td></tr><tr><td data-h="工具">Conftest</td><td data-h="语言">Rego</td><td data-h="主要场景">CI 中测试配置文件</td></tr><tr><td data-h="工具">HashiCorp Sentinel</td><td data-h="语言">Sentinel</td><td data-h="主要场景">Terraform Cloud 等 HashiCorp 产品</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>CI 阶段检查</h4><p><b class="k-p">优点</b>反馈最早，修复成本最低</p><p><b class="k-c">代价</b>可被绕过，不覆盖手工变更</p><p><b class="k-w">适用</b>所有 IaC 与清单仓库</p></div><div class="trd"><h4>集群准入强制</h4><p><b class="k-p">优点</b>无法绕过的最后关口</p><p><b class="k-c">代价</b>策略错误会阻断发布，需高可用</p><p><b class="k-w">适用</b>生产集群的关键安全规则</p></div><div class="trd"><h4>运行时授权（OPA sidecar/库）</h4><p><b class="k-p">优点</b>授权逻辑与业务代码解耦，统一审计</p><p><b class="k-c">代价</b>增加调用延迟与部署组件</p><p><b class="k-w">适用</b>多服务需要一致的细粒度授权</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>新策略直接强制执行，阻断大量现有工作负载</p><p class="fix"><b>✓</b>先审计模式统计违规，修复存量后再强制</p></li><li><p class="bad"><b>✗</b>策略没有单元测试，改动后误放或误杀</p><p class="fix"><b>✓</b>用 opa test 或 conftest verify 为每条规则写正反用例</p></li><li><p class="bad"><b>✗</b>准入 Webhook 故障导致集群无法创建资源</p><p class="fix"><b>✓</b>多副本部署，合理设置 failurePolicy 与超时，排除系统命名空间</p></li><li><p class="bad"><b>✗</b>拒绝信息含糊，开发者不知道怎么改</p><p class="fix"><b>✓</b>消息写明违规字段与修复方法，并附文档链接</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>策略文件纳入版本控制与代码评审</span></label></li><li><label><input type="checkbox"><span>每条策略有通过与拒绝的测试用例</span></label></li><li><label><input type="checkbox"><span>CI 与准入复用同一套策略</span></label></li><li><label><input type="checkbox"><span>新策略先审计后强制</span></label></li><li><label><input type="checkbox"><span>准入组件高可用且有故障策略</span></label></li><li><label><input type="checkbox"><span>例外有审批流程与到期时间</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么把策略决策与执行分离？</summary><p>业务服务只询问「能否执行」，规则统一在策略引擎中维护，修改规则无需改动和发布每个服务；决策可集中记录审计；同一策略语言覆盖 Kubernetes、CI、API 授权等多个执行点，减少规则在各处重复实现而不一致。</p></details><details class="iv"><summary>Gatekeeper 和 Kyverno 如何选？</summary><p>Gatekeeper 基于 OPA 与 Rego，表达力强，可与组织内其他 OPA 场景共享技能；Kyverno 用 Kubernetes 风格的 YAML 编写，上手快，并原生支持改写与生成资源。只管 Kubernetes 且团队不熟 Rego 时常选 Kyverno。</p></details><details class="iv"><summary>AI 生成的 IaC 如何借助策略即代码把关？</summary><p>在 CI 中对 Terraform 计划与 Kubernetes 清单运行策略检查，拦截公开存储桶、特权容器、缺少资源限制等问题；把违规消息反馈给 Agent 让其自行修复，形成自动闭环，人工只审查例外与高风险变更。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.openpolicyagent.org/docs/latest/" target="_blank" rel="noopener"><b>Open Policy Agent Documentation</b><small>openpolicyagent.org ↗</small></a></li><li><a href="https://www.conftest.dev/" target="_blank" rel="noopener"><b>Conftest</b><small>conftest.dev ↗</small></a></li><li><a href="https://kyverno.io/docs/" target="_blank" rel="noopener"><b>Kyverno Documentation</b><small>kyverno.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="kubernetes-operators.pro.html" rel="prev"><small>‹ 上一个</small><b>🧑‍🔧 K8s Operator 模式</b></a><a class="pn next" href="platform-engineering.pro.html" rel="next"><small>下一个 ›</small><b>🛤️ 平台工程 (内部开发者平台)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="分析型与事务型数据库 专业模式：OLTP（Online Transaction Processing，联机事务处理）与 OLAP（Online Analytical Processing，联机">
+<title>🎓 分析型与事务型数据库 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="olap-vs-oltp" data-answer="0" data-prev="data-warehouse.pro.html" data-next="columnar-storage.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#data">🔮 高级 · 📊 数据工程</a><span>›</span><a href="olap-vs-oltp.html">分析型与事务型数据库</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.360 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="data-warehouse.pro.html" rel="prev"><small>‹ 上一个</small><b>🏬 数据仓库 (BigQuery / Snowflake)</b></a><a class="pn next" href="columnar-storage.pro.html" rel="next"><small>下一个 ›</small><b>🗂️ 列式存储 (Parquet)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">⚖️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>📊 数据工程</span><span>⏱ 约 10 分钟</span></div>
+    <h1>分析型与事务型数据库</h1><p class="en">OLAP vs OLTP</p>
+    <div class="hbtns"><a class="prosw back" href="olap-vs-oltp.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">OLTP（Online Transaction Processing，联机事务处理）与 OLAP（Online Analytical Processing，联机分析处理）是两类数据负载。OLTP 面向大量并发的短事务，强调低延迟、ACID 与单行读写；OLAP 面向少量但扫描海量数据的聚合查询，强调吞吐与扫描效率。区分二者决定了数据库选型、存储格式与架构隔离方式。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>OLTP 请求通常按主键或索引读写少量行，要求毫秒级延迟和事务一致性，典型如下单、扣库存。</p></li><li><span class="sn">2</span><p>OLTP 系统多用行式存储与 B-tree 索引，一行的所有列连续存放，适合整行读写。</p></li><li><span class="sn">3</span><p>OLAP 查询常对数亿行做 GROUP BY、JOIN、窗口函数，只用少数列，瓶颈在扫描与聚合吞吐。</p></li><li><span class="sn">4</span><p>OLAP 系统多用列式存储、压缩、向量化执行与 MPP 并行，提升每秒处理的行数。</p></li><li><span class="sn">5</span><p>实际架构通过 CDC 或批量 ETL 把 OLTP 数据同步到 OLAP 系统，二者负载物理隔离。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>ACID</dt><dd>原子性、一致性、隔离性、持久性，事务型数据库的核心保证。</dd></div><div class="term"><dt>MPP (Massively Parallel Processing)</dt><dd>把查询拆到多节点并行执行的架构。</dd></div><div class="term"><dt>向量化执行 (Vectorized Execution)</dt><dd>一次处理一批列值而非逐行，提升 CPU 效率。</dd></div><div class="term"><dt>HTAP</dt><dd>混合事务/分析处理，同一系统兼顾两类负载。</dd></div><div class="term"><dt>CDC (Change Data Capture)</dt><dd>捕获数据库变更并实时同步到下游系统。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>两类查询的典型形态</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- OLTP：按主键改一行，要求毫秒级 + 事务
+BEGIN;
+UPDATE inventory SET stock = stock - 1
+ WHERE sku = &#x27;A100&#x27; AND stock &gt; 0;
+INSERT INTO orders (user_id, sku, amount)
+ VALUES (42, &#x27;A100&#x27;, 99.00);
+COMMIT;
+
+-- OLAP：扫全年数据做聚合，只用 3 列
+SELECT date_trunc(&#x27;month&#x27;, created_at) AS m,
+       sku,
+       SUM(amount) AS revenue
+FROM orders
+WHERE created_at &gt;= &#x27;2025-01-01&#x27;
+GROUP BY 1, 2
+ORDER BY 1, 3 DESC;</code></pre></div><p class="cnote">第一段是高并发短事务，第二段是低频大扫描；后者应放到分析库执行。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">OLTP 与 OLAP 关键差异</h3><div class="tw"><table><thead><tr><th>维度</th><th>OLTP</th><th>OLAP</th></tr></thead><tbody><tr><td data-h="维度">访问模式</td><td data-h="OLTP">点查/小范围读写</td><td data-h="OLAP">大范围扫描聚合</td></tr><tr><td data-h="维度">存储格式</td><td data-h="OLTP">行式 + B-tree</td><td data-h="OLAP">列式 + 压缩</td></tr><tr><td data-h="维度">优化目标</td><td data-h="OLTP">延迟、并发、一致性</td><td data-h="OLAP">吞吐、扫描效率</td></tr><tr><td data-h="维度">代表系统</td><td data-h="OLTP">PostgreSQL、MySQL</td><td data-h="OLAP">ClickHouse、BigQuery、Snowflake</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>分析查询走只读副本</h4><p><b class="k-p">优点</b>改动最小，数据准实时</p><p><b class="k-c">代价</b>仍是行存，复杂聚合慢，可能拖累复制</p><p><b class="k-w">适用</b>报表量小、早期产品</p></div><div class="trd"><h4>同步到专用 OLAP 库</h4><p><b class="k-p">优点</b>隔离彻底，分析性能高</p><p><b class="k-c">代价</b>多一套系统和同步链路</p><p><b class="k-w">适用</b>分析需求稳定增长</p></div><div class="trd"><h4>HTAP 数据库</h4><p><b class="k-p">优点</b>一套系统、数据新鲜</p><p><b class="k-c">代价</b>选型受限，极端负载仍需拆分</p><p><b class="k-w">适用</b>需要实时分析且团队想少运维</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>在 OLTP 主库上跑长时间报表查询</p><p class="fix"><b>✓</b>迁到只读副本或分析库，并设置 statement_timeout</p></li><li><p class="bad"><b>✗</b>为了报表在业务表上加大量索引</p><p class="fix"><b>✓</b>索引拖慢写入；聚合需求交给列式分析库</p></li><li><p class="bad"><b>✗</b>把 OLAP 库当业务库，做高频单行更新</p><p class="fix"><b>✓</b>OLAP 擅长批量追加，点更新代价高，保留在 OLTP</p></li><li><p class="bad"><b>✗</b>同步链路无监控，分析数据静默滞后</p><p class="fix"><b>✓</b>监控 CDC 延迟与行数对账，异常告警</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>区分并标注查询属于事务型还是分析型</span></label></li><li><label><input type="checkbox"><span>主库设置查询超时上限</span></label></li><li><label><input type="checkbox"><span>分析负载有独立资源（副本/数仓）</span></label></li><li><label><input type="checkbox"><span>同步延迟有监控与 SLO</span></label></li><li><label><input type="checkbox"><span>BI 账号无权访问主库</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么列式存储适合 OLAP 而不适合 OLTP？</summary><p>OLAP 只读少数列、扫描大量行，列存只读所需列且同列压缩率高；OLTP 常整行读写，列存要把一行拆到多列文件中更新，写放大且点查需拼行，延迟高。</p></details><details class="iv"><summary>如何把 OLTP 数据实时同步给 OLAP？</summary><p>用 CDC（如 Debezium 读 binlog/WAL）推到 Kafka 等消息系统，再写入分析库；注意顺序、幂等、Schema 演进和删除事件处理，并监控端到端延迟。</p></details><details class="iv"><summary>HTAP 能否完全替代分离架构？</summary><p>能减少同步链路与数据延迟，但两类负载仍在争用资源，通常靠行列双存或副本隔离实现；超大规模分析或复杂建模场景仍常用独立数仓。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://en.wikipedia.org/wiki/Online_transaction_processing" target="_blank" rel="noopener"><b>Wikipedia: Online transaction processing</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Online_analytical_processing" target="_blank" rel="noopener"><b>Wikipedia: Online analytical processing</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://clickhouse.com/resources/engineering/what-is-olap" target="_blank" rel="noopener"><b>ClickHouse：What is OLAP?</b><small>clickhouse.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="data-warehouse.pro.html" rel="prev"><small>‹ 上一个</small><b>🏬 数据仓库 (BigQuery / Snowflake)</b></a><a class="pn next" href="columnar-storage.pro.html" rel="next"><small>下一个 ›</small><b>🗂️ 列式存储 (Parquet)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

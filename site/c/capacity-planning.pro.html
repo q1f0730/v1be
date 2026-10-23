@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="容量规划工程 专业模式：容量规划（Capacity Planning）是根据业务增长预测和系统性能模型，提前确定需要多少计算、存储、网络与数据库资源，以在满足 SLO 的前提下控制成本">
+<title>🎓 容量规划工程 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="capacity-planning" data-answer="0" data-prev="chaos-engineering.pro.html" data-next="opentelemetry.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#sre">🔥 进阶 · 🩺 高可用 SRE</a><span>›</span><a href="capacity-planning.html">容量规划工程</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.444 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="chaos-engineering.pro.html" rel="prev"><small>‹ 上一个</small><b>🐒 混沌工程</b></a><a class="pn next" href="opentelemetry.pro.html" rel="next"><small>下一个 ›</small><b>🔌 OTel统一可观测标准</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📐</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>容量规划工程</h1><p class="en">Capacity Planning</p>
+    <div class="hbtns"><a class="prosw back" href="capacity-planning.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">容量规划（Capacity Planning）是根据业务增长预测和系统性能模型，提前确定需要多少计算、存储、网络与数据库资源，以在满足 SLO 的前提下控制成本的工程活动。它结合历史数据、压测结果、排队论估算和冗余要求（如 N+1），回答「何时、加多少、加在哪」。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>测基线：采集当前流量、资源利用率与延迟，找出对容量最敏感的瓶颈资源。</p></li><li><span class="sn">2</span><p>建模型：通过压测得到单实例在满足延迟 SLO 时能承受的最大吞吐。</p></li><li><span class="sn">3</span><p>预测需求：结合历史增长趋势、季节性峰值和业务活动计划估算未来峰值流量。</p></li><li><span class="sn">4</span><p>加冗余：考虑 N+1 或可用区故障、发布期间实例减少，并预留突发余量。</p></li><li><span class="sn">5</span><p>执行复盘：提前采购或配置扩容策略，定期对比预测与实际值并修正模型。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>利特尔法则 (Little&#x27;s Law)</dt><dd>L = λW：系统内平均请求数等于到达率乘以平均停留时间。</dd></div><div class="term"><dt>余量 (Headroom)</dt><dd>峰值负载之外为突发和故障预留的容量。</dd></div><div class="term"><dt>N+1 冗余</dt><dd>在满足需求的 N 份资源外再多备一份以容忍单点故障。</dd></div><div class="term"><dt>拐点 (Knee Point)</dt><dd>利用率超过某值后延迟急剧上升的位置。</dd></div><div class="term"><dt>负载测试 (Load Testing)</dt><dd>按预期或更高流量施压，测量吞吐与延迟关系。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>估算实例数</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import math
+
+peak_rps = 1200          # 预测峰值每秒请求数（含活动增长）
+latency_s = 0.15         # 平均处理耗时
+per_inst_max_rps = 180   # 压测得出：单实例 p99 仍达标时的最大吞吐
+target_util = 0.6        # 只用到 60%，远离延迟拐点
+zones = 3                # 跨 3 个可用区，需容忍丢失 1 个
+
+# 利特尔法则：系统中同时在处理的请求数
+concurrency = peak_rps * latency_s
+needed = peak_rps / (per_inst_max_rps * target_util)
+# 丢失一个可用区后剩余实例仍需扛住峰值
+total = math.ceil(needed * zones / (zones - 1))
+
+print(f&quot;并发约 {concurrency:.0f}，正常需 {math.ceil(needed)} 台，&quot;
+      f&quot;考虑可用区故障共需 {total} 台&quot;)</code></pre></div><p class="cnote">所有输入都应来自压测与监控；N+1 和目标利用率决定了最终余量。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">规划输入与来源</h3><div class="tw"><table><thead><tr><th>输入</th><th>来源</th><th>注意</th></tr></thead><tbody><tr><td data-h="输入">峰值流量预测</td><td data-h="来源">历史监控 + 业务计划</td><td data-h="注意">区分日常峰值与活动峰值</td></tr><tr><td data-h="输入">单实例容量</td><td data-h="来源">压测</td><td data-h="注意">以延迟 SLO 达标为准，而非 CPU 满载</td></tr><tr><td data-h="输入">目标利用率</td><td data-h="来源">排队特性与风险偏好</td><td data-h="注意">高利用率时延迟非线性上升</td></tr><tr><td data-h="输入">冗余要求</td><td data-h="来源">可用性目标</td><td data-h="注意">可用区故障、发布滚动</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>预留固定容量</h4><p><b class="k-p">优点</b>稳定可预测，可用预留折扣</p><p><b class="k-c">代价</b>低谷时浪费</p><p><b class="k-w">适用</b>基线流量稳定</p></div><div class="trd"><h4>自动扩缩容</h4><p><b class="k-p">优点</b>按需付费，应对波动</p><p><b class="k-c">代价</b>扩容有延迟，依赖指标正确</p><p><b class="k-w">适用</b>流量波动明显</p></div><div class="trd"><h4>预热+自动扩缩混合</h4><p><b class="k-p">优点</b>兼顾突发与成本</p><p><b class="k-c">代价</b>需要准确的活动排期</p><p><b class="k-w">适用</b>大促、发布会等可预期高峰</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>按 CPU 利用率规划，忽视数据库连接、带宽等真实瓶颈</p><p class="fix"><b>✓</b>压测找出首个饱和资源，以其为规划依据</p></li><li><p class="bad"><b>✗</b>把利用率目标定到 90% 以上</p><p class="fix"><b>✓</b>考虑排队效应和故障冗余，常见目标显著低于满载</p></li><li><p class="bad"><b>✗</b>只扩应用层，下游数据库和第三方配额跟不上</p><p class="fix"><b>✓</b>沿调用链评估所有依赖的容量与限额</p></li><li><p class="bad"><b>✗</b>依赖自动扩缩应对秒级突发</p><p class="fix"><b>✓</b>提前预热，并设置最小实例数和扩容余量</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>瓶颈资源已通过压测确定</span></label></li><li><label><input type="checkbox"><span>峰值预测含业务活动</span></label></li><li><label><input type="checkbox"><span>冗余覆盖可用区故障</span></label></li><li><label><input type="checkbox"><span>下游依赖容量已评估</span></label></li><li><label><input type="checkbox"><span>云配额与限额已确认</span></label></li><li><label><input type="checkbox"><span>预测与实际定期复盘</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么不能把服务器用到 100%？</summary><p>排队论表明利用率接近 100% 时排队等待时间急剧增长，延迟远超 SLO；突发流量和实例故障也需要余量。此外 N+1 冗余要求故障后剩余资源能承担全部负载，因此正常利用率必须留出空间。</p></details><details class="iv"><summary>如何确定单实例容量？</summary><p>在接近生产的环境做阶梯压测，逐步增加负载，记录吞吐与 p99 延迟、错误率，找到延迟或错误率超出 SLO 前的最大吞吐作为容量上限，同时记录首先饱和的资源。</p></details><details class="iv"><summary>大促容量规划你会怎么做？</summary><p>根据历史大促与业务目标估算峰值倍数；全链路压测找瓶颈；为数据库、缓存、消息队列和第三方接口确认容量；提前扩容和预热；准备限流、降级与熔断预案；活动中实时监控并复盘。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://sre.google/sre-book/introduction/" target="_blank" rel="noopener"><b>Google SRE Book: Introduction</b><small>sre.google ↗</small></a></li><li><a href="https://sre.google/sre-book/handling-overload/" target="_blank" rel="noopener"><b>Google SRE Book: Handling Overload</b><small>sre.google ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Little%27s_law" target="_blank" rel="noopener"><b>Little&#x27;s law - Wikipedia</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://grafana.com/docs/k6/latest/" target="_blank" rel="noopener"><b>Grafana k6 文档</b><small>grafana.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="chaos-engineering.pro.html" rel="prev"><small>‹ 上一个</small><b>🐒 混沌工程</b></a><a class="pn next" href="opentelemetry.pro.html" rel="next"><small>下一个 ›</small><b>🔌 OTel统一可观测标准</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

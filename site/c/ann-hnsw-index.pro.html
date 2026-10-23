@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="近似最近邻索引 (ANN / HNSW) 专业模式：近似最近邻（ANN）索引用少量精度换取数量级的检索加速，是向量数据库的核心。HNSW（Hierarchical Navigable Small World）是最">
+<title>🎓 近似最近邻索引 (ANN / HNSW) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="ann-hnsw-index" data-answer="0" data-prev="a2a-protocol.pro.html" data-next="agent-trajectory-evaluation.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#ai">🔥 进阶 · 🤖 AI 与提示词</a><span>›</span><a href="ann-hnsw-index.html">近似最近邻索引 (ANN / HNSW)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.456 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="a2a-protocol.pro.html" rel="prev"><small>‹ 上一个</small><b>🤝 智能体互联协议 (A2A)</b></a><a class="pn next" href="agent-trajectory-evaluation.pro.html" rel="next"><small>下一个 ›</small><b>🗺️ 智能体轨迹评测</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🕸️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>近似最近邻索引 (ANN / HNSW)</h1><p class="en">ANN Index (HNSW)</p>
+    <div class="hbtns"><a class="prosw back" href="ann-hnsw-index.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">近似最近邻（ANN）索引用少量精度换取数量级的检索加速，是向量数据库的核心。HNSW（Hierarchical Navigable Small World）是最常用的 ANN 图索引：把向量组织成多层近邻图，高层稀疏用于长距离跳转，底层稠密用于精细搜索，查询复杂度近似对数级，在召回率与延迟之间可通过参数调节。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>插入时为每个向量随机抽取最高层级，层级服从指数衰减分布，因此越高层节点越少。</p></li><li><span class="sn">2</span><p>从顶层入口点开始贪心搜索，逐层下降到新节点所在层，在每层找到候选近邻并建立双向边，每个节点边数受 M 限制。</p></li><li><span class="sn">3</span><p>建图时的候选队列大小由 efConstruction 控制，越大图质量越高、建索引越慢。</p></li><li><span class="sn">4</span><p>查询时同样从顶层贪心下降，在底层用大小为 efSearch 的优先队列做束搜索，返回 top-k。</p></li><li><span class="sn">5</span><p>efSearch 越大召回率越高、延迟越高；必须不小于 k，通常按目标召回率实测调优。</p></li><li><span class="sn">6</span><p>删除通常是标记删除，频繁删改会让图质量下降，需要定期重建或依赖引擎的修复机制。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>召回率 (Recall@k)</dt><dd>ANN 返回的 top-k 中与精确搜索 top-k 重合的比例，衡量近似质量。</dd></div><div class="term"><dt>M</dt><dd>HNSW 每个节点在各层保留的最大邻居数，影响内存、召回与建图速度。</dd></div><div class="term"><dt>efConstruction</dt><dd>建图时动态候选列表大小，越大图越好、构建越慢。</dd></div><div class="term"><dt>efSearch</dt><dd>查询时候选列表大小，是在线调节召回与延迟的主要旋钮。</dd></div><div class="term"><dt>IVF (Inverted File)</dt><dd>另一类 ANN：先聚类分桶，查询只扫描最近的若干桶。</dd></div><div class="term"><dt>乘积量化 (PQ)</dt><dd>把向量切段分别量化压缩，大幅降低内存，代价是精度损失。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>pgvector 建 HNSW 索引</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- 需要已安装 pgvector 扩展
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE docs (
+  id bigserial PRIMARY KEY,
+  content text,
+  embedding vector(1536)      -- 维度与所用嵌入模型一致
+);
+
+-- 余弦距离的 HNSW 索引；m / ef_construction 为 pgvector 默认值
+CREATE INDEX ON docs
+  USING hnsw (embedding vector_cosine_ops)
+  WITH (m = 16, ef_construction = 64);
+
+-- 会话级调大查询候选数以提高召回（默认 40）
+SET hnsw.ef_search = 100;
+
+SELECT id, content
+FROM docs
+ORDER BY embedding &lt;=&gt; &#x27;[0.01, 0.02, ...]&#x27;::vector  -- 替换为查询向量
+LIMIT 5;</code></pre></div><p class="cnote">操作符类必须与查询用的距离运算符匹配（&lt;=&gt; 对应 cosine），否则索引不会被使用。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见 ANN 索引对比</h3><div class="tw"><table><thead><tr><th>索引</th><th>原理</th><th>优势</th><th>代价</th></tr></thead><tbody><tr><td data-h="索引">Flat（暴力）</td><td data-h="原理">逐个计算距离</td><td data-h="优势">100% 精确</td><td data-h="代价">数据量大时线性变慢</td></tr><tr><td data-h="索引">HNSW</td><td data-h="原理">多层近邻图</td><td data-h="优势">高召回、低延迟</td><td data-h="代价">内存占用高，建图较慢</td></tr><tr><td data-h="索引">IVF</td><td data-h="原理">聚类分桶后只查近桶</td><td data-h="优势">建索引快、省内存</td><td data-h="代价">召回依赖 nprobe，需训练</td></tr><tr><td data-h="索引">IVF-PQ</td><td data-h="原理">分桶 + 乘积量化</td><td data-h="优势">内存极省，适合超大规模</td><td data-h="代价">精度损失明显，常需重排</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>调大 efSearch</h4><p><b class="k-p">优点</b>召回率提升，无需重建索引</p><p><b class="k-c">代价</b>单次查询延迟和 CPU 增加</p><p><b class="k-w">适用</b>召回不达标且延迟有余量</p></div><div class="trd"><h4>调大 M</h4><p><b class="k-p">优点</b>图连通性更好，高维数据召回更稳</p><p><b class="k-c">代价</b>内存与建图时间显著增加</p><p><b class="k-w">适用</b>高维、对召回要求严的场景</p></div><div class="trd"><h4>改用 IVF/PQ</h4><p><b class="k-p">优点</b>内存成本大幅下降</p><p><b class="k-c">代价</b>精度下降，参数需训练调优</p><p><b class="k-w">适用</b>向量规模大到 HNSW 放不进内存</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>带 WHERE 过滤的向量查询结果数不足或召回骤降</p><p class="fix"><b>✓</b>了解引擎的过滤策略（先过滤/后过滤/迭代扫描），必要时分区或用支持过滤感知的索引</p></li><li><p class="bad"><b>✗</b>只看延迟不测召回率</p><p class="fix"><b>✓</b>用暴力搜索结果做基准，离线计算 Recall@k 后再定参数</p></li><li><p class="bad"><b>✗</b>索引距离类型与嵌入模型推荐的不一致</p><p class="fix"><b>✓</b>按模型文档选 cosine / 内积 / L2，并保证查询运算符一致</p></li><li><p class="bad"><b>✗</b>大批量导入前先建 HNSW，导入极慢</p><p class="fix"><b>✓</b>先导入数据再建索引，并为建索引分配足够内存</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>距离度量与嵌入模型推荐一致</span></label></li><li><label><input type="checkbox"><span>用精确搜索基准测过 Recall@k</span></label></li><li><label><input type="checkbox"><span>efSearch 按 P99 延迟预算调优</span></label></li><li><label><input type="checkbox"><span>评估过带过滤条件查询的召回</span></label></li><li><label><input type="checkbox"><span>索引内存占用纳入容量规划</span></label></li><li><label><input type="checkbox"><span>有重建索引或模型换代的迁移方案</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>HNSW 为什么能做到近似对数级查询？</summary><p>高层节点稀疏，边跨度大，贪心搜索几步就能接近目标区域；逐层下降后底层只需在局部做束搜索。层级按指数分布随机分配，期望层数与 log N 成正比，类似跳表思想在图上的推广。</p></details><details class="iv"><summary>RAG 召回差，你如何定位是 ANN 的问题？</summary><p>先对同一批查询跑精确搜索，若精确结果也不对，问题在嵌入模型或切块；若精确正确而 ANN 漏掉，说明索引近似损失，调大 efSearch 或 M。还要检查过滤条件是否导致候选不足。</p></details><details class="iv"><summary>HNSW 和 IVF-PQ 如何选？</summary><p>内存充足、追求高召回低延迟选 HNSW；向量规模极大、内存是瓶颈选 IVF-PQ，并常配合原始向量重排补精度。数据频繁删改时还要考虑 HNSW 图退化与重建成本。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://arxiv.org/abs/1603.09320" target="_blank" rel="noopener"><b>Malkov &amp; Yashunin: HNSW (arXiv:1603.09320)</b><small>arxiv.org ↗</small></a></li><li><a href="https://github.com/pgvector/pgvector" target="_blank" rel="noopener"><b>pgvector README</b><small>github.com ↗</small></a></li><li><a href="https://github.com/facebookresearch/faiss/wiki" target="_blank" rel="noopener"><b>Faiss Wiki</b><small>github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="a2a-protocol.pro.html" rel="prev"><small>‹ 上一个</small><b>🤝 智能体互联协议 (A2A)</b></a><a class="pn next" href="agent-trajectory-evaluation.pro.html" rel="next"><small>下一个 ›</small><b>🗺️ 智能体轨迹评测</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

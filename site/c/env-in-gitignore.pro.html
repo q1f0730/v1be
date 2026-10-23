@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="忽略本地环境变量文件 专业模式：把 .env 加入 .gitignore，是让 Git 忽略本地环境变量文件、防止其中的密钥被提交并推送到远程仓库的基础做法。.gitignore 只对尚未被跟">
+<title>🎓 忽略本地环境变量文件 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l1" id="main" data-slug="env-in-gitignore" data-answer="0" data-prev="secrets-management.pro.html" data-next="mfa.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l1.html#sec">🌱 初级 · 🛡️ 安全防线</a><span>›</span><a href="env-in-gitignore.html">忽略本地环境变量文件</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.49 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="secrets-management.pro.html" rel="prev"><small>‹ 上一个</small><b>🔐 机密管理</b></a><a class="pn next" href="mfa.pro.html" rel="next"><small>下一个 ›</small><b>📲 多因素认证</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🙈</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌱 初级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>忽略本地环境变量文件</h1><p class="en">.env in .gitignore</p>
+    <div class="hbtns"><a class="prosw back" href="env-in-gitignore.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">把 .env 加入 .gitignore，是让 Git 忽略本地环境变量文件、防止其中的密钥被提交并推送到远程仓库的基础做法。.gitignore 只对尚未被跟踪的文件生效；若 .env 已被提交过，必须从索引中移除，并且历史中的密钥要视为已泄露并轮换。配套做法是提交一份只含变量名的 .env.example。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>匹配规则：Git 在添加文件时按 .gitignore 中的模式判断是否忽略，支持通配符与否定规则。</p></li><li><span class="sn">2</span><p>仅对未跟踪文件生效：已被提交过的文件不受 .gitignore 影响，修改仍会被跟踪。</p></li><li><span class="sn">3</span><p>从索引移除：git rm --cached .env 停止跟踪但保留本地文件，再提交这次删除。</p></li><li><span class="sn">4</span><p>历史残留：之前的提交中 .env 内容依然存在，任何能访问仓库的人都可查看。</p></li><li><span class="sn">5</span><p>补救：轮换全部泄露密钥，必要时用 git filter-repo 重写历史并强推。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>.gitignore</dt><dd>列出 Git 应忽略的文件模式的配置文件。</dd></div><div class="term"><dt>未跟踪文件 (Untracked)</dt><dd>Git 尚未纳入版本控制的文件。</dd></div><div class="term"><dt>git rm --cached</dt><dd>从暂存区和后续版本中移除文件，但保留工作区文件。</dd></div><div class="term"><dt>git filter-repo</dt><dd>官方推荐的历史重写工具，可彻底删除历史中的文件。</dd></div><div class="term"><dt>全局 gitignore</dt><dd>通过 core.excludesFile 为本机所有仓库设置的忽略规则。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>忽略 .env 与补救</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 1. 写入忽略规则（同时保留示例文件）
+cat &gt;&gt; .gitignore &lt;&lt;&#x27;EOF&#x27;
+.env
+.env.*
+!.env.example
+EOF
+
+# 2. 验证是否生效：输出匹配的规则即表示已忽略
+git check-ignore -v .env
+
+# 3. 如果 .env 之前已经被提交过：停止跟踪（本地文件保留）
+git rm --cached .env
+git commit -m &quot;chore: stop tracking .env&quot;
+
+# 4. 检查历史中是否出现过 .env
+git log --all --oneline -- .env
+
+# 5. 若曾推送：先轮换所有密钥！再按需重写历史（需安装 git-filter-repo）
+# git filter-repo --path .env --invert-paths
+# 之后需强推并通知协作者重新克隆</code></pre></div><p class="cnote">顺序很重要：先忽略并停止跟踪，发现历史泄露时第一步是轮换密钥，重写历史只是补充。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见文件该不该提交</h3><div class="tw"><table><thead><tr><th>文件</th><th>是否提交</th><th>原因</th></tr></thead><tbody><tr><td data-h="文件">.env / .env.local</td><td data-h="是否提交">否</td><td data-h="原因">包含真实密钥与个人配置</td></tr><tr><td data-h="文件">.env.example</td><td data-h="是否提交">是</td><td data-h="原因">只列变量名，供他人参考</td></tr><tr><td data-h="文件">package-lock.json 等锁文件</td><td data-h="是否提交">是</td><td data-h="原因">保证依赖可复现</td></tr><tr><td data-h="文件">node_modules / .venv</td><td data-h="是否提交">否</td><td data-h="原因">可重新安装，体积大</td></tr><tr><td data-h="文件">dist / build</td><td data-h="是否提交">通常否</td><td data-h="原因">可由源码构建生成</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>项目级 .gitignore</h4><p><b class="k-p">优点</b>团队共享，规则随仓库走</p><p><b class="k-c">代价</b>需每个项目维护</p><p><b class="k-w">适用</b>所有项目都应有</p></div><div class="trd"><h4>全局 gitignore</h4><p><b class="k-p">优点</b>本机所有仓库自动生效</p><p><b class="k-c">代价</b>不影响队友的机器</p><p><b class="k-w">适用</b>个人额外保险，如编辑器文件</p></div><div class="trd"><h4>重写 Git 历史</h4><p><b class="k-p">优点</b>从历史中彻底移除文件</p><p><b class="k-c">代价</b>破坏协作者历史，fork 与缓存中仍可能残留</p><p><b class="k-w">适用</b>泄露后在轮换之外的补充措施</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>先提交了 .env 才加 .gitignore，以为就安全了</p><p class="fix"><b>✓</b>执行 git rm --cached 停止跟踪，并轮换已提交的密钥</p></li><li><p class="bad"><b>✗</b>只删除最新版本中的 .env 文件</p><p class="fix"><b>✓</b>历史仍可见，必须轮换，必要时重写历史</p></li><li><p class="bad"><b>✗</b>忽略规则写成 .env 但实际文件名是 .env.production</p><p class="fix"><b>✓</b>使用 .env.* 并用 git check-ignore 验证</p></li><li><p class="bad"><b>✗</b>把 .env.example 也忽略了</p><p class="fix"><b>✓</b>加 !.env.example 否定规则，并确保其中只有占位值</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>.gitignore 包含 .env 与 .env.*</span></label></li><li><label><input type="checkbox"><span>.env.example 已提交且无真实值</span></label></li><li><label><input type="checkbox"><span>git check-ignore 验证通过</span></label></li><li><label><input type="checkbox"><span>历史中从未出现 .env</span></label></li><li><label><input type="checkbox"><span>启用密钥扫描作为兜底</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么加了 .gitignore，.env 还是被提交了？</summary><p>.gitignore 只影响未跟踪文件。若 .env 在添加规则之前已经被 git add 或提交过，Git 会继续跟踪它。需要 git rm --cached .env 停止跟踪并提交，同时把已进入历史的密钥视为泄露进行轮换。</p></details><details class="iv"><summary>重写历史后就安全了吗？</summary><p>不完全。在重写之前，内容可能已被克隆、fork、CI 缓存或被自动化扫描器抓取；托管平台的缓存视图也可能短期残留。所以轮换密钥是必须的第一步，重写历史只是减少后续暴露的补充措施。</p></details><details class="iv"><summary>如何从流程上杜绝这类问题？</summary><p>项目模板自带完善的 .gitignore；提交前钩子运行密钥扫描；托管平台开启推送保护；代码评审时检查新增文件；给 AI Agent 的规则中明确禁止创建或修改真实 .env 内容并提交。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://git-scm.com/docs/gitignore" target="_blank" rel="noopener"><b>Git 文档: gitignore</b><small>git-scm.com ↗</small></a></li><li><a href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/removing-sensitive-data-from-a-repository" target="_blank" rel="noopener"><b>GitHub Docs: Removing sensitive data from a repository</b><small>docs.github.com ↗</small></a></li><li><a href="https://github.com/github/gitignore" target="_blank" rel="noopener"><b>github/gitignore 模板集合</b><small>github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="secrets-management.pro.html" rel="prev"><small>‹ 上一个</small><b>🔐 机密管理</b></a><a class="pn next" href="mfa.pro.html" rel="next"><small>下一个 ›</small><b>📲 多因素认证</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

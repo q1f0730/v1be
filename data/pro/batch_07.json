@@ -1,0 +1,3836 @@
+[
+ {
+  "slug": "bcrypt-and-argon2",
+  "def": "bcrypt 与 Argon2 是专为口令存储设计的慢哈希（密钥派生函数，KDF），位于应用的认证层。它们通过可调的计算成本和内存成本，让每次口令验证都付出固定代价，使离线暴力破解与 GPU/ASIC 并行攻击在经济上不可行。",
+  "how": [
+   "注册时生成随机盐（salt），与口令一起输入 KDF，同一口令每次得到不同哈希。",
+   "bcrypt 基于 Blowfish 的昂贵密钥扩展，成本因子 cost 是对数，每加 1 耗时约翻倍。",
+   "Argon2 用内存成本 m、迭代次数 t、并行度 p 三个参数控制代价，大内存让 GPU 难以并行。",
+   "输出是自描述字符串（如 $2b$12$… 或 $argon2id$v=19$m=…），算法、参数和盐都编码在内。",
+   "登录时从存储串解析参数，重新计算并做常量时间比较，验证通过即可判断是否需要按新参数重哈希。"
+  ],
+  "terms": [
+   {
+    "t": "密钥派生函数 (KDF)",
+    "d": "从口令派生密钥或校验值的函数，口令存储用的是刻意变慢的 KDF。"
+   },
+   {
+    "t": "成本因子 (Cost Factor)",
+    "d": "bcrypt 的对数轮数参数，cost=12 表示 2^12 轮密钥扩展。"
+   },
+   {
+    "t": "内存困难 (Memory-hard)",
+    "d": "计算必须占用大量内存，削弱 GPU/ASIC 的并行优势。"
+   },
+   {
+    "t": "Argon2id",
+    "d": "Argon2 的混合变体，兼顾抗侧信道与抗 GPU，是 RFC 9106 推荐的默认选择。"
+   },
+   {
+    "t": "胡椒 (Pepper)",
+    "d": "存放在数据库之外（如 KMS/环境变量）的额外秘密，可选的纵深防御。"
+   },
+   {
+    "t": "重哈希 (Rehash)",
+    "d": "用户登录成功后按新参数或新算法重新计算并覆盖旧哈希。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "argon2-cffi 存储与校验",
+   "src": "# pip install argon2-cffi\nfrom argon2 import PasswordHasher\nfrom argon2.exceptions import VerifyMismatchError\n\n# OWASP 给出的 Argon2id 最低配置之一：19 MiB 内存、2 次迭代、并行度 1\nph = PasswordHasher(time_cost=2, memory_cost=19456, parallelism=1)\n\nstored = ph.hash(\"correct horse battery staple\")\nprint(stored)  # $argon2id$v=19$m=19456,t=2,p=1$<salt>$<hash>\n\ndef login(stored_hash: str, password: str) -> bool:\n    try:\n        ph.verify(stored_hash, password)\n    except VerifyMismatchError:\n        return False\n    # 参数升级后，旧哈希在登录成功时顺手重算\n    if ph.check_needs_rehash(stored_hash):\n        new_hash = ph.hash(password)  # 写回数据库\n    return True",
+   "note": "参数显式写出，哈希串自带算法与参数；check_needs_rehash 支持平滑升级。"
+  },
+  "table": {
+   "title": "口令哈希算法对照",
+   "head": [
+    "算法",
+    "可调参数",
+    "抗 GPU",
+    "注意点"
+   ],
+   "rows": [
+    [
+     "Argon2id",
+     "m / t / p",
+     "强（内存困难）",
+     "首选；需评估服务器内存"
+    ],
+    [
+     "scrypt",
+     "N / r / p",
+     "强（内存困难）",
+     "参数含义较难调"
+    ],
+    [
+     "bcrypt",
+     "cost（对数）",
+     "中",
+     "输入超过 72 字节会被截断"
+    ],
+    [
+     "PBKDF2-HMAC-SHA256",
+     "迭代次数",
+     "弱",
+     "FIPS 合规场景使用，迭代需很高"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Argon2id",
+    "pros": "内存困难，抗 GPU 最好，标准化（RFC 9106）",
+    "cons": "每次登录占内存，高并发需容量规划",
+    "when": "新项目默认选择"
+   },
+   {
+    "opt": "bcrypt",
+    "pros": "生态成熟，各语言都有稳定实现",
+    "cons": "非内存困难，72 字节截断",
+    "when": "老系统或框架默认即 bcrypt"
+   },
+   {
+    "opt": "PBKDF2",
+    "pros": "FIPS-140 认可，标准库常自带",
+    "cons": "易被 GPU 并行加速",
+    "when": "必须满足 FIPS 合规时"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用 SHA-256 加盐就当作口令存储",
+    "fix": "通用哈希太快，改用 Argon2id/bcrypt 等专用 KDF"
+   },
+   {
+    "bad": "bcrypt 前先拼接超长内容，导致超过 72 字节部分被忽略",
+    "fix": "限制口令长度或改用 Argon2id，避免静默截断"
+   },
+   {
+    "bad": "参数调得过高，登录高峰把 CPU/内存打满",
+    "fix": "压测单次耗时与并发上限，配合登录限流"
+   },
+   {
+    "bad": "升级算法时强制全员重置密码",
+    "fix": "登录成功时按新参数重哈希，逐步迁移"
+   }
+  ],
+  "checklist": [
+   "口令使用 Argon2id 或 bcrypt，未用通用哈希",
+   "参数不低于 OWASP 当前建议并有压测数据",
+   "比较用库函数的 verify，不自行字符串比较",
+   "登录成功时检查并执行重哈希",
+   "登录与重置接口有限流和失败计数",
+   "日志与报错中不出现口令或哈希值"
+  ],
+  "interview": [
+   {
+    "q": "为什么不能用 SHA-256 存口令？",
+    "a": "SHA-256 为速度设计，单卡每秒可算数十亿次，泄库后可快速离线爆破。口令 KDF 引入可调成本和内存占用，把每次猜测的代价拉高几个数量级，同时盐防彩虹表、防同口令同哈希。"
+   },
+   {
+    "q": "Argon2 的 m、t、p 如何取舍？",
+    "a": "先定可接受的单次耗时与内存预算，再优先把内存 m 调大（抗 GPU 主要靠它），t 补足耗时，p 按可用核数。OWASP 给出多组等价配置，如 m=19MiB,t=2,p=1。必须结合并发登录量压测。"
+   },
+   {
+    "q": "如何从 bcrypt 平滑迁到 Argon2id？",
+    "a": "哈希串自带前缀可识别算法。登录时按前缀选算法校验，成功后用 Argon2id 重算并覆盖。长期不登录的账户可用“外层包裹”方案：对旧 bcrypt 值再做 Argon2id，或到期强制重置。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP Password Storage Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html"
+   },
+   {
+    "title": "RFC 9106: Argon2",
+    "url": "https://www.rfc-editor.org/rfc/rfc9106"
+   },
+   {
+    "title": "argon2-cffi 文档",
+    "url": "https://argon2-cffi.readthedocs.io/en/stable/"
+   },
+   {
+    "title": "Wikipedia: bcrypt",
+    "url": "https://en.wikipedia.org/wiki/Bcrypt"
+   }
+  ]
+ },
+ {
+  "slug": "openid-connect",
+  "def": "OpenID Connect（OIDC）是构建在 OAuth 2.0 之上的身份认证层。OAuth 只解决“授权访问资源”，OIDC 额外定义了 ID Token、UserInfo 端点和发现机制，让客户端以标准方式确认“登录的是谁”，是“用 Google/企业 SSO 登录”的底层协议。",
+  "how": [
+   "客户端在授权请求中带上 scope=openid，并附 state、nonce，以及推荐的 PKCE 参数。",
+   "用户在身份提供方（OP）完成认证与同意，OP 通过 redirect_uri 回传一次性授权码 code。",
+   "客户端在后端用 code（加 code_verifier 或客户端密钥）向 token 端点换取 ID Token 与 Access Token。",
+   "客户端校验 ID Token：签名（用 JWKS 公钥）、iss、aud、exp、nonce，全部通过才建立本地会话。",
+   "需要更多资料时，用 Access Token 调用 UserInfo 端点；端点地址可从发现文档自动获取。"
+  ],
+  "terms": [
+   {
+    "t": "身份提供方 (OpenID Provider, OP)",
+    "d": "负责认证用户并签发 ID Token 的服务，如 Google、Okta、Keycloak。"
+   },
+   {
+    "t": "依赖方 (Relying Party, RP)",
+    "d": "接入 OIDC 登录、信任 OP 断言的应用。"
+   },
+   {
+    "t": "ID Token",
+    "d": "OP 签名的 JWT，包含 iss、sub、aud、exp、nonce 等身份声明。"
+   },
+   {
+    "t": "nonce",
+    "d": "客户端生成并在 ID Token 中回显的随机值，用于防重放。"
+   },
+   {
+    "t": "发现文档 (Discovery)",
+    "d": "/.well-known/openid-configuration，列出各端点与支持的算法。"
+   },
+   {
+    "t": "JWKS",
+    "d": "OP 公布的 JSON Web Key 集合，用于验证 ID Token 签名。"
+   }
+  ],
+  "code": {
+   "lang": "http",
+   "title": "授权码 + PKCE 流程",
+   "src": "# 1) 浏览器跳转到授权端点（地址取自发现文档）\nGET /authorize?response_type=code\n    &client_id=my-app\n    &redirect_uri=https%3A%2F%2Fapp.example.com%2Fcallback\n    &scope=openid%20profile%20email\n    &state=af0ifjsldkj\n    &nonce=n-0S6_WzA2Mj\n    &code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM\n    &code_challenge_method=S256 HTTP/1.1\nHost: idp.example.com\n\n# 2) 回调拿到 code 后，后端换 token\nPOST /token HTTP/1.1\nHost: idp.example.com\nContent-Type: application/x-www-form-urlencoded\n\ngrant_type=authorization_code&code=SplxlOBeZQQYbYS6WxSbIA\n&redirect_uri=https%3A%2F%2Fapp.example.com%2Fcallback\n&client_id=my-app&code_verifier=dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk\n\n# 3) 响应含 id_token（JWT）、access_token、expires_in",
+   "note": "scope 中的 openid 让 OAuth 流程变成 OIDC 登录；PKCE 防授权码被截获后滥用。"
+  },
+  "table": {
+   "title": "OAuth2 与 OIDC 分工",
+   "head": [
+    "维度",
+    "OAuth 2.0",
+    "OpenID Connect"
+   ],
+   "rows": [
+    [
+     "目的",
+     "委托授权访问资源",
+     "认证用户身份"
+    ],
+    [
+     "核心凭证",
+     "Access Token",
+     "ID Token（JWT）"
+    ],
+    [
+     "Token 受众",
+     "资源服务器",
+     "客户端本身（aud=client_id）"
+    ],
+    [
+     "标准化用户信息",
+     "无",
+     "标准 claims + UserInfo 端点"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "授权码 + PKCE",
+    "pros": "token 不经浏览器地址栏，安全性最高",
+    "cons": "需后端或 PKCE 支持，步骤较多",
+    "when": "Web、SPA、移动端的默认选择"
+   },
+   {
+    "opt": "隐式流程 (Implicit)",
+    "pros": "纯前端、无需后端换 token",
+    "cons": "token 暴露在 URL，已不推荐",
+    "when": "仅维护老系统"
+   },
+   {
+    "opt": "托管 IdP（Auth0/Cognito 等）",
+    "pros": "省去自建，MFA、社交登录开箱即用",
+    "cons": "按 MAU 计费，有锁定风险",
+    "when": "团队小、要快速上线"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "拿 Access Token 当登录凭证，不校验 ID Token",
+    "fix": "登录只认校验通过的 ID Token，Access Token 只用于调 API"
+   },
+   {
+    "bad": "只解码 JWT 不验签，或不检查 aud",
+    "fix": "用 JWKS 验签，并校验 iss、aud、exp、nonce"
+   },
+   {
+    "bad": "用 email 作为用户主键",
+    "fix": "用 iss + sub 组合做唯一标识，email 可能变化或未验证"
+   },
+   {
+    "bad": "缺少 state 校验，回调可被 CSRF",
+    "fix": "生成随机 state 存会话，回调时严格比对"
+   }
+  ],
+  "checklist": [
+   "使用授权码流程并启用 PKCE（S256）",
+   "ID Token 验签并校验 iss/aud/exp/nonce",
+   "用户唯一键为 iss + sub",
+   "redirect_uri 精确匹配白名单",
+   "JWKS 有缓存且支持密钥轮换",
+   "登出流程覆盖本地会话与 IdP 会话"
+  ],
+  "interview": [
+   {
+    "q": "OIDC 比纯 OAuth“登录”多解决了什么？",
+    "a": "纯 OAuth 的 Access Token 面向资源服务器，客户端无法可靠判断用户是谁、token 是否发给自己。OIDC 增加签名的 ID Token（aud 指向客户端、含 nonce 防重放）、标准 claims、UserInfo 与发现机制，使认证可互操作。"
+   },
+   {
+    "q": "ID Token 需要校验哪些字段？",
+    "a": "签名（按 kid 从 JWKS 取公钥，限制 alg）；iss 等于预期 OP；aud 包含本 client_id；exp 未过期、iat 合理；nonce 与发起时一致；如用到还要看 azp、auth_time、acr。"
+   },
+   {
+    "q": "SPA 为什么推荐 BFF 而非前端存 token？",
+    "a": "前端存 token 易被 XSS 窃取。BFF（Backend for Frontend）由后端完成授权码交换并持有 token，浏览器只拿 HttpOnly 会话 Cookie，攻击面更小，刷新令牌也不暴露给 JS。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OpenID Connect Core 1.0",
+    "url": "https://openid.net/specs/openid-connect-core-1_0.html"
+   },
+   {
+    "title": "OpenID Connect Discovery 1.0",
+    "url": "https://openid.net/specs/openid-connect-discovery-1_0.html"
+   },
+   {
+    "title": "RFC 7636: PKCE",
+    "url": "https://www.rfc-editor.org/rfc/rfc7636"
+   }
+  ]
+ },
+ {
+  "slug": "session-fixation",
+  "def": "会话固定（Session Fixation）是一类会话管理漏洞：攻击者先让受害者使用一个攻击者已知的会话 ID，待受害者登录后，该 ID 被提升为已认证状态，攻击者即可冒用。根因是应用在认证前后沿用同一个会话标识。",
+  "how": [
+   "攻击者从目标站获得一个合法但未认证的会话 ID，或利用宽松策略自造一个。",
+   "通过 URL 参数、子域写 Cookie、XSS 等方式把该 ID 植入受害者浏览器。",
+   "受害者正常登录，服务端只在原会话上写入用户身份，没有更换会话 ID。",
+   "攻击者携带同一会话 ID 访问，被服务端识别为已登录的受害者。",
+   "防御核心：认证或权限变化时作废旧会话并签发新 ID，并拒绝服务端未签发过的 ID。"
+  ],
+  "terms": [
+   {
+    "t": "会话标识 (Session ID)",
+    "d": "服务端会话的随机索引，通常放在 Cookie 中。"
+   },
+   {
+    "t": "会话再生 (Session Regeneration)",
+    "d": "登录或提权时销毁旧会话、生成新 ID 并迁移必要数据。"
+   },
+   {
+    "t": "严格模式 (Strict Mode)",
+    "d": "只接受服务端自己创建的会话 ID，拒绝客户端自造 ID。"
+   },
+   {
+    "t": "__Host- 前缀 Cookie",
+    "d": "要求 Secure、Path=/ 且无 Domain，防止子域覆盖写入。"
+   },
+   {
+    "t": "权限提升点 (Privilege Change)",
+    "d": "登录、切换角色、二次验证完成等需要换会话的时刻。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "Express 登录时再生会话",
+   "src": "// npm i express express-session\nconst session = require('express-session');\napp.use(session({\n  name: '__Host-sid',            // 防子域覆盖\n  secret: process.env.SESSION_SECRET,\n  resave: false,\n  saveUninitialized: false,     // 未登录不发会话\n  cookie: { httpOnly: true, secure: true, sameSite: 'lax', path: '/' }\n}));\n\napp.post('/login', async (req, res, next) => {\n  const user = await verifyPassword(req.body.username, req.body.password);\n  if (!user) return res.status(401).send('用户名或密码错误');\n  // 关键：认证成功后换新的会话 ID\n  req.session.regenerate((err) => {\n    if (err) return next(err);\n    req.session.userId = user.id;\n    req.session.save((err) => (err ? next(err) : res.redirect('/')));\n  });\n});",
+   "note": "regenerate 会销毁旧会话并签发新 ID；verifyPassword 为业务自定义函数。"
+  },
+  "table": {
+   "title": "植入途径与对应防线",
+   "head": [
+    "植入途径",
+    "前提条件",
+    "防线"
+   ],
+   "rows": [
+    [
+     "URL 携带会话 ID",
+     "框架允许 URL 传 sid",
+     "禁用 URL 会话，仅用 Cookie"
+    ],
+    [
+     "子域写 Cookie",
+     "可控任一子域",
+     "__Host- 前缀，不设 Domain"
+    ],
+    [
+     "接受任意 ID",
+     "服务端自动采纳未知 ID",
+     "开启严格模式"
+    ],
+    [
+     "XSS 写 Cookie",
+     "存在 XSS 且非 HttpOnly",
+     "修 XSS + HttpOnly + 再生"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "登录时再生会话",
+    "pros": "直接切断攻击链，成本极低",
+    "cons": "需迁移购物车等匿名数据",
+    "when": "所有有登录态的应用都应做"
+   },
+   {
+    "opt": "无状态 JWT 会话",
+    "pros": "无服务端会话可固定",
+    "cons": "吊销困难，需另做黑名单",
+    "when": "已有成熟 token 体系的 API"
+   },
+   {
+    "opt": "绑定客户端特征（IP/UA）",
+    "pros": "增加冒用难度",
+    "cons": "移动网络 IP 常变，误伤多",
+    "when": "仅作辅助风控信号"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只在注册时换会话，登录、二次验证后不换",
+    "fix": "每个权限提升点都调用会话再生"
+   },
+   {
+    "bad": "再生后旧会话未销毁仍可使用",
+    "fix": "确认存储层删除旧会话记录"
+   },
+   {
+    "bad": "Cookie 设置 Domain=.example.com，子域可覆盖",
+    "fix": "认证 Cookie 用 __Host- 前缀且不设 Domain"
+   },
+   {
+    "bad": "PHP 未开启 session.use_strict_mode",
+    "fix": "开启严格模式并在登录后 session_regenerate_id(true)"
+   }
+  ],
+  "checklist": [
+   "登录、提权、MFA 完成后均再生会话 ID",
+   "旧会话在存储层被删除",
+   "会话 ID 不出现在 URL 与日志中",
+   "Cookie 具备 HttpOnly、Secure、SameSite",
+   "服务端拒绝未签发过的会话 ID",
+   "登出时服务端销毁会话"
+  ],
+  "interview": [
+   {
+    "q": "会话固定和会话劫持有什么区别？",
+    "a": "劫持是登录后窃取受害者的会话 ID（如 XSS 读 Cookie、网络嗅探）；固定是登录前把已知 ID 塞给受害者，等它被提升权限。前者靠保护 ID 不泄露，后者靠认证时更换 ID。"
+   },
+   {
+    "q": "为什么 HttpOnly 不能完全防会话固定？",
+    "a": "HttpOnly 阻止脚本读取 Cookie，但固定攻击不需要读取，只需写入或让服务端接受攻击者提供的 ID。子域写 Cookie、URL 传 sid 都绕得过 HttpOnly，必须靠再生会话与严格模式。"
+   },
+   {
+    "q": "再生会话时要注意哪些数据迁移？",
+    "a": "保留合理的匿名态数据（购物车、语言偏好），丢弃与认证相关的临时状态（CSRF token 应重新生成）。确保原子性：先建新会话再删旧会话，避免并发请求落到半迁移状态。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP Session Management Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html"
+   },
+   {
+    "title": "OWASP: Session fixation",
+    "url": "https://owasp.org/www-community/attacks/Session_fixation"
+   },
+   {
+    "title": "express-session README",
+    "url": "https://github.com/expressjs/session"
+   }
+  ]
+ },
+ {
+  "slug": "account-enumeration",
+  "def": "账户枚举（Account Enumeration）是指攻击者通过登录、注册、找回密码等接口的响应差异，判断某个用户名或邮箱是否已注册。差异可能来自提示文案、HTTP 状态码、响应时长或后续行为。它常是撞库、定向钓鱼和暴力破解的前置侦察。",
+  "how": [
+   "攻击者准备候选用户名或邮箱列表，批量调用登录、注册等认证相关接口。",
+   "比较响应正文、状态码、重定向目标、Set-Cookie 等可观测差异。",
+   "测量响应时间：用户存在时执行慢哈希，不存在时立即返回，形成时间侧信道。",
+   "把确认存在的账户用于撞库、口令喷洒或社会工程，提高攻击命中率。",
+   "防御方统一对外响应与耗时，并用限流、验证码和监控提高批量探测成本。"
+  ],
+  "terms": [
+   {
+    "t": "时间侧信道 (Timing Side Channel)",
+    "d": "通过响应耗时差异推断内部分支走向。"
+   },
+   {
+    "t": "口令喷洒 (Password Spraying)",
+    "d": "用少量常见口令轮流尝试大量账户，规避单账户锁定。"
+   },
+   {
+    "t": "撞库 (Credential Stuffing)",
+    "d": "用其他站点泄露的账号密码组合批量登录。"
+   },
+   {
+    "t": "统一响应 (Generic Response)",
+    "d": "无论账户是否存在都返回相同文案、状态码与结构。"
+   },
+   {
+    "t": "虚拟哈希 (Dummy Hash)",
+    "d": "账户不存在时也做一次哈希校验，使耗时一致。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "统一文案与耗时的登录",
+   "src": "from argon2 import PasswordHasher\nfrom argon2.exceptions import VerifyMismatchError\n\nph = PasswordHasher()\n# 启动时预先算好一个虚拟哈希，参数与真实用户一致\nDUMMY_HASH = ph.hash(\"dummy-password-for-timing\")\nGENERIC = \"用户名或密码错误\"\n\ndef login(username: str, password: str):\n    user = find_user(username)          # 业务查询，可能返回 None\n    stored = user.password_hash if user else DUMMY_HASH\n    try:\n        ph.verify(stored, password)     # 两条分支都执行慢哈希\n        ok = user is not None\n    except VerifyMismatchError:\n        ok = False\n    if not ok:\n        return 401, GENERIC             # 文案、状态码完全一致\n    return 200, \"ok\"",
+   "note": "账户不存在时也跑一次哈希，消除时间差；find_user 为业务自定义。"
+  },
+  "table": {
+   "title": "各接口的泄露点与改法",
+   "head": [
+    "接口",
+    "常见泄露",
+    "推荐响应"
+   ],
+   "rows": [
+    [
+     "登录",
+     "“用户不存在”/“密码错误”",
+     "统一“用户名或密码错误”"
+    ],
+    [
+     "找回密码",
+     "“该邮箱未注册”",
+     "“若邮箱已注册，将收到邮件”"
+    ],
+    [
+     "注册",
+     "“邮箱已被占用”",
+     "统一提示查收邮件，邮件内说明已注册"
+    ],
+    [
+     "用户名检查 API",
+     "实时返回是否可用",
+     "加限流与验证码，或登录后才可用"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "完全统一响应",
+    "pros": "从根上消除枚举",
+    "cons": "注册体验变差，用户困惑",
+    "when": "金融、医疗等高敏场景"
+   },
+   {
+    "opt": "保留友好提示 + 强限流",
+    "pros": "体验好，攻击成本可控",
+    "cons": "仍可慢速枚举",
+    "when": "社交、内容类公开账户"
+   },
+   {
+    "opt": "验证码/风控挑战",
+    "pros": "有效抑制自动化",
+    "cons": "增加摩擦，可被打码平台绕过",
+    "when": "检测到异常频率时触发"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "文案统一了，但状态码或重定向仍不同",
+    "fix": "对比两种情况的完整 HTTP 响应，包括头和跳转"
+   },
+   {
+    "bad": "用户不存在时直接返回，耗时明显更短",
+    "fix": "执行虚拟哈希，或把发邮件等操作放入异步队列"
+   },
+   {
+    "bad": "锁定策略本身暴露存在性（只有真账户会被锁）",
+    "fix": "对不存在账户也计数，或改用渐进延迟"
+   },
+   {
+    "bad": "只修了 Web 页面，App/API 端仍有差异",
+    "fix": "所有客户端共用同一认证服务与响应规范"
+   }
+  ],
+  "checklist": [
+   "登录、注册、找回密码返回一致文案和状态码",
+   "存在与不存在账户的耗时差在噪声范围内",
+   "找回密码邮件发送走异步队列",
+   "认证接口按 IP 与账户双维度限流",
+   "异常失败率有告警与看板",
+   "API、App、Web 三端行为一致"
+  ],
+  "interview": [
+   {
+    "q": "怎样实际测试是否存在时间侧信道？",
+    "a": "选一个确定存在和一个确定不存在的账户，各请求数百次，统计响应时间分布（中位数、P95），看分布是否可区分。需在相近网络条件下测，排除缓存与冷启动影响。"
+   },
+   {
+    "q": "注册必须告诉用户“邮箱已占用”怎么办？",
+    "a": "可把结论移到邮件里：页面统一显示“请查收邮件”，已注册者收到“你已有账户，可直接登录或重置密码”。若产品坚持页面提示，就配合严格限流、验证码和异常监控。"
+   },
+   {
+    "q": "枚举漏洞风险等级该怎么评？",
+    "a": "单独看多为低到中危，但要结合场景：用户名是否公开、是否有限流和 MFA、账户本身是否敏感（如成人、医疗类网站，存在性本身就是隐私）。与撞库结合时影响会放大。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP Authentication Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html"
+   },
+   {
+    "title": "OWASP Forgot Password Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html"
+   },
+   {
+    "title": "OWASP WSTG: Testing for Account Enumeration",
+    "url": "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/03-Identity_Management_Testing/04-Testing_for_Account_Enumeration_and_Guessable_User_Account"
+   }
+  ]
+ },
+ {
+  "slug": "webhook-signature-verification",
+  "def": "Webhook 签名校验是接收方确认回调请求确实来自声明的发送方、且内容未被篡改的机制。主流做法是发送方用共享密钥对原始请求体（常加时间戳）计算 HMAC-SHA256 并放入请求头，接收方重新计算并常量时间比对，再配合时间窗口和事件去重防重放。",
+  "how": [
+   "双方预先共享一个签名密钥（signing secret），由发送方平台生成并在控制台展示。",
+   "发送方对原始字节请求体（或“时间戳.请求体”）计算 HMAC，放入如 X-Hub-Signature-256 的请求头。",
+   "接收方读取未经解析的原始请求体，用同一密钥和算法重新计算签名。",
+   "使用常量时间比较函数对比两个签名，不一致直接返回 401 并记录日志。",
+   "校验时间戳在允许窗口内，并按事件 ID 去重，保证重放和重复投递不会被重复处理。"
+  ],
+  "terms": [
+   {
+    "t": "HMAC",
+    "d": "基于哈希的消息认证码（RFC 2104），需要密钥才能生成有效值。"
+   },
+   {
+    "t": "原始请求体 (Raw Body)",
+    "d": "未经 JSON 解析与重新序列化的字节流，签名针对它计算。"
+   },
+   {
+    "t": "常量时间比较 (Constant-time Compare)",
+    "d": "比较耗时与内容无关，防止逐字节猜测签名。"
+   },
+   {
+    "t": "重放攻击 (Replay Attack)",
+    "d": "截获合法请求后原样重发，以触发重复操作。"
+   },
+   {
+    "t": "幂等键 (Idempotency Key)",
+    "d": "用事件 ID 记录已处理事件，重复到达时跳过。"
+   },
+   {
+    "t": "密钥轮换 (Secret Rotation)",
+    "d": "新旧密钥并存一段时间，接收方任一校验通过即接受。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "校验 GitHub Webhook",
+   "src": "import hmac, hashlib, os\nfrom flask import Flask, request, abort\n\napp = Flask(__name__)\nSECRET = os.environ[\"GITHUB_WEBHOOK_SECRET\"].encode()\n\n@app.post(\"/webhooks/github\")\ndef github_webhook():\n    body = request.get_data()  # 原始字节，不要先解析再序列化\n    received = request.headers.get(\"X-Hub-Signature-256\", \"\")\n    expected = \"sha256=\" + hmac.new(SECRET, body, hashlib.sha256).hexdigest()\n    if not hmac.compare_digest(expected, received):\n        abort(401)\n\n    delivery_id = request.headers.get(\"X-GitHub-Delivery\")\n    # 用 delivery_id 做去重后再处理，处理耗时的任务放进队列\n    event = request.get_json()\n    return \"\", 204",
+   "note": "签名基于原始请求体；compare_digest 做常量时间比较，投递 ID 用于去重。"
+  },
+  "table": {
+   "title": "主流平台签名方案",
+   "head": [
+    "平台",
+    "签名头",
+    "签名内容",
+    "防重放"
+   ],
+   "rows": [
+    [
+     "GitHub",
+     "X-Hub-Signature-256",
+     "HMAC-SHA256(请求体)",
+     "无时间戳，靠投递 ID 去重"
+    ],
+    [
+     "Stripe",
+     "Stripe-Signature",
+     "HMAC-SHA256(时间戳.请求体)",
+     "SDK 默认 5 分钟窗口"
+    ],
+    [
+     "Standard Webhooks",
+     "webhook-signature",
+     "HMAC-SHA256(id.时间戳.请求体)",
+     "时间戳 + 消息 ID"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "共享密钥 HMAC",
+    "pros": "实现简单、性能好，生态最普遍",
+    "cons": "双方都持密钥，泄露需轮换",
+    "when": "绝大多数 SaaS 回调"
+   },
+   {
+    "opt": "非对称签名（如 Ed25519）",
+    "pros": "接收方只持公钥，泄露风险低",
+    "cons": "实现与密钥分发更复杂",
+    "when": "多租户、大量接收方"
+   },
+   {
+    "opt": "mTLS 或 IP 白名单",
+    "pros": "网络层拦截，免改业务",
+    "cons": "IP 会变，不能防内容篡改",
+    "when": "作为签名之外的补充"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "框架先把 JSON 解析了，再序列化后计算签名",
+    "fix": "在中间件中保留原始字节，如 express.raw()"
+   },
+   {
+    "bad": "用 == 比较签名",
+    "fix": "用 hmac.compare_digest 或 crypto.timingSafeEqual"
+   },
+   {
+    "bad": "签名通过就同步执行耗时业务，超时触发重试",
+    "fix": "先返回 2xx，任务入队异步处理并按事件 ID 去重"
+   },
+   {
+    "bad": "测试环境与生产共用一个签名密钥",
+    "fix": "按环境分配密钥，存入密钥管理服务"
+   }
+  ],
+  "checklist": [
+   "签名针对原始请求体计算",
+   "使用常量时间比较",
+   "校验时间戳窗口（若平台提供）",
+   "按事件 ID 幂等去重",
+   "密钥存于密钥管理服务并支持轮换",
+   "校验失败有日志与告警"
+  ],
+  "interview": [
+   {
+    "q": "为什么签名要包含时间戳？",
+    "a": "只签请求体时，截获的合法请求可无限期重放。把时间戳纳入签名内容，攻击者改时间戳就会破坏签名；接收方只接受窗口内的请求，再配合事件 ID 去重，即可在窗口内也防重复处理。"
+   },
+   {
+    "q": "为什么不能用普通字符串比较？",
+    "a": "普通比较遇到第一个不同字节就返回，耗时随匹配前缀长度变化。攻击者可通过大量请求测时逐字节猜出正确签名。常量时间比较消除这种时间侧信道。"
+   },
+   {
+    "q": "密钥轮换时如何不中断回调？",
+    "a": "发送方在过渡期同时用新旧密钥签名（或多个签名值），接收方配置两把密钥，任一校验通过即接受；确认全部切换后移除旧密钥。Stripe、Standard Webhooks 都支持多签名并存。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "GitHub Docs: Validating webhook deliveries",
+    "url": "https://docs.github.com/en/webhooks/using-webhooks/validating-webhook-deliveries"
+   },
+   {
+    "title": "Stripe Docs: Webhook signatures",
+    "url": "https://docs.stripe.com/webhooks/signature"
+   },
+   {
+    "title": "Standard Webhooks 规范",
+    "url": "https://www.standardwebhooks.com/"
+   },
+   {
+    "title": "RFC 2104: HMAC",
+    "url": "https://www.rfc-editor.org/rfc/rfc2104"
+   }
+  ]
+ },
+ {
+  "slug": "tls-certificate-expiry",
+  "def": "TLS 证书过期治理是对服务端证书生命周期的工程化管理：签发、部署、监控、续期与吊销。证书过期后客户端握手失败，表现为浏览器拦截页、API 调用报错甚至移动端整体不可用。随着行业逐步缩短证书最长有效期，自动化续期已成为硬性要求。",
+  "how": [
+   "证书由 CA 签发，带 notBefore/notAfter 有效期，客户端握手时校验链路、域名与有效期。",
+   "ACME 协议（RFC 8555）让客户端自动完成域名验证（HTTP-01/DNS-01/TLS-ALPN-01）并获取证书。",
+   "续期通常在到期前一段时间触发（如 Let's Encrypt 90 天证书常在剩余约 30 天时续），证书落盘后重载服务。",
+   "中间证书与根证书同样会过期或更替，服务端需下发完整证书链。",
+   "监控从外部探测实际对外的证书，按剩余天数分级告警，覆盖所有域名与端口。"
+  ],
+  "terms": [
+   {
+    "t": "ACME",
+    "d": "自动化证书管理协议，Let's Encrypt 等 CA 使用。"
+   },
+   {
+    "t": "证书链 (Certificate Chain)",
+    "d": "叶子证书、中间证书到受信根的签名链路。"
+   },
+   {
+    "t": "DNS-01 验证",
+    "d": "通过写 TXT 记录证明域名控制权，可签通配符证书。"
+   },
+   {
+    "t": "证书透明度 (Certificate Transparency)",
+    "d": "公开日志记录所有签发证书，可用于盘点资产。"
+   },
+   {
+    "t": "ARI (ACME Renewal Information)",
+    "d": "CA 告知客户端建议续期时间窗口的 ACME 扩展。"
+   },
+   {
+    "t": "OCSP / CRL",
+    "d": "查询证书吊销状态的两种机制。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "检查到期并演练续期",
+   "src": "#!/usr/bin/env bash\nHOST=example.com\n\n# 查看线上实际下发证书的到期时间、主体和签发者\necho | openssl s_client -connect \"$HOST:443\" -servername \"$HOST\" 2>/dev/null \\\n  | openssl x509 -noout -enddate -subject -issuer\n\n# 30 天内到期则返回非 0（-checkend 单位是秒），可接入告警\nif ! echo | openssl s_client -connect \"$HOST:443\" -servername \"$HOST\" 2>/dev/null \\\n     | openssl x509 -noout -checkend $((30*24*3600)); then\n  echo \"WARN: $HOST 证书 30 天内到期\"\nfi\n\n# certbot：演练续期，不实际替换证书\nsudo certbot renew --dry-run\n\n# 确认自动续期定时器存在\nsystemctl list-timers | grep -i certbot",
+   "note": "从外部看真实下发的证书，而不是磁盘文件；--dry-run 验证续期链路可用。"
+  },
+  "table": {
+   "title": "公开 TLS 证书有效期上限",
+   "head": [
+    "生效时间",
+    "最长有效期",
+    "依据"
+   ],
+   "rows": [
+    [
+     "2020-09 起",
+     "398 天",
+     "浏览器根计划要求"
+    ],
+    [
+     "2026-03-15 起",
+     "200 天",
+     "CA/B 论坛 SC-081"
+    ],
+    [
+     "2027-03-15 起",
+     "100 天",
+     "CA/B 论坛 SC-081"
+    ],
+    [
+     "2029-03-15 起",
+     "47 天",
+     "CA/B 论坛 SC-081"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "ACME 自动续期",
+    "pros": "免费、零人工，适应短有效期",
+    "cons": "依赖验证通道与 CA 可用性",
+    "when": "公网 Web 服务默认选择"
+   },
+   {
+    "opt": "云托管证书（ACM 等）",
+    "pros": "与负载均衡/CDN 集成，自动续期",
+    "cons": "私钥不可导出，绑定云厂商",
+    "when": "流量经云 LB/CDN 终止 TLS"
+   },
+   {
+    "opt": "人工购买 OV/EV 证书",
+    "pros": "有组织验证信息",
+    "cons": "需人工续期，易遗忘",
+    "when": "合规或合同明确要求"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "续期成功但服务没重载，仍在用旧证书",
+    "fix": "配置 deploy hook 重载 Nginx 等，并从外部验证"
+   },
+   {
+    "bad": "只监控主站，漏掉 API、邮件、内部域名",
+    "fix": "用 CT 日志与资产清单盘点全部证书"
+   },
+   {
+    "bad": "依赖 CA 的到期提醒邮件",
+    "fix": "自建监控；Let's Encrypt 已于 2025 年停发到期邮件"
+   },
+   {
+    "bad": "移动端证书固定（pinning）叶子证书",
+    "fix": "固定公钥或中间 CA，并预置备用钥"
+   }
+  ],
+  "checklist": [
+   "所有证书都有自动续期并演练过",
+   "续期后自动重载服务",
+   "外部探测剩余天数并分级告警",
+   "证书资产清单含负责人",
+   "服务端下发完整证书链",
+   "DNS-01 凭据最小权限保存"
+  ],
+  "interview": [
+   {
+    "q": "证书有效期越来越短，对团队有什么影响？",
+    "a": "按 CA/B 论坛 SC-081，公开证书上限从 2026 年 3 月起为 200 天，逐步降到 2029 年的 47 天。人工续期将不可行，必须全链路自动化：签发、部署、重载、验证与监控，并清点所有手工维护的证书。"
+   },
+   {
+    "q": "为什么续期了还会出现过期？",
+    "a": "常见原因：服务未重载仍持有旧证书；多台机器只更新了一台；CDN/LB 上另有一份证书；中间证书过期或链不完整；客户端缓存了旧链。所以监控要从外部探测真实下发的证书。"
+   },
+   {
+    "q": "HTTP-01 和 DNS-01 如何选？",
+    "a": "HTTP-01 简单，需 80 端口可达，不支持通配符。DNS-01 支持通配符、内网服务，但要把 DNS API 凭据交给续期程序，需最小权限。多机或 CDN 后的场景常选 DNS-01。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 8555: ACME",
+    "url": "https://www.rfc-editor.org/rfc/rfc8555"
+   },
+   {
+    "title": "Let's Encrypt 文档",
+    "url": "https://letsencrypt.org/docs/"
+   },
+   {
+    "title": "Certbot 文档",
+    "url": "https://eff-certbot.readthedocs.io/en/stable/"
+   },
+   {
+    "title": "CA/B Forum Ballot SC-081v3",
+    "url": "https://cabforum.org/2025/04/11/ballot-sc081v3-introduce-schedule-of-reducing-validity-and-data-reuse-periods/"
+   }
+  ]
+ },
+ {
+  "slug": "encryption-at-rest",
+  "def": "静态数据加密（Encryption at Rest）指数据在磁盘、数据库文件、对象存储和备份中以密文保存。它可落在全盘、卷/存储服务、数据库（TDE）或应用字段等不同层次，主要防御介质丢失、快照泄露和越权读取底层存储，不防御已获授权的应用层访问。",
+  "how": [
+   "选定加密层：全盘/卷加密对应用透明，字段级加密在写入数据库前就由应用完成。",
+   "普遍采用信封加密：数据密钥（DEK）用 AES-GCM 加密数据，DEK 再被主密钥（KEK）加密。",
+   "KEK 托管在 KMS 或 HSM 中，不离开硬件边界，应用只能请求加解密 DEK。",
+   "密文 DEK 与数据一起存储；读取时先调 KMS 解密 DEK，再在内存中解密数据。",
+   "密钥轮换通常只轮换 KEK 并重新包裹 DEK，访问 KMS 的每次调用都有审计日志。"
+  ],
+  "terms": [
+   {
+    "t": "信封加密 (Envelope Encryption)",
+    "d": "用 KEK 加密 DEK、用 DEK 加密数据的两层结构。"
+   },
+   {
+    "t": "KMS",
+    "d": "密钥管理服务，集中保管主密钥并提供权限控制与审计。"
+   },
+   {
+    "t": "TDE (Transparent Data Encryption)",
+    "d": "数据库引擎在页写盘时加密，对 SQL 透明。"
+   },
+   {
+    "t": "AES-GCM",
+    "d": "带认证的对称加密模式，同时提供机密性与完整性。"
+   },
+   {
+    "t": "加密上下文 / AAD",
+    "d": "参与认证但不加密的附加数据，防止密文被挪用到别处。"
+   },
+   {
+    "t": "加密擦除 (Crypto-shredding)",
+    "d": "销毁密钥使对应数据永久不可读，用于删除合规。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "KMS 信封加密字段",
+   "src": "# pip install boto3 cryptography\nimport os, boto3\nfrom cryptography.hazmat.primitives.ciphers.aead import AESGCM\n\nkms = boto3.client(\"kms\")\nKEY_ID = \"alias/app-data\"  # KMS 中的主密钥别名\n\ndef encrypt_field(plaintext: bytes, user_id: str) -> dict:\n    dk = kms.generate_data_key(KeyId=KEY_ID, KeySpec=\"AES_256\")\n    nonce = os.urandom(12)                       # GCM 每次加密用新 nonce\n    aad = user_id.encode()                       # 绑定到该用户，防挪用\n    ct = AESGCM(dk[\"Plaintext\"]).encrypt(nonce, plaintext, aad)\n    # 只持久化：密文 DEK + nonce + 密文，明文 DEK 用完即丢\n    return {\"edk\": dk[\"CiphertextBlob\"], \"nonce\": nonce, \"ct\": ct}\n\ndef decrypt_field(rec: dict, user_id: str) -> bytes:\n    dek = kms.decrypt(CiphertextBlob=rec[\"edk\"])[\"Plaintext\"]\n    return AESGCM(dek).decrypt(rec[\"nonce\"], rec[\"ct\"], user_id.encode())",
+   "note": "主密钥不出 KMS；每条记录有独立 DEK，AAD 让密文无法被搬到别的用户名下。"
+  },
+  "table": {
+   "title": "加密层次对比",
+   "head": [
+    "层次",
+    "防御对象",
+    "不防御",
+    "典型实现"
+   ],
+   "rows": [
+    [
+     "全盘/卷加密",
+     "磁盘或快照被拿走",
+     "已登录主机的读取",
+     "LUKS、BitLocker、云盘加密"
+    ],
+    [
+     "数据库 TDE",
+     "数据文件、备份泄露",
+     "有 SQL 权限的人",
+     "SQL Server/Oracle TDE"
+    ],
+    [
+     "应用字段级",
+     "DBA 与库被拖",
+     "应用本身被攻破",
+     "KMS + AES-GCM、客户端加密"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "云存储默认加密",
+    "pros": "零改造，几乎无性能损耗",
+    "cons": "云账号权限即可解密读取",
+    "when": "所有场景的基线"
+   },
+   {
+    "opt": "字段级加密",
+    "pros": "最小化明文暴露面，DBA 也看不到",
+    "cons": "无法直接索引、排序和模糊查询",
+    "when": "身份证号、银行卡等高敏字段"
+   },
+   {
+    "opt": "客户自管密钥（CMK/BYOK）",
+    "pros": "可随时停用密钥，满足合规",
+    "cons": "密钥误删即数据永久丢失",
+    "when": "受监管行业或客户合同要求"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "开了磁盘加密就宣称“数据已加密安全”",
+    "fix": "明确威胁模型，敏感字段另做应用层加密"
+   },
+   {
+    "bad": "加密密钥写在代码或同库配置表里",
+    "fix": "主密钥放 KMS/HSM，应用只持有调用权限"
+   },
+   {
+    "bad": "AES-GCM 重复使用同一 nonce",
+    "fix": "每次加密生成随机 96 位 nonce 或使用计数器"
+   },
+   {
+    "bad": "备份、日志、缓存仍是明文",
+    "fix": "盘点所有数据副本，统一纳入加密策略"
+   }
+  ],
+  "checklist": [
+   "存储、数据库、备份均启用静态加密",
+   "高敏字段使用应用层加密",
+   "主密钥在 KMS/HSM，权限最小化",
+   "密钥轮换与 KMS 调用审计已启用",
+   "日志、缓存、导出文件不含明文敏感数据",
+   "演练过密钥不可用时的恢复流程"
+  ],
+  "interview": [
+   {
+    "q": "为什么要用信封加密而不是直接用 KMS 加密数据？",
+    "a": "KMS 单次加密有大小限制且每次网络调用有延迟和费用。信封加密只让 KMS 处理很小的 DEK，大数据在本地用 AES 加密；轮换 KEK 时只需重包 DEK，无需重加密全部数据。"
+   },
+   {
+    "q": "TDE 能防 SQL 注入拖库吗？",
+    "a": "不能。TDE 在存储层透明解密，凡是能正常执行 SQL 的连接看到的都是明文，注入同样如此。它防的是数据文件、备份介质被直接拿走。要防注入拖库需应用层加密与访问控制。"
+   },
+   {
+    "q": "字段加密后还要按手机号查询怎么办？",
+    "a": "可额外存一列确定性的盲索引：用独立密钥对规范化手机号做 HMAC，查询时同样计算后等值匹配。代价是泄露“值是否相同”，不支持范围与模糊查询。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP Cryptographic Storage Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html"
+   },
+   {
+    "title": "AWS KMS 概念（含信封加密）",
+    "url": "https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html"
+   },
+   {
+    "title": "NIST SP 800-111 存储加密指南",
+    "url": "https://csrc.nist.gov/pubs/sp/800/111/final"
+   },
+   {
+    "title": "cryptography: AEAD 文档",
+    "url": "https://cryptography.io/en/latest/hazmat/primitives/aead/"
+   }
+  ]
+ },
+ {
+  "slug": "dependency-vulnerabilities",
+  "def": "依赖项已知漏洞指项目直接或间接引入的第三方包中已被公开披露的安全缺陷（通常有 CVE 或 GHSA 编号）。现代项目的传递依赖往往成百上千，治理目标是持续发现、评估可利用性、按优先级升级或缓解，而非追求扫描结果清零。",
+  "how": [
+   "包管理器根据清单与锁文件解析出完整依赖树，其中多数是传递依赖。",
+   "扫描器把依赖树中的包名与版本，与 OSV、GitHub Advisory、NVD 等漏洞库比对。",
+   "命中后按 CVSS 严重度、是否在野利用（如 CISA KEV）、EPSS 概率和代码可达性排序。",
+   "修复方式：升级到修复版本、覆盖传递依赖版本、替换库，或加缓解措施并记录豁免。",
+   "Dependabot、Renovate 等机器人持续发起升级 PR，CI 跑测试与扫描作为合并门禁。"
+  ],
+  "terms": [
+   {
+    "t": "CVE",
+    "d": "公共漏洞编号体系，每个公开漏洞一个唯一 ID。"
+   },
+   {
+    "t": "传递依赖 (Transitive Dependency)",
+    "d": "依赖的依赖，未在清单中声明却会被安装。"
+   },
+   {
+    "t": "CVSS",
+    "d": "通用漏洞评分系统，0–10 分描述技术严重度，不等于实际风险。"
+   },
+   {
+    "t": "EPSS",
+    "d": "预测漏洞在未来 30 天被利用概率的评分模型。"
+   },
+   {
+    "t": "可达性分析 (Reachability)",
+    "d": "判断项目代码是否真的调用到漏洞函数。"
+   },
+   {
+    "t": "SBOM",
+    "d": "软件物料清单，列出制品包含的全部组件与版本。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "多语言依赖漏洞扫描",
+   "src": "#!/usr/bin/env bash\nset -euo pipefail\n\n# Node：按锁文件安装，只审计生产依赖，高危及以上让 CI 失败\nnpm ci\nnpm audit --omit=dev --audit-level=high\n\n# 定位某个有漏洞的传递依赖是被谁引入的\nnpm explain minimist\n\n# Python：pip install pip-audit\npip-audit -r requirements.txt\n\n# Go：只报告代码实际调用到的漏洞\ngovulncheck ./...\n\n# 多语言：OSV-Scanner（v2 命令格式）递归扫描仓库中的锁文件\nosv-scanner scan source -r .",
+   "note": "按生态选工具；npm explain 找出传递依赖来源，govulncheck 自带可达性分析。"
+  },
+  "table": {
+   "title": "漏洞优先级信号",
+   "head": [
+    "信号",
+    "含义",
+    "用法"
+   ],
+   "rows": [
+    [
+     "CVSS 分数",
+     "技术严重度",
+     "初筛，不能单独决定优先级"
+    ],
+    [
+     "CISA KEV 收录",
+     "已确认在野利用",
+     "最高优先级，限期修复"
+    ],
+    [
+     "EPSS 概率",
+     "近期被利用可能性",
+     "在大量中危中排序"
+    ],
+    [
+     "可达性",
+     "代码是否调用漏洞路径",
+     "不可达可降级并记录"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "自动升级机器人",
+    "pros": "持续小步升级，修复快",
+    "cons": "PR 噪音多，依赖测试覆盖",
+    "when": "测试较完善的活跃项目"
+   },
+   {
+    "opt": "覆盖传递依赖版本",
+    "pros": "不等上游发版即可修复",
+    "cons": "可能破坏兼容，需回归测试",
+    "when": "上游维护慢、漏洞紧急"
+   },
+   {
+    "opt": "风险接受并豁免",
+    "pros": "避免为不可达漏洞冒升级风险",
+    "cons": "需定期复审，易被遗忘",
+    "when": "确认不可达且有到期日"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只看直接依赖，忽略传递依赖",
+    "fix": "扫描锁文件中的完整依赖树"
+   },
+   {
+    "bad": "按 CVSS 一刀切，全员疲于处理低风险告警",
+    "fix": "结合 KEV、EPSS、可达性做优先级"
+   },
+   {
+    "bad": "CI 用 npm install，实际版本与锁文件漂移",
+    "fix": "CI 与生产构建用 npm ci 或等价的锁定安装"
+   },
+   {
+    "bad": "让 AI 助手“修漏洞”，它跨大版本升级引入破坏性变更",
+    "fix": "限定升级范围到修复版本，跑完整测试再合并"
+   }
+  ],
+  "checklist": [
+   "锁文件已提交，构建使用锁定安装",
+   "CI 中有依赖扫描并设门禁阈值",
+   "自动升级机器人已开启并分组",
+   "KEV 收录漏洞有修复时限",
+   "豁免项有理由、负责人和到期日",
+   "发布制品附带 SBOM"
+  ],
+  "interview": [
+   {
+    "q": "扫描出几百个漏洞，怎么排期？",
+    "a": "先过滤只在开发依赖中的；再看是否在 KEV 或 EPSS 高、是否暴露在公网入口；用可达性分析剔除未调用的。剩下的按“一次升级能消掉多少条”批量处理，并设定 SLA，例如严重级限期修复。"
+   },
+   {
+    "q": "上游不修，传递依赖有漏洞怎么办？",
+    "a": "用 npm overrides、yarn resolutions、pip 约束文件等强制提升版本并回归测试；或换库、fork 打补丁；无法修时加 WAF 规则或输入校验等缓解，并记录豁免和复审日期。"
+   },
+   {
+    "q": "锁文件为什么对安全很重要？",
+    "a": "锁文件固定了每个包的精确版本和完整性哈希，保证扫描的就是实际部署的依赖，也防止构建时悄悄拉到被投毒的新版本。没有锁文件，扫描结果和生产环境可能不一致。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OSV 开源漏洞数据库",
+    "url": "https://osv.dev/"
+   },
+   {
+    "title": "npm audit 文档",
+    "url": "https://docs.npmjs.com/cli/v10/commands/npm-audit"
+   },
+   {
+    "title": "pip-audit",
+    "url": "https://github.com/pypa/pip-audit"
+   },
+   {
+    "title": "CISA Known Exploited Vulnerabilities",
+    "url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+   }
+  ]
+ },
+ {
+  "slug": "supply-chain-attacks",
+  "def": "软件供应链攻击指攻击者不直接攻击目标系统，而是污染其依赖的源代码、第三方包、构建工具、CI 流水线或分发渠道，让恶意代码随正常更新进入下游。与“已知漏洞”不同，这里的组件本身是被故意植入恶意行为，扫描已知 CVE 往往发现不了。",
+  "how": [
+   "入口一：注册与流行包相似的名字（typosquatting），或 AI 幻觉出的包名，等待误装。",
+   "入口二：依赖混淆，把内部包名发布到公共仓库并给出更高版本号，诱使解析器优先拉取。",
+   "入口三：接管维护者账号或长期潜伏取得信任，在正常版本中植入后门（如 2024 年 xz-utils 事件）。",
+   "恶意代码常借安装脚本（npm postinstall、setup.py）在安装时立即执行，窃取凭据或植入持久化。",
+   "入口四：攻破构建系统或 CI，篡改产物而源码看起来干净；防御依赖来源证明与可复现构建。"
+  ],
+  "terms": [
+   {
+    "t": "Typosquatting",
+    "d": "注册与知名包拼写相近的名字诱导误装。"
+   },
+   {
+    "t": "依赖混淆 (Dependency Confusion)",
+    "d": "利用公私仓库解析顺序，让公共同名包替换内部包。"
+   },
+   {
+    "t": "Slopsquatting",
+    "d": "抢注大模型常幻觉出的不存在包名，等 AI 生成代码去安装。"
+   },
+   {
+    "t": "SLSA",
+    "d": "供应链制品完整性分级框架，要求可追溯的构建来源。"
+   },
+   {
+    "t": "来源证明 (Provenance)",
+    "d": "签名声明制品由哪个仓库、哪次构建产出。"
+   },
+   {
+    "t": "Sigstore",
+    "d": "开源签名基础设施，用短期证书和透明日志签名制品。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "安装与构建加固",
+   "src": "#!/usr/bin/env bash\nset -euo pipefail\n\n# Node：严格按锁文件安装，并禁止依赖的安装脚本自动执行\nnpm ci --ignore-scripts\n\n# 校验已安装包的 registry 签名与来源证明（provenance）\nnpm audit signatures\n\n# 发布自己的包时附带来源证明（需在受支持的 CI 中运行）\n# npm publish --provenance --access public\n\n# Python：用 pip-tools 生成带哈希的锁定文件\npip-compile --generate-hashes -o requirements.txt requirements.in\n# 安装时任何包哈希不匹配都会失败\npip install --require-hashes -r requirements.txt\n\n# 安装 AI 建议的新依赖前，先确认包确实存在且来源可信\nnpm view some-package name repository.url time.created",
+   "note": "锁版本+校验哈希+禁安装脚本+来源证明，并核实 AI 推荐的包名。"
+  },
+  "table": {
+   "title": "攻击入口与防线",
+   "head": [
+    "入口",
+    "代表手法",
+    "主要防线"
+   ],
+   "rows": [
+    [
+     "包仓库",
+     "仿冒名、AI 幻觉包名",
+     "核实包名、锁文件、私有镜像"
+    ],
+    [
+     "包解析",
+     "依赖混淆",
+     "命名空间/scope、仓库映射"
+    ],
+    [
+     "维护者",
+     "账号接管、潜伏投毒",
+     "2FA、新版本延迟采纳"
+    ],
+    [
+     "构建/CI",
+     "篡改产物、窃取密钥",
+     "SLSA 来源证明、最小权限 token"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "私有代理仓库 + 白名单",
+    "pros": "集中管控可安装的包",
+    "cons": "引入新包流程变慢",
+    "when": "企业内网与高合规团队"
+   },
+   {
+    "opt": "新版本冷却期",
+    "pros": "多数恶意版本几天内被发现下架",
+    "cons": "安全补丁也会延迟采纳",
+    "when": "非紧急的常规升级"
+   },
+   {
+    "opt": "禁用安装脚本",
+    "pros": "阻断最常见的安装即执行",
+    "cons": "部分原生模块需手动构建",
+    "when": "CI 与开发机默认开启"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "直接运行 AI 生成的 pip/npm install 命令",
+    "fix": "安装前核实包名、维护者、下载量和仓库链接"
+   },
+   {
+    "bad": "CI 中的 Action/镜像只用可变标签如 @v3、latest",
+    "fix": "固定到完整 commit SHA 或镜像 digest"
+   },
+   {
+    "bad": "CI 令牌拥有全仓库写权限",
+    "fix": "按任务最小权限，发布用 OIDC 短期凭据"
+   },
+   {
+    "bad": "内部包名未加 scope，公共仓库可被抢注",
+    "fix": "用组织 scope，并在公共仓库占位"
+   }
+  ],
+  "checklist": [
+   "锁文件与哈希校验已启用",
+   "CI 默认禁止依赖安装脚本",
+   "第三方 Action 与镜像固定到 SHA/digest",
+   "发布账号开启 2FA，用可信发布",
+   "内部包使用 scope 并配置仓库映射",
+   "新增依赖有人工审核"
+  ],
+  "interview": [
+   {
+    "q": "供应链攻击和依赖漏洞有什么区别？",
+    "a": "依赖漏洞是无意的缺陷，通常有 CVE，可被扫描器匹配；供应链攻击是故意投毒，恶意版本刚发布时没有 CVE，需靠来源验证、行为检测、锁定版本和审核新依赖来防御。"
+   },
+   {
+    "q": "依赖混淆是怎么发生的？如何防？",
+    "a": "构建同时配置了私有与公共仓库，解析器按版本号取最高者，攻击者在公共仓库发布同名高版本即可被拉取。防法：使用 scope/命名空间，配置包到仓库的显式映射，只允许私有代理转发白名单包。"
+   },
+   {
+    "q": "用 AI 写代码会带来哪些供应链新风险？",
+    "a": "模型可能推荐不存在的包名，攻击者抢注后被自动安装（slopsquatting）；Agent 在终端自动执行安装命令时缺少人工把关。应限制 Agent 安装权限、核实新依赖，并在 CI 中统一校验。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "SLSA 框架",
+    "url": "https://slsa.dev/"
+   },
+   {
+    "title": "npm Docs: Generating provenance statements",
+    "url": "https://docs.npmjs.com/generating-provenance-statements"
+   },
+   {
+    "title": "pip: Secure installs",
+    "url": "https://pip.pypa.io/en/stable/topics/secure-installs/"
+   },
+   {
+    "title": "Wikipedia: XZ Utils backdoor (CVE-2024-3094)",
+    "url": "https://en.wikipedia.org/wiki/XZ_Utils_backdoor"
+   }
+  ]
+ },
+ {
+  "slug": "explain-analyze",
+  "def": "EXPLAIN ANALYZE 是关系型数据库的执行计划剖析命令：它真正执行 SQL，并在计划树的每个节点上报告实际行数、循环次数和耗时（PostgreSQL 还可附带缓冲区命中）。与只给估算的 EXPLAIN 不同，它能暴露估算偏差、全表扫描和低效连接，是查询调优的第一手证据。",
+  "how": [
+   "优化器根据统计信息生成多个候选计划，选总代价（cost）最低的一个执行。",
+   "ANALYZE 选项让数据库真实执行该计划，并对每个节点计时、计数。",
+   "输出为树形结构，自底向上读：叶子是扫描节点，上层是连接、排序、聚合。",
+   "每个节点对比估算 rows 与实际 rows，偏差数量级大说明统计信息过期或谓词相关性未被建模。",
+   "加 BUFFERS 可看到 shared hit（内存命中）与 read（磁盘读），判断瓶颈在 IO 还是 CPU。"
+  ],
+  "terms": [
+   {
+    "t": "执行计划 (Query Plan)",
+    "d": "优化器决定的扫描方式、连接顺序与算法组成的树。"
+   },
+   {
+    "t": "代价估算 (Cost)",
+    "d": "优化器内部的相对代价单位，不等于毫秒。"
+   },
+   {
+    "t": "Seq Scan / Index Scan",
+    "d": "顺序全表扫描与按索引访问两种扫描节点。"
+   },
+   {
+    "t": "Nested Loop / Hash Join",
+    "d": "嵌套循环连接与哈希连接，适用于不同数据规模。"
+   },
+   {
+    "t": "loops",
+    "d": "节点被执行的次数，实际总行数 ≈ rows × loops。"
+   },
+   {
+    "t": "统计信息 (Statistics)",
+    "d": "ANALYZE 采集的列分布数据，决定估算准确度。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "PostgreSQL 剖析慢查询",
+   "src": "-- EXPLAIN ANALYZE 会真正执行语句；写操作务必包在事务里回滚\nBEGIN;\n\nEXPLAIN (ANALYZE, BUFFERS)\nSELECT o.id, o.total\nFROM orders o\nJOIN customers c ON c.id = o.customer_id\nWHERE c.country = 'CN'\n  AND o.created_at >= now() - interval '7 days'\nORDER BY o.created_at DESC\nLIMIT 50;\n\nROLLBACK;\n\n-- 读输出时重点看：\n--  1. rows=估算 vs actual rows=实际，差距是否达到数量级\n--  2. 哪个节点 actual time 最大（时间是包含子节点的累计值）\n--  3. Seq Scan 是否出现在大表上，Rows Removed by Filter 是否很多\n--  4. Buffers: shared read 多说明大量走磁盘\n\n-- 估算偏差大时，先刷新统计信息再看\nANALYZE orders;",
+   "note": "先找耗时最大、估算偏差最大的节点；BUFFERS 区分内存命中与磁盘读取。"
+  },
+  "table": {
+   "title": "常见节点与信号",
+   "head": [
+    "输出现象",
+    "可能原因",
+    "处理方向"
+   ],
+   "rows": [
+    [
+     "大表 Seq Scan + 大量过滤",
+     "缺少合适索引",
+     "按过滤与排序列建索引"
+    ],
+    [
+     "估算 1 行，实际上万",
+     "统计过期或列相关",
+     "ANALYZE、扩展统计"
+    ],
+    [
+     "Nested Loop 内层 loops 很大",
+     "选错连接算法",
+     "修正估算或改写查询"
+    ],
+    [
+     "Sort Method: external merge",
+     "work_mem 不足",
+     "加索引避免排序或调参"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "EXPLAIN（仅估算）",
+    "pros": "不执行，安全、瞬间返回",
+    "cons": "看不到真实行数与耗时",
+    "when": "生产上查看长查询的计划"
+   },
+   {
+    "opt": "EXPLAIN ANALYZE",
+    "pros": "真实耗时与行数，证据充分",
+    "cons": "会执行语句，有计时开销",
+    "when": "副本或预发环境调优"
+   },
+   {
+    "opt": "auto_explain / 慢日志",
+    "pros": "自动捕获线上真实慢查询",
+    "cons": "有性能开销，需控制阈值",
+    "when": "排查偶发慢查询"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "对 UPDATE/DELETE 直接 EXPLAIN ANALYZE",
+    "fix": "包在 BEGIN … ROLLBACK 中，或只在副本执行"
+   },
+   {
+    "bad": "把 cost 数值当成毫秒比较",
+    "fix": "cost 是相对单位，看 actual time 判断耗时"
+   },
+   {
+    "bad": "只看总时间，不看 loops",
+    "fix": "节点时间按每次循环给出，需乘 loops"
+   },
+   {
+    "bad": "在空测试库上调优，结论不适用生产",
+    "fix": "用接近生产的数据量和分布验证"
+   }
+  ],
+  "checklist": [
+   "写语句的剖析在事务中回滚",
+   "对比估算与实际行数",
+   "定位耗时最大的节点",
+   "检查是否有大表全表扫描",
+   "统计信息最近已更新",
+   "优化前后各保留一份计划对比"
+  ],
+  "interview": [
+   {
+    "q": "估算行数严重偏差会导致什么？",
+    "a": "优化器基于错误基数选择计划，例如以为只有几行而选 Nested Loop，实际上万行导致内层循环爆炸；或以为很多行放弃索引。修复从 ANALYZE 刷新统计、提高统计目标、建立多列扩展统计入手。"
+   },
+   {
+    "q": "为什么建了索引却仍是 Seq Scan？",
+    "a": "可能是谓词选择性低，全表扫更便宜；对列用了函数或隐式类型转换导致索引不可用；统计信息过期；或表本身很小。用 EXPLAIN ANALYZE 比较实际耗时，确认是否真的更慢。"
+   },
+   {
+    "q": "MySQL 有 EXPLAIN ANALYZE 吗？",
+    "a": "有。MySQL 8.0.18 起支持 EXPLAIN ANALYZE，以树形格式输出每个迭代器的实际耗时与行数，同样会真正执行查询。更早版本只能用 EXPLAIN 与 optimizer trace 等手段。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL: Using EXPLAIN",
+    "url": "https://www.postgresql.org/docs/current/using-explain.html"
+   },
+   {
+    "title": "PostgreSQL: EXPLAIN 命令",
+    "url": "https://www.postgresql.org/docs/current/sql-explain.html"
+   },
+   {
+    "title": "MySQL 8.0: EXPLAIN Statement",
+    "url": "https://dev.mysql.com/doc/refman/8.0/en/explain.html"
+   }
+  ]
+ },
+ {
+  "slug": "connection-pooling",
+  "def": "数据库连接池是在应用与数据库之间维护一组可复用长连接的组件。建立连接需要 TCP 握手、TLS、认证和后端进程初始化，开销大；数据库能承受的并发连接也有限。连接池把连接的创建成本摊薄，并对并发访问数设上限，保护数据库。",
+  "how": [
+   "应用启动或首次使用时创建若干连接放入池中，空闲连接保持打开。",
+   "请求需要数据库时从池中借出一个连接，用完归还，而不是关闭。",
+   "池满时新请求排队等待，超过等待超时则报错，从而形成背压。",
+   "池定期检测连接有效性（pre-ping），并按最大寿命回收，避免使用被网络设备断开的连接。",
+   "外部连接池（如 PgBouncer）可在多个应用实例与数据库之间再做一层复用，按事务分配连接。"
+  ],
+  "terms": [
+   {
+    "t": "pool_size / 最大连接数",
+    "d": "池中常驻或允许的最大连接数量。"
+   },
+   {
+    "t": "等待超时 (Acquire Timeout)",
+    "d": "借不到连接时最多等待多久才报错。"
+   },
+   {
+    "t": "连接回收 (Max Lifetime / Recycle)",
+    "d": "连接存活超过阈值后主动关闭重建。"
+   },
+   {
+    "t": "事务级池化 (Transaction Pooling)",
+    "d": "PgBouncer 模式，事务结束即归还服务器连接。"
+   },
+   {
+    "t": "连接泄漏 (Connection Leak)",
+    "d": "借出后未归还，池逐渐耗尽。"
+   },
+   {
+    "t": "max_connections",
+    "d": "PostgreSQL 允许的最大并发连接数参数，默认通常为 100。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "SQLAlchemy 连接池配置",
+   "src": "# pip install sqlalchemy psycopg[binary]\nfrom sqlalchemy import create_engine, text\n\nengine = create_engine(\n    \"postgresql+psycopg://app:secret@db:5432/app\",\n    pool_size=10,        # 常驻连接数\n    max_overflow=5,      # 高峰时允许额外临时连接\n    pool_timeout=30,     # 借连接最多等 30 秒\n    pool_recycle=1800,   # 连接用满 30 分钟后重建\n    pool_pre_ping=True,  # 借出前探活，避免拿到已断开的连接\n)\n\n# with 块结束自动归还连接，避免泄漏\nwith engine.connect() as conn:\n    rows = conn.execute(text(\"SELECT id, name FROM users LIMIT 5\")).all()\n\n# 容量估算：实例数 × (pool_size + max_overflow) 应小于数据库 max_connections\n# 例如 6 个实例 × 15 = 90，需给管理连接留余量\nprint(engine.pool.status())",
+   "note": "上下文管理器保证归还；总连接数要按实例数乘以单实例上限来规划。"
+  },
+  "table": {
+   "title": "PgBouncer 池化模式",
+   "head": [
+    "模式",
+    "连接归还时机",
+    "复用率",
+    "限制"
+   ],
+   "rows": [
+    [
+     "session",
+     "客户端断开",
+     "低",
+     "几乎无兼容问题"
+    ],
+    [
+     "transaction",
+     "事务结束",
+     "高",
+     "会话级 SET、LISTEN、advisory lock 等受限"
+    ],
+    [
+     "statement",
+     "语句结束",
+     "最高",
+     "不允许多语句事务"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "应用内连接池",
+    "pros": "零额外组件，延迟最低",
+    "cons": "实例多时总连接数膨胀",
+    "when": "实例数少的常规服务"
+   },
+   {
+    "opt": "外部池（PgBouncer/RDS Proxy）",
+    "pros": "大量客户端共享少量后端连接",
+    "cons": "多一跳与运维，有模式限制",
+    "when": "多实例、Serverless 场景"
+   },
+   {
+    "opt": "池开得很大",
+    "pros": "排队少",
+    "cons": "数据库上下文切换与锁竞争加剧",
+    "when": "几乎不应作为默认"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "Serverless 函数每次调用都新建连接",
+    "fix": "在函数外部复用客户端，并使用外部连接池"
+   },
+   {
+    "bad": "池越大越快的直觉",
+    "fix": "按 CPU 核数估起点并压测，过大反而降低吞吐"
+   },
+   {
+    "bad": "长事务或慢请求占着连接不放",
+    "fix": "缩短事务，外部调用不要夹在事务中"
+   },
+   {
+    "bad": "事务池模式下依赖 SET 会话变量",
+    "fix": "改用 SET LOCAL 或连接参数，确认驱动兼容"
+   }
+  ],
+  "checklist": [
+   "总连接数 ≤ max_connections 减预留",
+   "设置借连接超时，超时有告警",
+   "开启探活与连接最大寿命",
+   "监控活跃、空闲、等待中的连接数",
+   "代码中连接与事务都能可靠归还",
+   "Serverless 场景接入外部连接池"
+  ],
+  "interview": [
+   {
+    "q": "为什么连接池不是越大越好？",
+    "a": "数据库真正能并行处理的查询受 CPU 核数和磁盘限制。连接过多会增加上下文切换、内存占用与锁竞争，吞吐反而下降。较小的池加排队通常更稳，HikariCP 的池大小文档对此有详细论述。"
+   },
+   {
+    "q": "PostgreSQL 为什么特别需要连接池？",
+    "a": "PostgreSQL 采用每连接一个后端进程的模型，每个连接都有进程与内存开销，建立连接也较慢。大量短连接或成千上万并发连接会拖垮实例，因此常配合应用池或 PgBouncer 使用。"
+   },
+   {
+    "q": "如何发现连接泄漏？",
+    "a": "监控池中借出连接数持续上升不回落、借连接等待超时增加；数据库侧看 pg_stat_activity 中长时间 idle in transaction 的连接。代码上统一用上下文管理器，部分池可开启泄漏检测阈值。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "SQLAlchemy: Connection Pooling",
+    "url": "https://docs.sqlalchemy.org/en/20/core/pooling.html"
+   },
+   {
+    "title": "PgBouncer Features",
+    "url": "https://www.pgbouncer.org/features.html"
+   },
+   {
+    "title": "HikariCP Wiki: About Pool Sizing",
+    "url": "https://github.com/brettwooldridge/HikariCP/wiki/About-Pool-Sizing"
+   },
+   {
+    "title": "PostgreSQL: Connection Settings",
+    "url": "https://www.postgresql.org/docs/current/runtime-config-connection.html"
+   }
+  ]
+ },
+ {
+  "slug": "down-migrations",
+  "def": "回滚迁移（Down Migration）是与升级迁移（Up）配对的逆向脚本，用于把数据库结构撤回到上一版本。它属于数据库变更管理层，主要用于开发环境来回切换和发布失败时的应急。由于删除列、改类型等操作会丢数据，生产中更常见的策略是“向前修复”加兼容性设计。",
+  "how": [
+   "迁移工具为每个版本维护一对脚本：upgrade/up 前进，downgrade/down 撤销。",
+   "工具在数据库内的版本表（如 alembic_version）记录当前版本，按顺序执行或回退。",
+   "down 必须逆序撤销 up 的每一步，例如先删索引再删列。",
+   "破坏性变更（删列、删表、收窄类型）的 down 无法恢复数据，只能恢复结构。",
+   "生产常采用扩展-收缩（expand-contract）：先加兼容结构，代码切换稳定后再删旧结构。"
+  ],
+  "terms": [
+   {
+    "t": "Schema Migration",
+    "d": "版本化、可重复执行的数据库结构变更脚本。"
+   },
+   {
+    "t": "Roll Forward",
+    "d": "出问题时发布一个新迁移修复，而非回退旧迁移。"
+   },
+   {
+    "t": "扩展-收缩 (Expand-Contract)",
+    "d": "先兼容新增、后清理旧结构的分阶段变更模式。"
+   },
+   {
+    "t": "事务性 DDL (Transactional DDL)",
+    "d": "DDL 可在事务中回滚；PostgreSQL 支持，MySQL 多数 DDL 会隐式提交。"
+   },
+   {
+    "t": "不可逆迁移 (Irreversible Migration)",
+    "d": "down 无法还原数据的迁移，应显式标注。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Alembic 成对迁移",
+   "src": "\"\"\"add users.nickname\"\"\"\nfrom alembic import op\nimport sqlalchemy as sa\n\nrevision = \"a1b2c3d4e5f6\"\ndown_revision = \"9f8e7d6c5b4a\"\n\ndef upgrade():\n    # 扩展阶段：只新增可空列，旧代码不受影响\n    op.add_column(\"users\", sa.Column(\"nickname\", sa.String(64), nullable=True))\n    op.create_index(\"ix_users_nickname\", \"users\", [\"nickname\"])\n\ndef downgrade():\n    # 逆序撤销：先删索引，再删列（该列数据会丢失）\n    op.drop_index(\"ix_users_nickname\", table_name=\"users\")\n    op.drop_column(\"users\", \"nickname\")\n\n# 命令行：\n#   alembic upgrade head     升级到最新\n#   alembic downgrade -1     回退一个版本\n#   alembic upgrade head --sql   只生成 SQL 供评审",
+   "note": "down 与 up 严格逆序；新增可空列属于可安全回退的扩展型变更。"
+  },
+  "table": {
+   "title": "主流迁移工具的回滚支持",
+   "head": [
+    "工具",
+    "回滚方式",
+    "说明"
+   ],
+   "rows": [
+    [
+     "Alembic",
+     "downgrade 函数",
+     "每个版本手写 upgrade/downgrade"
+    ],
+    [
+     "Rails",
+     "change 自动推导或 down",
+     "部分操作可自动逆转"
+    ],
+    [
+     "Flyway",
+     "Undo 迁移（U 前缀）",
+     "Undo 属付费版功能"
+    ],
+    [
+     "Prisma Migrate",
+     "无内置 down",
+     "可用 migrate diff 生成回退 SQL"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "维护 down 脚本",
+    "pros": "开发环境可来回切换，应急有预案",
+    "cons": "维护成本高，常年不测易失效",
+    "when": "开发频繁切分支的团队"
+   },
+   {
+    "opt": "只向前修复",
+    "pros": "流程单一，避免回退丢数据",
+    "cons": "出错时需快速写修复迁移",
+    "when": "生产环境的主要策略"
+   },
+   {
+    "opt": "备份/快照回滚",
+    "pros": "可恢复数据本身",
+    "cons": "会丢失快照之后的写入",
+    "when": "灾难性错误的最后手段"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "down 脚本从未执行过，出事时才发现跑不通",
+    "fix": "CI 中执行 up→down→up 验证可逆性"
+   },
+   {
+    "bad": "同一次发布里改代码又删旧列",
+    "fix": "按扩展-收缩拆成多次发布"
+   },
+   {
+    "bad": "以为 down 能恢复被删列的数据",
+    "fix": "破坏性变更前备份或保留影子列一段时间"
+   },
+   {
+    "bad": "在 MySQL 中依赖事务回滚失败的 DDL",
+    "fix": "了解 DDL 隐式提交，单个迁移只做一类变更"
+   }
+  ],
+  "checklist": [
+   "每个迁移都有 down 或标注不可逆",
+   "CI 验证 up→down→up",
+   "破坏性变更拆分为多次发布",
+   "删除操作前已有可恢复备份",
+   "迁移在接近生产数据量上演练过",
+   "大表 DDL 评估了锁与耗时"
+  ],
+  "interview": [
+   {
+    "q": "为什么生产上更推荐向前修复？",
+    "a": "回退迁移可能丢失新写入的数据，且应用代码可能已依赖新结构；在压力下执行少测的 down 风险高。向前修复配合扩展-收缩，让每一步都兼容新旧代码，代码可独立回滚而数据库不用退。"
+   },
+   {
+    "q": "如何安全地重命名一列？",
+    "a": "不直接 RENAME。先加新列，代码双写新旧列并回填历史数据；读取切到新列并观察；确认旧代码不再运行后停止写旧列；最后单独发布删除旧列。每一步都可单独回退。"
+   },
+   {
+    "q": "AI 生成的迁移需要重点审什么？",
+    "a": "是否有删列删表等破坏性操作、down 是否真正逆序、大表上是否会长时间锁表（如加非空默认值、建索引未用 CONCURRENTLY），以及是否混入了与需求无关的自动生成变更。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Alembic Tutorial",
+    "url": "https://alembic.sqlalchemy.org/en/latest/tutorial.html"
+   },
+   {
+    "title": "Rails Guides: Active Record Migrations",
+    "url": "https://guides.rubyonrails.org/active_record_migrations.html"
+   },
+   {
+    "title": "Prisma: Generating down migrations",
+    "url": "https://www.prisma.io/docs/orm/prisma-migrate/workflows/generating-down-migrations"
+   }
+  ]
+ },
+ {
+  "slug": "acid",
+  "def": "ACID 是数据库事务的四项保证：原子性（Atomicity）、一致性（Consistency）、隔离性（Isolation）、持久性（Durability）。它定义了一组读写操作作为整体执行时数据库应提供的行为，是关系型数据库区别于很多早期 NoSQL 的核心能力，也是业务正确性的基础。",
+  "how": [
+   "原子性：事务内的修改要么全部生效要么全部撤销，引擎借助日志在失败时回滚。",
+   "一致性：事务前后数据满足约束（主键、外键、CHECK）与业务不变式，后者需应用配合保证。",
+   "隔离性：并发事务互不干扰的程度，由锁或 MVCC 实现，强弱由隔离级别决定。",
+   "持久性：提交成功后即使崩溃也不丢失，通常靠预写日志（WAL）在提交时刷盘。",
+   "崩溃恢复时，引擎重放已提交事务的日志、撤销未提交的修改，恢复到一致状态。"
+  ],
+  "terms": [
+   {
+    "t": "预写日志 (WAL)",
+    "d": "先把变更写入日志并落盘，再修改数据页。"
+   },
+   {
+    "t": "MVCC",
+    "d": "多版本并发控制，读不阻塞写，各事务看到自己的快照。"
+   },
+   {
+    "t": "保存点 (Savepoint)",
+    "d": "事务内的回滚点，可只撤销部分操作。"
+   },
+   {
+    "t": "不变式 (Invariant)",
+    "d": "任何时刻都必须成立的业务规则，如余额不为负。"
+   },
+   {
+    "t": "fsync",
+    "d": "要求操作系统把数据真正写到持久存储的系统调用。"
+   },
+   {
+    "t": "BASE",
+    "d": "基本可用、软状态、最终一致，常与 ACID 对照的设计取向。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "转账事务与约束",
+   "src": "-- 一致性的一部分交给约束：余额不能为负\nCREATE TABLE accounts (\n  id      int PRIMARY KEY,\n  balance numeric(12,2) NOT NULL CHECK (balance >= 0)\n);\nINSERT INTO accounts VALUES (1, 100), (2, 0);\n\n-- 原子性：两条更新作为整体\nBEGIN;\nUPDATE accounts SET balance = balance - 150 WHERE id = 1;  -- 违反 CHECK，报错\nUPDATE accounts SET balance = balance + 150 WHERE id = 2;\nCOMMIT;  -- PostgreSQL 中事务已处于失败状态，COMMIT 实际执行回滚\n\n-- 保存点：只撤销事务中的一部分\nBEGIN;\nUPDATE accounts SET balance = balance - 30 WHERE id = 1;\nSAVEPOINT before_bonus;\nUPDATE accounts SET balance = balance + 999 WHERE id = 2;\nROLLBACK TO SAVEPOINT before_bonus;  -- 撤销加 999\nUPDATE accounts SET balance = balance + 30 WHERE id = 2;\nCOMMIT;\n\nSELECT * FROM accounts;  -- 1: 70, 2: 30",
+   "note": "约束保证不变式，事务保证整体生效；保存点可局部回滚。以 PostgreSQL 为例。"
+  },
+  "table": {
+   "title": "四项特性的实现机制",
+   "head": [
+    "特性",
+    "典型机制",
+    "可调项/注意"
+   ],
+   "rows": [
+    [
+     "原子性",
+     "WAL / undo 日志",
+     "长事务回滚代价高"
+    ],
+    [
+     "一致性",
+     "约束 + 应用逻辑",
+     "约束外的规则靠代码保证"
+    ],
+    [
+     "隔离性",
+     "MVCC、锁",
+     "由隔离级别决定强弱"
+    ],
+    [
+     "持久性",
+     "提交时 WAL 刷盘",
+     "如 synchronous_commit 可换性能"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "严格 ACID 单库事务",
+    "pros": "正确性推理简单",
+    "cons": "扩展受单机或单分片限制",
+    "when": "订单、支付、库存等核心数据"
+   },
+   {
+    "opt": "放宽持久性（异步提交）",
+    "pros": "写入延迟显著下降",
+    "cons": "崩溃可能丢最近少量已确认事务",
+    "when": "日志、埋点等可丢数据"
+   },
+   {
+    "opt": "跨服务 Saga",
+    "pros": "支持微服务各自独立存储",
+    "cons": "无全局隔离，需补偿逻辑",
+    "when": "无法放进同一数据库时"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "以为 ACID 的一致性会自动保证所有业务规则",
+    "fix": "把关键规则落到约束，其余在事务内显式校验"
+   },
+   {
+    "bad": "ORM 默认自动提交，多步操作没包事务",
+    "fix": "显式开启事务，确认框架的事务边界"
+   },
+   {
+    "bad": "事务中调用外部 HTTP，长时间持锁",
+    "fix": "外部调用移出事务，或使用 outbox 模式"
+   },
+   {
+    "bad": "以为默认隔离级别就能防所有并发异常",
+    "fix": "了解所用库默认级别，必要时加锁或升级"
+   }
+  ],
+  "checklist": [
+   "多步写操作都在显式事务中",
+   "关键不变式有数据库约束兜底",
+   "事务内不包含外部网络调用",
+   "已确认数据库默认隔离级别",
+   "持久性参数未被误改为异步",
+   "事务失败有重试与幂等处理"
+  ],
+  "interview": [
+   {
+    "q": "ACID 中的 C 和 CAP 中的 C 一样吗？",
+    "a": "不一样。ACID 的一致性指事务把数据从一个满足约束的状态带到另一个；CAP 的一致性指分布式系统中读到最新写入（线性一致）。很多人认为 ACID 的 C 更多由应用保证，引擎只提供约束工具。"
+   },
+   {
+    "q": "数据库如何在崩溃后保证持久性和原子性？",
+    "a": "提交时先确保 WAL 刷盘再返回成功。重启时从检查点开始重放日志，把已提交但未写入数据页的修改补上；未提交事务的修改被撤销或因 MVCC 不可见。"
+   },
+   {
+    "q": "微服务里怎样获得类似事务的效果？",
+    "a": "常用 Saga：把大事务拆成本地事务序列，每步有补偿操作；配合 outbox 模式保证本地写与消息发送原子；全程幂等。代价是中间状态对外可见，没有跨服务的隔离性。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL Tutorial: Transactions",
+    "url": "https://www.postgresql.org/docs/current/tutorial-transactions.html"
+   },
+   {
+    "title": "PostgreSQL: Write-Ahead Logging",
+    "url": "https://www.postgresql.org/docs/current/wal-intro.html"
+   },
+   {
+    "title": "Wikipedia: ACID",
+    "url": "https://en.wikipedia.org/wiki/ACID"
+   }
+  ]
+ },
+ {
+  "slug": "isolation-levels",
+  "def": "事务隔离级别定义了并发事务之间能“看见”彼此多少未完成或新提交的修改。SQL 标准按允许的异常现象划分为读未提交、读已提交、可重复读、可串行化四级。级别越高越接近串行执行的正确性，但并发度、阻塞或重试成本也越高。",
+  "how": [
+   "数据库用锁或 MVCC 快照实现隔离：MVCC 下每个事务读取某一时刻的数据版本。",
+   "读已提交：每条语句取新快照，只能看到已提交数据，但同一事务两次读可能不同。",
+   "可重复读：整个事务使用同一快照，重复读取结果一致；具体能否防幻读因引擎而异。",
+   "可串行化：保证结果等价于某种串行顺序；PostgreSQL 用 SSI 检测冲突并让事务失败。",
+   "被判定冲突的事务会收到序列化失败错误（SQLSTATE 40001），应用需整体重试该事务。"
+  ],
+  "terms": [
+   {
+    "t": "脏读 (Dirty Read)",
+    "d": "读到其他事务尚未提交的修改。"
+   },
+   {
+    "t": "不可重复读 (Non-repeatable Read)",
+    "d": "同一事务内两次读同一行，结果不同。"
+   },
+   {
+    "t": "幻读 (Phantom Read)",
+    "d": "同一条件两次查询，返回的行集合变化。"
+   },
+   {
+    "t": "写偏斜 (Write Skew)",
+    "d": "两事务基于同一快照各自写不同行，合起来破坏约束。"
+   },
+   {
+    "t": "快照隔离 (Snapshot Isolation)",
+    "d": "事务读固定快照，写冲突时后提交者失败。"
+   },
+   {
+    "t": "SSI",
+    "d": "可串行化快照隔离，PostgreSQL 可串行化级别的实现。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "写偏斜与可串行化",
+   "src": "-- 规则：至少要有一名医生值班\nCREATE TABLE doctors (name text PRIMARY KEY, on_call boolean);\nINSERT INTO doctors VALUES ('alice', true), ('bob', true);\n\n-- 会话 A                                  -- 会话 B\nBEGIN ISOLATION LEVEL REPEATABLE READ;     -- BEGIN ISOLATION LEVEL REPEATABLE READ;\nSELECT count(*) FROM doctors               -- SELECT count(*) FROM doctors\n  WHERE on_call;  -- 2                     --   WHERE on_call;  -- 2\nUPDATE doctors SET on_call = false         -- UPDATE doctors SET on_call = false\n  WHERE name = 'alice';                    --   WHERE name = 'bob';\nCOMMIT;                                    -- COMMIT;\n-- 结果：两人都不值班，规则被破坏（写偏斜）\n\n-- 改为 SERIALIZABLE 后，后提交的一方会失败：\n-- ERROR: could not serialize access due to read/write dependencies\n-- SQLSTATE 40001 → 应用捕获后重试整个事务\nSHOW default_transaction_isolation;  -- PostgreSQL 默认 read committed",
+   "note": "可重复读挡不住写偏斜；PostgreSQL 可串行化会让其中一个事务失败，需重试。"
+  },
+  "table": {
+   "title": "隔离级别与异常（标准定义）",
+   "head": [
+    "级别",
+    "脏读",
+    "不可重复读",
+    "幻读"
+   ],
+   "rows": [
+    [
+     "读未提交",
+     "可能",
+     "可能",
+     "可能"
+    ],
+    [
+     "读已提交",
+     "不会",
+     "可能",
+     "可能"
+    ],
+    [
+     "可重复读",
+     "不会",
+     "不会",
+     "可能（PG 实际不会）"
+    ],
+    [
+     "可串行化",
+     "不会",
+     "不会",
+     "不会"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "读已提交（PG 默认）",
+    "pros": "冲突少，吞吐高",
+    "cons": "需自行处理丢失更新与写偏斜",
+    "when": "大多数 OLTP 业务"
+   },
+   {
+    "opt": "可重复读（MySQL 默认）",
+    "pros": "事务内读一致，适合报表",
+    "cons": "仍可能写偏斜，语义因库而异",
+    "when": "需一致快照的读多事务"
+   },
+   {
+    "opt": "可串行化",
+    "pros": "正确性推理最简单",
+    "cons": "失败重试增多，需幂等设计",
+    "when": "资金、配额等强约束逻辑"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "以为各数据库同名级别行为一致",
+    "fix": "查阅所用引擎文档，MySQL 与 PG 的可重复读差异很大"
+   },
+   {
+    "bad": "开了可串行化但没写重试逻辑",
+    "fix": "捕获 40001 并重试整个事务，限制次数"
+   },
+   {
+    "bad": "读后改写（读余额再写回）未防丢失更新",
+    "fix": "用原子 UPDATE、SELECT FOR UPDATE 或版本号"
+   },
+   {
+    "bad": "全局调高隔离级别解决个别问题",
+    "fix": "只对需要的事务单独设置级别"
+   }
+  ],
+  "checklist": [
+   "已确认数据库与驱动的默认隔离级别",
+   "识别出读后写类的关键路径",
+   "关键路径有锁、版本号或高隔离级别",
+   "序列化失败与死锁错误可自动重试",
+   "重试的事务是幂等的",
+   "并发场景有压测或集成测试覆盖"
+  ],
+  "interview": [
+   {
+    "q": "快照隔离为什么不等于可串行化？",
+    "a": "快照隔离只检测两个事务写同一行的冲突。写偏斜中两事务读同一集合、写不同的行，没有写写冲突，各自提交后组合结果违反约束。可串行化需额外追踪读写依赖，如 PostgreSQL 的 SSI。"
+   },
+   {
+    "q": "MySQL InnoDB 的可重复读如何处理幻读？",
+    "a": "普通一致性读用快照，看不到新插入行；加锁读（FOR UPDATE）和更新使用 next-key 锁（记录锁加间隙锁）阻止范围内插入。但快照读与当前读混用时仍可能出现与直觉不符的结果。"
+   },
+   {
+    "q": "如何选择业务的隔离级别？",
+    "a": "默认用读已提交，识别出需要强一致的少数路径：能用原子 UPDATE 或唯一约束解决的优先；其次用行锁或乐观锁；逻辑涉及多行约束、难以手工加锁时，对该事务使用可串行化并配重试。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL: Transaction Isolation",
+    "url": "https://www.postgresql.org/docs/current/transaction-iso.html"
+   },
+   {
+    "title": "MySQL: InnoDB Transaction Isolation Levels",
+    "url": "https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html"
+   },
+   {
+    "title": "A Critique of ANSI SQL Isolation Levels",
+    "url": "https://www.microsoft.com/en-us/research/publication/a-critique-of-ansi-sql-isolation-levels/"
+   },
+   {
+    "title": "Jepsen: Consistency Models",
+    "url": "https://jepsen.io/consistency"
+   }
+  ]
+ },
+ {
+  "slug": "deadlocks",
+  "def": "死锁是两个或多个事务各自持有对方需要的锁并互相等待，形成等待环，任何一方都无法继续。数据库会通过等待图检测死锁，选择一个事务作为牺牲者回滚以打破环路。死锁无法完全消除，工程目标是降低频率并让应用能安全重试。",
+  "how": [
+   "事务 A 锁住行 1，事务 B 锁住行 2，随后 A 请求行 2、B 请求行 1，形成环。",
+   "锁等待超过一定时间（PostgreSQL 的 deadlock_timeout 默认 1 秒）后，数据库检查等待图。",
+   "发现环路即选择牺牲者回滚，返回死锁错误（PG 为 40P01，MySQL 为错误 1213）。",
+   "另一事务获得锁继续执行；被回滚的事务释放全部锁，需由应用从头重试。",
+   "数据库在日志或状态命令中记录死锁详情，用于定位涉及的语句和锁。"
+  ],
+  "terms": [
+   {
+    "t": "等待图 (Wait-for Graph)",
+    "d": "节点为事务、边为等待关系的图，有环即死锁。"
+   },
+   {
+    "t": "牺牲者 (Victim)",
+    "d": "被数据库选中回滚以解除死锁的事务。"
+   },
+   {
+    "t": "锁顺序 (Lock Ordering)",
+    "d": "所有事务按同一顺序获取锁，从根本上避免环。"
+   },
+   {
+    "t": "间隙锁 (Gap Lock)",
+    "d": "InnoDB 锁住索引记录间的间隙，常引发意外死锁。"
+   },
+   {
+    "t": "锁超时 (Lock Timeout)",
+    "d": "等锁超过阈值直接报错，与死锁检测不同。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "复现与按序加锁",
+   "src": "-- 复现（两个会话交替执行）\n-- 会话 A: BEGIN; UPDATE accounts SET balance = balance - 10 WHERE id = 1;\n-- 会话 B: BEGIN; UPDATE accounts SET balance = balance - 10 WHERE id = 2;\n-- 会话 A: UPDATE accounts SET balance = balance + 10 WHERE id = 2;  -- 等待 B\n-- 会话 B: UPDATE accounts SET balance = balance + 10 WHERE id = 1;  -- 形成环\n-- ERROR: deadlock detected (SQLSTATE 40P01)\n\n-- 修复：无论转账方向，都按 id 升序一次性锁住相关行\nBEGIN;\nSELECT id FROM accounts\nWHERE id IN (1, 2)\nORDER BY id\nFOR UPDATE;\nUPDATE accounts SET balance = balance - 10 WHERE id = 2;\nUPDATE accounts SET balance = balance + 10 WHERE id = 1;\nCOMMIT;\n\n-- PostgreSQL：记录长时间锁等待，便于排查\nALTER SYSTEM SET log_lock_waits = on;\nSELECT pg_reload_conf();\n-- MySQL：查看最近一次死锁详情\n-- SHOW ENGINE INNODB STATUS;",
+   "note": "按固定顺序加锁打破环路；开启锁等待日志帮助定位。"
+  },
+  "table": {
+   "title": "常见死锁成因",
+   "head": [
+    "成因",
+    "典型场景",
+    "对策"
+   ],
+   "rows": [
+    [
+     "加锁顺序不一致",
+     "双向转账、批量更新顺序不同",
+     "按主键排序后加锁"
+    ],
+    [
+     "无索引导致锁范围大",
+     "UPDATE 条件列没索引",
+     "补索引缩小锁范围"
+    ],
+    [
+     "间隙锁冲突",
+     "InnoDB 可重复读下并发插入",
+     "降为读已提交或改写语句"
+    ],
+    [
+     "事务过长",
+     "事务内含外部调用",
+     "缩短事务、先算后写"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "统一加锁顺序",
+    "pros": "从根源消除这类死锁",
+    "cons": "需约束所有代码路径",
+    "when": "多行更新的核心业务"
+   },
+   {
+    "opt": "捕获死锁并重试",
+    "pros": "实现简单，兜底所有情况",
+    "cons": "重试增加延迟，需幂等",
+    "when": "任何事务型系统都应具备"
+   },
+   {
+    "opt": "粗粒度锁（表锁/分布式锁）",
+    "pros": "不会出现行级环路",
+    "cons": "并发度大幅下降",
+    "when": "低频的批处理任务"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把死锁当作数据库 bug，只调大超时",
+    "fix": "分析死锁日志，修正加锁顺序或索引"
+   },
+   {
+    "bad": "批量 UPDATE 不排序，与其他批次交叉",
+    "fix": "按主键排序或分批固定顺序处理"
+   },
+   {
+    "bad": "重试时只重放失败那条语句",
+    "fix": "整个事务回滚后从头重试"
+   },
+   {
+    "bad": "外键检查隐式加锁被忽略",
+    "fix": "分析时考虑外键、唯一约束带来的隐式锁"
+   }
+  ],
+  "checklist": [
+   "多行写操作按统一顺序加锁",
+   "UPDATE/DELETE 条件列有索引",
+   "事务内无外部网络调用",
+   "应用捕获死锁错误并整事务重试",
+   "死锁次数有监控指标",
+   "开启死锁/锁等待日志"
+  ],
+  "interview": [
+   {
+    "q": "死锁和锁等待超时有什么区别？",
+    "a": "死锁是循环等待，没有外力永远无法解除，数据库主动检测并回滚一方；锁等待超时是单向等待太久，对方迟早会释放，只是超过了设置的阈值（如 lock_timeout、innodb_lock_wait_timeout）而报错。"
+   },
+   {
+    "q": "为什么缺索引会导致死锁增多？",
+    "a": "没有合适索引时，UPDATE 需要扫描更多行，InnoDB 会对扫描到的记录和间隙加锁，锁范围扩大，不同事务的锁区间更容易交叉形成环。补上索引后只锁命中行。"
+   },
+   {
+    "q": "线上出现死锁如何排查？",
+    "a": "先取死锁日志（MySQL 用 SHOW ENGINE INNODB STATUS，PG 看服务器日志），找出两个事务各持有和等待的锁及语句；回到代码确认执行顺序；再看执行计划判断锁范围是否过大，最后修顺序或索引。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL: Explicit Locking",
+    "url": "https://www.postgresql.org/docs/current/explicit-locking.html"
+   },
+   {
+    "title": "MySQL: Deadlocks in InnoDB",
+    "url": "https://dev.mysql.com/doc/refman/8.0/en/innodb-deadlocks.html"
+   },
+   {
+    "title": "PostgreSQL: Lock Management 参数",
+    "url": "https://www.postgresql.org/docs/current/runtime-config-locks.html"
+   }
+  ]
+ },
+ {
+  "slug": "optimistic-locking",
+  "def": "乐观锁（Optimistic Locking）是一种并发控制策略：读取时不加锁，写入时检查数据自读取后是否被他人修改（通常比较版本号），若已变化则拒绝写入并让调用方重试或提示冲突。它适合冲突概率低、读多写少，以及跨请求的长时间编辑场景。",
+  "how": [
+   "表中增加 version 整数列（或更新时间戳），读取数据时一并取回版本号。",
+   "用户在客户端编辑，可能持续数分钟，期间数据库不持有任何锁。",
+   "保存时执行 UPDATE … SET version = version + 1 WHERE id = ? AND version = 读到的版本。",
+   "受影响行数为 1 表示成功；为 0 说明版本已变化，发生冲突。",
+   "冲突时由应用决定：自动重试、合并修改，或返回 409/412 让用户处理。"
+  ],
+  "terms": [
+   {
+    "t": "版本列 (Version Column)",
+    "d": "每次更新自增的整数，用于检测并发修改。"
+   },
+   {
+    "t": "丢失更新 (Lost Update)",
+    "d": "后写者覆盖先写者的修改而无人察觉。"
+   },
+   {
+    "t": "比较并交换 (CAS)",
+    "d": "仅当当前值等于预期值时才写入的原子操作。"
+   },
+   {
+    "t": "If-Match / ETag",
+    "d": "HTTP 层的乐观锁：带上版本标识，不匹配返回 412。"
+   },
+   {
+    "t": "冲突率 (Conflict Rate)",
+    "d": "写入因版本不符被拒的比例，决定是否适合乐观锁。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "版本号检测并发修改",
+   "src": "import sqlite3\n\nconn = sqlite3.connect(\":memory:\")\nconn.execute(\"CREATE TABLE doc(id INTEGER PRIMARY KEY, body TEXT, version INTEGER NOT NULL)\")\nconn.execute(\"INSERT INTO doc VALUES (1, '初稿', 1)\")\n\ndef save(doc_id: int, new_body: str, read_version: int) -> bool:\n    cur = conn.execute(\n        \"UPDATE doc SET body = ?, version = version + 1 \"\n        \"WHERE id = ? AND version = ?\",\n        (new_body, doc_id, read_version),\n    )\n    conn.commit()\n    return cur.rowcount == 1   # 0 行表示被别人抢先修改了\n\n# A、B 同时打开文档，都读到 version = 1\nprint(save(1, \"A 的修改\", 1))  # True，version 变为 2\nprint(save(1, \"B 的修改\", 1))  # False，冲突，需要重新读取后再改\nprint(conn.execute(\"SELECT body, version FROM doc\").fetchone())  # ('A 的修改', 2)",
+   "note": "版本检查与更新在一条 UPDATE 中原子完成；rowcount 为 0 即冲突。"
+  },
+  "table": {
+   "title": "各层的乐观锁实现",
+   "head": [
+    "层次",
+    "实现方式",
+    "冲突信号"
+   ],
+   "rows": [
+    [
+     "SQL",
+     "WHERE version = ?",
+     "受影响行数为 0"
+    ],
+    [
+     "ORM",
+     "JPA @Version、Rails lock_version",
+     "抛出乐观锁异常"
+    ],
+    [
+     "HTTP API",
+     "ETag + If-Match",
+     "412 Precondition Failed"
+    ],
+    [
+     "Redis",
+     "WATCH + MULTI/EXEC",
+     "EXEC 返回空"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "乐观锁",
+    "pros": "无锁等待，可跨请求、跨长时间编辑",
+    "cons": "冲突多时大量重试浪费",
+    "when": "冲突概率低、读多写少"
+   },
+   {
+    "opt": "悲观锁",
+    "pros": "冲突时排队而非失败",
+    "cons": "持锁阻塞他人，有死锁风险",
+    "when": "热点数据高频写入"
+   },
+   {
+    "opt": "原子更新语句",
+    "pros": "最简单，无需版本",
+    "cons": "只适用于可表达为单条 SQL 的修改",
+    "when": "计数器、余额增减"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "先 SELECT 版本比对，再单独 UPDATE",
+    "fix": "把版本条件写进同一条 UPDATE 的 WHERE"
+   },
+   {
+    "bad": "冲突后自动重试，但用的仍是旧数据",
+    "fix": "重试前重新读取最新数据和版本"
+   },
+   {
+    "bad": "用毫秒时间戳当版本，同毫秒更新漏检",
+    "fix": "使用自增整数版本列"
+   },
+   {
+    "bad": "秒杀等高冲突场景用乐观锁",
+    "fix": "改用原子扣减、队列或悲观锁"
+   }
+  ],
+  "checklist": [
+   "版本条件与更新在同一语句",
+   "检查受影响行数并处理冲突",
+   "批量更新与后台任务也维护版本",
+   "API 返回 ETag 并支持 If-Match",
+   "冲突提示对用户可理解",
+   "监控冲突率是否异常升高"
+  ],
+  "interview": [
+   {
+    "q": "乐观锁和悲观锁怎么选？",
+    "a": "看冲突概率与持锁时长。冲突少、编辑跨越多个请求（表单、文档）适合乐观锁，避免长时间持锁；冲突频繁、操作短小的热点写入适合悲观锁或原子更新，避免反复重试。"
+   },
+   {
+    "q": "HTTP API 如何实现乐观锁？",
+    "a": "GET 响应返回 ETag（版本或内容哈希），客户端 PUT/PATCH 时带 If-Match: 该 ETag。服务端比对当前版本，不一致返回 412 Precondition Failed；缺少 If-Match 可返回 428 要求带上。"
+   },
+   {
+    "q": "乐观锁能防止写偏斜吗？",
+    "a": "单行版本号只能检测同一行的并发修改。写偏斜涉及读取多行、写入不同的行，各行版本都不冲突，因此防不住。需要锁住相关行集合、引入汇总行版本或使用可串行化隔离。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Wikipedia: Optimistic concurrency control",
+    "url": "https://en.wikipedia.org/wiki/Optimistic_concurrency_control"
+   },
+   {
+    "title": "MDN: If-Match",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Match"
+   },
+   {
+    "title": "Rails API: Optimistic Locking",
+    "url": "https://api.rubyonrails.org/classes/ActiveRecord/Locking/Optimistic.html"
+   }
+  ]
+ },
+ {
+  "slug": "pessimistic-locking",
+  "def": "悲观锁（Pessimistic Locking）是在读取数据时就加锁，阻止其他事务并发修改，直到本事务提交或回滚才释放。数据库中通常通过 SELECT … FOR UPDATE 等加锁读实现。它用排队等待换取正确性，适合冲突频繁、必须串行处理的短事务。",
+  "how": [
+   "事务开始后，用加锁读（如 SELECT … FOR UPDATE）锁定目标行。",
+   "其他事务对这些行的加锁读或写入会阻塞，直到锁被释放；普通 MVCC 读不受影响。",
+   "持锁事务基于已锁定的最新数据完成计算并写入，然后提交，锁随之释放。",
+   "可用 NOWAIT 立即失败、SKIP LOCKED 跳过已锁行，或设置锁超时，避免无限等待。",
+   "跨请求或跨服务的场景可用数据库咨询锁或分布式锁，但需处理持有者崩溃。"
+  ],
+  "terms": [
+   {
+    "t": "FOR UPDATE",
+    "d": "排他行锁，阻止他人修改和加锁读取这些行。"
+   },
+   {
+    "t": "FOR SHARE",
+    "d": "共享行锁，允许他人读但阻止修改。"
+   },
+   {
+    "t": "NOWAIT",
+    "d": "遇到已被锁的行立即报错，不等待。"
+   },
+   {
+    "t": "SKIP LOCKED",
+    "d": "跳过已被锁的行，常用于数据库任务队列。"
+   },
+   {
+    "t": "咨询锁 (Advisory Lock)",
+    "d": "PostgreSQL 提供的由应用定义含义的锁。"
+   },
+   {
+    "t": "锁粒度 (Lock Granularity)",
+    "d": "锁覆盖范围：行、页、表，粒度越粗并发越低。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "扣库存与任务领取",
+   "src": "-- 场景一：扣库存，锁住商品行后再判断\nBEGIN;\nSET LOCAL lock_timeout = '3s';          -- 等锁最多 3 秒（PostgreSQL）\nSELECT stock FROM products WHERE id = 42 FOR UPDATE;\n-- 应用判断 stock >= 1 后：\nUPDATE products SET stock = stock - 1 WHERE id = 42;\nINSERT INTO orders (product_id, qty) VALUES (42, 1);\nCOMMIT;\n\n-- 场景二：多个 worker 并发领取任务，互不阻塞\nBEGIN;\nSELECT id, payload FROM jobs\nWHERE status = 'pending'\nORDER BY id\nLIMIT 1\nFOR UPDATE SKIP LOCKED;\n-- 拿到 id 后：\nUPDATE jobs SET status = 'running', started_at = now() WHERE id = $1;\nCOMMIT;",
+   "note": "FOR UPDATE 串行化同一行的修改；SKIP LOCKED 让多个消费者各取一行。"
+  },
+  "table": {
+   "title": "加锁读选项",
+   "head": [
+    "写法",
+    "遇到已锁行",
+    "典型用途"
+   ],
+   "rows": [
+    [
+     "FOR UPDATE",
+     "等待",
+     "扣库存、改余额"
+    ],
+    [
+     "FOR UPDATE NOWAIT",
+     "立即报错",
+     "交互式操作快速失败"
+    ],
+    [
+     "FOR UPDATE SKIP LOCKED",
+     "跳过该行",
+     "任务队列并发领取"
+    ],
+    [
+     "FOR SHARE",
+     "等待写锁释放",
+     "校验父记录存在且不被改"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "行级悲观锁",
+    "pros": "冲突时排队，结果确定",
+    "cons": "持锁期间阻塞，可能死锁",
+    "when": "热点行高频写入"
+   },
+   {
+    "opt": "SKIP LOCKED 队列",
+    "pros": "无需额外中间件即可并发消费",
+    "cons": "高吞吐下不如专用消息队列",
+    "when": "中小规模后台任务"
+   },
+   {
+    "opt": "分布式锁（Redis 等）",
+    "pros": "可跨服务、跨数据库",
+    "cons": "需处理过期、时钟与持有者崩溃",
+    "when": "无法用单库锁表达时"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "加锁读放在事务外（自动提交），锁立即释放",
+    "fix": "确保 FOR UPDATE 与后续写在同一事务中"
+   },
+   {
+    "bad": "持锁期间调用支付等外部接口",
+    "fix": "外部调用移出事务，或改为状态机异步处理"
+   },
+   {
+    "bad": "条件列无索引，锁住大量无关行",
+    "fix": "为加锁条件建索引，缩小锁范围"
+   },
+   {
+    "bad": "多行加锁顺序不定，引发死锁",
+    "fix": "按主键排序加锁，并配置锁超时"
+   }
+  ],
+  "checklist": [
+   "加锁读与写入在同一事务内",
+   "事务尽可能短，无外部调用",
+   "设置了锁超时或 NOWAIT",
+   "多行加锁按固定顺序",
+   "加锁条件命中索引",
+   "监控锁等待时间与阻塞会话"
+  ],
+  "interview": [
+   {
+    "q": "SKIP LOCKED 适合做消息队列吗？",
+    "a": "适合中小规模：利用已有数据库、与业务数据同事务提交、无需新组件。局限是高吞吐下轮询与行锁开销大、缺少消息队列的路由与重投机制。PostgreSQL 9.5 和 MySQL 8.0 起支持该语法。"
+   },
+   {
+    "q": "为什么不直接用原子 UPDATE 扣库存？",
+    "a": "能用就优先用：UPDATE … SET stock = stock - 1 WHERE id = ? AND stock > 0，看受影响行数即可。需要先读出数据做复杂判断（多表校验、计算优惠）时，才需要 FOR UPDATE 锁住再算。"
+   },
+   {
+    "q": "分布式锁的主要风险是什么？",
+    "a": "持有者因 GC 停顿或网络分区超过租期，锁被他人获取，导致两方同时操作。缓解方法是使用单调递增的 fencing token，让存储端拒绝旧 token 的写入，并缩短临界区。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL: SELECT 锁定子句",
+    "url": "https://www.postgresql.org/docs/current/sql-select.html#SQL-FOR-UPDATE-SHARE"
+   },
+   {
+    "title": "MySQL: Locking Reads",
+    "url": "https://dev.mysql.com/doc/refman/8.0/en/innodb-locking-reads.html"
+   },
+   {
+    "title": "PostgreSQL: Explicit Locking",
+    "url": "https://www.postgresql.org/docs/current/explicit-locking.html"
+   }
+  ]
+ },
+ {
+  "slug": "normalization",
+  "def": "范式化（Normalization）是关系数据库的建模方法：依据函数依赖把数据拆分到多个表，使每个事实只存储一次，以消除冗余带来的更新、插入、删除异常。常用范式依次为 1NF、2NF、3NF 和 BCNF，OLTP 系统通常以 3NF 为设计基线。",
+  "how": [
+   "识别实体和属性，找出函数依赖：哪些属性由哪些属性唯一决定。",
+   "1NF：每个字段只存原子值，不在一列里塞列表或重复列组。",
+   "2NF：在 1NF 基础上，非主属性必须依赖整个复合主键，而非其中一部分。",
+   "3NF：非主属性不能传递依赖于主键（如 订单→客户→客户城市），应拆到客户表。",
+   "拆分后通过外键关联，查询时用 JOIN 组合，约束保证引用完整性。"
+  ],
+  "terms": [
+   {
+    "t": "函数依赖 (Functional Dependency)",
+    "d": "A 的值确定则 B 的值唯一确定，记作 A→B。"
+   },
+   {
+    "t": "候选键 (Candidate Key)",
+    "d": "能唯一标识一行的最小属性集合。"
+   },
+   {
+    "t": "传递依赖 (Transitive Dependency)",
+    "d": "A→B 且 B→C，C 间接依赖 A。"
+   },
+   {
+    "t": "更新异常 (Update Anomaly)",
+    "d": "同一事实存多处，只改一处导致不一致。"
+   },
+   {
+    "t": "BCNF",
+    "d": "每个决定因素都是候选键，比 3NF 更严格。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "从宽表拆到 3NF",
+   "src": "-- 反例：客户信息随每个订单重复存储\n-- orders_flat(order_id, customer_email, customer_name, customer_city,\n--             product_sku, product_name, unit_price, qty)\n\n-- 拆分后：每个事实只存一次\nCREATE TABLE customers (\n  id    bigint PRIMARY KEY,\n  email text UNIQUE NOT NULL,\n  name  text NOT NULL,\n  city  text\n);\nCREATE TABLE products (\n  sku   text PRIMARY KEY,\n  name  text NOT NULL,\n  price numeric(10,2) NOT NULL          -- 当前标价\n);\nCREATE TABLE orders (\n  id          bigint PRIMARY KEY,\n  customer_id bigint NOT NULL REFERENCES customers(id),\n  created_at  timestamptz NOT NULL DEFAULT now()\n);\nCREATE TABLE order_items (\n  order_id   bigint REFERENCES orders(id),\n  sku        text REFERENCES products(sku),\n  qty        int NOT NULL CHECK (qty > 0),\n  unit_price numeric(10,2) NOT NULL,    -- 下单时成交价，是独立事实\n  PRIMARY KEY (order_id, sku)\n);",
+   "note": "客户改城市只改一行；成交价属于订单明细的事实，保留在明细表并非冗余。"
+  },
+  "table": {
+   "title": "范式要求速查",
+   "head": [
+    "范式",
+    "要求",
+    "消除的问题"
+   ],
+   "rows": [
+    [
+     "1NF",
+     "字段原子、无重复组",
+     "无法按单个值查询与约束"
+    ],
+    [
+     "2NF",
+     "非主属性完全依赖整个主键",
+     "复合主键下的部分依赖冗余"
+    ],
+    [
+     "3NF",
+     "无传递依赖",
+     "间接属性重复存储"
+    ],
+    [
+     "BCNF",
+     "所有决定因素都是候选键",
+     "3NF 下残留的少数异常"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "严格 3NF",
+    "pros": "写入一致、无更新异常",
+    "cons": "查询需多表 JOIN",
+    "when": "OLTP 核心业务表"
+   },
+   {
+    "opt": "适度反范式",
+    "pros": "读路径快、查询简单",
+    "cons": "需同步冗余，可能不一致",
+    "when": "读远多于写的热点查询"
+   },
+   {
+    "opt": "JSON 列存半结构化",
+    "pros": "模式灵活",
+    "cons": "约束弱，难做引用完整性",
+    "when": "属性多变、少被关联查询"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把订单成交价也规范化成引用商品当前价",
+    "fix": "区分“当前值”和“历史事实”，历史事实应快照"
+   },
+   {
+    "bad": "逗号分隔字符串存多个标签",
+    "fix": "建关联表，支持索引与约束"
+   },
+   {
+    "bad": "为范式而范式，拆出大量一对一小表",
+    "fix": "按访问模式与依赖关系合理合并"
+   },
+   {
+    "bad": "拆表后外键列不建索引",
+    "fix": "为外键列建索引，保证 JOIN 与删除性能"
+   }
+  ],
+  "checklist": [
+   "每个字段存原子值",
+   "非主属性完全依赖主键",
+   "无明显传递依赖",
+   "历史快照数据与当前数据区分清楚",
+   "外键约束与索引齐全",
+   "有意的冗余已记录原因"
+  ],
+  "interview": [
+   {
+    "q": "3NF 和 BCNF 的区别？",
+    "a": "3NF 允许“非候选键决定主属性”的依赖存在，BCNF 不允许，要求每个非平凡函数依赖的左边都是超键。实践中多数 3NF 设计已满足 BCNF，差异只在存在多个重叠候选键时出现。"
+   },
+   {
+    "q": "订单表里存商品名算违反范式吗？",
+    "a": "取决于语义。如果它代表“下单时的商品名”，是订单的历史事实，商品改名不应影响旧订单，存下来是正确建模；如果只是为了少一次 JOIN 而复制当前名称，就是反范式冗余，需要同步机制。"
+   },
+   {
+    "q": "让 AI 生成数据库表结构时要检查什么？",
+    "a": "看是否有重复存储的属性和列表型字段；外键与唯一约束是否齐全；历史数据是否被错误引用为当前值；索引是否覆盖外键和常用查询；命名是否一致。AI 常给出能跑但冗余的宽表。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Wikipedia: Database normalization",
+    "url": "https://en.wikipedia.org/wiki/Database_normalization"
+   },
+   {
+    "title": "Wikipedia: Third normal form",
+    "url": "https://en.wikipedia.org/wiki/Third_normal_form"
+   },
+   {
+    "title": "Microsoft Learn: Database normalization description",
+    "url": "https://learn.microsoft.com/en-us/office/troubleshoot/access/database-normalization-description"
+   }
+  ]
+ },
+ {
+  "slug": "denormalization",
+  "def": "反范式化（Denormalization）是在已有规范化模型基础上，有意引入冗余数据（复制列、预计算汇总、嵌套文档、读模型）以减少 JOIN 和实时计算，换取更快的读性能。代价是写入时必须同步多份数据，并接受或处理短暂不一致。",
+  "how": [
+   "先从规范化模型出发，用慢查询日志与访问模式确认真正的读路径瓶颈。",
+   "选择冗余形式：复制列、计数/汇总列、物化视图、文档嵌套或独立读库。",
+   "确定同步机制：同事务双写、数据库触发器、异步事件或 CDC 管道。",
+   "明确一致性要求：同步更新则强一致，异步更新则最终一致并可容忍延迟。",
+   "定期对账：用规范化的源数据重算冗余值，发现并修复因漏同步造成的漂移。"
+  ],
+  "terms": [
+   {
+    "t": "冗余列 (Redundant Column)",
+    "d": "从关联表复制过来的字段，避免 JOIN。"
+   },
+   {
+    "t": "计数缓存 (Counter Cache)",
+    "d": "在父表存子记录数量，避免实时 COUNT。"
+   },
+   {
+    "t": "CQRS",
+    "d": "命令查询职责分离，写模型与读模型分开设计。"
+   },
+   {
+    "t": "CDC (Change Data Capture)",
+    "d": "从数据库日志捕获变更，用于同步下游副本。"
+   },
+   {
+    "t": "热点行 (Hot Row)",
+    "d": "被大量并发更新的同一行，如热门帖子的计数。"
+   },
+   {
+    "t": "对账 (Reconciliation)",
+    "d": "用源数据重算冗余值并修正偏差。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "触发器维护评论计数",
+   "src": "-- 在帖子表冗余评论数，列表页不再 COUNT(*)\nALTER TABLE posts ADD COLUMN comment_count int NOT NULL DEFAULT 0;\n\nCREATE FUNCTION sync_comment_count() RETURNS trigger AS $$\nBEGIN\n  IF TG_OP = 'INSERT' THEN\n    UPDATE posts SET comment_count = comment_count + 1 WHERE id = NEW.post_id;\n  ELSIF TG_OP = 'DELETE' THEN\n    UPDATE posts SET comment_count = comment_count - 1 WHERE id = OLD.post_id;\n  END IF;\n  RETURN NULL;\nEND $$ LANGUAGE plpgsql;\n\nCREATE TRIGGER comments_count_trg\nAFTER INSERT OR DELETE ON comments\nFOR EACH ROW EXECUTE FUNCTION sync_comment_count();\n\n-- 定期对账：找出冗余值与真实值不一致的帖子\nSELECT p.id, p.comment_count, count(c.id) AS actual\nFROM posts p LEFT JOIN comments c ON c.post_id = p.id\nGROUP BY p.id\nHAVING p.comment_count <> count(c.id);",
+   "note": "触发器与业务写入同事务，保持强一致；对账查询兜底发现漂移。PostgreSQL 11+ 语法。"
+  },
+  "table": {
+   "title": "同步机制对比",
+   "head": [
+    "机制",
+    "一致性",
+    "代价"
+   ],
+   "rows": [
+    [
+     "同事务双写/触发器",
+     "强一致",
+     "写入变慢，热点行锁竞争"
+    ],
+    [
+     "异步事件/消息",
+     "最终一致",
+     "需处理丢失、乱序与重放"
+    ],
+    [
+     "CDC 管道",
+     "最终一致",
+     "多一套基础设施"
+    ],
+    [
+     "物化视图定时刷新",
+     "按刷新周期滞后",
+     "刷新期间资源开销"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "冗余列/计数列",
+    "pros": "改动小，读性能提升明显",
+    "cons": "所有写路径都要维护",
+    "when": "列表页频繁展示关联信息"
+   },
+   {
+    "opt": "独立读模型（CQRS）",
+    "pros": "读写各自优化与扩展",
+    "cons": "系统复杂度大增",
+    "when": "读写模式差异巨大的大型系统"
+   },
+   {
+    "opt": "加缓存而不改表",
+    "pros": "不动数据模型",
+    "cons": "失效逻辑同样复杂",
+    "when": "热点读集中、可容忍短暂旧值"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "没有慢查询证据就提前反范式",
+    "fix": "先建索引、改查询，测量后再引入冗余"
+   },
+   {
+    "bad": "批量导入或后台脚本绕过同步逻辑",
+    "fix": "同步放在数据库层，或所有写入走同一服务"
+   },
+   {
+    "bad": "热门帖子计数行成为锁竞争点",
+    "fix": "分片计数或异步批量累加"
+   },
+   {
+    "bad": "冗余值从不校对，漂移越来越大",
+    "fix": "定期对账任务并告警"
+   }
+  ],
+  "checklist": [
+   "有性能数据证明需要冗余",
+   "每份冗余都标明真实来源",
+   "所有写入路径都会同步",
+   "一致性要求已与产品确认",
+   "有定期对账与修复脚本",
+   "热点写入已评估锁竞争"
+  ],
+  "interview": [
+   {
+    "q": "什么时候应该反范式？",
+    "a": "当某个读路径是瓶颈、已尝试索引与查询改写仍不够、且读远多于写时。还要能明确冗余数据的来源、同步方式和可接受的不一致窗口。没有这些前提的反范式只会制造数据不一致。"
+   },
+   {
+    "q": "反范式和缓存有什么区别？",
+    "a": "反范式把冗余持久化在数据库模型中，通常与写入同步或经可靠管道更新，可被查询、索引；缓存在数据库之外，可随时丢弃重建，更侧重降低读延迟。二者都要面对失效与一致性问题。"
+   },
+   {
+    "q": "计数器热点如何优化？",
+    "a": "把一个计数拆成 N 个分片行，写入随机加到某个分片，读取时求和；或把增量写入日志表/消息，后台批量合并；对实时性要求低的展示用近似值并定期校准。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Wikipedia: Denormalization",
+    "url": "https://en.wikipedia.org/wiki/Denormalization"
+   },
+   {
+    "title": "PostgreSQL: Trigger Functions",
+    "url": "https://www.postgresql.org/docs/current/plpgsql-trigger.html"
+   },
+   {
+    "title": "Martin Fowler: CQRS",
+    "url": "https://martinfowler.com/bliki/CQRS.html"
+   }
+  ]
+ },
+ {
+  "slug": "cascading-deletes",
+  "def": "级联删除是外键约束的一种引用动作：删除父表记录时，数据库自动删除所有引用它的子表记录（ON DELETE CASCADE）。它保证引用完整性、免去手工清理，但一次删除可能沿关系链扩散到大量数据，且无法撤销，必须谨慎设计关系边界。",
+  "how": [
+   "在子表外键上声明 ON DELETE 动作：CASCADE、SET NULL、SET DEFAULT、RESTRICT 或 NO ACTION。",
+   "删除父行时，数据库查找所有引用它的子行，按声明的动作处理。",
+   "子行若又被其他表以 CASCADE 引用，删除会沿关系链递归传播，全部在同一事务中完成。",
+   "引擎需要通过子表外键列定位子行；没有索引时每次删除都可能全表扫描。",
+   "ORM 也能在应用层模拟级联，但不经过 ORM 的删除不会触发这类逻辑。"
+  ],
+  "terms": [
+   {
+    "t": "引用动作 (Referential Action)",
+    "d": "外键在父行删除或更新时执行的动作。"
+   },
+   {
+    "t": "RESTRICT / NO ACTION",
+    "d": "有子行引用时拒绝删除父行；二者检查时机略有差别。"
+   },
+   {
+    "t": "SET NULL",
+    "d": "删除父行时把子行外键置空，保留子行。"
+   },
+   {
+    "t": "软删除 (Soft Delete)",
+    "d": "用 deleted_at 标记删除而不物理删除。"
+   },
+   {
+    "t": "孤儿记录 (Orphan Record)",
+    "d": "外键指向已不存在父行的子记录。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "按关系选择引用动作",
+   "src": "CREATE TABLE users (id bigint PRIMARY KEY, email text UNIQUE NOT NULL);\n\n-- 组成关系：用户删了，其会话没有意义 → 级联删除\nCREATE TABLE sessions (\n  id      uuid PRIMARY KEY,\n  user_id bigint NOT NULL REFERENCES users(id) ON DELETE CASCADE\n);\n\n-- 关联关系：订单要留存做账 → 拒绝删除有订单的用户\nCREATE TABLE orders (\n  id      bigint PRIMARY KEY,\n  user_id bigint NOT NULL REFERENCES users(id) ON DELETE RESTRICT\n);\n\n-- 可选关系：指派人离开，任务保留 → 置空\nCREATE TABLE tasks (\n  id          bigint PRIMARY KEY,\n  assignee_id bigint REFERENCES users(id) ON DELETE SET NULL\n);\n\n-- PostgreSQL 不会自动为外键列建索引，级联与 JOIN 都依赖它\nCREATE INDEX ON sessions (user_id);\nCREATE INDEX ON orders (user_id);\nCREATE INDEX ON tasks (assignee_id);",
+   "note": "按“组成/关联/可选”关系选动作；外键列建索引，避免级联时扫描全表。"
+  },
+  "table": {
+   "title": "ON DELETE 动作对比",
+   "head": [
+    "动作",
+    "子行结果",
+    "适用关系"
+   ],
+   "rows": [
+    [
+     "CASCADE",
+     "随父行删除",
+     "强组成：会话、订单明细"
+    ],
+    [
+     "SET NULL",
+     "外键置空保留",
+     "可选关联：负责人、分类"
+    ],
+    [
+     "RESTRICT / NO ACTION",
+     "阻止删除父行",
+     "需留存的业务记录"
+    ],
+    [
+     "SET DEFAULT",
+     "改为默认值",
+     "有兜底父行的场景"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "数据库级联",
+    "pros": "原子、可靠，任何客户端删除都生效",
+    "cons": "影响范围不直观，难审计",
+    "when": "生命周期完全依附父行的数据"
+   },
+   {
+    "opt": "ORM/应用层级联",
+    "pros": "可触发回调、写审计日志",
+    "cons": "绕过 ORM 的删除不生效",
+    "when": "删除需附带业务逻辑"
+   },
+   {
+    "opt": "软删除",
+    "pros": "可恢复、保留历史",
+    "cons": "查询都要过滤，唯一约束复杂",
+    "when": "用户可见数据需要回收站"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "到处默认 CASCADE，误删一个账户连带清空订单",
+    "fix": "只对组成关系用 CASCADE，业务记录用 RESTRICT"
+   },
+   {
+    "bad": "外键列没索引，删除大父行时极慢且长时间锁表",
+    "fix": "为所有外键列建索引，大批量删除分批执行"
+   },
+   {
+    "bad": "依赖级联删除时期望触发器或审计逻辑执行",
+    "fix": "确认引擎行为：MySQL InnoDB 级联不触发触发器"
+   },
+   {
+    "bad": "合规删除只删主表，日志与备份仍留数据",
+    "fix": "梳理全部副本，制定数据删除清单"
+   }
+  ],
+  "checklist": [
+   "每个外键的 ON DELETE 动作有明确理由",
+   "外键列都有索引",
+   "删除前可预估影响行数",
+   "关键业务数据不会被级联删除",
+   "大批量删除分批执行",
+   "删除操作有审计记录"
+  ],
+  "interview": [
+   {
+    "q": "ON DELETE CASCADE 和 ORM 的 cascade 有什么区别？",
+    "a": "数据库级联由引擎在同一事务内执行，任何客户端的 DELETE 都会触发，可靠但不运行应用回调。ORM 级联先加载子对象再逐个删除，可触发钩子，但慢，且直接执行 SQL 删除时不生效。SQLAlchemy 可用 passive_deletes 交给数据库。"
+   },
+   {
+    "q": "如何评估一次删除会波及多少数据？",
+    "a": "从父表出发沿外键图列出所有 CASCADE 关系，对每张子表执行 COUNT 预估；在预发环境用事务执行删除并统计受影响行数后回滚。对用户触发的删除，可在界面上展示影响范围再确认。"
+   },
+   {
+    "q": "软删除和级联怎么配合？",
+    "a": "软删除不会触发外键动作，需要在应用层同步标记子记录，或在查询时通过父表状态过滤。唯一约束要改为部分索引（如仅约束 deleted_at IS NULL 的行），并有定期物理清理策略。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL: Foreign Keys",
+    "url": "https://www.postgresql.org/docs/current/ddl-constraints.html#DDL-CONSTRAINTS-FK"
+   },
+   {
+    "title": "MySQL: FOREIGN KEY Constraints",
+    "url": "https://dev.mysql.com/doc/refman/8.0/en/create-table-foreign-keys.html"
+   },
+   {
+    "title": "SQLAlchemy: Cascades",
+    "url": "https://docs.sqlalchemy.org/en/20/orm/cascades.html"
+   }
+  ]
+ },
+ {
+  "slug": "full-text-search",
+  "def": "全文检索（Full-Text Search）是对自然语言文本按“词”建立倒排索引并按相关性排序返回结果的技术。它解决 LIKE 模糊匹配无法用索引、不懂词形、无法排序的问题。可用数据库内置能力，也可用 Elasticsearch、OpenSearch、Meilisearch 等专用引擎。",
+  "how": [
+   "分析（Analysis）：把文本切分为词元，做小写化、去停用词、词干还原；中文需要专门分词。",
+   "建立倒排索引：记录每个词出现在哪些文档、出现位置与频率。",
+   "查询时对检索词做同样的分析，在倒排表中查找并按布尔逻辑合并文档集合。",
+   "相关性排序：按 TF-IDF、BM25 等模型给文档打分，可叠加字段权重和新鲜度。",
+   "结果返回时可生成高亮片段；索引需随数据写入同步或异步更新。"
+  ],
+  "terms": [
+   {
+    "t": "倒排索引 (Inverted Index)",
+    "d": "从词到包含它的文档列表的映射结构。"
+   },
+   {
+    "t": "分析器 (Analyzer)",
+    "d": "分词器与过滤器的组合，决定文本如何变成词元。"
+   },
+   {
+    "t": "词干还原 (Stemming)",
+    "d": "把 running、runs 归一为 run 等词根。"
+   },
+   {
+    "t": "BM25",
+    "d": "主流相关性评分模型，考虑词频饱和与文档长度。"
+   },
+   {
+    "t": "tsvector / tsquery",
+    "d": "PostgreSQL 中已分析的文档与查询类型。"
+   },
+   {
+    "t": "ngram 分词",
+    "d": "按固定长度切分字符序列，常用于中日韩文本。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "PostgreSQL 全文检索",
+   "src": "-- 用生成列维护 tsvector（PostgreSQL 12+），标题权重高于正文\nALTER TABLE articles ADD COLUMN search tsvector\n  GENERATED ALWAYS AS (\n    setweight(to_tsvector('english', coalesce(title, '')), 'A') ||\n    setweight(to_tsvector('english', coalesce(body,  '')), 'B')\n  ) STORED;\n\n-- GIN 倒排索引\nCREATE INDEX articles_search_idx ON articles USING GIN (search);\n\n-- 支持类似搜索引擎的语法：引号短语、OR、减号排除\nSELECT id, title,\n       ts_rank(search, q) AS rank,\n       ts_headline('english', body, q) AS snippet\nFROM articles,\n     websearch_to_tsquery('english', '\"connection pool\" -mysql') AS q\nWHERE search @@ q\nORDER BY rank DESC\nLIMIT 20;\n\n-- 注意：内置配置不会切分中文，中文需 zhparser/pg_jieba 等扩展",
+   "note": "生成列自动随写入更新；GIN 索引加速 @@ 匹配，ts_rank 排序、ts_headline 高亮。"
+  },
+  "table": {
+   "title": "方案选型",
+   "head": [
+    "方案",
+    "中文支持",
+    "优势",
+    "局限"
+   ],
+   "rows": [
+    [
+     "PostgreSQL FTS",
+     "需扩展分词",
+     "与业务数据同库同事务",
+     "相关性与聚合能力有限"
+    ],
+    [
+     "MySQL FULLTEXT",
+     "内置 ngram 解析器",
+     "零部署",
+     "排序可调性弱"
+    ],
+    [
+     "Elasticsearch/OpenSearch",
+     "需中文分词插件",
+     "相关性、聚合、扩展性强",
+     "额外集群与同步链路"
+    ],
+    [
+     "Meilisearch",
+     "内置多语言分词",
+     "开箱即用、容错拼写",
+     "大规模与复杂查询受限"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "数据库内置全文检索",
+    "pros": "无同步延迟，运维简单",
+    "cons": "高级相关性调优能力弱",
+    "when": "数据量中等、需求简单"
+   },
+   {
+    "opt": "专用搜索引擎",
+    "pros": "相关性、分面、高亮能力完善",
+    "cons": "需维护索引同步与一致性",
+    "when": "搜索是核心功能"
+   },
+   {
+    "opt": "向量/混合检索",
+    "pros": "理解语义近义表达",
+    "cons": "成本高，精确匹配反而变弱",
+    "when": "问答、RAG 与关键词互补"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用 LIKE '%关键词%' 扛搜索",
+    "fix": "改用全文索引；模糊子串可考虑 pg_trgm"
+   },
+   {
+    "bad": "中文直接用 english/simple 配置",
+    "fix": "接入中文分词扩展，或用 ngram 解析器"
+   },
+   {
+    "bad": "查询和索引使用不同分析配置",
+    "fix": "两端使用同一语言配置与分析器"
+   },
+   {
+    "bad": "搜索引擎与数据库不同步，删除后仍能搜到",
+    "fix": "用 CDC 或可靠事件同步，并定期全量校对"
+   }
+  ],
+  "checklist": [
+   "确认目标语言的分词方案",
+   "索引与查询使用同一分析配置",
+   "相关性排序经过真实查询评估",
+   "索引更新链路可靠并有延迟监控",
+   "支持高亮与无结果时的兜底",
+   "有查询日志用于迭代调优"
+  ],
+  "interview": [
+   {
+    "q": "倒排索引为什么比 LIKE 快？",
+    "a": "LIKE '%x%' 前缀不确定，B-tree 无法使用，只能逐行扫描比较。倒排索引预先把词映射到文档列表，查询只需查几个词条的列表并做交并集，复杂度与命中量相关，而不是与全表大小相关。"
+   },
+   {
+    "q": "BM25 相比 TF-IDF 改进了什么？",
+    "a": "BM25 引入词频饱和：同一词出现很多次后得分增长趋缓（参数 k1）；并做文档长度归一化（参数 b），避免长文档仅因词多而占优。它是 Lucene 系引擎目前的默认相似度模型。"
+   },
+   {
+    "q": "全文检索和向量检索怎么结合？",
+    "a": "关键词检索擅长精确术语、编号、名称，向量检索擅长语义近似。常见做法是两路召回后融合排序（如 RRF 倒数排名融合），再用重排模型精排。RAG 系统中混合检索通常比单一方式召回更稳。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL: Full Text Search",
+    "url": "https://www.postgresql.org/docs/current/textsearch.html"
+   },
+   {
+    "title": "MySQL: ngram Full-Text Parser",
+    "url": "https://dev.mysql.com/doc/refman/8.0/en/fulltext-search-ngram.html"
+   },
+   {
+    "title": "Wikipedia: Okapi BM25",
+    "url": "https://en.wikipedia.org/wiki/Okapi_BM25"
+   },
+   {
+    "title": "Wikipedia: Inverted index",
+    "url": "https://en.wikipedia.org/wiki/Inverted_index"
+   }
+  ]
+ },
+ {
+  "slug": "read-replicas",
+  "def": "只读副本（Read Replica）是从主库持续复制数据、只对外提供读查询的数据库实例。它通过把读流量分摊出去来扩展读能力，也可用于报表隔离、跨地域就近读取和故障切换候选。它不能扩展写能力，且通常为异步复制，读到的数据可能略旧。",
+  "how": [
+   "主库把变更写入日志（PostgreSQL 的 WAL、MySQL 的 binlog），并持续发送给副本。",
+   "副本接收并重放这些日志，保持与主库数据近似一致，且拒绝写入。",
+   "应用或代理层按语句类型路由：写请求和强一致读走主库，其余读走副本。",
+   "多个副本可放在负载均衡后，按健康状态与延迟剔除异常节点。",
+   "主库故障时，可把某个副本提升（promote）为新主库，其余副本改为跟随它。"
+  ],
+  "terms": [
+   {
+    "t": "流复制 (Streaming Replication)",
+    "d": "PostgreSQL 通过网络实时传输 WAL 的复制方式。"
+   },
+   {
+    "t": "异步复制 (Asynchronous Replication)",
+    "d": "主库提交不等待副本确认，延迟低但可能丢数据。"
+   },
+   {
+    "t": "读写分离 (Read/Write Splitting)",
+    "d": "按读写类型把请求路由到不同实例。"
+   },
+   {
+    "t": "提升 (Promote)",
+    "d": "把副本转为可写的主库。"
+   },
+   {
+    "t": "热备 (Hot Standby)",
+    "d": "处于恢复状态但可接受只读查询的备库。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "应用层读写分离",
+   "src": "from sqlalchemy import create_engine, text\n\nprimary = create_engine(\"postgresql+psycopg://app@db-primary:5432/app\")\nreplica = create_engine(\"postgresql+psycopg://app@db-replica:5432/app\")\n\ndef engine_for(readonly: bool, need_fresh: bool = False):\n    # 写操作、以及刚写完马上要读的场景，一律走主库\n    if not readonly or need_fresh:\n        return primary\n    return replica\n\n# 列表页：容忍少量延迟，走副本\nwith engine_for(readonly=True).connect() as conn:\n    posts = conn.execute(text(\"SELECT id, title FROM posts ORDER BY id DESC LIMIT 20\")).all()\n\n# 用户刚提交订单后查看详情：需要最新数据，走主库\nwith engine_for(readonly=True, need_fresh=True).connect() as conn:\n    order = conn.execute(text(\"SELECT * FROM orders WHERE id = :id\"), {\"id\": 1001}).one()\n\n# 确认连接到的是副本（PostgreSQL 处于恢复模式即为副本）\nwith replica.connect() as conn:\n    print(conn.execute(text(\"SELECT pg_is_in_recovery()\")).scalar())  # True",
+   "note": "按一致性需求而非仅按 SELECT 路由；刚写完就读的场景回主库。"
+  },
+  "table": {
+   "title": "副本的用途与注意点",
+   "head": [
+    "用途",
+    "收益",
+    "注意点"
+   ],
+   "rows": [
+    [
+     "分摊在线读流量",
+     "提升读吞吐",
+     "需处理复制延迟"
+    ],
+    [
+     "报表/分析查询",
+     "不影响主库",
+     "长查询可能与复制冲突"
+    ],
+    [
+     "跨地域就近读",
+     "降低远端用户延迟",
+     "跨区流量费与更大延迟"
+    ],
+    [
+     "故障切换候选",
+     "缩短恢复时间",
+     "异步副本可能缺最新事务"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "应用层路由",
+    "pros": "可按业务语义精确控制",
+    "cons": "代码侵入，易漏判",
+    "when": "一致性要求各异的业务"
+   },
+   {
+    "opt": "代理层路由（ProxySQL 等）",
+    "pros": "应用无感知",
+    "cons": "无法理解业务一致性需求",
+    "when": "存量系统快速接入"
+   },
+   {
+    "opt": "加缓存替代副本",
+    "pros": "延迟更低、成本更低",
+    "cons": "失效逻辑复杂",
+    "when": "热点读集中在少数数据"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "所有 SELECT 一律走副本，用户刚改的资料显示旧值",
+    "fix": "写后短时间内或关键读回主库"
+   },
+   {
+    "bad": "副本规格比主库小，延迟持续扩大",
+    "fix": "副本规格不低于主库，监控重放速度"
+   },
+   {
+    "bad": "把副本当备份",
+    "fix": "误删也会被复制过去，仍需独立备份与 PITR"
+   },
+   {
+    "bad": "事务内混用主库和副本连接",
+    "fix": "一个事务内的读写使用同一连接"
+   }
+  ],
+  "checklist": [
+   "明确哪些读可以容忍延迟",
+   "写后读场景有回主库策略",
+   "副本延迟有监控与告警",
+   "延迟过大时自动摘除副本",
+   "副本规格与参数与主库匹配",
+   "演练过副本提升流程"
+  ],
+  "interview": [
+   {
+    "q": "只读副本能解决写入瓶颈吗？",
+    "a": "不能。每个副本都要重放主库的全部写入，写压力并未分摊。写瓶颈需靠优化写路径、批量化、垂直扩容、分区或分片。副本只扩展读和隔离分析负载。"
+   },
+   {
+    "q": "如何保证“写后读”一致？",
+    "a": "常见方法：写入后一段时间内该用户的读走主库；记录写入时主库日志位置（如 LSN），读时选择已重放到该位置的副本或等待；关键页面直接读主库。按业务重要性选择。"
+   },
+   {
+    "q": "副本上的长查询会带来什么问题？",
+    "a": "PostgreSQL 热备上，重放需要清理的行版本可能被长查询依赖，产生冲突：要么取消查询，要么延迟重放（max_standby_streaming_delay）。开启 hot_standby_feedback 可减少取消，但会让主库膨胀。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL: Log-Shipping Standby Servers",
+    "url": "https://www.postgresql.org/docs/current/warm-standby.html"
+   },
+   {
+    "title": "Amazon RDS: Working with read replicas",
+    "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ReadRepl.html"
+   },
+   {
+    "title": "MySQL: Replication",
+    "url": "https://dev.mysql.com/doc/refman/8.0/en/replication.html"
+   }
+  ]
+ },
+ {
+  "slug": "replication-lag",
+  "def": "复制延迟（Replication Lag）是副本落后于主库的程度，可用时间或日志位置差衡量。异步复制下延迟始终存在，通常很小，但在写入突增、副本上的长查询、网络或资源不足时会显著放大，导致读到旧数据、故障切换丢数据等问题。",
+  "how": [
+   "主库提交事务并生成日志；异步模式下不等待副本即返回成功。",
+   "日志经网络传输到副本，副本写入本地后再按顺序重放到数据页。",
+   "延迟可拆为传输、落盘、重放三段，PostgreSQL 分别报告 write/flush/replay lag。",
+   "重放若较慢（单线程应用、与查询冲突、IO 不足），延迟就会持续累积。",
+   "应用需监控延迟，并按业务容忍度决定读主库、等待追上或摘除副本。"
+  ],
+  "terms": [
+   {
+    "t": "LSN",
+    "d": "PostgreSQL 日志序列号，标识 WAL 中的位置。"
+   },
+   {
+    "t": "replay_lag",
+    "d": "主库提交到副本重放完成之间的时间。"
+   },
+   {
+    "t": "Seconds_Behind_Source",
+    "d": "MySQL 副本落后主库的估算秒数。"
+   },
+   {
+    "t": "写后读一致 (Read-your-writes)",
+    "d": "用户总能读到自己刚写入的数据。"
+   },
+   {
+    "t": "并行复制 (Parallel Replication)",
+    "d": "副本多线程应用日志以加快重放。"
+   },
+   {
+    "t": "同步复制 (Synchronous Replication)",
+    "d": "提交需等待副本确认，消除丢失但增加写延迟。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "PostgreSQL 监测复制延迟",
+   "src": "-- 在主库：查看各副本的传输、落盘、重放延迟（PostgreSQL 10+）\nSELECT application_name, client_addr, state,\n       write_lag, flush_lag, replay_lag,\n       pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn) AS replay_bytes_behind\nFROM pg_stat_replication;\n\n-- 在副本：距最后一次重放的事务已过去多久\n-- 注意：主库空闲时该值也会增大，不一定代表真的落后\nSELECT now() - pg_last_xact_replay_timestamp() AS replay_delay;\n\n-- 写后读：写入后在主库记下位置\nSELECT pg_current_wal_lsn();          -- 例如 0/3A2B1C8\n\n-- 读之前在副本检查是否已重放到该位置\nSELECT pg_last_wal_replay_lsn() >= '0/3A2B1C8'::pg_lsn AS caught_up;\n-- caught_up 为 false 时，改读主库或稍后重试\n\n-- MySQL 8.0.22+ 对应命令：SHOW REPLICA STATUS（看 Seconds_Behind_Source）",
+   "note": "主库视角看三段延迟，副本视角看重放时间；LSN 比较实现精确的写后读。"
+  },
+  "table": {
+   "title": "延迟成因与对策",
+   "head": [
+    "成因",
+    "表现",
+    "对策"
+   ],
+   "rows": [
+    [
+     "写入突增/大批量更新",
+     "延迟随批次飙升",
+     "分批写入、限速"
+    ],
+    [
+     "副本长查询冲突",
+     "重放暂停或查询被取消",
+     "分析查询走专用副本"
+    ],
+    [
+     "副本资源不足",
+     "延迟持续增长",
+     "规格对齐主库、提升 IO"
+    ],
+    [
+     "单线程重放",
+     "MySQL 高并发写时落后",
+     "开启并行复制"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "异步复制",
+    "pros": "写入延迟最低",
+    "cons": "存在延迟，切换可能丢数据",
+    "when": "多数读扩展场景"
+   },
+   {
+    "opt": "同步复制",
+    "pros": "已提交事务不丢",
+    "cons": "写延迟增加，副本故障可能阻塞写",
+    "when": "金融等零丢失要求"
+   },
+   {
+    "opt": "半同步/仲裁提交",
+    "pros": "兼顾可靠与可用",
+    "cons": "配置复杂，仍有边界情况",
+    "when": "多副本高可用集群"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只监控平均延迟，忽略突刺",
+    "fix": "监控最大值与 P99，并按副本分别告警"
+   },
+   {
+    "bad": "用“距上次重放时间”判断延迟，空闲时误报",
+    "fix": "结合主库 pg_stat_replication 或心跳表"
+   },
+   {
+    "bad": "大事务一次性更新千万行",
+    "fix": "拆成小批次，控制每批行数与间隔"
+   },
+   {
+    "bad": "延迟很大时副本仍在负载均衡池中",
+    "fix": "超过阈值自动摘除，恢复后再加入"
+   }
+  ],
+  "checklist": [
+   "每个副本的延迟都有监控与告警",
+   "定义了业务可接受的最大延迟",
+   "超阈值副本会被摘除",
+   "写后读场景有一致性策略",
+   "批量任务做了分批与限速",
+   "切换预案评估了可能丢失的数据量"
+  ],
+  "interview": [
+   {
+    "q": "怎样准确测量复制延迟？",
+    "a": "PostgreSQL 在主库查 pg_stat_replication 的 replay_lag 与 LSN 差值；也可用心跳表：主库定期写时间戳，副本读出与当前时间比较。MySQL 的 Seconds_Behind_Source 有时不准，可用 pt-heartbeat。"
+   },
+   {
+    "q": "复制延迟对故障切换有什么影响？",
+    "a": "异步复制下，主库宕机时未传到副本的事务会丢失，丢失量约等于当时的延迟。切换前应选择最新的副本，并评估 RPO；要求零丢失需同步复制或仲裁提交。"
+   },
+   {
+    "q": "如何在用户层面屏蔽延迟？",
+    "a": "写后对该用户会话读主库一段时间；使用 LSN/GTID 令牌等待副本追上；前端乐观更新界面，先展示本地结果；对延迟敏感页面直接走主库。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL: Monitoring Statistics (pg_stat_replication)",
+    "url": "https://www.postgresql.org/docs/current/monitoring-stats.html"
+   },
+   {
+    "title": "PostgreSQL: Hot Standby",
+    "url": "https://www.postgresql.org/docs/current/hot-standby.html"
+   },
+   {
+    "title": "MySQL: SHOW REPLICA STATUS",
+    "url": "https://dev.mysql.com/doc/refman/8.0/en/show-replica-status.html"
+   }
+  ]
+ },
+ {
+  "slug": "materialized-views",
+  "def": "物化视图（Materialized View）是把查询结果实际存储下来的数据库对象。与每次访问都重新执行查询的普通视图不同，它在刷新时计算并保存结果，读取时像读表一样快，可建索引。代价是数据只反映上次刷新时的状态，需要设计刷新策略。",
+  "how": [
+   "定义：CREATE MATERIALIZED VIEW … AS SELECT …，创建时执行一次并存储结果。",
+   "读取：查询物化视图就是读一张普通表，可在其上建立索引加速。",
+   "刷新：PostgreSQL 需显式执行 REFRESH，重新计算整个查询结果。",
+   "CONCURRENTLY 刷新不阻塞读，但要求视图有唯一索引，且通常比普通刷新更慢。",
+   "调度：用 cron、pg_cron 或业务事件触发刷新，刷新间隔决定数据新鲜度。"
+  ],
+  "terms": [
+   {
+    "t": "普通视图 (View)",
+    "d": "保存的查询定义，每次访问实时执行。"
+   },
+   {
+    "t": "全量刷新 (Complete Refresh)",
+    "d": "丢弃旧结果，重新执行完整查询。"
+   },
+   {
+    "t": "增量维护 (Incremental View Maintenance)",
+    "d": "只根据变更更新受影响的结果行。"
+   },
+   {
+    "t": "REFRESH CONCURRENTLY",
+    "d": "PostgreSQL 中不阻塞读的刷新方式，需唯一索引。"
+   },
+   {
+    "t": "数据新鲜度 (Staleness)",
+    "d": "物化结果落后源数据的时间。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "日销售汇总物化视图",
+   "src": "-- 预先汇总，看板查询从秒级变为毫秒级\nCREATE MATERIALIZED VIEW daily_sales AS\nSELECT date_trunc('day', o.created_at)::date AS day,\n       p.category,\n       count(*)          AS orders,\n       sum(oi.qty * oi.unit_price) AS revenue\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.id\nJOIN products p     ON p.sku = oi.sku\nGROUP BY 1, 2\nWITH DATA;\n\n-- CONCURRENTLY 刷新要求有唯一索引\nCREATE UNIQUE INDEX daily_sales_pk ON daily_sales (day, category);\n\n-- 看板直接查询\nSELECT * FROM daily_sales WHERE day >= current_date - 30 ORDER BY day;\n\n-- 定时刷新（如每 15 分钟），刷新期间读请求不被阻塞\nREFRESH MATERIALIZED VIEW CONCURRENTLY daily_sales;\n\n-- 使用 pg_cron 扩展调度（需已安装）\n-- SELECT cron.schedule('*/15 * * * *', 'REFRESH MATERIALIZED VIEW CONCURRENTLY daily_sales');",
+   "note": "唯一索引是并发刷新的前提；刷新频率就是数据可接受的滞后上限。"
+  },
+  "table": {
+   "title": "各数据库物化视图能力",
+   "head": [
+    "数据库",
+    "刷新方式",
+    "备注"
+   ],
+   "rows": [
+    [
+     "PostgreSQL",
+     "手动 REFRESH，全量",
+     "增量维护需 pg_ivm 等扩展"
+    ],
+    [
+     "Oracle",
+     "全量或基于日志的快速刷新",
+     "支持查询重写"
+    ],
+    [
+     "MySQL",
+     "无原生物化视图",
+     "用汇总表 + 定时任务模拟"
+    ],
+    [
+     "ClickHouse",
+     "插入时触发写入目标表",
+     "语义类似插入触发器"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "物化视图",
+    "pros": "声明式，SQL 即定义，可建索引",
+    "cons": "刷新是全量重算，有滞后",
+    "when": "报表、看板等可容忍延迟"
+   },
+   {
+    "opt": "触发器维护汇总表",
+    "pros": "实时更新",
+    "cons": "增加写入开销，逻辑分散",
+    "when": "汇总简单且需实时"
+   },
+   {
+    "opt": "应用缓存",
+    "pros": "灵活，可放在内存",
+    "cons": "需自行处理失效",
+    "when": "结果小、访问极热"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "普通 REFRESH 锁住视图，刷新期间看板卡住",
+    "fix": "建唯一索引后使用 CONCURRENTLY"
+   },
+   {
+    "bad": "刷新间隔短于刷新耗时，任务堆积",
+    "fix": "监控刷新耗时，调度避免重叠执行"
+   },
+   {
+    "bad": "以为 PostgreSQL 物化视图会自动更新",
+    "fix": "必须显式刷新，并在页面标注数据更新时间"
+   },
+   {
+    "bad": "实时性要求强的数据也放物化视图",
+    "fix": "实时数据查源表或用增量维护方案"
+   }
+  ],
+  "checklist": [
+   "已明确可接受的数据滞后",
+   "有唯一索引支持并发刷新",
+   "刷新任务有调度、超时与告警",
+   "刷新耗时与资源占用已评估",
+   "前端展示数据更新时间",
+   "源表结构变更会同步更新视图"
+  ],
+  "interview": [
+   {
+    "q": "物化视图和普通视图的本质区别？",
+    "a": "普通视图只是保存的查询，访问时展开执行，数据实时但性能取决于底层查询；物化视图存储结果，读快但有滞后，需要刷新。前者是抽象封装，后者是用存储换计算的缓存。"
+   },
+   {
+    "q": "REFRESH CONCURRENTLY 的原理和代价？",
+    "a": "它在临时空间计算新结果，再与旧结果按唯一索引比对，只对差异行执行增删改，因此刷新期间读不被阻塞。代价是比较过程更耗时、更占资源，且必须有覆盖所有行的唯一索引。"
+   },
+   {
+    "q": "什么时候不该用物化视图？",
+    "a": "数据需要实时准确（如余额、库存）；源数据变化极快而查询很少；结果集与源表差不多大，物化不节省计算。此时更适合优化原查询、加索引或用触发器维护汇总。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL: Materialized Views",
+    "url": "https://www.postgresql.org/docs/current/rules-materializedviews.html"
+   },
+   {
+    "title": "PostgreSQL: REFRESH MATERIALIZED VIEW",
+    "url": "https://www.postgresql.org/docs/current/sql-refreshmaterializedview.html"
+   },
+   {
+    "title": "Wikipedia: Materialized view",
+    "url": "https://en.wikipedia.org/wiki/Materialized_view"
+   }
+  ]
+ },
+ {
+  "slug": "testing-your-restores",
+  "def": "恢复演练（Restore Testing）是定期把备份真正恢复到独立环境，并验证数据完整性、可用性与恢复耗时的实践。备份任务显示“成功”只证明写出了文件，不证明能恢复。只有演练才能确认实际可达的 RPO（最多丢多少数据）和 RTO（多久恢复服务）。",
+  "how": [
+   "自动选取最新（或随机历史）备份，从异地存储下载到隔离环境。",
+   "在临时实例上执行完整恢复流程，与真实事故时使用的步骤一致。",
+   "校验数据：行数、关键表最近记录时间、校验和，以及应用的冒烟测试。",
+   "记录恢复耗时与最新数据时间点，对比 RTO/RPO 目标。",
+   "清理临时环境，任一步失败即告警；演练结果与发现的问题回写到运维手册。"
+  ],
+  "terms": [
+   {
+    "t": "RPO (Recovery Point Objective)",
+    "d": "可容忍丢失的最大数据时间窗口。"
+   },
+   {
+    "t": "RTO (Recovery Time Objective)",
+    "d": "从故障到恢复服务的最长可接受时间。"
+   },
+   {
+    "t": "3-2-1 原则",
+    "d": "至少 3 份数据、2 种介质、1 份异地。"
+   },
+   {
+    "t": "不可变备份 (Immutable Backup)",
+    "d": "写入后在保留期内不可修改或删除，防勒索。"
+   },
+   {
+    "t": "逻辑备份 / 物理备份",
+    "d": "导出 SQL 或数据，与拷贝数据文件的两种方式。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "每日自动恢复演练",
+   "src": "#!/usr/bin/env bash\nset -euo pipefail\nBUCKET=s3://my-backups/pg\nHOST=restore-test.internal   # 隔离的临时实例\nDB=restore_check\n\n# 1. 取最新的备份文件（pg_dump -Fc 生成的自定义格式）\nLATEST=$(aws s3 ls \"$BUCKET/\" | sort | tail -n 1 | awk '{print $4}')\naws s3 cp \"$BUCKET/$LATEST\" /tmp/latest.dump\n\n# 2. 恢复并计时\ndropdb -h \"$HOST\" --if-exists \"$DB\"\ncreatedb -h \"$HOST\" \"$DB\"\nSTART=$(date +%s)\npg_restore -h \"$HOST\" -d \"$DB\" --no-owner -j 4 /tmp/latest.dump\necho \"restore took $(( $(date +%s) - START ))s\"\n\n# 3. 校验：最近一天应当有订单，否则视为备份异常\nCOUNT=$(psql -h \"$HOST\" -d \"$DB\" -Atc \\\n  \"SELECT count(*) FROM orders WHERE created_at > now() - interval '1 day'\")\n[ \"$COUNT\" -gt 0 ] || { echo \"FAIL: no recent orders in backup\"; exit 1; }\necho \"OK: $COUNT recent orders\"",
+   "note": "真实执行恢复并校验业务数据新鲜度；退出码非 0 即接入告警。"
+  },
+  "table": {
+   "title": "恢复演练分级",
+   "head": [
+    "级别",
+    "内容",
+    "建议频率"
+   ],
+   "rows": [
+    [
+     "自动校验",
+     "备份可下载、可解析、校验和正确",
+     "每次备份后"
+    ],
+    [
+     "自动恢复",
+     "恢复到临时实例并跑数据断言",
+     "每日或每周"
+    ],
+    [
+     "应用级演练",
+     "应用连接恢复库跑冒烟测试",
+     "每月"
+    ],
+    [
+     "灾难演练",
+     "按手册切换整套环境、计时",
+     "每季度或半年"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "全自动定期恢复",
+    "pros": "持续验证，问题早发现",
+    "cons": "占用计算与存储成本",
+    "when": "核心数据库默认要做"
+   },
+   {
+    "opt": "抽样手工演练",
+    "pros": "能验证人和流程",
+    "cons": "频率低，依赖个人",
+    "when": "配合自动化做年度演练"
+   },
+   {
+    "opt": "只监控备份任务成功",
+    "pros": "几乎零成本",
+    "cons": "无法发现不可恢复的备份",
+    "when": "不应作为唯一手段"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "备份脚本报成功，但文件是空的或被截断",
+    "fix": "每次备份后校验大小、校验和并抽样恢复"
+   },
+   {
+    "bad": "演练只恢复了数据库，忘了密钥、配置和对象存储",
+    "fix": "列出完整恢复依赖清单并一并演练"
+   },
+   {
+    "bad": "备份与生产在同一账号，被同一次误操作删除",
+    "fix": "异地、跨账号、不可变存储"
+   },
+   {
+    "bad": "从未计时，RTO 只是纸面数字",
+    "fix": "每次演练记录实际耗时并更新目标"
+   }
+  ],
+  "checklist": [
+   "备份满足 3-2-1 且有不可变副本",
+   "至少每周自动恢复并校验一次",
+   "校验包含业务数据新鲜度断言",
+   "记录实际 RTO/RPO 并与目标对比",
+   "恢复手册最近一次演练后已更新",
+   "演练失败会触发告警"
+  ],
+  "interview": [
+   {
+    "q": "为什么说没测过的备份等于没有备份？",
+    "a": "备份可能因权限、磁盘满、版本不兼容、加密密钥丢失、脚本静默失败而不可用，这些只有恢复时才暴露。2017 年 GitLab 数据库事故中，多种备份机制被发现未正常工作，就是典型案例。"
+   },
+   {
+    "q": "如何定义 RPO 和 RTO？",
+    "a": "与业务一起定：RPO 看能接受丢多少数据，决定备份频率与是否需要 WAL 归档/PITR；RTO 看能停多久，决定恢复方式（快照、热备、多活）。目标必须经演练验证，而非估算。"
+   },
+   {
+    "q": "演练中除了数据库还要验证什么？",
+    "a": "加密密钥与 KMS 权限、配置与密钥管理、对象存储文件、DNS 与连接串切换、依赖服务、监控告警，以及人员是否熟悉手册。很多恢复失败是因为数据之外的依赖缺失。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL: Backup and Restore",
+    "url": "https://www.postgresql.org/docs/current/backup.html"
+   },
+   {
+    "title": "GitLab: Postmortem of database outage of January 31",
+    "url": "https://about.gitlab.com/blog/2017/02/10/postmortem-of-database-outage-of-january-31/"
+   },
+   {
+    "title": "Google SRE Book: Data Integrity",
+    "url": "https://sre.google/sre-book/data-integrity/"
+   }
+  ]
+ },
+ {
+  "slug": "point-in-time-recovery",
+  "def": "时间点恢复（PITR）是把数据库恢复到过去任意指定时刻状态的能力。它以一个基础备份为起点，再按顺序重放之后连续归档的事务日志（PostgreSQL 的 WAL、MySQL 的 binlog），在目标时间点停止。常用于撤销误删表、错误批量更新等逻辑错误。",
+  "how": [
+   "定期做物理基础备份（如 pg_basebackup），并记录备份开始时的日志位置。",
+   "持续归档事务日志到独立存储，形成从基础备份开始不间断的日志链。",
+   "恢复时先还原基础备份到新实例，再配置日志来源与恢复目标时间。",
+   "数据库按顺序重放日志，到达目标时间或事务点后暂停或结束恢复。",
+   "核对数据无误后提升为可写实例，或导出所需数据回灌到生产库。"
+  ],
+  "terms": [
+   {
+    "t": "基础备份 (Base Backup)",
+    "d": "某一时刻数据目录的完整物理拷贝。"
+   },
+   {
+    "t": "WAL 归档 (WAL Archiving)",
+    "d": "把写满的 WAL 段持续复制到归档存储。"
+   },
+   {
+    "t": "recovery_target_time",
+    "d": "PostgreSQL 恢复的目标时间参数。"
+   },
+   {
+    "t": "时间线 (Timeline)",
+    "d": "每次 PITR 后产生新时间线，避免与原历史混淆。"
+   },
+   {
+    "t": "binlog",
+    "d": "MySQL 二进制日志，用于复制和时间点恢复。"
+   },
+   {
+    "t": "保留期 (Retention Window)",
+    "d": "可恢复到的最早时间，取决于备份与日志保留时长。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "PostgreSQL 恢复到误删前",
+   "src": "# 前提：主库已开启 archive_mode=on，并配置 archive_command 持续归档 WAL\n# 场景：14:30 误删表，恢复到 14:29\n\n# 1. 在新目录还原基础备份（不要覆盖仍在运行的生产数据目录）\ntar -xzf /backups/base_20261020.tar.gz -C /var/lib/postgresql/pitr\n\n# 2. 配置恢复参数（PostgreSQL 12+ 写在 postgresql.conf 中）\ncat >> /var/lib/postgresql/pitr/postgresql.conf <<'EOF'\nrestore_command = 'cp /mnt/wal_archive/%f %p'\nrecovery_target_time = '2026-10-20 14:29:00+08'\nrecovery_target_action = 'pause'\nEOF\n\n# 3. 创建 recovery.signal，进入目标恢复模式并启动\ntouch /var/lib/postgresql/pitr/recovery.signal\npg_ctl -D /var/lib/postgresql/pitr -o \"-p 5433\" start\n\n# 4. 到达目标后暂停，检查数据是否正确\npsql -p 5433 -c \"SELECT count(*) FROM orders;\"\n\n# 5. 确认无误后结束恢复，实例变为可写\npsql -p 5433 -c \"SELECT pg_wal_replay_resume();\"",
+   "note": "在独立实例恢复并先暂停核对；生产中常用 pgBackRest、WAL-G 等工具封装。"
+  },
+  "table": {
+   "title": "PITR 实现方式",
+   "head": [
+    "平台",
+    "机制",
+    "说明"
+   ],
+   "rows": [
+    [
+     "PostgreSQL 自建",
+     "基础备份 + WAL 归档",
+     "可用 pgBackRest/WAL-G/Barman"
+    ],
+    [
+     "MySQL 自建",
+     "全量备份 + binlog",
+     "mysqlbinlog 按时间截止重放"
+    ],
+    [
+     "Amazon RDS",
+     "自动备份 + 事务日志",
+     "恢复为新实例，保留期最长 35 天"
+    ],
+    [
+     "多数托管数据库",
+     "控制台选择时间点",
+     "通常恢复到新实例而非原地"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "PITR",
+    "pros": "可精确到秒，丢失极少",
+    "cons": "需持续归档，恢复耗时较长",
+    "when": "误操作与逻辑错误"
+   },
+   {
+    "opt": "定时快照/逻辑备份",
+    "pros": "简单，恢复步骤少",
+    "cons": "最多丢一个备份周期的数据",
+    "when": "RPO 宽松的系统"
+   },
+   {
+    "opt": "延迟副本",
+    "pros": "可快速取回误删前数据",
+    "cons": "多一个实例成本",
+    "when": "频繁需要快速撤销误操作"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "WAL 归档链中断而无人发现",
+    "fix": "监控归档失败与延迟，定期验证可恢复"
+   },
+   {
+    "bad": "在生产实例上原地恢复，覆盖了误删之后的正常写入",
+    "fix": "恢复到新实例，只把需要的数据回灌"
+   },
+   {
+    "bad": "目标时间未写时区，恢复到了错误时刻",
+    "fix": "目标时间带明确时区偏移"
+   },
+   {
+    "bad": "保留期太短，发现问题时已无法回到那个时间",
+    "fix": "按问题发现周期设定保留期"
+   }
+  ],
+  "checklist": [
+   "日志归档开启且失败有告警",
+   "基础备份与日志在独立存储",
+   "保留期满足业务发现问题的周期",
+   "恢复手册写明时区与目标格式",
+   "定期演练 PITR 并记录耗时",
+   "明确数据回灌到生产的流程"
+  ],
+  "interview": [
+   {
+    "q": "PITR 的原理是什么？",
+    "a": "数据库所有修改先写日志。拿到某时刻的物理基础备份后，按顺序重放其后的日志，就能重建之后任意时刻的状态；设定目标时间，到达后停止重放即可。前提是日志链完整连续。"
+   },
+   {
+    "q": "误删一张表，怎样尽量不影响其他数据？",
+    "a": "不在生产原地回退。把备份 PITR 到误删前一刻的新实例，导出这张表（或缺失的数据），再导入生产库；这样误删之后其他表的正常写入不受影响。"
+   },
+   {
+    "q": "PITR 和主从复制能互相替代吗？",
+    "a": "不能。复制会把误删同步到副本，无法撤销逻辑错误；PITR 能回到过去但恢复耗时较长，不适合快速故障切换。高可用靠复制，防误操作和灾难恢复靠备份加 PITR。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL: Continuous Archiving and PITR",
+    "url": "https://www.postgresql.org/docs/current/continuous-archiving.html"
+   },
+   {
+    "title": "MySQL: Point-in-Time Recovery Using Binary Log",
+    "url": "https://dev.mysql.com/doc/refman/8.0/en/point-in-time-recovery-binlog.html"
+   },
+   {
+    "title": "Amazon RDS: Restoring to a specified time",
+    "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PIT.html"
+   },
+   {
+    "title": "pgBackRest",
+    "url": "https://pgbackrest.org/"
+   }
+  ]
+ }
+]

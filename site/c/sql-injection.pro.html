@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="SQL注入 专业模式：SQL 注入（SQL Injection）是攻击者通过把恶意 SQL 片段混入应用拼接的查询语句，使数据库执行非预期命令的漏洞，属于 OWASP Top 10 ">
+<title>🎓 SQL注入 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="sql-injection" data-answer="0" data-prev="cookies-and-sessions.pro.html" data-next="xss.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#sec">🌊 中级 · 🛡️ 安全防线</a><span>›</span><a href="sql-injection.html">SQL注入</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.104 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="cookies-and-sessions.pro.html" rel="prev"><small>‹ 上一个</small><b>🍪 Cookie 与会话</b></a><a class="pn next" href="xss.pro.html" rel="next"><small>下一个 ›</small><b>📜 跨站脚本攻击</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">💉</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>SQL注入</h1><p class="en">SQL Injection</p>
+    <div class="hbtns"><a class="prosw back" href="sql-injection.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">SQL 注入（SQL Injection）是攻击者通过把恶意 SQL 片段混入应用拼接的查询语句，使数据库执行非预期命令的漏洞，属于 OWASP Top 10 中的注入（Injection）类。它可导致数据泄露、篡改、绕过登录甚至控制服务器。根因是把不可信输入当作代码拼进查询，根本解法是参数化查询。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>应用把用户输入直接拼接进 SQL 字符串，如 WHERE name = &#x27;用户输入&#x27;。</p></li><li><span class="sn">2</span><p>攻击者输入含引号和 SQL 关键字的内容，闭合原有字符串并追加自己的条件或语句。</p></li><li><span class="sn">3</span><p>数据库解析整个字符串时无法区分开发者写的代码和用户数据，于是执行被篡改的语义。</p></li><li><span class="sn">4</span><p>常见利用手法有 UNION 查询拼接数据、布尔或时间盲注逐位推断、堆叠查询执行额外语句。</p></li><li><span class="sn">5</span><p>参数化查询让 SQL 结构与数据分开发送，数据库始终把参数当作值而不是代码。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>参数化查询 (Parameterized Query)</dt><dd>用占位符表示值，值单独绑定，结构无法被改变。</dd></div><div class="term"><dt>预编译语句 (Prepared Statement)</dt><dd>先编译 SQL 结构再绑定参数执行，常用于参数化。</dd></div><div class="term"><dt>盲注 (Blind SQLi)</dt><dd>页面无直接回显，通过真假响应或延迟推断数据。</dd></div><div class="term"><dt>ORM</dt><dd>对象关系映射库，默认参数化，但原生 SQL 接口仍可能注入。</dd></div><div class="term"><dt>二阶注入 (Second-Order)</dt><dd>恶意数据先被存储，之后在其他查询中被拼接触发。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>拼接 vs 参数化</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import sqlite3
+conn = sqlite3.connect(&quot;:memory:&quot;)
+conn.execute(&quot;CREATE TABLE users(name TEXT, role TEXT)&quot;)
+conn.executemany(&quot;INSERT INTO users VALUES (?, ?)&quot;,
+                 [(&quot;alice&quot;, &quot;admin&quot;), (&quot;bob&quot;, &quot;user&quot;)])
+
+name = &quot;x&#x27; OR &#x27;1&#x27;=&#x27;1&quot;   # 攻击者输入
+
+# 错误：字符串拼接，条件被篡改为恒真，返回全部用户
+unsafe = f&quot;SELECT * FROM users WHERE name = &#x27;{name}&#x27;&quot;
+print(conn.execute(unsafe).fetchall())   # [(&#x27;alice&#x27;,&#x27;admin&#x27;), (&#x27;bob&#x27;,&#x27;user&#x27;)]
+
+# 正确：参数化，输入只被当作一个普通字符串值
+safe = conn.execute(&quot;SELECT * FROM users WHERE name = ?&quot;, (name,))
+print(safe.fetchall())                    # []
+
+# 表名、排序字段不能参数化，应使用白名单
+sort = &quot;name&quot;
+assert sort in {&quot;name&quot;, &quot;role&quot;}
+print(conn.execute(f&quot;SELECT * FROM users ORDER BY {sort}&quot;).fetchall())</code></pre></div><p class="cnote">可直接运行，对比同一输入在拼接与参数化下的结果；标识符需用白名单。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">防御手段对比</h3><div class="tw"><table><thead><tr><th>手段</th><th>效果</th><th>说明</th></tr></thead><tbody><tr><td data-h="手段">参数化查询</td><td data-h="效果">根本防御</td><td data-h="说明">值与 SQL 结构分离</td></tr><tr><td data-h="手段">标识符白名单</td><td data-h="效果">必需补充</td><td data-h="说明">表名、列名、排序方向无法参数化</td></tr><tr><td data-h="手段">最小权限数据库账号</td><td data-h="效果">降低危害</td><td data-h="说明">应用账号不应有 DROP 等权限</td></tr><tr><td data-h="手段">手工转义/黑名单过滤</td><td data-h="效果">不可靠</td><td data-h="说明">容易遗漏编码与边界情况</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>ORM 查询构建器</h4><p><b class="k-p">优点</b>默认参数化，开发快</p><p><b class="k-c">代价</b>复杂查询需原生 SQL</p><p><b class="k-w">适用</b>常规 CRUD</p></div><div class="trd"><h4>原生 SQL + 参数绑定</h4><p><b class="k-p">优点</b>性能与表达力强</p><p><b class="k-c">代价</b>需团队纪律</p><p><b class="k-w">适用</b>复杂报表与优化查询</p></div><div class="trd"><h4>存储过程</h4><p><b class="k-p">优点</b>权限可收敛到过程</p><p><b class="k-c">代价</b>内部拼接仍会注入</p><p><b class="k-w">适用</b>强数据库治理环境</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>以为用了 ORM 就绝对安全</p><p class="fix"><b>✓</b>审查 raw、literal 等原生接口，同样使用参数绑定</p></li><li><p class="bad"><b>✗</b>把用户输入拼进 ORDER BY 或表名</p><p class="fix"><b>✓</b>使用固定白名单映射</p></li><li><p class="bad"><b>✗</b>AI 生成的代码用 f-string 拼 SQL</p><p class="fix"><b>✓</b>在规则文件中禁止拼接，并用 lint 或扫描工具检测</p></li><li><p class="bad"><b>✗</b>数据库报错信息直接返回给用户</p><p class="fix"><b>✓</b>对外返回通用错误，详细信息只写日志</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有查询使用参数绑定</span></label></li><li><label><input type="checkbox"><span>动态标识符走白名单</span></label></li><li><label><input type="checkbox"><span>应用数据库账号最小权限</span></label></li><li><label><input type="checkbox"><span>错误信息不泄露 SQL 细节</span></label></li><li><label><input type="checkbox"><span>CI 中有 SAST 扫描</span></label></li><li><label><input type="checkbox"><span>安全测试包含注入用例</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么参数化能根本防御 SQL 注入？</summary><p>参数化把 SQL 语句结构和数据分开传给数据库：结构先被解析确定，参数只能作为值填入，无论内容包含什么引号或关键字，都无法改变语句的语法结构。转义则是试图让数据“看起来不像代码”，容易遗漏。</p></details><details class="iv"><summary>哪些地方不能参数化，怎么处理？</summary><p>表名、列名、排序方向、LIMIT 在部分驱动中等 SQL 标识符和关键字通常不能用占位符。正确做法是用白名单把用户选择映射到固定的合法值，绝不直接拼接原始输入。</p></details><details class="iv"><summary>什么是二阶 SQL 注入？</summary><p>恶意输入第一次写入时被安全地参数化保存，没有触发；但之后另一段代码从数据库读出这个值，信任它并拼接进新的 SQL，此时才触发注入。防御原则是任何来源的数据进入 SQL 时都参数化，包括来自自己数据库的数据。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://owasp.org/www-community/attacks/SQL_Injection" target="_blank" rel="noopener"><b>OWASP: SQL Injection</b><small>owasp.org ↗</small></a></li><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html" target="_blank" rel="noopener"><b>OWASP SQL Injection Prevention Cheat Sheet</b><small>cheatsheetseries.owasp.org ↗</small></a></li><li><a href="https://cwe.mitre.org/data/definitions/89.html" target="_blank" rel="noopener"><b>CWE-89: SQL Injection</b><small>cwe.mitre.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="cookies-and-sessions.pro.html" rel="prev"><small>‹ 上一个</small><b>🍪 Cookie 与会话</b></a><a class="pn next" href="xss.pro.html" rel="next"><small>下一个 ›</small><b>📜 跨站脚本攻击</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

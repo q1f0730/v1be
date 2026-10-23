@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="过期仍用后台刷新 (SWR) 专业模式：Stale-While-Revalidate（SWR）是一种缓存策略：缓存过了新鲜期后的一段宽限时间内，先立即返回旧（stale）内容，同时在后台异步重新验证或">
+<title>🎓 过期仍用后台刷新 (SWR) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="stale-while-revalidate" data-answer="0" data-prev="cache-penetration.pro.html" data-next="pub-sub.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#cache">🔮 高级 · ⚡ 缓存与队列</a><span>›</span><a href="stale-while-revalidate.html">过期仍用后台刷新 (SWR)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.354 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="cache-penetration.pro.html" rel="prev"><small>‹ 上一个</small><b>🕳️ 缓存穿透</b></a><a class="pn next" href="pub-sub.pro.html" rel="next"><small>下一个 ›</small><b>📢 发布订阅 (Pub/Sub)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔄</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>⚡ 缓存与队列</span><span>⏱ 约 10 分钟</span></div>
+    <h1>过期仍用后台刷新 (SWR)</h1><p class="en">Stale-While-Revalidate</p>
+    <div class="hbtns"><a class="prosw back" href="stale-while-revalidate.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">Stale-While-Revalidate（SWR）是一种缓存策略：缓存过了新鲜期后的一段宽限时间内，先立即返回旧（stale）内容，同时在后台异步重新验证或获取新内容并更新缓存。它由 RFC 5861 定义为 HTTP Cache-Control 扩展指令，也被前端库（如 Vercel 的 SWR）广泛采用，以少量陈旧换稳定低延迟。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>响应携带 Cache-Control: max-age=N, stale-while-revalidate=M，表示 N 秒内为新鲜，此后 M 秒内可用旧内容。</p></li><li><span class="sn">2</span><p>在 max-age 规定的新鲜期内，请求直接由缓存返回内容，完全不访问源站。</p></li><li><span class="sn">3</span><p>超过 max-age 但在宽限期内的请求，缓存立即返回旧内容，并在后台向源站发起重新验证（可带 ETag 条件请求）。</p></li><li><span class="sn">4</span><p>后台请求成功后更新缓存，后续请求获得新内容；超过 max-age + M 后缓存不可再直接使用旧内容，必须等待源站响应。</p></li><li><span class="sn">5</span><p>配合 stale-if-error 指令，可在源站出错时继续返回旧内容，提高可用性。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>新鲜期 (Freshness Lifetime)</dt><dd>由 max-age 或 s-maxage 定义，期间缓存可直接使用。</dd></div><div class="term"><dt>重新验证 (Revalidation)</dt><dd>向源站确认缓存是否仍有效，常用 ETag/If-None-Match。</dd></div><div class="term"><dt>stale-if-error</dt><dd>源站出错时允许在指定时间内返回过期内容。</dd></div><div class="term"><dt>s-maxage</dt><dd>只作用于共享缓存（CDN、代理）的新鲜期。</dd></div><div class="term"><dt>useSWR</dt><dd>Vercel 的 React 数据请求 Hook，按 SWR 思路先返回缓存再重新请求。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>HTTP 响应头与前端 useSWR</span><em>javascript</em><button class="ccopy">复制</button></div><pre><code>// 服务端（Express）：CDN 60 秒新鲜，之后 5 分钟内可先返回旧内容并后台刷新
+app.get(&quot;/api/articles&quot;, async (req, res) =&gt; {
+  res.set(&quot;Cache-Control&quot;,
+    &quot;public, s-maxage=60, stale-while-revalidate=300, stale-if-error=86400&quot;);
+  res.json(await listArticles());
+});
+// 注意：不同 CDN 对 stale-while-revalidate 的支持不同，以各自文档为准
+
+// 前端（React）：先显示缓存数据，同时后台重新请求
+import useSWR from &quot;swr&quot;;
+const fetcher = (url) =&gt; fetch(url).then((r) =&gt; r.json());
+
+export function ArticleList() {
+  const { data, error, isLoading } = useSWR(&quot;/api/articles&quot;, fetcher);
+  if (error) return &lt;p&gt;加载失败&lt;/p&gt;;
+  if (isLoading) return &lt;p&gt;加载中…&lt;/p&gt;;
+  return &lt;ul&gt;{data.map((a) =&gt; &lt;li key={a.id}&gt;{a.title}&lt;/li&gt;)}&lt;/ul&gt;;
+}</code></pre></div><p class="cnote">同一思想在 CDN 层（响应头）和浏览器层（useSWR）各用一次，均以短暂旧数据换即时响应。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">Cache-Control 相关指令</h3><div class="tw"><table><thead><tr><th>指令</th><th>作用</th><th>示例</th></tr></thead><tbody><tr><td data-h="指令">max-age</td><td data-h="作用">浏览器与共享缓存的新鲜期（秒）</td><td data-h="示例">max-age=60</td></tr><tr><td data-h="指令">s-maxage</td><td data-h="作用">仅共享缓存的新鲜期</td><td data-h="示例">s-maxage=300</td></tr><tr><td data-h="指令">stale-while-revalidate</td><td data-h="作用">过期后可先用旧内容并后台刷新的时长</td><td data-h="示例">stale-while-revalidate=600</td></tr><tr><td data-h="指令">stale-if-error</td><td data-h="作用">源站错误时可用旧内容的时长</td><td data-h="示例">stale-if-error=86400</td></tr><tr><td data-h="指令">no-cache</td><td data-h="作用">每次使用前都必须重新验证</td><td data-h="示例">no-cache</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>SWR</h4><p><b class="k-p">优点</b>响应始终快，源站压力平滑</p><p><b class="k-c">代价</b>用户可能看到稍旧的数据</p><p><b class="k-w">适用</b>文章列表、商品目录、仪表盘</p></div><div class="trd"><h4>严格过期（max-age 后同步回源）</h4><p><b class="k-p">优点</b>过期后数据较新</p><p><b class="k-c">代价</b>过期瞬间请求变慢，可能并发回源</p><p><b class="k-w">适用</b>数据时效性要求中等</p></div><div class="trd"><h4>不缓存 / no-store</h4><p><b class="k-p">优点</b>始终最新</p><p><b class="k-c">代价</b>延迟与源站负载最高</p><p><b class="k-w">适用</b>余额、库存扣减、个人敏感数据</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>对个性化或敏感接口设置 public + SWR</p><p class="fix"><b>✓</b>个人数据使用 private 或 no-store，共享缓存只缓存公共内容</p></li><li><p class="bad"><b>✗</b>宽限期设得过长，用户长时间看到过时内容</p><p class="fix"><b>✓</b>按业务可接受的陈旧度设置，并在数据变更时主动清除 CDN 缓存</p></li><li><p class="bad"><b>✗</b>假设所有 CDN 都支持该指令</p><p class="fix"><b>✓</b>查阅所用 CDN 文档，必要时在边缘函数中实现</p></li><li><p class="bad"><b>✗</b>前端 useSWR 未处理错误与重复请求</p><p class="fix"><b>✓</b>配置去重、错误重试与降级展示</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>确认数据可接受短暂陈旧</span></label></li><li><label><input type="checkbox"><span>新鲜期与宽限期按业务设定</span></label></li><li><label><input type="checkbox"><span>个人数据不进入共享缓存</span></label></li><li><label><input type="checkbox"><span>确认 CDN 支持相关指令</span></label></li><li><label><input type="checkbox"><span>数据变更时有主动清除缓存的手段</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>SWR 与普通 TTL 缓存有什么区别？</summary><p>普通 TTL 缓存过期后，下一个请求必须同步等待回源，延迟突增且可能多个请求同时回源。SWR 在宽限期内立即返回旧内容并后台刷新，用户不感知等待，源站请求也更平滑，代价是短时间内看到旧数据。</p></details><details class="iv"><summary>什么数据不适合用 SWR？</summary><p>对时效和正确性要求严格的数据，如账户余额、库存扣减、支付状态、权限变更；以及个性化或敏感内容（不能进入共享缓存）。这些应直接读源，或用短 TTL 加主动失效。</p></details><details class="iv"><summary>前端 useSWR 解决了什么问题？</summary><p>它把“先显示缓存、再后台请求、获得结果后更新界面”的模式封装成 Hook，并提供请求去重、窗口聚焦时重新验证、错误重试和乐观更新等能力，减少手写加载状态和缓存管理代码。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.rfc-editor.org/rfc/rfc5861" target="_blank" rel="noopener"><b>RFC 5861：HTTP Cache-Control Extensions for Stale Content</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cache-Control" target="_blank" rel="noopener"><b>MDN：Cache-Control</b><small>developer.mozilla.org ↗</small></a></li><li><a href="https://web.dev/articles/stale-while-revalidate" target="_blank" rel="noopener"><b>web.dev：Keeping things fresh with stale-while-revalidate</b><small>web.dev ↗</small></a></li><li><a href="https://swr.vercel.app/" target="_blank" rel="noopener"><b>SWR (Vercel)</b><small>swr.vercel.app ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="cache-penetration.pro.html" rel="prev"><small>‹ 上一个</small><b>🕳️ 缓存穿透</b></a><a class="pn next" href="pub-sub.pro.html" rel="next"><small>下一个 ›</small><b>📢 发布订阅 (Pub/Sub)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

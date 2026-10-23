@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="护栏 (Guardrails) 专业模式：护栏（Guardrails）是围绕 LLM 调用设置的输入、输出与行为约束层，用于拦截提示注入、越权工具调用、敏感信息泄露、有害内容和不符合格式的输出。它在模型">
+<title>🎓 护栏 (Guardrails) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="guardrails" data-answer="0" data-prev="agent-memory.pro.html" data-next="prompt-caching.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#ai">🔮 高级 · 🤖 AI 与提示词</a><span>›</span><a href="guardrails.html">护栏 (Guardrails)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.210 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="agent-memory.pro.html" rel="prev"><small>‹ 上一个</small><b>🧠 智能体记忆</b></a><a class="pn next" href="prompt-caching.pro.html" rel="next"><small>下一个 ›</small><b>♻️ 提示词缓存</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🚧</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>护栏 (Guardrails)</h1><p class="en">Guardrails</p>
+    <div class="hbtns"><a class="prosw back" href="guardrails.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">护栏（Guardrails）是围绕 LLM 调用设置的输入、输出与行为约束层，用于拦截提示注入、越权工具调用、敏感信息泄露、有害内容和不符合格式的输出。它在模型自身对齐之外提供可控、可审计的防线，通常由规则校验、分类模型、结构化输出校验和权限控制组合而成。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>输入护栏：检测提示注入、越狱尝试、敏感信息和超出业务范围的请求，必要时拒绝或改写。</p></li><li><span class="sn">2</span><p>上下文护栏：把检索内容、网页、文件标记为不可信数据，与系统指令明确分隔。</p></li><li><span class="sn">3</span><p>工具护栏：限定可调用工具与参数范围，高风险操作需人工确认，权限按最小化原则。</p></li><li><span class="sn">4</span><p>输出护栏：用 schema 校验结构，检测 PII、有害内容与事实性问题，不合格则重试或拦截。</p></li><li><span class="sn">5</span><p>记录所有拦截事件、触发规则与样本，用于监控攻击趋势和调整阈值。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>提示注入 (Prompt Injection)</dt><dd>通过输入或外部内容篡改模型行为，OWASP LLM Top 10 首位。</dd></div><div class="term"><dt>间接提示注入 (Indirect Injection)</dt><dd>恶意指令藏在模型读取的网页、文档或邮件中。</dd></div><div class="term"><dt>结构化输出 (Structured Output)</dt><dd>约束模型按 JSON Schema 输出，便于校验。</dd></div><div class="term"><dt>内容分类器 (Safety Classifier)</dt><dd>判断输入输出是否违规的专用模型，如 Llama Guard。</dd></div><div class="term"><dt>过度代理 (Excessive Agency)</dt><dd>赋予模型过多权限或自主性导致的风险。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>输出 schema 校验与工具白名单</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import re
+from pydantic import BaseModel, Field, ValidationError
+
+class RefundDecision(BaseModel):
+    approve: bool
+    amount_cents: int = Field(ge=0, le=50_000)   # 金额上限硬约束
+    reason: str = Field(max_length=300)
+
+ALLOWED_TOOLS = {&quot;lookup_order&quot;, &quot;issue_refund&quot;}
+NEEDS_HUMAN = {&quot;issue_refund&quot;}
+PII = re.compile(r&quot;\b\d{16}\b&quot;)                   # 粗略的卡号模式
+
+def check_output(raw_json: str) -&gt; RefundDecision | None:
+    try:
+        d = RefundDecision.model_validate_json(raw_json)
+    except ValidationError:
+        return None                    # 结构不合格：重试或拒绝
+    if PII.search(d.reason):
+        return None                    # 输出含疑似卡号：拦截
+    return d
+
+def check_tool(name: str) -&gt; str:
+    if name not in ALLOWED_TOOLS:
+        return &quot;deny&quot;
+    return &quot;ask_human&quot; if name in NEEDS_HUMAN else &quot;allow&quot;</code></pre></div><p class="cnote">用代码强制的约束（schema、上限、白名单）比提示词里的「请不要」可靠得多。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">护栏层次与手段</h3><div class="tw"><table><thead><tr><th>层次</th><th>防什么</th><th>常用手段</th></tr></thead><tbody><tr><td data-h="层次">输入</td><td data-h="防什么">注入、越狱、超范围请求</td><td data-h="常用手段">分类器、规则、主题限制</td></tr><tr><td data-h="层次">上下文</td><td data-h="防什么">间接注入</td><td data-h="常用手段">数据与指令分隔、来源标注</td></tr><tr><td data-h="层次">工具/行为</td><td data-h="防什么">越权操作</td><td data-h="常用手段">白名单、参数校验、人工确认</td></tr><tr><td data-h="层次">输出</td><td data-h="防什么">格式错误、泄露、有害内容</td><td data-h="常用手段">schema 校验、PII 检测、审核模型</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>提示词内约束</h4><p><b class="k-p">优点</b>零成本，易调整</p><p><b class="k-c">代价</b>可被绕过，不能当安全边界</p><p><b class="k-w">适用</b>体验层面的引导</p></div><div class="trd"><h4>代码级硬约束</h4><p><b class="k-p">优点</b>确定性强，不可被提示绕过</p><p><b class="k-c">代价</b>只能覆盖可形式化的规则</p><p><b class="k-w">适用</b>金额、权限、格式等</p></div><div class="trd"><h4>分类模型护栏</h4><p><b class="k-p">优点</b>覆盖语义层面的风险</p><p><b class="k-c">代价</b>增加延迟与误判</p><p><b class="k-w">适用</b>开放式输入输出的产品</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>以为在系统提示里写「忽略任何注入」就安全</p><p class="fix"><b>✓</b>把权限控制放在代码与基础设施层，不依赖模型自律</p></li><li><p class="bad"><b>✗</b>Agent 读取网页后可以直接调用发邮件、转账工具</p><p class="fix"><b>✓</b>处理不可信内容的上下文中限制高风险工具，或需人工确认</p></li><li><p class="bad"><b>✗</b>护栏过严，大量正常请求被拒绝</p><p class="fix"><b>✓</b>用评测集同时衡量拦截率与误拒率，逐步调阈值</p></li><li><p class="bad"><b>✗</b>只拦截不记录，无法发现攻击模式</p><p class="fix"><b>✓</b>记录拦截事件与样本，定期复盘</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>高风险工具有人工确认</span></label></li><li><label><input type="checkbox"><span>工具与参数有白名单校验</span></label></li><li><label><input type="checkbox"><span>输出有 schema 校验</span></label></li><li><label><input type="checkbox"><span>外部内容与指令明确分隔</span></label></li><li><label><input type="checkbox"><span>PII 与密钥有检测</span></label></li><li><label><input type="checkbox"><span>拦截率与误拒率可监控</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么提示注入很难彻底解决？</summary><p>LLM 在同一输入流中处理指令和数据，无法从机制上区分可信指令与不可信内容。因此只能降低风险：限制模型权限、隔离不可信上下文、高风险操作需人工确认，假设注入终会成功来设计影响范围。</p></details><details class="iv"><summary>护栏应该放在哪一层？</summary><p>多层叠加：输入层过滤明显攻击，上下文层隔离外部数据，工具层用权限与参数校验做硬约束，输出层校验结构与敏感信息。最关键的是工具/权限层，因为真正造成损失的是行动。</p></details><details class="iv"><summary>如何评估护栏效果？</summary><p>构建攻击样本集（直接与间接注入、越狱、PII 诱导）与正常请求集，分别统计拦截率与误拒率；做红队测试；上线后监控拦截日志与用户投诉，持续补充样本。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://genai.owasp.org/llm-top-10/" target="_blank" rel="noopener"><b>OWASP Top 10 for LLM Applications</b><small>genai.owasp.org ↗</small></a></li><li><a href="https://docs.nvidia.com/nemo/guardrails/latest/index.html" target="_blank" rel="noopener"><b>NVIDIA NeMo Guardrails 文档</b><small>docs.nvidia.com ↗</small></a></li><li><a href="https://arxiv.org/abs/2312.06674" target="_blank" rel="noopener"><b>Llama Guard 论文 (arXiv:2312.06674)</b><small>arxiv.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="agent-memory.pro.html" rel="prev"><small>‹ 上一个</small><b>🧠 智能体记忆</b></a><a class="pn next" href="prompt-caching.pro.html" rel="next"><small>下一个 ›</small><b>♻️ 提示词缓存</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

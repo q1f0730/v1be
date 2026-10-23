@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="低秩适配微调 (LoRA / QLoRA) 专业模式：LoRA（Low-Rank Adaptation，低秩适配）是一种参数高效微调（PEFT）方法：冻结预训练权重 W，在选定线性层旁注入两个低秩矩阵 A、B，只训">
+<title>🎓 低秩适配微调 (LoRA / QLoRA) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="lora" data-answer="0" data-prev="mixture-of-experts.pro.html" data-next="inference-engines.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#llmops">🔮 高级 · 🧠 模型工程与推理部署</a><span>›</span><a href="lora.html">低秩适配微调 (LoRA / QLoRA)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.385 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="mixture-of-experts.pro.html" rel="prev"><small>‹ 上一个</small><b>👥 混合专家模型 (MoE)</b></a><a class="pn next" href="inference-engines.pro.html" rel="next"><small>下一个 ›</small><b>🏎️ 推理引擎 (vLLM / SGLang / llama.cpp)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🩹</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🧠 模型工程与推理部署</span><span>⏱ 约 10 分钟</span></div>
+    <h1>低秩适配微调 (LoRA / QLoRA)</h1><p class="en">LoRA / QLoRA</p>
+    <div class="hbtns"><a class="prosw back" href="lora.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">LoRA（Low-Rank Adaptation，低秩适配）是一种参数高效微调（PEFT）方法：冻结预训练权重 W，在选定线性层旁注入两个低秩矩阵 A、B，只训练它们，使权重更新 ΔW = BA 的秩远小于原矩阵。QLoRA 进一步把冻结的基座以 4-bit 量化加载，在其上训练 LoRA，显著降低显存。它属于模型训练与适配层。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>选择目标模块（常见为注意力的 q/k/v/o 投影，或加上 MLP 层），冻结全部原始参数。</p></li><li><span class="sn">2</span><p>为每个目标线性层添加 A（r×d）与 B（d×r），r 为秩（常见 8–64）；B 初始化为零，使训练开始时输出不变。</p></li><li><span class="sn">3</span><p>前向时输出为 Wx + (α/r)·BAx，α 为缩放系数；反向传播只更新 A、B，优化器状态也只为它们保存。</p></li><li><span class="sn">4</span><p>QLoRA 把基座权重量化为 4-bit NF4，计算时反量化到 BF16，并配合双重量化与分页优化器节省显存。</p></li><li><span class="sn">5</span><p>训练后可单独保存适配器（通常几十 MB 级），推理时动态加载，或合并回基座权重消除额外延迟。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>秩 (Rank, r)</dt><dd>低秩矩阵的内维度，决定适配器容量与参数量。</dd></div><div class="term"><dt>lora_alpha</dt><dd>缩放系数，实际缩放为 α/r，影响更新幅度。</dd></div><div class="term"><dt>目标模块 (target_modules)</dt><dd>被注入 LoRA 的层名，如 q_proj、v_proj。</dd></div><div class="term"><dt>NF4 (4-bit NormalFloat)</dt><dd>QLoRA 提出的 4-bit 数据类型，针对正态分布权重设计。</dd></div><div class="term"><dt>PEFT</dt><dd>参数高效微调方法族，也是 Hugging Face 对应库的名称。</dd></div><div class="term"><dt>权重合并 (Merge)</dt><dd>把 BA 加回 W，得到无额外推理开销的完整模型。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>PEFT 配置 QLoRA</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import torch
+from transformers import AutoModelForCausalLM, BitsAndBytesConfig
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+
+bnb = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type=&quot;nf4&quot;,
+                         bnb_4bit_compute_dtype=torch.bfloat16,
+                         bnb_4bit_use_double_quant=True)
+model = AutoModelForCausalLM.from_pretrained(
+    &quot;Qwen/Qwen2.5-1.5B-Instruct&quot;, quantization_config=bnb, device_map=&quot;auto&quot;)
+model = prepare_model_for_kbit_training(model)   # 4-bit 基座冻结
+
+config = LoraConfig(
+    r=16, lora_alpha=32, lora_dropout=0.05,
+    target_modules=[&quot;q_proj&quot;, &quot;k_proj&quot;, &quot;v_proj&quot;, &quot;o_proj&quot;],
+    task_type=&quot;CAUSAL_LM&quot;)
+model = get_peft_model(model, config)
+model.print_trainable_parameters()   # 可训练参数通常只占总量很小比例
+# 之后交给 transformers Trainer 或 TRL 的 SFTTrainer 训练
+# model.save_pretrained(&quot;my-adapter&quot;) 只保存适配器权重</code></pre></div><p class="cnote">基座以 4-bit 加载并冻结，只训练注意力投影上的 LoRA 矩阵；需 GPU 与 bitsandbytes。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">微调方式对比</h3><div class="tw"><table><thead><tr><th>方式</th><th>训练参数</th><th>显存需求</th><th>产物</th></tr></thead><tbody><tr><td data-h="方式">全量微调</td><td data-h="训练参数">全部</td><td data-h="显存需求">最高（含优化器状态）</td><td data-h="产物">完整模型</td></tr><tr><td data-h="方式">LoRA</td><td data-h="训练参数">极少（低秩矩阵）</td><td data-h="显存需求">需装下 16 位基座</td><td data-h="产物">适配器文件</td></tr><tr><td data-h="方式">QLoRA</td><td data-h="训练参数">同 LoRA</td><td data-h="显存需求">基座 4-bit，显著更低</td><td data-h="产物">适配器文件</td></tr><tr><td data-h="方式">提示工程/RAG</td><td data-h="训练参数">无</td><td data-h="显存需求">仅推理</td><td data-h="产物">提示或知识库</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>LoRA</h4><p><b class="k-p">优点</b>显存低、训练快、适配器可热切换</p><p><b class="k-c">代价</b>容量有限，复杂新知识效果不如全量</p><p><b class="k-w">适用</b>风格、格式、领域语气适配</p></div><div class="trd"><h4>QLoRA</h4><p><b class="k-p">优点</b>单卡可微调较大模型</p><p><b class="k-c">代价</b>量化带来额外计算与轻微误差</p><p><b class="k-w">适用</b>显存紧张的个人/小团队</p></div><div class="trd"><h4>全量微调</h4><p><b class="k-p">优点</b>表达能力最强</p><p><b class="k-c">代价</b>成本高，易灾难性遗忘</p><p><b class="k-w">适用</b>大量数据、深度领域迁移</p></div><div class="trd"><h4>不微调（RAG/提示）</h4><p><b class="k-p">优点</b>无训练成本，知识可实时更新</p><p><b class="k-c">代价</b>无法改变模型行为习惯</p><p><b class="k-w">适用</b>知识问答类需求</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>用微调灌输事实知识，期望模型准确记住</p><p class="fix"><b>✓</b>事实知识用 RAG；微调更适合行为、格式和风格</p></li><li><p class="bad"><b>✗</b>小数据集训练过多轮导致过拟合</p><p class="fix"><b>✓</b>留验证集，监控验证损失，早停或减少轮次</p></li><li><p class="bad"><b>✗</b>训练与推理使用不同的对话模板</p><p class="fix"><b>✓</b>训练数据套用与推理一致的 chat template</p></li><li><p class="bad"><b>✗</b>合并到 4-bit 量化基座后精度异常</p><p class="fix"><b>✓</b>合并时在 16 位精度的基座上进行，再按需量化</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>明确微调目标属于行为/格式类</span></label></li><li><label><input type="checkbox"><span>训练与验证数据集分离</span></label></li><li><label><input type="checkbox"><span>对话模板与推理一致</span></label></li><li><label><input type="checkbox"><span>与基座模型做对照评测</span></label></li><li><label><input type="checkbox"><span>检查基座模型许可证允许微调与分发</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>LoRA 为什么有效？</summary><p>论文假设微调时权重更新具有低「内在秩」，用低秩矩阵即可近似；冻结基座也减少优化器状态和梯度显存。实验表明在多种任务上接近全量微调效果。</p></details><details class="iv"><summary>秩 r 和 alpha 如何选？</summary><p>r 越大容量越高、参数越多；常从 8 或 16 起步。缩放为 α/r，常见做法是 α 设为 r 的 1–2 倍。最终以验证集效果为准，并配合学习率一起调。</p></details><details class="iv"><summary>QLoRA 节省显存的三个关键技术？</summary><p>4-bit NF4 量化基座权重；双重量化（对量化常数再量化）；分页优化器在显存峰值时把优化器状态换出到 CPU 内存。论文据此在单张 48GB GPU 上微调了 65B 模型。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://arxiv.org/abs/2106.09685" target="_blank" rel="noopener"><b>LoRA (arXiv 2106.09685)</b><small>arxiv.org ↗</small></a></li><li><a href="https://arxiv.org/abs/2305.14314" target="_blank" rel="noopener"><b>QLoRA (arXiv 2305.14314)</b><small>arxiv.org ↗</small></a></li><li><a href="https://huggingface.co/docs/peft/index" target="_blank" rel="noopener"><b>Hugging Face PEFT 文档</b><small>huggingface.co ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="mixture-of-experts.pro.html" rel="prev"><small>‹ 上一个</small><b>👥 混合专家模型 (MoE)</b></a><a class="pn next" href="inference-engines.pro.html" rel="next"><small>下一个 ›</small><b>🏎️ 推理引擎 (vLLM / SGLang / llama.cpp)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

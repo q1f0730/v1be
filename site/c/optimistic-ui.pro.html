@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="乐观更新 (Optimistic UI) 专业模式：乐观更新（Optimistic UI）是一种前端交互模式：在服务器确认前就按预期成功的结果更新界面，请求失败时再回滚并提示。它属于前端状态管理与交互设计层，用于">
+<title>🎓 乐观更新 (Optimistic UI) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="optimistic-ui" data-answer="0" data-prev="event-loop.pro.html" data-next="server-state-caching.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#fe">🔮 高级 · 🎨 前端工程</a><span>›</span><a href="optimistic-ui.html">乐观更新 (Optimistic UI)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.379 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="event-loop.pro.html" rel="prev"><small>‹ 上一个</small><b>🔄 JS 事件循环 (Event Loop)</b></a><a class="pn next" href="server-state-caching.pro.html" rel="next"><small>下一个 ›</small><b>🗃️ 服务端状态缓存 (TanStack Query / SWR)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">😊</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🎨 前端工程</span><span>⏱ 约 10 分钟</span></div>
+    <h1>乐观更新 (Optimistic UI)</h1><p class="en">Optimistic UI</p>
+    <div class="hbtns"><a class="prosw back" href="optimistic-ui.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">乐观更新（Optimistic UI）是一种前端交互模式：在服务器确认前就按预期成功的结果更新界面，请求失败时再回滚并提示。它属于前端状态管理与交互设计层，用于掩盖网络延迟，让高成功率操作（点赞、收藏、发消息、拖拽排序）感觉即时。React 19 提供 useOptimistic，TanStack Query 等库支持基于缓存的乐观更新。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>用户触发操作，前端先保存当前状态（或缓存数据）的快照，用于请求失败时回滚。</p></li><li><span class="sn">2</span><p>立即把预期结果写入本地状态或请求缓存，界面马上反映变化，可附加「发送中」等待定标记。</p></li><li><span class="sn">3</span><p>同时向服务器发送变更请求，并取消可能覆盖乐观值的进行中查询。</p></li><li><span class="sn">4</span><p>成功：用服务器返回的权威数据替换乐观值，或使相关缓存失效后重新获取。</p></li><li><span class="sn">5</span><p>失败：恢复快照、用 toast 等方式提示用户，并视情况提供重试或撤销入口。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>乐观更新 (Optimistic Update)</dt><dd>假设请求成功，先更新界面再等待确认。</dd></div><div class="term"><dt>回滚 (Rollback)</dt><dd>请求失败时把界面恢复到操作前的状态。</dd></div><div class="term"><dt>useOptimistic</dt><dd>React 19 Hook，在异步操作进行期间显示临时状态。</dd></div><div class="term"><dt>onMutate</dt><dd>TanStack Query 变更前回调，常用于写入乐观值并返回快照。</dd></div><div class="term"><dt>权威状态 (Source of Truth)</dt><dd>服务器上的真实数据，最终以它为准。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>TanStack Query 乐观点赞</span><em>typescript</em><button class="ccopy">复制</button></div><pre><code>import { useMutation, useQueryClient } from &quot;@tanstack/react-query&quot;;
+
+export function useLike(postId: string) {
+  const qc = useQueryClient();
+  const key = [&quot;post&quot;, postId];
+  return useMutation({
+    mutationFn: () =&gt; fetch(`/api/posts/${postId}/like`, { method: &quot;POST&quot; }),
+    onMutate: async () =&gt; {
+      await qc.cancelQueries({ queryKey: key });   // 防止旧请求覆盖乐观值
+      const prev = qc.getQueryData&lt;{ likes: number; liked: boolean }&gt;(key);
+      qc.setQueryData(key, (old: any) =&gt; ({ ...old, likes: old.likes + 1, liked: true }));
+      return { prev };                              // 快照，用于回滚
+    },
+    onError: (_err, _vars, ctx) =&gt; {
+      qc.setQueryData(key, ctx?.prev);              // 失败回滚
+    },
+    onSettled: () =&gt; qc.invalidateQueries({ queryKey: key }), // 以服务器为准
+  });
+}</code></pre></div><p class="cnote">onMutate 写入乐观值并返回快照，onError 回滚，onSettled 重新获取权威数据。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">乐观更新适用性判断</h3><div class="tw"><table><thead><tr><th>维度</th><th>适合</th><th>不适合</th></tr></thead><tbody><tr><td data-h="维度">失败概率</td><td data-h="适合">极低（点赞、收藏）</td><td data-h="不适合">较高（库存、竞价）</td></tr><tr><td data-h="维度">失败代价</td><td data-h="适合">可轻松撤销</td><td data-h="不适合">涉及资金、法律、不可逆</td></tr><tr><td data-h="维度">结果可预测性</td><td data-h="适合">前端能算出结果</td><td data-h="不适合">依赖服务端计算（如价格）</td></tr><tr><td data-h="维度">并发冲突</td><td data-h="适合">个人数据</td><td data-h="不适合">多人同时编辑同一记录</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>乐观更新</h4><p><b class="k-p">优点</b>零感知延迟，体验流畅</p><p><b class="k-c">代价</b>需写回滚逻辑，失败时界面跳变</p><p><b class="k-w">适用</b>高成功率、可撤销操作</p></div><div class="trd"><h4>悲观更新（等待确认）</h4><p><b class="k-p">优点</b>界面始终真实</p><p><b class="k-c">代价</b>延迟明显，需加载状态</p><p><b class="k-w">适用</b>支付、下单、权限变更</p></div><div class="trd"><h4>乐观 + 待定标记</h4><p><b class="k-p">优点</b>即时又诚实，如消息「发送中」</p><p><b class="k-c">代价</b>需要额外 UI 状态</p><p><b class="k-w">适用</b>聊天、评论、上传</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>没有保存快照，失败后无法正确回滚</p><p class="fix"><b>✓</b>在变更前保存先前状态，失败时整体恢复</p></li><li><p class="bad"><b>✗</b>乐观更新后不与服务器对齐</p><p class="fix"><b>✓</b>成功后用响应数据或重新获取覆盖乐观值</p></li><li><p class="bad"><b>✗</b>进行中的旧查询返回后覆盖了乐观值</p><p class="fix"><b>✓</b>变更前取消相关查询，再写入乐观值</p></li><li><p class="bad"><b>✗</b>对涉及金额或库存的操作使用乐观更新</p><p class="fix"><b>✓</b>关键业务等待服务器确认，可用加载态与禁用重复提交</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>只对高成功率、可撤销操作使用</span></label></li><li><label><input type="checkbox"><span>失败有回滚与用户提示</span></label></li><li><label><input type="checkbox"><span>最终以服务器数据校准</span></label></li><li><label><input type="checkbox"><span>处理快速重复点击与并发请求</span></label></li><li><label><input type="checkbox"><span>断网/慢网场景已测试</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>乐观更新失败时如何避免糟糕体验？</summary><p>回滚要平滑并给出明确提示与重试入口；对可能失败的操作显示待定状态而非完全成功；失败率高的操作不应使用乐观更新。</p></details><details class="iv"><summary>用户快速连点点赞/取消，如何保证最终一致？</summary><p>可对请求排队或只发送最终状态（防抖）；每次变更前取消进行中查询；成功或失败后统一重新获取服务器状态。后端接口最好设计成设置状态（PUT liked=true）而非切换。</p></details><details class="iv"><summary>useOptimistic 与 TanStack Query 乐观更新有何不同？</summary><p>useOptimistic 管组件内的临时状态，在 Action 进行期间显示，结束后自动回到真实状态；TanStack Query 直接修改共享的查询缓存，所有用该数据的组件同步更新，需要手动回滚与失效。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://react.dev/reference/react/useOptimistic" target="_blank" rel="noopener"><b>React 文档：useOptimistic</b><small>react.dev ↗</small></a></li><li><a href="https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates" target="_blank" rel="noopener"><b>TanStack Query 文档：Optimistic Updates</b><small>tanstack.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="event-loop.pro.html" rel="prev"><small>‹ 上一个</small><b>🔄 JS 事件循环 (Event Loop)</b></a><a class="pn next" href="server-state-caching.pro.html" rel="next"><small>下一个 ›</small><b>🗃️ 服务端状态缓存 (TanStack Query / SWR)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="物化视图 专业模式：物化视图（Materialized View）是把查询结果实际存储下来的数据库对象。与每次访问都重新执行查询的普通视图不同，它在刷新时计算并保存结果，读取时像读">
+<title>🎓 物化视图 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="materialized-views" data-answer="0" data-prev="replication-lag.pro.html" data-next="testing-your-restores.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#db">🔮 高级 · 🗄️ 数据库</a><span>›</span><a href="materialized-views.html">物化视图</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.250 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="replication-lag.pro.html" rel="prev"><small>‹ 上一个</small><b>📠 主从复制延迟</b></a><a class="pn next" href="testing-your-restores.pro.html" rel="next"><small>下一个 ›</small><b>🧯 备份恢复演练</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🧮</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>物化视图</h1><p class="en">Materialized Views</p>
+    <div class="hbtns"><a class="prosw back" href="materialized-views.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">物化视图（Materialized View）是把查询结果实际存储下来的数据库对象。与每次访问都重新执行查询的普通视图不同，它在刷新时计算并保存结果，读取时像读表一样快，可建索引。代价是数据只反映上次刷新时的状态，需要设计刷新策略。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>定义：CREATE MATERIALIZED VIEW … AS SELECT …，创建时执行一次并存储结果。</p></li><li><span class="sn">2</span><p>读取：查询物化视图就是读一张普通表，可在其上建立索引加速。</p></li><li><span class="sn">3</span><p>刷新：PostgreSQL 需显式执行 REFRESH，重新计算整个查询结果。</p></li><li><span class="sn">4</span><p>CONCURRENTLY 刷新不阻塞读，但要求视图有唯一索引，且通常比普通刷新更慢。</p></li><li><span class="sn">5</span><p>调度：用 cron、pg_cron 或业务事件触发刷新，刷新间隔决定数据新鲜度。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>普通视图 (View)</dt><dd>保存的查询定义，每次访问实时执行。</dd></div><div class="term"><dt>全量刷新 (Complete Refresh)</dt><dd>丢弃旧结果，重新执行完整查询。</dd></div><div class="term"><dt>增量维护 (Incremental View Maintenance)</dt><dd>只根据变更更新受影响的结果行。</dd></div><div class="term"><dt>REFRESH CONCURRENTLY</dt><dd>PostgreSQL 中不阻塞读的刷新方式，需唯一索引。</dd></div><div class="term"><dt>数据新鲜度 (Staleness)</dt><dd>物化结果落后源数据的时间。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>日销售汇总物化视图</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- 预先汇总，看板查询从秒级变为毫秒级
+CREATE MATERIALIZED VIEW daily_sales AS
+SELECT date_trunc(&#x27;day&#x27;, o.created_at)::date AS day,
+       p.category,
+       count(*)          AS orders,
+       sum(oi.qty * oi.unit_price) AS revenue
+FROM orders o
+JOIN order_items oi ON oi.order_id = o.id
+JOIN products p     ON p.sku = oi.sku
+GROUP BY 1, 2
+WITH DATA;
+
+-- CONCURRENTLY 刷新要求有唯一索引
+CREATE UNIQUE INDEX daily_sales_pk ON daily_sales (day, category);
+
+-- 看板直接查询
+SELECT * FROM daily_sales WHERE day &gt;= current_date - 30 ORDER BY day;
+
+-- 定时刷新（如每 15 分钟），刷新期间读请求不被阻塞
+REFRESH MATERIALIZED VIEW CONCURRENTLY daily_sales;
+
+-- 使用 pg_cron 扩展调度（需已安装）
+-- SELECT cron.schedule(&#x27;*/15 * * * *&#x27;, &#x27;REFRESH MATERIALIZED VIEW CONCURRENTLY daily_sales&#x27;);</code></pre></div><p class="cnote">唯一索引是并发刷新的前提；刷新频率就是数据可接受的滞后上限。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">各数据库物化视图能力</h3><div class="tw"><table><thead><tr><th>数据库</th><th>刷新方式</th><th>备注</th></tr></thead><tbody><tr><td data-h="数据库">PostgreSQL</td><td data-h="刷新方式">手动 REFRESH，全量</td><td data-h="备注">增量维护需 pg_ivm 等扩展</td></tr><tr><td data-h="数据库">Oracle</td><td data-h="刷新方式">全量或基于日志的快速刷新</td><td data-h="备注">支持查询重写</td></tr><tr><td data-h="数据库">MySQL</td><td data-h="刷新方式">无原生物化视图</td><td data-h="备注">用汇总表 + 定时任务模拟</td></tr><tr><td data-h="数据库">ClickHouse</td><td data-h="刷新方式">插入时触发写入目标表</td><td data-h="备注">语义类似插入触发器</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>物化视图</h4><p><b class="k-p">优点</b>声明式，SQL 即定义，可建索引</p><p><b class="k-c">代价</b>刷新是全量重算，有滞后</p><p><b class="k-w">适用</b>报表、看板等可容忍延迟</p></div><div class="trd"><h4>触发器维护汇总表</h4><p><b class="k-p">优点</b>实时更新</p><p><b class="k-c">代价</b>增加写入开销，逻辑分散</p><p><b class="k-w">适用</b>汇总简单且需实时</p></div><div class="trd"><h4>应用缓存</h4><p><b class="k-p">优点</b>灵活，可放在内存</p><p><b class="k-c">代价</b>需自行处理失效</p><p><b class="k-w">适用</b>结果小、访问极热</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>普通 REFRESH 锁住视图，刷新期间看板卡住</p><p class="fix"><b>✓</b>建唯一索引后使用 CONCURRENTLY</p></li><li><p class="bad"><b>✗</b>刷新间隔短于刷新耗时，任务堆积</p><p class="fix"><b>✓</b>监控刷新耗时，调度避免重叠执行</p></li><li><p class="bad"><b>✗</b>以为 PostgreSQL 物化视图会自动更新</p><p class="fix"><b>✓</b>必须显式刷新，并在页面标注数据更新时间</p></li><li><p class="bad"><b>✗</b>实时性要求强的数据也放物化视图</p><p class="fix"><b>✓</b>实时数据查源表或用增量维护方案</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>已明确可接受的数据滞后</span></label></li><li><label><input type="checkbox"><span>有唯一索引支持并发刷新</span></label></li><li><label><input type="checkbox"><span>刷新任务有调度、超时与告警</span></label></li><li><label><input type="checkbox"><span>刷新耗时与资源占用已评估</span></label></li><li><label><input type="checkbox"><span>前端展示数据更新时间</span></label></li><li><label><input type="checkbox"><span>源表结构变更会同步更新视图</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>物化视图和普通视图的本质区别？</summary><p>普通视图只是保存的查询，访问时展开执行，数据实时但性能取决于底层查询；物化视图存储结果，读快但有滞后，需要刷新。前者是抽象封装，后者是用存储换计算的缓存。</p></details><details class="iv"><summary>REFRESH CONCURRENTLY 的原理和代价？</summary><p>它在临时空间计算新结果，再与旧结果按唯一索引比对，只对差异行执行增删改，因此刷新期间读不被阻塞。代价是比较过程更耗时、更占资源，且必须有覆盖所有行的唯一索引。</p></details><details class="iv"><summary>什么时候不该用物化视图？</summary><p>数据需要实时准确（如余额、库存）；源数据变化极快而查询很少；结果集与源表差不多大，物化不节省计算。此时更适合优化原查询、加索引或用触发器维护汇总。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.postgresql.org/docs/current/rules-materializedviews.html" target="_blank" rel="noopener"><b>PostgreSQL: Materialized Views</b><small>postgresql.org ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/sql-refreshmaterializedview.html" target="_blank" rel="noopener"><b>PostgreSQL: REFRESH MATERIALIZED VIEW</b><small>postgresql.org ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Materialized_view" target="_blank" rel="noopener"><b>Wikipedia: Materialized view</b><small>en.wikipedia.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="replication-lag.pro.html" rel="prev"><small>‹ 上一个</small><b>📠 主从复制延迟</b></a><a class="pn next" href="testing-your-restores.pro.html" rel="next"><small>下一个 ›</small><b>🧯 备份恢复演练</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

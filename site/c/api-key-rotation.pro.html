@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="API密钥定期轮换 专业模式：API 密钥轮换（API Key Rotation）是按计划或在疑似泄露时生成新密钥、平滑切换使用方、再吊销旧密钥的运维实践。它属于密钥管理（Secrets M">
+<title>🎓 API密钥定期轮换 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="api-key-rotation" data-answer="0" data-prev="least-privilege.pro.html" data-next="hashing-vs-encryption.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#sec">🌊 中级 · 🛡️ 安全防线</a><span>›</span><a href="api-key-rotation.html">API密钥定期轮换</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.111 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="least-privilege.pro.html" rel="prev"><small>‹ 上一个</small><b>🗝️ 最小权限原则</b></a><a class="pn next" href="hashing-vs-encryption.pro.html" rel="next"><small>下一个 ›</small><b>🥔 哈希与加密的分野</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔄</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>API密钥定期轮换</h1><p class="en">API Key Rotation</p>
+    <div class="hbtns"><a class="prosw back" href="api-key-rotation.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">API 密钥轮换（API Key Rotation）是按计划或在疑似泄露时生成新密钥、平滑切换使用方、再吊销旧密钥的运维实践。它属于密钥管理（Secrets Management）层，目的是缩短任一密钥的有效暴露窗口。轮换的关键在于支持新旧密钥短期并存，实现零停机切换。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>盘点所有密钥及其使用方、存放位置、权限范围和负责人，建立密钥清单。</p></li><li><span class="sn">2</span><p>生成新密钥，并写入密钥管理服务或部署平台的环境变量，而非代码仓库。</p></li><li><span class="sn">3</span><p>在新旧密钥同时有效的过渡期内，逐个更新所有使用方的配置并重新部署。</p></li><li><span class="sn">4</span><p>通过访问日志确认旧密钥已无调用后再吊销；疑似泄露时应立即吊销。</p></li><li><span class="sn">5</span><p>记录轮换时间与操作人，并通过自动化（定时任务或密钥管理服务）降低人工成本。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>密钥管理服务 (Secrets Manager)</dt><dd>集中存储、访问控制和轮换密钥的服务。</dd></div><div class="term"><dt>双密钥过渡 (Dual-Key Overlap)</dt><dd>新旧密钥同时有效一段时间，确保无缝切换。</dd></div><div class="term"><dt>吊销 (Revocation)</dt><dd>使密钥立即失效，不能再用于认证。</dd></div><div class="term"><dt>密钥扫描 (Secret Scanning)</dt><dd>检测代码仓库与日志中意外提交的密钥。</dd></div><div class="term"><dt>短期凭证 (Short-lived Credential)</dt><dd>自动过期的临时凭证，如 OIDC 联合身份签发的令牌。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>零停机轮换流程</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 0. 先在服务商控制台创建新密钥（此时新旧两把同时有效）
+
+# 1. 写入部署平台的密钥存储（示例：GitHub Actions Secrets）
+gh secret set PAYMENT_API_KEY --body &quot;$NEW_KEY&quot;
+
+# 或写入 Cloudflare Workers 的密钥
+printf &#x27;%s&#x27; &quot;$NEW_KEY&quot; | npx wrangler secret put PAYMENT_API_KEY
+
+# 2. 重新部署所有使用方，使其读取新密钥
+gh workflow run deploy.yml
+
+# 3. 观察：确认旧密钥不再有调用（在服务商的用量/日志页面查看）
+
+# 4. 在服务商控制台吊销旧密钥
+
+# 5. 防止泄露：扫描仓库历史中残留的密钥
+gitleaks detect --source . --log-opts=&quot;--all&quot;</code></pre></div><p class="cnote">顺序是先加新、再切换、确认后吊销旧；命令均为对应工具的真实用法。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">轮换触发与节奏</h3><div class="tw"><table><thead><tr><th>触发条件</th><th>动作</th><th>时限</th></tr></thead><tbody><tr><td data-h="触发条件">确认或疑似泄露</td><td data-h="动作">立即吊销并更换</td><td data-h="时限">尽快，不等过渡期</td></tr><tr><td data-h="触发条件">人员离职/权限变更</td><td data-h="动作">轮换其接触过的密钥</td><td data-h="时限">尽快</td></tr><tr><td data-h="触发条件">定期轮换</td><td data-h="动作">按计划生成新密钥并切换</td><td data-h="时限">依组织策略与合规要求</td></tr><tr><td data-h="触发条件">服务商提示</td><td data-h="动作">按通知处理</td><td data-h="时限">按服务商要求</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>长期静态密钥 + 定期轮换</h4><p><b class="k-p">优点</b>接入简单，服务商普遍支持</p><p><b class="k-c">代价</b>仍有暴露窗口</p><p><b class="k-w">适用</b>第三方 SaaS API</p></div><div class="trd"><h4>短期凭证（OIDC 联合等）</h4><p><b class="k-p">优点</b>无需保存长期密钥</p><p><b class="k-c">代价</b>需平台支持与配置</p><p><b class="k-w">适用</b>CI 访问云平台</p></div><div class="trd"><h4>密钥管理服务自动轮换</h4><p><b class="k-p">优点</b>自动化、可审计</p><p><b class="k-c">代价</b>依赖云服务与集成工作</p><p><b class="k-w">适用</b>数据库凭证等受支持场景</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>先吊销旧密钥再部署新密钥</p><p class="fix"><b>✓</b>先让新密钥上线，确认无旧密钥调用后再吊销</p></li><li><p class="bad"><b>✗</b>泄露后只删除提交，没有吊销密钥</p><p class="fix"><b>✓</b>Git 历史和 fork 中仍可找到，必须立即吊销</p></li><li><p class="bad"><b>✗</b>密钥写在前端代码或移动应用里</p><p class="fix"><b>✓</b>前端可见即公开，秘密密钥只放在服务端</p></li><li><p class="bad"><b>✗</b>把 .env 内容贴给 AI 工具排查问题</p><p class="fix"><b>✓</b>脱敏后再分享，若已泄露立即轮换</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有密钥有清单与负责人</span></label></li><li><label><input type="checkbox"><span>密钥存于密钥管理服务或平台变量</span></label></li><li><label><input type="checkbox"><span>支持新旧密钥并存切换</span></label></li><li><label><input type="checkbox"><span>仓库开启密钥扫描</span></label></li><li><label><input type="checkbox"><span>有泄露应急吊销流程</span></label></li><li><label><input type="checkbox"><span>CI 优先使用短期凭证</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>如何实现零停机的密钥轮换？</summary><p>依赖新旧密钥并存：先生成新密钥并保持旧密钥有效，把新密钥分发到所有使用方并重新部署，通过日志确认旧密钥流量归零后再吊销。若服务商只允许一把有效密钥，就需要维护窗口或在应用层支持多密钥回退。</p></details><details class="iv"><summary>密钥误提交到 Git 后该怎么做？</summary><p>首先立即吊销并更换该密钥，因为公开仓库可能在几分钟内被扫描利用，私有仓库也可能被克隆。然后排查是否有异常调用，再视需要清理历史。仅仅删除提交或改写历史并不能让已泄露的密钥变安全。</p></details><details class="iv"><summary>为什么短期凭证优于定期轮换？</summary><p>定期轮换只是缩短暴露窗口，长期密钥仍需存储和分发。短期凭证由身份联合（如 CI 的 OIDC）按需签发、分钟到小时级自动过期，没有需要保管的长期秘密，泄露后可利用的时间也很短。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html" target="_blank" rel="noopener"><b>OWASP Secrets Management Cheat Sheet</b><small>cheatsheetseries.owasp.org ↗</small></a></li><li><a href="https://docs.github.com/en/code-security/secret-scanning/introduction/about-secret-scanning" target="_blank" rel="noopener"><b>GitHub Docs: About secret scanning</b><small>docs.github.com ↗</small></a></li><li><a href="https://github.com/gitleaks/gitleaks" target="_blank" rel="noopener"><b>Gitleaks (GitHub)</b><small>github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="least-privilege.pro.html" rel="prev"><small>‹ 上一个</small><b>🗝️ 最小权限原则</b></a><a class="pn next" href="hashing-vs-encryption.pro.html" rel="next"><small>下一个 ›</small><b>🥔 哈希与加密的分野</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

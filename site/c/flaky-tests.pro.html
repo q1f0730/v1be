@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="不稳定测试 (Flaky Tests) 专业模式：不稳定测试（Flaky Test）是在代码与环境未变的情况下，多次运行结果时而通过时而失败的测试。它属于测试工程与 CI 可靠性层，根因通常是非确定性：时序与异">
+<title>🎓 不稳定测试 (Flaky Tests) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="flaky-tests" data-answer="0" data-prev="edge-functions.pro.html" data-next="golden-signals.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#ship">🔮 高级 · 🚀 上线与测试</a><span>›</span><a href="flaky-tests.html">不稳定测试 (Flaky Tests)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.400 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="edge-functions.pro.html" rel="prev"><small>‹ 上一个</small><b>🌍 边缘函数 (Edge Functions)</b></a><a class="pn next" href="golden-signals.pro.html" rel="next"><small>下一个 ›</small><b>🚥 四大黄金信号</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🎲</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🚀 上线与测试</span><span>⏱ 约 10 分钟</span></div>
+    <h1>不稳定测试 (Flaky Tests)</h1><p class="en">Flaky Tests</p>
+    <div class="hbtns"><a class="prosw back" href="flaky-tests.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">不稳定测试（Flaky Test）是在代码与环境未变的情况下，多次运行结果时而通过时而失败的测试。它属于测试工程与 CI 可靠性层，根因通常是非确定性：时序与异步等待、测试间共享状态、执行顺序依赖、外部服务、时间与随机数、资源竞争。不稳定测试会侵蚀团队对 CI 的信任，导致真实失败被当作噪音忽略。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>检测：同一提交多次运行结果不同；CI 中失败后重试通过的测试被标记为疑似不稳定。</p></li><li><span class="sn">2</span><p>复现：用重复执行（如 --repeat-each）、随机顺序、并行度变化或压力负载放大问题出现概率。</p></li><li><span class="sn">3</span><p>定位：借助失败时的日志、截图、trace 与时间线，判断属于等待、状态、顺序、外部依赖哪一类。</p></li><li><span class="sn">4</span><p>隔离：把确认不稳定的测试移入隔离区（quarantine），不阻塞合并，但必须有负责人与修复期限。</p></li><li><span class="sn">5</span><p>修复：用条件等待替代固定睡眠、每个测试独立数据、模拟外部依赖、固定时间与随机种子，然后恢复。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>非确定性 (Non-determinism)</dt><dd>相同输入下结果不一致的来源，如时序、随机数。</dd></div><div class="term"><dt>隔离区 (Quarantine)</dt><dd>暂时不阻塞流水线的不稳定测试集合，需跟踪修复。</dd></div><div class="term"><dt>自动等待 (Auto-waiting)</dt><dd>测试框架在操作前等待元素可交互，替代固定延时。</dd></div><div class="term"><dt>测试隔离 (Test Isolation)</dt><dd>每个测试独立的数据与状态，不受其他测试影响。</dd></div><div class="term"><dt>Trace</dt><dd>Playwright 记录的操作、网络与 DOM 快照，用于事后排查失败。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Playwright：去掉固定等待</span><em>typescript</em><button class="ccopy">复制</button></div><pre><code>import { test, expect } from &quot;@playwright/test&quot;;
+
+test(&quot;提交订单后显示成功&quot;, async ({ page }) =&gt; {
+  await page.goto(&quot;/checkout&quot;);
+  await page.getByRole(&quot;button&quot;, { name: &quot;提交订单&quot; }).click();
+
+  // ❌ 固定睡眠：机器慢时不够，机器快时浪费
+  // await page.waitForTimeout(2000);
+  // expect(await page.textContent(&quot;.toast&quot;)).toBe(&quot;下单成功&quot;);
+
+  // ✅ Web-first 断言：自动重试直到满足或超时
+  await expect(page.getByText(&quot;下单成功&quot;)).toBeVisible();
+});
+
+// playwright.config.ts 中：
+//   retries: process.env.CI ? 2 : 0,      // 重试用于暴露不稳定，不是修复
+//   use: { trace: &quot;on-first-retry&quot; },      // 首次重试时记录 trace 便于排查
+// 本地复现：npx playwright test checkout.spec.ts --repeat-each=50</code></pre></div><p class="cnote">expect(...).toBeVisible() 会自动等待；--repeat-each 放大复现概率，trace 帮助定位原因。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">不稳定原因与修复</h3><div class="tw"><table><thead><tr><th>根因</th><th>典型表现</th><th>修复方向</th></tr></thead><tbody><tr><td data-h="根因">异步等待</td><td data-h="典型表现">固定 sleep，偶发超时</td><td data-h="修复方向">条件等待、Web-first 断言</td></tr><tr><td data-h="根因">共享状态</td><td data-h="典型表现">并行时互相覆盖数据</td><td data-h="修复方向">每测试独立数据/事务回滚</td></tr><tr><td data-h="根因">顺序依赖</td><td data-h="典型表现">单独跑过、一起跑挂</td><td data-h="修复方向">去除隐式依赖，随机顺序运行</td></tr><tr><td data-h="根因">外部依赖</td><td data-h="典型表现">第三方接口偶发失败</td><td data-h="修复方向">Mock/录制回放，契约测试</td></tr><tr><td data-h="根因">时间与随机</td><td data-h="典型表现">跨午夜、时区、随机数据失败</td><td data-h="修复方向">注入固定时钟与随机种子</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>自动重试</h4><p><b class="k-p">优点</b>减少偶发失败阻塞</p><p><b class="k-c">代价</b>掩盖问题，可能放过真实缺陷</p><p><b class="k-w">适用</b>临时缓解，并配合统计上报</p></div><div class="trd"><h4>隔离区 + 修复期限</h4><p><b class="k-p">优点</b>不阻塞团队又不丢失跟踪</p><p><b class="k-c">代价</b>隔离期间该测试保护失效</p><p><b class="k-w">适用</b>已确认的不稳定测试</p></div><div class="trd"><h4>删除测试</h4><p><b class="k-p">优点</b>立即消除噪音</p><p><b class="k-c">代价</b>失去覆盖</p><p><b class="k-w">适用</b>测试价值低且修复成本高</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>失败就点重跑，从不追查</p><p class="fix"><b>✓</b>记录每次重试通过的测试并统计不稳定率，定期修复</p></li><li><p class="bad"><b>✗</b>用更长的 sleep 解决偶发超时</p><p class="fix"><b>✓</b>等待具体条件（元素、网络响应、状态），而非时间</p></li><li><p class="bad"><b>✗</b>测试共用同一账号与数据库记录</p><p class="fix"><b>✓</b>每个测试创建独立数据，或使用事务回滚/独立 schema</p></li><li><p class="bad"><b>✗</b>隔离区只进不出，越积越多</p><p class="fix"><b>✓</b>隔离需有负责人与期限，超期升级处理</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>CI 统计并展示不稳定测试</span></label></li><li><label><input type="checkbox"><span>无固定 sleep 等待</span></label></li><li><label><input type="checkbox"><span>测试数据相互隔离</span></label></li><li><label><input type="checkbox"><span>外部服务已 Mock 或有稳定替身</span></label></li><li><label><input type="checkbox"><span>失败时自动保存 trace/截图/日志</span></label></li><li><label><input type="checkbox"><span>隔离测试有负责人与期限</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>如何系统地发现不稳定测试？</summary><p>在 CI 中记录每个测试的历史结果，失败后重试通过即标记；定期对主干同一提交多次运行；使用随机顺序与不同并行度；按不稳定率排行并分配修复。</p></details><details class="iv"><summary>为什么说重试不是修复？</summary><p>重试只降低失败被看见的概率，根因仍在，还可能让真实的偶发缺陷（如竞态 Bug）溜进生产。重试应伴随上报与追踪，用于发现而非掩盖。</p></details><details class="iv"><summary>AI 生成的 E2E 测试常见哪些不稳定写法？</summary><p>固定 waitForTimeout、依赖 CSS 选择器与文本位置、共用测试账号、依赖真实外部接口、断言动态内容（时间、随机 ID）。评审时应重点检查并改为语义定位与条件等待。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://playwright.dev/docs/test-retries" target="_blank" rel="noopener"><b>Playwright 文档：Retries</b><small>playwright.dev ↗</small></a></li><li><a href="https://playwright.dev/docs/actionability" target="_blank" rel="noopener"><b>Playwright 文档：Auto-waiting</b><small>playwright.dev ↗</small></a></li><li><a href="https://martinfowler.com/articles/nonDeterminism.html" target="_blank" rel="noopener"><b>Martin Fowler：Eradicating Non-Determinism in Tests</b><small>martinfowler.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="edge-functions.pro.html" rel="prev"><small>‹ 上一个</small><b>🌍 边缘函数 (Edge Functions)</b></a><a class="pn next" href="golden-signals.pro.html" rel="next"><small>下一个 ›</small><b>🚥 四大黄金信号</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

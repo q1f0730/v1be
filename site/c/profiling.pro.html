@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="运行时性能剖析 专业模式：运行时性能剖析（Profiling）是在程序运行时采样或插桩，统计 CPU 时间、内存分配、锁等待、I/O 等资源消耗在各函数和调用栈上的分布，从而定位性能热点">
+<title>🎓 运行时性能剖析 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="profiling" data-answer="0" data-prev="error-tracking.pro.html" data-next="flame-graphs.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#devops">🔮 高级 · 🔭 可观测与交付</a><span>›</span><a href="profiling.html">运行时性能剖析</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.322 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="error-tracking.pro.html" rel="prev"><small>‹ 上一个</small><b>🪲 应用错误追踪与聚合</b></a><a class="pn next" href="flame-graphs.pro.html" rel="next"><small>下一个 ›</small><b>🔥 火焰图</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🩺</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>运行时性能剖析</h1><p class="en">Profiling</p>
+    <div class="hbtns"><a class="prosw back" href="profiling.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">运行时性能剖析（Profiling）是在程序运行时采样或插桩，统计 CPU 时间、内存分配、锁等待、I/O 等资源消耗在各函数和调用栈上的分布，从而定位性能热点的技术。它比日志和指标更细，回答慢在哪行代码。常见工具有 perf、Go pprof、cProfile、py-spy 及持续剖析平台。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>选择剖析维度：CPU 时间、墙钟时间、内存分配、堆占用、锁竞争或阻塞。</p></li><li><span class="sn">2</span><p>采样式剖析器按固定频率中断程序、记录当前调用栈，开销较低，适合生产。</p></li><li><span class="sn">3</span><p>插桩式剖析器在函数进出处计时，结果精确但开销大，适合开发环境。</p></li><li><span class="sn">4</span><p>汇总大量调用栈样本，得出各函数的自身耗时和包含子调用的累计耗时。</p></li><li><span class="sn">5</span><p>用火焰图、调用图或热点排行表查看结果，优化之后在相同负载下重新剖析对比。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>采样剖析 (Sampling Profiler)</dt><dd>定时抓取调用栈统计热点，开销低。</dd></div><div class="term"><dt>插桩剖析 (Instrumenting Profiler)</dt><dd>在函数入口出口插入计时代码，精确但开销大。</dd></div><div class="term"><dt>自身时间 (Self Time)</dt><dd>函数自身代码消耗的时间，不含其调用的子函数。</dd></div><div class="term"><dt>墙钟时间 (Wall-clock Time)</dt><dd>包含等待 I/O、锁等在内的真实经过时间。</dd></div><div class="term"><dt>持续剖析 (Continuous Profiling)</dt><dd>在生产环境长期低开销采样并存储剖析数据。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>常用剖析命令</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># Python：开发时用内置 cProfile，按累计耗时排序
+python -m cProfile -s cumtime app.py
+
+# Python：对线上进程采样，无需改代码、无需重启
+py-spy top --pid 12345                              # 实时热点排行
+py-spy record -o profile.svg --pid 12345 --duration 30  # 输出火焰图
+
+# Go：服务引入 net/http/pprof 后，采集 30 秒 CPU 剖析并打开网页视图
+go tool pprof -http=:8080 &quot;http://localhost:6060/debug/pprof/profile?seconds=30&quot;
+
+# Linux：系统级 CPU 采样（99Hz，带调用栈）
+perf record -F 99 -g -p 12345 -- sleep 30
+perf report</code></pre></div><p class="cnote">开发期用 cProfile，线上用 py-spy、pprof、perf 等采样工具，开销小且不需改代码。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">剖析维度与适用问题</h3><div class="tw"><table><thead><tr><th>维度</th><th>回答的问题</th><th>常用工具</th></tr></thead><tbody><tr><td data-h="维度">CPU</td><td data-h="回答的问题">哪段代码最耗计算</td><td data-h="常用工具">perf、pprof、py-spy</td></tr><tr><td data-h="维度">墙钟/阻塞</td><td data-h="回答的问题">时间花在等待什么</td><td data-h="常用工具">pprof block、py-spy --idle</td></tr><tr><td data-h="维度">内存分配</td><td data-h="回答的问题">谁分配最多内存</td><td data-h="常用工具">pprof heap、tracemalloc</td></tr><tr><td data-h="维度">锁竞争</td><td data-h="回答的问题">哪些锁导致等待</td><td data-h="常用工具">pprof mutex</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>采样剖析</h4><p><b class="k-p">优点</b>开销低，可用于生产</p><p><b class="k-c">代价</b>短函数可能统计不准</p><p><b class="k-w">适用</b>线上热点定位</p></div><div class="trd"><h4>插桩剖析</h4><p><b class="k-p">优点</b>调用次数和耗时精确</p><p><b class="k-c">代价</b>开销大，可能扭曲结果</p><p><b class="k-w">适用</b>本地精细分析</p></div><div class="trd"><h4>持续剖析平台</h4><p><b class="k-p">优点</b>随时回看任意时段</p><p><b class="k-c">代价</b>需要部署与存储成本</p><p><b class="k-w">适用</b>性能敏感的长期服务</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>凭直觉优化，没剖析就改代码。</p><p class="fix"><b>✓</b>先剖析定位热点，再针对性优化并对比。</p></li><li><p class="bad"><b>✗</b>只看 CPU 剖析，问题其实是 I/O 等待。</p><p class="fix"><b>✓</b>CPU 利用率低但延迟高时，看墙钟或阻塞剖析。</p></li><li><p class="bad"><b>✗</b>在调试构建或小数据量下剖析，结论不适用生产。</p><p class="fix"><b>✓</b>用接近生产的构建、数据和负载。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>优化前后都有剖析数据对比</span></label></li><li><label><input type="checkbox"><span>按问题选对剖析维度</span></label></li><li><label><input type="checkbox"><span>线上剖析使用采样方式控制开销</span></label></li><li><label><input type="checkbox"><span>剖析在接近生产的负载下进行</span></label></li><li><label><input type="checkbox"><span>服务预留剖析入口并受权限保护</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>采样剖析和插桩剖析如何选择？</summary><p>采样剖析定时抓栈，开销低、对程序干扰小，适合生产与整体热点定位；插桩剖析精确记录每次调用，但开销大，可能改变程序行为，适合本地对小范围代码精细分析。通常先采样找方向，再局部深入。</p></details><details class="iv"><summary>CPU 剖析看不出问题，但接口很慢，怎么办？</summary><p>说明时间多花在等待上，如数据库、网络、锁或线程池排队。应使用墙钟剖析或阻塞、锁剖析，结合分布式追踪查看各下游耗时，以及连接池和队列指标。</p></details><details class="iv"><summary>什么是持续剖析，有何价值？</summary><p>在生产中长期以低频采样收集剖析数据并存储，可以回看任意时段、对比不同版本的热点变化，定位偶发性能问题和版本回归，而不必等问题重现时再手动抓取。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.python.org/3/library/profile.html" target="_blank" rel="noopener"><b>Python 文档：The Python Profilers</b><small>docs.python.org ↗</small></a></li><li><a href="https://github.com/benfred/py-spy" target="_blank" rel="noopener"><b>py-spy（GitHub）</b><small>github.com ↗</small></a></li><li><a href="https://go.dev/blog/pprof" target="_blank" rel="noopener"><b>Go Blog：Profiling Go Programs</b><small>go.dev ↗</small></a></li><li><a href="https://grafana.com/docs/pyroscope/latest/" target="_blank" rel="noopener"><b>Grafana Pyroscope 文档</b><small>grafana.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="error-tracking.pro.html" rel="prev"><small>‹ 上一个</small><b>🪲 应用错误追踪与聚合</b></a><a class="pn next" href="flame-graphs.pro.html" rel="next"><small>下一个 ›</small><b>🔥 火焰图</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

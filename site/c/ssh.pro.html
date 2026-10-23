@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="SSH 远程登录与密钥 专业模式：SSH（Secure Shell）是用于在不安全网络上安全登录和执行命令的加密协议，默认使用 TCP 22 端口。它在传输层完成密钥交换与服务器身份验证，再以密">
+<title>🎓 SSH 远程登录与密钥 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="ssh" data-answer="0" data-prev="tcp-vs-udp.pro.html" data-next="dns-record-types.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#net">🌊 中级 · 🌐 网络与 API</a><span>›</span><a href="ssh.html">SSH 远程登录与密钥</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.191 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="tcp-vs-udp.pro.html" rel="prev"><small>‹ 上一个</small><b>📬 TCP 与 UDP</b></a><a class="pn next" href="dns-record-types.pro.html" rel="next"><small>下一个 ›</small><b>📇 DNS 记录类型 (A / CNAME / MX / TXT)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔐</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>SSH 远程登录与密钥</h1><p class="en">SSH</p>
+    <div class="hbtns"><a class="prosw back" href="ssh.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">SSH（Secure Shell）是用于在不安全网络上安全登录和执行命令的加密协议，默认使用 TCP 22 端口。它在传输层完成密钥交换与服务器身份验证，再以密码或公钥方式认证用户，并支持端口转发、文件传输（scp/sftp）。开发中最常见的用途是登录云服务器和以 SSH 方式访问 Git 托管平台。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>客户端连接服务器，双方协商协议版本与算法，并通过密钥交换（如 Curve25519）生成会话密钥，后续流量全部加密。</p></li><li><span class="sn">2</span><p>服务器出示主机公钥，客户端与 known_hosts 中的记录比对；首次连接会提示指纹，用于防范中间人攻击。</p></li><li><span class="sn">3</span><p>用户认证阶段，公钥认证要求客户端用私钥对会话数据签名，服务器用 authorized_keys 中的公钥验证。</p></li><li><span class="sn">4</span><p>认证成功后在加密通道内开启会话：交互式 shell、远程命令、端口转发或 SFTP 子系统。</p></li><li><span class="sn">5</span><p>ssh-agent 在内存中持有解锁后的私钥，供多次连接复用；agent 转发可在跳板机上使用本地密钥，但有安全风险。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>authorized_keys</dt><dd>服务器上允许登录的公钥列表，位于用户 ~/.ssh 下。</dd></div><div class="term"><dt>known_hosts</dt><dd>客户端记录已信任服务器主机公钥的文件。</dd></div><div class="term"><dt>Ed25519</dt><dd>基于椭圆曲线的签名算法，密钥短、速度快，当前推荐类型。</dd></div><div class="term"><dt>ssh-agent</dt><dd>保存解密后私钥的后台进程，避免反复输入口令。</dd></div><div class="term"><dt>端口转发 (Port Forwarding)</dt><dd>用 -L/-R 把本地或远端端口经 SSH 隧道转发。</dd></div><div class="term"><dt>跳板机 (Bastion / ProxyJump)</dt><dd>通过 -J 经中间主机访问内网服务器。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>生成密钥、配置别名并加固</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 1. 生成 Ed25519 密钥（建议设置口令）
+ssh-keygen -t ed25519 -C &quot;you@example.com&quot;
+
+# 2. 公钥上传到服务器（或粘贴到 GitHub 设置）
+ssh-copy-id -i ~/.ssh/id_ed25519.pub deploy@203.0.113.10
+ssh -T git@github.com          # 测试 GitHub 连接
+
+# 3. ~/.ssh/config 设置别名
+cat &gt;&gt; ~/.ssh/config &lt;&lt;CFG
+Host prod
+  HostName 203.0.113.10
+  User deploy
+  IdentityFile ~/.ssh/id_ed25519
+CFG
+ssh prod
+
+# 4. 服务器 /etc/ssh/sshd_config 加固后重载
+#   PasswordAuthentication no
+#   PermitRootLogin no
+sudo systemctl reload ssh   # 部分发行版服务名为 sshd</code></pre></div><p class="cnote">覆盖密钥生成、公钥分发、客户端别名与禁用密码登录；改配置前保持一个已登录会话以防锁死。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">认证方式对比</h3><div class="tw"><table><thead><tr><th>方式</th><th>安全性</th><th>适用场景</th></tr></thead><tbody><tr><td data-h="方式">密码认证</td><td data-h="安全性">易被暴力破解</td><td data-h="适用场景">临时或内网测试，不推荐公网</td></tr><tr><td data-h="方式">公钥认证</td><td data-h="安全性">强，私钥不出本机</td><td data-h="适用场景">服务器登录、Git 推送</td></tr><tr><td data-h="方式">SSH 证书 (CA 签发)</td><td data-h="安全性">强，可设置有效期集中吊销</td><td data-h="适用场景">大规模团队与服务器集群</td></tr><tr><td data-h="方式">硬件密钥 (FIDO2)</td><td data-h="安全性">私钥存于硬件，防窃取</td><td data-h="适用场景">高安全要求的管理员</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>个人公钥直接加入服务器</h4><p><b class="k-p">优点</b>简单直接</p><p><b class="k-c">代价</b>人员变动需逐台删除</p><p><b class="k-w">适用</b>少量服务器、小团队</p></div><div class="trd"><h4>SSH 证书认证</h4><p><b class="k-p">优点</b>集中签发、自动过期</p><p><b class="k-c">代价</b>需维护 CA 基础设施</p><p><b class="k-w">适用</b>服务器与成员较多</p></div><div class="trd"><h4>云厂商会话管理（如 SSM、IAP）</h4><p><b class="k-p">优点</b>无需开放 22 端口，带审计</p><p><b class="k-c">代价</b>绑定云平台</p><p><b class="k-w">适用</b>云上生产环境</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>私钥不设口令且同步到网盘</p><p class="fix"><b>✓</b>设置口令、配合 ssh-agent，私钥只存本机</p></li><li><p class="bad"><b>✗</b>看到主机指纹变化直接删 known_hosts 继续</p><p class="fix"><b>✓</b>先核实服务器是否重装或换 IP，确认后再更新记录</p></li><li><p class="bad"><b>✗</b>修改 sshd_config 后直接断开会话</p><p class="fix"><b>✓</b>保留当前会话，新开窗口测试登录成功后再退出</p></li><li><p class="bad"><b>✗</b>对不可信跳板机开启 agent 转发</p><p class="fix"><b>✓</b>改用 ProxyJump，避免远端借用你的 agent</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>公网服务器禁用密码登录</span></label></li><li><label><input type="checkbox"><span>禁止 root 直接登录</span></label></li><li><label><input type="checkbox"><span>使用 Ed25519 或硬件密钥</span></label></li><li><label><input type="checkbox"><span>安全组仅对可信来源开放 22 端口</span></label></li><li><label><input type="checkbox"><span>离职人员公钥及时移除</span></label></li><li><label><input type="checkbox"><span>启用 fail2ban 或等效防暴力破解措施</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>SSH 如何防止中间人攻击？</summary><p>依靠服务器主机密钥。首次连接时用户应通过可信渠道核对指纹，客户端将其记入 known_hosts；之后每次连接都校验主机密钥，若不一致会发出强烈警告并拒绝连接。也可用 SSHFP DNS 记录或主机证书自动验证。</p></details><details class="iv"><summary>公钥认证时私钥会被发送到服务器吗？</summary><p>不会。服务器只持有公钥，客户端用私钥对包含会话标识的数据签名，服务器用公钥验证签名。私钥始终留在本机，因此即使服务器被攻破，攻击者也拿不到你的私钥。</p></details><details class="iv"><summary>-L 和 -R 端口转发有什么区别？</summary><p>-L 是本地转发：把本机端口经 SSH 转发到远端可达的地址，常用于访问只在内网监听的数据库。-R 是远程转发：把远端服务器的端口转回本机，可让外部访问本地服务，类似简易内网穿透。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.openssh.com/manual.html" target="_blank" rel="noopener"><b>OpenSSH 手册</b><small>openssh.com ↗</small></a></li><li><a href="https://docs.github.com/en/authentication/connecting-to-github-with-ssh" target="_blank" rel="noopener"><b>GitHub：使用 SSH 连接</b><small>docs.github.com ↗</small></a></li><li><a href="https://www.rfc-editor.org/rfc/rfc4251" target="_blank" rel="noopener"><b>RFC 4251: SSH 协议架构</b><small>rfc-editor.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="tcp-vs-udp.pro.html" rel="prev"><small>‹ 上一个</small><b>📬 TCP 与 UDP</b></a><a class="pn next" href="dns-record-types.pro.html" rel="next"><small>下一个 ›</small><b>📇 DNS 记录类型 (A / CNAME / MX / TXT)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

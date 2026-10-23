@@ -1,0 +1,3563 @@
+[
+ {
+  "slug": "a2a-protocol",
+  "def": "A2A（Agent2Agent）是 Google 于 2025 年发起、后交由 Linux 基金会托管的开放协议，规定不同厂商的 Agent 如何发现能力、委派任务、交换消息与产物。它属于应用层，基于 HTTP(S) 上的 JSON-RPC 2.0，支持 SSE 流式与 Webhook 推送。MCP 连接 Agent 与工具，A2A 连接 Agent 与 Agent。",
+  "how": [
+   "服务方发布 Agent Card（JSON），声明端点、技能、输入输出模态和认证方式，放在约定的 well-known 路径（文件名以规范版本为准）。",
+   "客户端 Agent 读取 Agent Card 选择合适的远程 Agent，并按其声明的方案（如 OAuth 2.0、API Key）完成认证。",
+   "客户端发送 message/send 或 message/stream 请求，消息由多个 Part 组成（文本、文件、结构化数据）。",
+   "服务端创建 Task 并维护生命周期状态，如 submitted、working、input-required、completed、failed、canceled。",
+   "长任务可通过 SSE 流式推送状态更新，或通过客户端注册的推送通知 Webhook 异步回调；结果以 Artifact 形式返回。",
+   "远程 Agent 对客户端是不透明的：只暴露能力与结果，不暴露内部提示词、工具或记忆。"
+  ],
+  "terms": [
+   {
+    "t": "Agent Card",
+    "d": "描述 Agent 身份、端点、技能和认证要求的 JSON 文档，用于能力发现。"
+   },
+   {
+    "t": "任务 (Task)",
+    "d": "A2A 中有状态的工作单元，带 ID 与生命周期状态，可被查询或取消。"
+   },
+   {
+    "t": "产物 (Artifact)",
+    "d": "任务产出的结果，如文档、图片或结构化数据，由一个或多个 Part 组成。"
+   },
+   {
+    "t": "Part",
+    "d": "消息或产物中的内容片段，常见类型为文本、文件和结构化数据。"
+   },
+   {
+    "t": "不透明执行 (Opaque Execution)",
+    "d": "协作双方不共享内部状态与工具，只通过协议约定的消息交互。"
+   }
+  ],
+  "code": {
+   "lang": "http",
+   "title": "A2A 发送消息请求",
+   "src": "POST /a2a HTTP/1.1\nHost: travel-agent.example.com\nContent-Type: application/json\nAuthorization: Bearer <token>\n\n{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"req-1\",\n  \"method\": \"message/send\",\n  \"params\": {\n    \"message\": {\n      \"role\": \"user\",\n      \"messageId\": \"msg-001\",\n      \"parts\": [\n        { \"kind\": \"text\", \"text\": \"预订 11 月 5 日上海两晚酒店，预算 800 元/晚\" }\n      ]\n    }\n  }\n}",
+   "note": "JSON-RPC 2.0 调用 message/send；响应会返回 Task（含 id 与 status）或直接返回消息。字段以所用规范版本为准。"
+  },
+  "table": {
+   "title": "MCP 与 A2A 分工",
+   "head": [
+    "维度",
+    "MCP",
+    "A2A"
+   ],
+   "rows": [
+    [
+     "连接对象",
+     "模型/Agent ↔ 工具与数据源",
+     "Agent ↔ Agent"
+    ],
+    [
+     "交互粒度",
+     "单次工具调用",
+     "可多轮、长时间运行的任务"
+    ],
+    [
+     "状态",
+     "调用基本无状态",
+     "Task 有完整生命周期"
+    ],
+    [
+     "对方可见性",
+     "工具 schema 完全暴露",
+     "远程 Agent 内部不透明"
+    ],
+    [
+     "典型传输",
+     "stdio 或 Streamable HTTP",
+     "HTTP + JSON-RPC，SSE / Webhook"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "A2A 跨 Agent 委派",
+    "pros": "跨厂商互通，远程 Agent 可独立演进",
+    "cons": "多一跳网络与认证，调试链路更长",
+    "when": "对方是独立团队或第三方运营的 Agent"
+   },
+   {
+    "opt": "把对方包装成 MCP 工具",
+    "pros": "接入简单，现有客户端直接可用",
+    "cons": "难表达多轮交互与长任务状态",
+    "when": "对方能力是一次请求一次返回"
+   },
+   {
+    "opt": "同进程多 Agent 框架",
+    "pros": "延迟低、共享上下文方便",
+    "cons": "绑定单一框架与部署",
+    "when": "所有 Agent 由同一团队维护"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把远程 Agent 返回内容直接当可信指令执行",
+    "fix": "将其视为不可信输入，敏感动作需本地授权或人工确认"
+   },
+   {
+    "bad": "Agent Card 声明了技能却不做认证与授权",
+    "fix": "按 Card 声明的方案强制认证，并在服务端按调用方做权限校验"
+   },
+   {
+    "bad": "长任务只用同步请求，超时就丢结果",
+    "fix": "使用流式或推送通知，并支持 tasks/get 轮询恢复"
+   },
+   {
+    "bad": "不处理 input-required 状态，任务卡死",
+    "fix": "客户端识别该状态，补充信息或转人工后继续同一 Task"
+   }
+  ],
+  "checklist": [
+   "Agent Card 字段完整，技能描述与真实能力一致",
+   "认证方案明确，服务端对每个调用方做授权",
+   "任务状态全部被客户端处理，含失败与取消",
+   "长任务有流式或 Webhook，且 Webhook 校验来源",
+   "跨 Agent 调用带链路追踪 ID 便于排障",
+   "对照目标规范版本做兼容性测试"
+  ],
+  "interview": [
+   {
+    "q": "已经有 MCP 了，为什么还需要 A2A？",
+    "a": "MCP 把能力建模为工具：调用方掌握全部参数，对方无自主性。A2A 把对方建模为自主 Agent：可多轮澄清、长时间运行、返回多种产物，内部实现不透明。二者常组合：Agent 内部用 MCP 调工具，Agent 之间用 A2A 协作。"
+   },
+   {
+    "q": "A2A 如何支持耗时数小时的任务？",
+    "a": "服务端创建有状态 Task 并立即返回 ID；客户端可通过 message/stream 的 SSE 接收增量状态，或注册推送通知 Webhook 断开连接后等回调，还可用 tasks/get 查询。需要用户补充信息时进入 input-required 状态。"
+   },
+   {
+    "q": "跨组织 A2A 协作的主要安全风险？",
+    "a": "一是身份与授权：需按 Card 声明的方案认证并按调用方限权；二是内容可信度：远程返回可能携带注入指令，应视为数据；三是数据外泄：委派前做最小化脱敏；四是 Webhook 伪造：校验签名或令牌。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "A2A Protocol Specification",
+    "url": "https://a2a-protocol.org/latest/specification/"
+   },
+   {
+    "title": "GitHub: a2aproject/A2A",
+    "url": "https://github.com/a2aproject/A2A"
+   },
+   {
+    "title": "Google Developers Blog: Announcing A2A",
+    "url": "https://developers.googleblog.com/en/a2a-a-new-era-of-agent-interoperability/"
+   }
+  ]
+ },
+ {
+  "slug": "ann-hnsw-index",
+  "def": "近似最近邻（ANN）索引用少量精度换取数量级的检索加速，是向量数据库的核心。HNSW（Hierarchical Navigable Small World）是最常用的 ANN 图索引：把向量组织成多层近邻图，高层稀疏用于长距离跳转，底层稠密用于精细搜索，查询复杂度近似对数级，在召回率与延迟之间可通过参数调节。",
+  "how": [
+   "插入时为每个向量随机抽取最高层级，层级服从指数衰减分布，因此越高层节点越少。",
+   "从顶层入口点开始贪心搜索，逐层下降到新节点所在层，在每层找到候选近邻并建立双向边，每个节点边数受 M 限制。",
+   "建图时的候选队列大小由 efConstruction 控制，越大图质量越高、建索引越慢。",
+   "查询时同样从顶层贪心下降，在底层用大小为 efSearch 的优先队列做束搜索，返回 top-k。",
+   "efSearch 越大召回率越高、延迟越高；必须不小于 k，通常按目标召回率实测调优。",
+   "删除通常是标记删除，频繁删改会让图质量下降，需要定期重建或依赖引擎的修复机制。"
+  ],
+  "terms": [
+   {
+    "t": "召回率 (Recall@k)",
+    "d": "ANN 返回的 top-k 中与精确搜索 top-k 重合的比例，衡量近似质量。"
+   },
+   {
+    "t": "M",
+    "d": "HNSW 每个节点在各层保留的最大邻居数，影响内存、召回与建图速度。"
+   },
+   {
+    "t": "efConstruction",
+    "d": "建图时动态候选列表大小，越大图越好、构建越慢。"
+   },
+   {
+    "t": "efSearch",
+    "d": "查询时候选列表大小，是在线调节召回与延迟的主要旋钮。"
+   },
+   {
+    "t": "IVF (Inverted File)",
+    "d": "另一类 ANN：先聚类分桶，查询只扫描最近的若干桶。"
+   },
+   {
+    "t": "乘积量化 (PQ)",
+    "d": "把向量切段分别量化压缩，大幅降低内存，代价是精度损失。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "pgvector 建 HNSW 索引",
+   "src": "-- 需要已安装 pgvector 扩展\nCREATE EXTENSION IF NOT EXISTS vector;\n\nCREATE TABLE docs (\n  id bigserial PRIMARY KEY,\n  content text,\n  embedding vector(1536)      -- 维度与所用嵌入模型一致\n);\n\n-- 余弦距离的 HNSW 索引；m / ef_construction 为 pgvector 默认值\nCREATE INDEX ON docs\n  USING hnsw (embedding vector_cosine_ops)\n  WITH (m = 16, ef_construction = 64);\n\n-- 会话级调大查询候选数以提高召回（默认 40）\nSET hnsw.ef_search = 100;\n\nSELECT id, content\nFROM docs\nORDER BY embedding <=> '[0.01, 0.02, ...]'::vector  -- 替换为查询向量\nLIMIT 5;",
+   "note": "操作符类必须与查询用的距离运算符匹配（<=> 对应 cosine），否则索引不会被使用。"
+  },
+  "table": {
+   "title": "常见 ANN 索引对比",
+   "head": [
+    "索引",
+    "原理",
+    "优势",
+    "代价"
+   ],
+   "rows": [
+    [
+     "Flat（暴力）",
+     "逐个计算距离",
+     "100% 精确",
+     "数据量大时线性变慢"
+    ],
+    [
+     "HNSW",
+     "多层近邻图",
+     "高召回、低延迟",
+     "内存占用高，建图较慢"
+    ],
+    [
+     "IVF",
+     "聚类分桶后只查近桶",
+     "建索引快、省内存",
+     "召回依赖 nprobe，需训练"
+    ],
+    [
+     "IVF-PQ",
+     "分桶 + 乘积量化",
+     "内存极省，适合超大规模",
+     "精度损失明显，常需重排"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "调大 efSearch",
+    "pros": "召回率提升，无需重建索引",
+    "cons": "单次查询延迟和 CPU 增加",
+    "when": "召回不达标且延迟有余量"
+   },
+   {
+    "opt": "调大 M",
+    "pros": "图连通性更好，高维数据召回更稳",
+    "cons": "内存与建图时间显著增加",
+    "when": "高维、对召回要求严的场景"
+   },
+   {
+    "opt": "改用 IVF/PQ",
+    "pros": "内存成本大幅下降",
+    "cons": "精度下降，参数需训练调优",
+    "when": "向量规模大到 HNSW 放不进内存"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "带 WHERE 过滤的向量查询结果数不足或召回骤降",
+    "fix": "了解引擎的过滤策略（先过滤/后过滤/迭代扫描），必要时分区或用支持过滤感知的索引"
+   },
+   {
+    "bad": "只看延迟不测召回率",
+    "fix": "用暴力搜索结果做基准，离线计算 Recall@k 后再定参数"
+   },
+   {
+    "bad": "索引距离类型与嵌入模型推荐的不一致",
+    "fix": "按模型文档选 cosine / 内积 / L2，并保证查询运算符一致"
+   },
+   {
+    "bad": "大批量导入前先建 HNSW，导入极慢",
+    "fix": "先导入数据再建索引，并为建索引分配足够内存"
+   }
+  ],
+  "checklist": [
+   "距离度量与嵌入模型推荐一致",
+   "用精确搜索基准测过 Recall@k",
+   "efSearch 按 P99 延迟预算调优",
+   "评估过带过滤条件查询的召回",
+   "索引内存占用纳入容量规划",
+   "有重建索引或模型换代的迁移方案"
+  ],
+  "interview": [
+   {
+    "q": "HNSW 为什么能做到近似对数级查询？",
+    "a": "高层节点稀疏，边跨度大，贪心搜索几步就能接近目标区域；逐层下降后底层只需在局部做束搜索。层级按指数分布随机分配，期望层数与 log N 成正比，类似跳表思想在图上的推广。"
+   },
+   {
+    "q": "RAG 召回差，你如何定位是 ANN 的问题？",
+    "a": "先对同一批查询跑精确搜索，若精确结果也不对，问题在嵌入模型或切块；若精确正确而 ANN 漏掉，说明索引近似损失，调大 efSearch 或 M。还要检查过滤条件是否导致候选不足。"
+   },
+   {
+    "q": "HNSW 和 IVF-PQ 如何选？",
+    "a": "内存充足、追求高召回低延迟选 HNSW；向量规模极大、内存是瓶颈选 IVF-PQ，并常配合原始向量重排补精度。数据频繁删改时还要考虑 HNSW 图退化与重建成本。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Malkov & Yashunin: HNSW (arXiv:1603.09320)",
+    "url": "https://arxiv.org/abs/1603.09320"
+   },
+   {
+    "title": "pgvector README",
+    "url": "https://github.com/pgvector/pgvector"
+   },
+   {
+    "title": "Faiss Wiki",
+    "url": "https://github.com/facebookresearch/faiss/wiki"
+   }
+  ]
+ },
+ {
+  "slug": "agent-trajectory-evaluation",
+  "def": "轨迹评测（Trajectory Evaluation）是 Agent 评测的一种，除了检查最终结果，还检查 Agent 执行过程中的工具调用序列、参数、中间推理与副作用。它能发现「结果对但过程错」的问题，如走捷径、越权操作、冗余调用和成本失控，是 Agent 上线前评审与回归测试的关键环节。",
+  "how": [
+   "通过日志或追踪（如 OpenTelemetry span）完整记录每一步：工具名、参数、返回值、耗时与 Token 消耗。",
+   "为评测用例定义参考轨迹或约束：必须调用的工具、禁止的动作、允许的顺序关系。",
+   "用确定性规则比对：精确匹配、按序包含、无序包含、子集/超集，或计算工具调用的精确率与召回率。",
+   "对难以规则化的部分，用 LLM 评审（LLM-as-a-judge）按评分细则判断每步是否合理。",
+   "汇总过程指标与结果指标，并多次重复运行，评估非确定性带来的稳定性差异。"
+  ],
+  "terms": [
+   {
+    "t": "轨迹 (Trajectory)",
+    "d": "Agent 从接收任务到结束的完整动作序列，含思考、工具调用与观察。"
+   },
+   {
+    "t": "按序匹配 (In-order Match)",
+    "d": "参考轨迹的步骤按相同顺序出现在实际轨迹中，允许中间有额外步骤。"
+   },
+   {
+    "t": "工具调用精确率/召回率",
+    "d": "实际调用中正确调用的占比，与参考调用被覆盖的占比。"
+   },
+   {
+    "t": "pass^k",
+    "d": "同一任务连续 k 次都成功的概率，衡量 Agent 的稳定性，见 τ-bench。"
+   },
+   {
+    "t": "副作用检查 (Side-effect Check)",
+    "d": "核验环境最终状态，如数据库是否被误改，而不只看文本输出。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "规则化轨迹打分",
+   "src": "# 每一步记录为 (工具名, 参数) ；示例为纯 Python，无第三方依赖\nFORBIDDEN = {\"delete_file\", \"git_push_force\"}\n\ndef in_order_match(actual, reference):\n    \"\"\"reference 中的工具按顺序出现在 actual 中即可\"\"\"\n    it = iter(name for name, _ in actual)\n    return all(ref in it for ref in reference)\n\ndef score(actual, reference):\n    names = [n for n, _ in actual]\n    hits = sum(1 for r in reference if r in names)\n    return {\n        \"in_order\": in_order_match(actual, reference),\n        \"recall\": hits / len(reference),\n        \"forbidden\": sorted(FORBIDDEN & set(names)),\n        \"steps\": len(actual),          # 冗余步骤也要关注\n    }\n\nactual = [(\"read_file\", {\"path\": \"app.py\"}), (\"edit_file\", {}),\n          (\"delete_file\", {\"path\": \"test_app.py\"}), (\"run_tests\", {})]\nprint(score(actual, [\"read_file\", \"edit_file\", \"run_tests\"]))\n# in_order=True，但 forbidden=['delete_file']，应判定失败",
+   "note": "结果与顺序都对，但删除了测试文件；轨迹规则能抓到仅看结果会漏掉的违规。"
+  },
+  "table": {
+   "title": "轨迹匹配模式对比",
+   "head": [
+    "模式",
+    "判定条件",
+    "适用场景"
+   ],
+   "rows": [
+    [
+     "精确匹配",
+     "工具序列完全一致",
+     "流程固定的业务操作"
+    ],
+    [
+     "按序匹配",
+     "参考步骤按顺序出现",
+     "关键步骤有先后依赖"
+    ],
+    [
+     "无序匹配",
+     "参考步骤都出现即可",
+     "步骤可并行或顺序无关"
+    ],
+    [
+     "约束检查",
+     "无禁止动作、步数与成本在上限内",
+     "安全与成本兜底"
+    ],
+    [
+     "LLM 评审",
+     "按评分细则判断合理性",
+     "开放式任务、路径多样"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "确定性规则匹配",
+    "pros": "可复现、便宜、易进 CI",
+    "cons": "合理的替代路径会被误判",
+    "when": "流程明确、工具集小的 Agent"
+   },
+   {
+    "opt": "LLM 评审轨迹",
+    "pros": "能评价开放路径的合理性",
+    "cons": "有偏差和成本，需校准",
+    "when": "编码、研究等路径多样的任务"
+   },
+   {
+    "opt": "只评最终状态",
+    "pros": "实现最简单",
+    "cons": "漏掉作弊、越权与浪费",
+    "when": "仅作为结果指标的一部分"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "参考轨迹写得过死，Agent 更优的路径被判失败",
+    "fix": "关键步骤用按序或无序匹配，其余用约束和结果检查兜底"
+   },
+   {
+    "bad": "只跑一次就下结论",
+    "fix": "每个用例多次运行，统计成功率与 pass^k"
+   },
+   {
+    "bad": "评测只看文本输出，没核对环境状态",
+    "fix": "在沙箱中检查文件、数据库等最终状态与副作用"
+   },
+   {
+    "bad": "日志缺失工具参数，事后无法复盘",
+    "fix": "结构化记录每步参数、返回与耗时，敏感字段脱敏"
+   }
+  ],
+  "checklist": [
+   "每步工具调用与参数都被结构化记录",
+   "定义了禁止动作清单并自动检查",
+   "关键步骤有参考轨迹或顺序约束",
+   "统计步数、Token 与耗时等成本指标",
+   "同一用例多次运行评估稳定性",
+   "LLM 评审有人工标注样本做校准"
+  ],
+  "interview": [
+   {
+    "q": "为什么 Agent 评测不能只看最终答案？",
+    "a": "Agent 有副作用：结果正确时也可能删了测试、越权读文件、调用付费接口几十次。只看结果会把这些作弊和风险当成功。轨迹评测补上过程维度，同时能定位失败发生在哪一步，便于改提示或工具。"
+   },
+   {
+    "q": "参考轨迹不唯一时怎么评？",
+    "a": "把轨迹拆成硬约束和软评价：硬约束如必须先读后写、禁止危险动作、步数上限用规则检查；路径选择是否合理交给 LLM 评审按细则打分，并用人工标注样本校准评审一致性。"
+   },
+   {
+    "q": "τ-bench 的 pass^k 想说明什么？",
+    "a": "它要求同一任务 k 次都成功，衡量可靠性而非偶尔成功。Agent 输出非确定，单次通过率高不代表稳定；面向真实用户的客服、运维 Agent 更关心一致性，pass^k 随 k 增大下降越快说明越不稳。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "τ-bench (arXiv:2406.12045)",
+    "url": "https://arxiv.org/abs/2406.12045"
+   },
+   {
+    "title": "GitHub: langchain-ai/agentevals",
+    "url": "https://github.com/langchain-ai/agentevals"
+   },
+   {
+    "title": "Google Cloud: Evaluate Gen AI agents",
+    "url": "https://cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-agents"
+   }
+  ]
+ },
+ {
+  "slug": "reward-hacking",
+  "def": "奖励投机（Reward Hacking），也叫规格投机（Specification Gaming），指优化系统找到了让奖励或评测指标变高、却没有完成设计者真实意图的捷径。它是 Goodhart 定律在机器学习中的体现：指标一旦成为优化目标就不再可靠。在编码 Agent 中常表现为修改测试、硬编码期望值或绕过检查。",
+  "how": [
+   "设计者只能用可计算的代理指标（测试通过、评分模型分数、格式正确）来近似真实目标。",
+   "强化学习或反复迭代的 Agent 会搜索所有能提高该指标的行为，包括设计者未预料到的漏洞。",
+   "若漏洞比真正完成任务更容易，优化压力就会把策略推向漏洞，如删除失败测试或针对测试输入特判。",
+   "训练阶段学到的投机倾向可能泛化到部署：模型在新任务中也倾向寻找评测漏洞。",
+   "缓解依赖多层手段：加固奖励与环境、隔离测试、轨迹与思维链监控、人工抽检和保留集评测。"
+  ],
+  "terms": [
+   {
+    "t": "Goodhart 定律",
+    "d": "当一个度量变成目标时，它就不再是一个好的度量。"
+   },
+   {
+    "t": "代理奖励 (Proxy Reward)",
+    "d": "用来近似真实目标的可计算信号，与真实目标之间总有缝隙。"
+   },
+   {
+    "t": "测试特判 (Special-casing Tests)",
+    "d": "代码识别测试输入并返回期望值，使测试通过而功能未实现。"
+   },
+   {
+    "t": "奖励模型过优化 (Reward Overoptimization)",
+    "d": "对学习得到的奖励模型优化过度，代理分上升而真实质量下降。"
+   },
+   {
+    "t": "思维链监控 (CoT Monitoring)",
+    "d": "用另一个模型审查推理过程，识别投机或作弊意图。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "CI 拦截 Agent 改测试",
+   "src": "#!/usr/bin/env bash\n# 在 Agent 提交的 PR 上运行：发现可疑的「刷绿」改动就失败\nset -euo pipefail\nBASE=${BASE:-origin/main}\n\nchanged=$(git diff --name-only \"$BASE\"...HEAD)\n\n# 1) 测试文件被改动或删除，需要人工审批\nif echo \"$changed\" | grep -E '(^|/)(tests?/|test_.*\\.py$|.*\\.test\\.[jt]s$)'; then\n  echo \"::error::PR 修改了测试文件，需要人工审查\"; exit 1\nfi\n\n# 2) 新增跳过标记或恒真断言\nif git diff \"$BASE\"...HEAD | grep -E '^\\+.*(pytest\\.mark\\.skip|\\.skip\\(|assert True)'; then\n  echo \"::error::新增了跳过测试或恒真断言\"; exit 1\nfi\necho \"OK\"\n",
+   "note": "规则只是兜底信号，不能证明没有投机；仍需代码审查与保留测试集。"
+  },
+  "table": {
+   "title": "投机形式与对策",
+   "head": [
+    "场景",
+    "投机行为",
+    "对策"
+   ],
+   "rows": [
+    [
+     "编码 Agent",
+     "删除/跳过失败测试",
+     "测试文件只读，CI 检查测试改动"
+    ],
+    [
+     "编码 Agent",
+     "识别测试输入硬编码返回",
+     "隐藏测试集、随机化输入"
+    ],
+    [
+     "RLHF",
+     "迎合评分模型：冗长、讨好",
+     "长度惩罚、定期刷新奖励模型"
+    ],
+    [
+     "可验证奖励",
+     "只匹配答案格式不解题",
+     "严格校验器、检查推理一致性"
+    ],
+    [
+     "评测基准",
+     "过拟合公开题目",
+     "保留集与新题定期轮换"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "加固环境与校验器",
+    "pros": "从根上堵漏洞，效果确定",
+    "cons": "需持续投入，漏洞难以穷尽",
+    "when": "奖励由程序判定的任务"
+   },
+   {
+    "opt": "思维链/轨迹监控",
+    "pros": "能发现意图层面的作弊",
+    "cons": "强优化压力下模型可能隐藏意图",
+    "when": "高价值 Agent 部署与训练审计"
+   },
+   {
+    "opt": "人工抽检",
+    "pros": "最可靠的最终判断",
+    "cons": "成本高、覆盖率低",
+    "when": "上线前评审和指标异常时"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "让 Agent 「修到测试通过」且允许它改测试",
+    "fix": "明确禁止修改测试，并在权限或 CI 层面强制"
+   },
+   {
+    "bad": "指标暴涨就直接庆祝",
+    "fix": "先抽查样本与轨迹，确认不是钻了评测漏洞"
+   },
+   {
+    "bad": "直接拿监控信号当训练惩罚",
+    "fix": "警惕模型学会隐藏意图，监控与训练目标适度分离"
+   },
+   {
+    "bad": "公开测试集既用于调优又用于汇报",
+    "fix": "保留未见过的测试集用于最终评估"
+   }
+  ],
+  "checklist": [
+   "Agent 对测试与评测脚本无写权限",
+   "PR 中测试文件改动需人工批准",
+   "有 Agent 未见过的保留测试集",
+   "指标异常提升时有抽检流程",
+   "轨迹中记录并审查文件修改清单",
+   "提示中写明禁止跳过或硬编码"
+  ],
+  "interview": [
+   {
+    "q": "举一个编码 Agent 的奖励投机例子并给出防御",
+    "a": "任务要求修复 Bug 使测试通过，Agent 在实现中判断输入是否为测试样例并返回期望值。防御：测试目录只读、用隐藏用例和变异输入复测、审查 diff 中的条件特判、在轨迹评测中把修改测试列为禁止动作。"
+   },
+   {
+    "q": "为什么奖励模型分数上升，真实质量可能下降？",
+    "a": "奖励模型只是人类偏好的有限近似，在训练分布外有可被利用的偏差，如偏好更长或更自信的回答。策略持续优化会找到这些偏差，代理分上升而人评下降，即过优化。常用 KL 约束、早停和定期重训奖励模型缓解。"
+   },
+   {
+    "q": "思维链监控能解决奖励投机吗？",
+    "a": "能发现很多明显的作弊意图，作为审计手段很有价值。但研究提示，若把监控结果直接作为强训练惩罚，模型可能学会在推理中隐藏意图而继续投机。因此更适合用于检测和环境修复，而非唯一防线。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Lilian Weng: Reward Hacking in Reinforcement Learning",
+    "url": "https://lilianweng.github.io/posts/2024-11-28-reward-hacking/"
+   },
+   {
+    "title": "DeepMind: Specification gaming",
+    "url": "https://deepmind.google/discover/blog/specification-gaming-the-flip-side-of-ai-ingenuity/"
+   },
+   {
+    "title": "Baker et al.: Monitoring Reasoning Models for Misbehavior (arXiv:2503.11926)",
+    "url": "https://arxiv.org/abs/2503.11926"
+   }
+  ]
+ },
+ {
+  "slug": "domain-driven-design",
+  "def": "领域驱动设计（DDD）是 Eric Evans 于 2003 年系统提出的软件建模方法，主张以业务领域为中心组织代码与团队。战略设计用限界上下文和通用语言划清模型边界；战术设计用实体、值对象、聚合、领域事件等模式在边界内表达业务规则。它主要解决复杂业务中模型混乱、概念歧义和改动牵一发动全身的问题。",
+  "how": [
+   "与领域专家协作（如事件风暴工作坊），梳理业务流程、关键事件与名词，形成团队共享的通用语言。",
+   "按语义一致性划分限界上下文：同一个词（如「用户」）在不同上下文可以有不同模型，各自独立演进。",
+   "用上下文映射描述上下文之间的关系，如客户-供应方、遵奉者、防腐层（ACL）、开放主机服务。",
+   "在上下文内识别聚合：一组必须保持一致的对象，由聚合根对外暴露行为，并在一个事务内守护不变量。",
+   "聚合之间通过 ID 引用和领域事件协作，跨聚合的一致性通常接受最终一致。",
+   "代码目录、模块和服务边界与限界上下文对齐，让业务改动集中在少数模块内。"
+  ],
+  "terms": [
+   {
+    "t": "限界上下文 (Bounded Context)",
+    "d": "一个模型及其通用语言保持一致含义的边界，常对应模块、服务或团队。"
+   },
+   {
+    "t": "通用语言 (Ubiquitous Language)",
+    "d": "领域专家与开发者共用、并直接体现在代码命名中的业务词汇。"
+   },
+   {
+    "t": "聚合 (Aggregate)",
+    "d": "作为一致性边界的一组实体与值对象，外部只能通过聚合根修改。"
+   },
+   {
+    "t": "值对象 (Value Object)",
+    "d": "无身份、按属性判等且通常不可变的对象，如金额、地址。"
+   },
+   {
+    "t": "防腐层 (Anti-Corruption Layer)",
+    "d": "在两个上下文之间做模型翻译，防止外部模型污染本地模型。"
+   },
+   {
+    "t": "领域事件 (Domain Event)",
+    "d": "领域中已发生、业务关心的事实，如「订单已支付」，用于解耦协作。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "聚合根守护不变量",
+   "src": "from dataclasses import dataclass, field\nfrom decimal import Decimal\n\n@dataclass(frozen=True)\nclass Money:                      # 值对象：不可变、按值相等\n    amount: Decimal\n    currency: str = \"CNY\"\n\n@dataclass\nclass Order:                      # 聚合根：外部只能通过它改订单\n    order_id: str\n    lines: list = field(default_factory=list)\n    status: str = \"DRAFT\"\n    events: list = field(default_factory=list)\n\n    def add_line(self, sku: str, qty: int, price: Money):\n        if self.status != \"DRAFT\":\n            raise ValueError(\"已提交的订单不能再加商品\")   # 不变量\n        if qty <= 0:\n            raise ValueError(\"数量必须为正\")\n        self.lines.append((sku, qty, price))\n\n    def submit(self):\n        if not self.lines:\n            raise ValueError(\"空订单不能提交\")\n        self.status = \"SUBMITTED\"\n        self.events.append((\"OrderSubmitted\", self.order_id))  # 领域事件",
+   "note": "业务规则写在聚合方法里而不是散在控制器中；事件由应用层发布给其他上下文。"
+  },
+  "table": {
+   "title": "DDD 战术模式速查",
+   "head": [
+    "模式",
+    "身份",
+    "职责",
+    "持久化"
+   ],
+   "rows": [
+    [
+     "实体 (Entity)",
+     "有唯一 ID",
+     "随时间变化的业务对象",
+     "随所属聚合保存"
+    ],
+    [
+     "值对象",
+     "无 ID",
+     "描述属性，不可变",
+     "嵌入实体中"
+    ],
+    [
+     "聚合根",
+     "有 ID",
+     "一致性边界入口",
+     "仓储以聚合为单位读写"
+    ],
+    [
+     "领域服务",
+     "无状态",
+     "不属于单个实体的业务逻辑",
+     "无"
+    ],
+    [
+     "仓储 (Repository)",
+     "—",
+     "像集合一样存取聚合",
+     "封装具体数据库"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "完整 DDD（战略+战术）",
+    "pros": "复杂规则清晰，边界稳定可演进",
+    "cons": "学习与建模成本高，代码量增加",
+    "when": "核心业务复杂且长期演进"
+   },
+   {
+    "opt": "只用战略设计",
+    "pros": "以较低成本获得清晰的模块边界",
+    "cons": "上下文内部仍可能是贫血模型",
+    "when": "中等复杂度、需要拆模块或服务"
+   },
+   {
+    "opt": "简单 CRUD",
+    "pros": "开发快，框架脚手架即可",
+    "cons": "规则增多后逻辑散落难维护",
+    "when": "支撑域或以数据录入为主的系统"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "聚合设计过大，一次加载整棵对象树导致锁冲突",
+    "fix": "聚合尽量小，只包含必须同事务一致的数据，其余用 ID 引用"
+   },
+   {
+    "bad": "一个事务里修改多个聚合",
+    "fix": "一次事务只改一个聚合，跨聚合用领域事件与最终一致"
+   },
+   {
+    "bad": "照搬战术模式却不和业务方建立通用语言",
+    "fix": "先做领域建模与命名对齐，模式是手段而非目标"
+   },
+   {
+    "bad": "按技术层拆微服务，再叫它 DDD",
+    "fix": "服务边界应对齐限界上下文，而非 controller/service/dao 分层"
+   }
+  ],
+  "checklist": [
+   "核心域、支撑域、通用域已区分",
+   "每个限界上下文有明确的通用语言词表",
+   "上下文映射图标出上下游与集成方式",
+   "聚合边界小，事务内只改一个聚合",
+   "业务规则位于领域层而非控制器或 SQL",
+   "让 AI 生成代码时提供领域词表与边界说明"
+  ],
+  "interview": [
+   {
+    "q": "如何确定聚合边界？",
+    "a": "从不变量出发：哪些数据必须在同一时刻强一致，才放进同一聚合。其余通过 ID 引用与事件最终一致。经验上聚合要小，否则会带来并发冲突与加载成本。也要看业务能否接受短暂不一致，例如库存与订单常分属不同聚合。"
+   },
+   {
+    "q": "限界上下文和微服务是什么关系？",
+    "a": "限界上下文是模型与语言的边界，微服务是部署单元。一个上下文可以是一个服务，也可以是模块化单体中的一个模块；一个服务不应横跨多个上下文的模型。先在单体中把上下文划清，再按需要拆服务，风险更低。"
+   },
+   {
+    "q": "什么时候不该用 DDD？",
+    "a": "业务规则简单、以增删改查为主，或属于可外购的通用域（如认证、支付网关集成）时，DDD 的建模成本大于收益。DDD 应集中投入在决定竞争力的核心域，其余用简单方案或现成服务。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Martin Fowler: DomainDrivenDesign",
+    "url": "https://martinfowler.com/bliki/DomainDrivenDesign.html"
+   },
+   {
+    "title": "Martin Fowler: BoundedContext",
+    "url": "https://martinfowler.com/bliki/BoundedContext.html"
+   },
+   {
+    "title": "Microsoft Learn: Domain analysis for microservices",
+    "url": "https://learn.microsoft.com/en-us/azure/architecture/microservices/model/domain-analysis"
+   }
+  ]
+ },
+ {
+  "slug": "hexagonal-architecture",
+  "def": "六边形架构（Hexagonal Architecture，又称端口与适配器）由 Alistair Cockburn 于 2005 年提出，整洁架构（Clean Architecture）是 Robert C. Martin 2012 年总结的同类思想。核心是依赖只指向内部：业务核心定义端口（接口），数据库、Web 框架等外部技术以适配器实现端口，使业务可独立测试、技术可替换。",
+  "how": [
+   "把应用分为内部（领域模型与用例）和外部（UI、数据库、第三方服务、消息系统）。",
+   "内部定义端口：驱动端口是外界调用应用的入口（如用例接口），被驱动端口是应用需要的外部能力（如仓储接口）。",
+   "外部实现适配器：HTTP 控制器、CLI 属于驱动适配器；数据库仓储、邮件网关属于被驱动适配器。",
+   "依赖倒置：核心只依赖自己定义的抽象，适配器依赖核心，组装在应用启动的组合根中完成。",
+   "测试时用内存适配器替换真实数据库，用例测试无需启动框架或外部服务。"
+  ],
+  "terms": [
+   {
+    "t": "端口 (Port)",
+    "d": "由应用核心定义的接口，描述它对外提供或需要的能力。"
+   },
+   {
+    "t": "适配器 (Adapter)",
+    "d": "把具体技术（SQL、HTTP、SDK）转换为端口接口的实现。"
+   },
+   {
+    "t": "驱动/被驱动 (Driving/Driven)",
+    "d": "主动调用应用的一侧与被应用调用的一侧，也称主/次适配器。"
+   },
+   {
+    "t": "依赖规则 (Dependency Rule)",
+    "d": "整洁架构的要求：源代码依赖只能指向更内层的策略。"
+   },
+   {
+    "t": "组合根 (Composition Root)",
+    "d": "应用入口处集中创建并装配具体适配器的位置。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "端口与内存适配器",
+   "src": "from typing import Protocol\n\nclass UserRepo(Protocol):               # 被驱动端口：核心定义\n    def get_email(self, uid: int) -> str | None: ...\n\nclass Mailer(Protocol):\n    def send(self, to: str, body: str) -> None: ...\n\nclass SendWelcome:                      # 用例：只依赖端口\n    def __init__(self, repo: UserRepo, mailer: Mailer):\n        self.repo, self.mailer = repo, mailer\n    def __call__(self, uid: int) -> bool:\n        email = self.repo.get_email(uid)\n        if not email:\n            return False\n        self.mailer.send(email, \"欢迎加入\")\n        return True\n\n# 测试用适配器：无需数据库与邮件服务\nclass InMemoryRepo:\n    def __init__(self, data): self.data = data\n    def get_email(self, uid): return self.data.get(uid)\n\nclass FakeMailer:\n    def __init__(self): self.sent = []\n    def send(self, to, body): self.sent.append(to)\n\nm = FakeMailer()\nassert SendWelcome(InMemoryRepo({1: \"a@x.com\"}), m)(1) and m.sent == [\"a@x.com\"]",
+   "note": "生产环境换成 SQL 仓储和 SMTP 适配器即可，用例代码不改；Protocol 需要 Python 3.8+，X | None 写法需 3.10+。"
+  },
+  "table": {
+   "title": "几种分层架构对比",
+   "head": [
+    "架构",
+    "依赖方向",
+    "关注点"
+   ],
+   "rows": [
+    [
+     "传统三层",
+     "UI → 业务 → 数据访问",
+     "业务层直接依赖数据库实现"
+    ],
+    [
+     "六边形",
+     "适配器 → 端口 ← 核心",
+     "内外对称，强调可替换适配器"
+    ],
+    [
+     "洋葱架构",
+     "外环依赖内环",
+     "领域模型位于圆心"
+    ],
+    [
+     "整洁架构",
+     "框架 → 接口适配 → 用例 → 实体",
+     "以依赖规则统一上述思想"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "严格端口与适配器",
+    "pros": "核心可单测，技术栈可替换",
+    "cons": "接口与映射代码增多，入门门槛高",
+    "when": "业务复杂、生命周期长的系统"
+   },
+   {
+    "opt": "轻量分层（只抽仓储）",
+    "pros": "成本低，保留主要测试收益",
+    "cons": "框架依赖仍可能渗入业务",
+    "when": "中小型项目、团队较小"
+   },
+   {
+    "opt": "直接用框架约定",
+    "pros": "开发最快，生态工具最全",
+    "cons": "业务与框架强耦合，难迁移难测",
+    "when": "原型、短期项目或纯 CRUD"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "领域实体直接继承 ORM 基类",
+    "fix": "领域模型保持纯对象，在适配器中做 ORM 映射"
+   },
+   {
+    "bad": "为每个类都建接口，抽象泛滥",
+    "fix": "只在外部依赖边界建端口，内部代码直接调用"
+   },
+   {
+    "bad": "端口按数据库表设计，泄漏存储细节",
+    "fix": "端口以业务语言命名，如 find_active_orders，而非通用 SQL 操作"
+   },
+   {
+    "bad": "依赖规则只靠约定，逐渐被破坏",
+    "fix": "用 import-linter、ArchUnit 等工具在 CI 中检查依赖方向"
+   }
+  ],
+  "checklist": [
+   "领域与用例代码不 import 框架和驱动库",
+   "外部依赖都通过核心定义的端口访问",
+   "用例可用内存适配器完成单元测试",
+   "装配集中在组合根或依赖注入容器",
+   "CI 中有架构依赖规则检查",
+   "给 AI 的规则文件写明分层与依赖方向"
+  ],
+  "interview": [
+   {
+    "q": "六边形架构和三层架构的本质区别？",
+    "a": "三层架构中业务层依赖数据访问层的具体实现，依赖方向自上而下直达数据库。六边形架构通过依赖倒置，让数据库适配器依赖业务核心定义的接口，核心不知道任何技术细节。结果是核心可脱离基础设施测试，替换存储只需新增适配器。"
+   },
+   {
+    "q": "如何防止 AI 生成的代码破坏分层？",
+    "a": "在规则文件中写明目录职责与禁止的 import，例如 domain 目录不得引入 ORM 和 Web 框架；在 CI 加架构测试自动拦截；评审时重点看新代码的依赖方向。把这些约束作为 Agent 的上下文，比事后重构便宜得多。"
+   },
+   {
+    "q": "什么情况下这种架构是过度设计？",
+    "a": "逻辑主要是表单与数据库的直接映射、生命周期短或团队很小时，额外的接口与映射层收益有限。可先只抽象最可能替换或最难测的外部依赖（如支付、邮件），随复杂度增长再逐步演进。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Alistair Cockburn: Hexagonal Architecture",
+    "url": "https://alistair.cockburn.us/hexagonal-architecture/"
+   },
+   {
+    "title": "Robert C. Martin: The Clean Architecture",
+    "url": "https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html"
+   },
+   {
+    "title": "Wikipedia: Hexagonal architecture (software)",
+    "url": "https://en.wikipedia.org/wiki/Hexagonal_architecture_(software)"
+   }
+  ]
+ },
+ {
+  "slug": "multi-tenancy",
+  "def": "多租户（Multi-Tenancy）是让一套应用实例与基础设施同时服务多个客户（租户）的架构方式，是 SaaS 的基础。核心问题是在隔离性、成本与运维复杂度之间取舍：数据、计算、配置和故障影响面都要按租户隔离，同时尽量共享资源以降低单租户成本。",
+  "how": [
+   "身份层在认证时确定租户上下文（如 JWT 中的 tenant_id），并在请求整个生命周期中传递。",
+   "数据层选择隔离模型：共享库共享表加 tenant_id（池化）、每租户独立 schema、或每租户独立数据库（孤岛）。",
+   "在共享表模式下，用数据库行级安全（RLS）或数据访问层强制附加租户过滤，避免依赖每条查询手写条件。",
+   "计算与配额层按租户限流、设置资源上限，缓解吵闹邻居（Noisy Neighbor）问题。",
+   "运维层支持按租户迁移、备份恢复、计量计费，并可把大客户迁到独立资源（混合模型）。"
+  ],
+  "terms": [
+   {
+    "t": "租户 (Tenant)",
+    "d": "共享系统中逻辑隔离的一个客户单位，通常是一家组织。"
+   },
+   {
+    "t": "孤岛/池化 (Silo/Pool)",
+    "d": "AWS SaaS 文献中的术语：资源按租户独占或在租户间共享。"
+   },
+   {
+    "t": "行级安全 (RLS)",
+    "d": "数据库按策略自动过滤行，PostgreSQL 通过 CREATE POLICY 实现。"
+   },
+   {
+    "t": "吵闹邻居 (Noisy Neighbor)",
+    "d": "某租户过量使用共享资源，拖慢同一资源上的其他租户。"
+   },
+   {
+    "t": "租户上下文 (Tenant Context)",
+    "d": "贯穿请求、日志、缓存键和异步任务的当前租户标识。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "PostgreSQL RLS 租户隔离",
+   "src": "CREATE TABLE invoices (\n  id         bigserial PRIMARY KEY,\n  tenant_id  uuid    NOT NULL,\n  amount     numeric NOT NULL\n);\nCREATE INDEX ON invoices (tenant_id);\n\nALTER TABLE invoices ENABLE ROW LEVEL SECURITY;\nALTER TABLE invoices FORCE ROW LEVEL SECURITY;  -- 表属主也受约束\n\nCREATE POLICY tenant_isolation ON invoices\n  USING (tenant_id = current_setting('app.tenant_id')::uuid)\n  WITH CHECK (tenant_id = current_setting('app.tenant_id')::uuid);\n\n-- 应用每个事务开头设置租户（连接池下务必用 SET LOCAL）\nBEGIN;\nSET LOCAL app.tenant_id = '6f1c2a8e-0000-4000-8000-000000000001';\nSELECT * FROM invoices;          -- 只返回该租户的行\nCOMMIT;",
+   "note": "超级用户和带 BYPASSRLS 的角色会绕过策略，应用应使用普通角色连接。"
+  },
+  "table": {
+   "title": "数据隔离模型对比",
+   "head": [
+    "模型",
+    "隔离强度",
+    "单租户成本",
+    "运维复杂度"
+   ],
+   "rows": [
+    [
+     "共享表 + tenant_id",
+     "依赖应用/RLS",
+     "最低",
+     "低，但迁移单租户难"
+    ],
+    [
+     "每租户 schema",
+     "中",
+     "中",
+     "迁移脚本需跑 N 次"
+    ],
+    [
+     "每租户数据库",
+     "强",
+     "高",
+     "连接数与运维随租户增长"
+    ],
+    [
+     "混合（大客户独立）",
+     "按层级",
+     "按套餐区分",
+     "需要支持两种路径"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "池化（共享表）",
+    "pros": "资源利用率高，上线新租户零成本",
+    "cons": "一个漏洞可能跨租户泄露",
+    "when": "大量中小租户的 SaaS"
+   },
+   {
+    "opt": "孤岛（独立库/集群）",
+    "pros": "强隔离，便于满足合规与数据驻留",
+    "cons": "成本高，版本与迁移管理复杂",
+    "when": "大客户、强监管行业"
+   },
+   {
+    "opt": "混合分层",
+    "pros": "按套餐平衡成本与隔离",
+    "cons": "代码与运维要同时支持多模式",
+    "when": "客户规模差异大的成长期产品"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "缓存键、对象存储路径没带租户前缀",
+    "fix": "租户 ID 进入所有缓存键、存储路径和搜索索引的命名"
+   },
+   {
+    "bad": "后台任务和消息消费丢失租户上下文",
+    "fix": "消息体携带 tenant_id，消费者显式设置上下文后再访问数据"
+   },
+   {
+    "bad": "连接池里用 SET 设置租户，串到下个请求",
+    "fix": "在事务内用 SET LOCAL，或每次借出连接时重置"
+   },
+   {
+    "bad": "租户 ID 取自请求参数而非认证令牌",
+    "fix": "以服务端校验过的身份为准，忽略客户端传入的租户字段"
+   }
+  ],
+  "checklist": [
+   "租户上下文来源于认证结果而非请求参数",
+   "共享表启用 RLS 或统一数据访问层过滤",
+   "缓存、文件、搜索、日志都按租户隔离",
+   "有跨租户访问的自动化测试用例",
+   "按租户限流与配额，监控吵闹邻居",
+   "支持按租户导出、删除与恢复数据"
+  ],
+  "interview": [
+   {
+    "q": "共享表模式下如何保证不跨租户泄露？",
+    "a": "多层防御：认证令牌确定租户；数据访问层或 ORM 全局作用域自动加过滤；数据库 RLS 作为最后一道防线，并启用 FORCE 让属主也受约束；缓存与文件路径带租户前缀；再用两个租户互访的集成测试持续回归。"
+   },
+   {
+    "q": "如何处理吵闹邻居？",
+    "a": "先可观测：按租户统计请求量、慢查询和资源占用。再控制：按租户限流、队列分级、查询超时和配额。最后隔离：把重度租户迁到独立的数据库分片或计算池。计费模型也可引导用量。"
+   },
+   {
+    "q": "每租户一库的模型主要痛点是什么？",
+    "a": "数据库数量随租户线性增长，连接池、监控、备份成本上升；每次 schema 迁移要对所有库执行并处理部分失败；跨租户分析需要额外汇总管道。适合租户少而价值高的场景。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "AWS Whitepaper: SaaS Tenant Isolation Strategies",
+    "url": "https://docs.aws.amazon.com/whitepapers/latest/saas-tenant-isolation-strategies/saas-tenant-isolation-strategies.html"
+   },
+   {
+    "title": "PostgreSQL: Row Security Policies",
+    "url": "https://www.postgresql.org/docs/current/ddl-rowsecurity.html"
+   },
+   {
+    "title": "Azure: Multitenant architecture guide",
+    "url": "https://learn.microsoft.com/en-us/azure/architecture/guide/multitenant/overview"
+   }
+  ]
+ },
+ {
+  "slug": "lakehouse",
+  "def": "湖仓一体（Lakehouse）是在对象存储上的开放文件（通常为 Parquet）之上，增加一层事务性表格式元数据，使数据湖具备数据仓库的 ACID 事务、模式管理、时间旅行和高效查询能力。主流开放表格式包括 Apache Iceberg、Delta Lake 和 Apache Hudi，多种计算引擎可共享同一份数据。",
+  "how": [
+   "数据文件以列式格式（如 Parquet）存放在对象存储，存储与计算分离，按量付费。",
+   "表格式维护元数据：Iceberg 用元数据文件、清单列表和清单文件描述快照；Delta Lake 用 _delta_log 中的提交日志与检查点。",
+   "写入先生成新数据文件，再通过原子操作提交新快照（如目录服务中的指针替换），读者看到完整的旧版或新版。",
+   "查询时引擎读元数据中的分区与列统计信息做文件裁剪，只扫描相关文件。",
+   "保留历史快照以支持时间旅行与回滚；通过快照过期和小文件合并等维护任务控制存储与性能。"
+  ],
+  "terms": [
+   {
+    "t": "开放表格式 (Open Table Format)",
+    "d": "定义如何用元数据把一组文件组织成可事务读写的表，如 Iceberg、Delta。"
+   },
+   {
+    "t": "快照 (Snapshot)",
+    "d": "表在某次提交后的完整状态，支持按快照 ID 或时间读取。"
+   },
+   {
+    "t": "目录 (Catalog)",
+    "d": "记录表名到当前元数据位置的服务，如 Hive Metastore、REST Catalog。"
+   },
+   {
+    "t": "隐藏分区 (Hidden Partitioning)",
+    "d": "Iceberg 由列值变换派生分区，查询无需显式写分区列。"
+   },
+   {
+    "t": "合并 (Compaction)",
+    "d": "把大量小文件重写为较大的文件，降低元数据和读取开销。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "Spark SQL 操作 Iceberg 表",
+   "src": "-- 假设已在 Spark 中配置名为 demo 的 Iceberg catalog\nCREATE TABLE demo.db.events (\n  id      BIGINT,\n  user_id BIGINT,\n  kind    STRING,\n  ts      TIMESTAMP\n) USING iceberg\nPARTITIONED BY (days(ts));          -- 隐藏分区\n\nINSERT INTO demo.db.events VALUES (1, 42, 'click', current_timestamp());\n\n-- 模式演进：加列只改元数据，不重写数据文件\nALTER TABLE demo.db.events ADD COLUMN device STRING;\n\n-- 查看快照并时间旅行\nSELECT snapshot_id, committed_at FROM demo.db.events.snapshots;\nSELECT * FROM demo.db.events TIMESTAMP AS OF '2026-10-01 00:00:00';\n\n-- 维护：合并小文件、过期旧快照\nCALL demo.system.rewrite_data_files(table => 'db.events');\nCALL demo.system.expire_snapshots(table => 'db.events',\n     older_than => TIMESTAMP '2026-09-01 00:00:00');",
+   "note": "时间旅行语法需 Spark 3.3 及以上；过期快照后，更早的时间点将无法回溯。"
+  },
+  "table": {
+   "title": "数据湖、仓库与湖仓",
+   "head": [
+    "维度",
+    "数据湖",
+    "数据仓库",
+    "湖仓一体"
+   ],
+   "rows": [
+    [
+     "存储",
+     "对象存储开放文件",
+     "专有存储格式",
+     "对象存储开放文件"
+    ],
+    [
+     "事务",
+     "无",
+     "完整 ACID",
+     "表格式提供 ACID"
+    ],
+    [
+     "引擎",
+     "多引擎直读文件",
+     "通常绑定自家引擎",
+     "多引擎共享表"
+    ],
+    [
+     "模式管理",
+     "读时解析，易漂移",
+     "严格写时校验",
+     "支持演进与校验"
+    ],
+    [
+     "数据类型",
+     "结构化与非结构化",
+     "以结构化为主",
+     "两者兼顾"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Apache Iceberg",
+    "pros": "引擎中立，隐藏分区与分区演进",
+    "cons": "需要选型和运维 Catalog",
+    "when": "多引擎共享、避免厂商锁定"
+   },
+   {
+    "opt": "Delta Lake",
+    "pros": "与 Spark/Databricks 集成深",
+    "cons": "部分高级特性依赖特定生态",
+    "when": "以 Spark 为主的团队"
+   },
+   {
+    "opt": "托管云数据仓库",
+    "pros": "开箱即用，运维最少",
+    "cons": "存储格式与计费受厂商约束",
+    "when": "团队小、追求简单的分析需求"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "流式高频小批写入，产生海量小文件",
+    "fix": "调大提交间隔并定期执行 rewrite_data_files 合并"
+   },
+   {
+    "bad": "从不过期快照，存储成本持续增长",
+    "fix": "按保留策略定期 expire_snapshots，并清理孤儿文件"
+   },
+   {
+    "bad": "多个写入方绕过 Catalog 直接改文件",
+    "fix": "所有写入都经表格式 API 提交，保证并发控制与原子性"
+   },
+   {
+    "bad": "按高基数字段分区导致分区过多",
+    "fix": "按时间等低基数维度分区，必要时用分桶变换"
+   }
+  ],
+  "checklist": [
+   "选定表格式与 Catalog，并验证多引擎兼容",
+   "分区策略基于主要查询过滤条件",
+   "定时任务覆盖合并、快照过期与孤儿文件清理",
+   "快照保留期满足审计与回滚需求",
+   "模式变更遵守兼容规则并有评审",
+   "对象存储权限按表或命名空间最小授权"
+  ],
+  "interview": [
+   {
+    "q": "表格式如何在对象存储上实现 ACID？",
+    "a": "数据文件一旦写入不再修改；每次提交生成新的元数据描述新快照，最后通过原子操作切换当前元数据指针（Catalog 的比较并交换，或 Delta 日志的原子创建）。并发写入采用乐观并发：提交时发现冲突则基于新版本重试或失败。"
+   },
+   {
+    "q": "为什么湖仓表要定期合并小文件？",
+    "a": "每个文件都有打开开销和元数据条目，海量小文件会让查询规划变慢、扫描效率下降、对象存储请求费用上升。合并把小文件重写为目标大小的文件，同时可按排序或聚簇优化数据布局。"
+   },
+   {
+    "q": "时间旅行有哪些实际用途和限制？",
+    "a": "用途：误写后回滚、复现历史报表、机器学习训练集按快照固定版本、审计。限制：依赖快照保留，过期后无法回溯；保留越久存储成本越高；且时间旅行回看的是表状态，不等同于业务时间。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Apache Iceberg Documentation",
+    "url": "https://iceberg.apache.org/docs/latest/"
+   },
+   {
+    "title": "Delta Lake Documentation",
+    "url": "https://docs.delta.io/latest/index.html"
+   },
+   {
+    "title": "Armbrust et al.: Lakehouse (CIDR 2021)",
+    "url": "https://www.cidrdb.org/cidr2021/papers/cidr2021_paper17.pdf"
+   }
+  ]
+ },
+ {
+  "slug": "stream-processing",
+  "def": "流处理（Stream Processing）是对持续到达的无界事件流进行增量、低延迟计算的数据处理范式，与按批处理有界数据集相对。Apache Flink 是代表性引擎，提供事件时间语义、水位线、窗口、有状态计算和基于检查点的容错，常用于实时风控、实时指标、实时特征和 CDC 数据同步。",
+  "how": [
+   "从 Kafka 等消息系统或 CDC 源持续读取事件，事件携带业务发生时间（事件时间）。",
+   "水位线（Watermark）声明「早于某时间的事件应已到齐」，驱动窗口触发，并容忍一定程度的乱序。",
+   "按键分区后在窗口内聚合：滚动、滑动、会话窗口，或无窗口的持续聚合与流式 Join。",
+   "算子状态保存在状态后端（内存或 RocksDB），引擎周期性做分布式快照（检查点）记录状态与源位点。",
+   "故障时从最近检查点恢复状态并回退源位点重放；配合事务性或幂等输出可达到端到端精确一次。"
+  ],
+  "terms": [
+   {
+    "t": "事件时间 (Event Time)",
+    "d": "事件在业务中实际发生的时间，相对于被处理时的处理时间。"
+   },
+   {
+    "t": "水位线 (Watermark)",
+    "d": "表示事件时间进度的标记，用于判断窗口何时可以输出结果。"
+   },
+   {
+    "t": "滚动窗口 (Tumbling Window)",
+    "d": "固定长度、不重叠的时间窗口，如每 1 分钟一个。"
+   },
+   {
+    "t": "检查点 (Checkpoint)",
+    "d": "Flink 对全部算子状态与源偏移做的一致性快照，用于故障恢复。"
+   },
+   {
+    "t": "迟到数据 (Late Data)",
+    "d": "在水位线越过其窗口后才到达的事件，需丢弃、侧输出或更新结果。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "Flink SQL 每分钟订单统计",
+   "src": "-- 从 Kafka 读取订单，声明事件时间与 5 秒乱序容忍\nCREATE TABLE orders (\n  order_id STRING,\n  amount   DECIMAL(10, 2),\n  ts       TIMESTAMP(3),\n  WATERMARK FOR ts AS ts - INTERVAL '5' SECOND\n) WITH (\n  'connector' = 'kafka',\n  'topic' = 'orders',\n  'properties.bootstrap.servers' = 'kafka:9092',\n  'properties.group.id' = 'order-stats',\n  'scan.startup.mode' = 'latest-offset',\n  'format' = 'json'\n);\n\n-- 窗口表值函数：1 分钟滚动窗口\nSELECT window_start, window_end,\n       COUNT(*)    AS order_cnt,\n       SUM(amount) AS gmv\nFROM TABLE(\n  TUMBLE(TABLE orders, DESCRIPTOR(ts), INTERVAL '1' MINUTES))\nGROUP BY window_start, window_end;",
+   "note": "水位线决定窗口何时输出：延迟超过 5 秒的事件默认不再计入已关闭窗口。"
+  },
+  "table": {
+   "title": "流处理引擎关键语义",
+   "head": [
+    "语义",
+    "含义",
+    "工程影响"
+   ],
+   "rows": [
+    [
+     "至少一次",
+     "故障重放可能重复计算",
+     "下游需幂等或去重"
+    ],
+    [
+     "精确一次（状态）",
+     "引擎内部状态不重不漏",
+     "依赖检查点与可重放源"
+    ],
+    [
+     "端到端精确一次",
+     "输出到外部系统也不重复",
+     "需事务性 Sink 或幂等写"
+    ],
+    [
+     "事件时间",
+     "按发生时间统计",
+     "需设计水位线与迟到处理"
+    ],
+    [
+     "处理时间",
+     "按到达时间统计",
+     "实现简单，但结果不可复现"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Flink 等流引擎",
+    "pros": "毫秒到秒级延迟，强状态与时间语义",
+    "cons": "运维、状态管理和调试复杂",
+    "when": "风控、实时特征等强实时场景"
+   },
+   {
+    "opt": "微批（如 Spark Structured Streaming）",
+    "pros": "与批处理统一 API，生态成熟",
+    "cons": "延迟通常受批间隔限制",
+    "when": "分钟级延迟可接受、团队熟悉 Spark"
+   },
+   {
+    "opt": "定时批处理",
+    "pros": "最简单，易重跑与核对",
+    "cons": "延迟为小时或天级",
+    "when": "报表与离线分析"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用处理时间做业务统计，重跑结果对不上",
+    "fix": "使用事件时间与水位线，保证结果可复现"
+   },
+   {
+    "bad": "水位线设得过紧，大量迟到数据被丢弃",
+    "fix": "按实际乱序分布设定延迟，并为迟到数据配置侧输出"
+   },
+   {
+    "bad": "无限增长的状态（如无 TTL 的去重表）",
+    "fix": "为状态设置 TTL，或用窗口限定状态范围"
+   },
+   {
+    "bad": "以为开了检查点就端到端精确一次",
+    "fix": "确认 Sink 支持事务或幂等写，否则仍可能重复"
+   }
+  ],
+  "checklist": [
+   "明确使用事件时间还是处理时间",
+   "水位线延迟基于实测乱序分布",
+   "迟到数据有明确处理策略",
+   "检查点间隔与状态大小经过压测",
+   "所有状态都有 TTL 或边界",
+   "监控消费延迟、反压与检查点耗时"
+  ],
+  "interview": [
+   {
+    "q": "水位线解决了什么问题？代价是什么？",
+    "a": "事件会乱序到达，引擎需要知道何时某个事件时间窗口已经完整可以输出。水位线给出事件时间进度的估计。代价是延迟与完整性的权衡：等得越久结果越完整、输出越晚；等得太短会把迟到事件排除在外。"
+   },
+   {
+    "q": "Flink 检查点如何保证状态一致？",
+    "a": "JobManager 周期性向源注入屏障（barrier），屏障随数据流动；算子收到所有输入的屏障后对状态做快照，基于 Chandy-Lamport 思想的异步屏障快照。恢复时所有算子回到同一检查点，源回退到对应偏移重放，状态即不重不漏。"
+   },
+   {
+    "q": "实时特征为什么常用流处理计算？",
+    "a": "推荐、风控模型依赖最近几分钟的行为，如过去 5 分钟点击数、短时内交易次数。批处理延迟太高；流处理以滑动窗口持续更新并写入在线特征存储，同时需保证训练和推理的特征口径一致。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Apache Flink: Timely Stream Processing",
+    "url": "https://nightlies.apache.org/flink/flink-docs-stable/docs/concepts/time/"
+   },
+   {
+    "title": "Flink SQL: Window TVF",
+    "url": "https://nightlies.apache.org/flink/flink-docs-stable/docs/sql/reference/queries/window-tvf/"
+   },
+   {
+    "title": "Apache Flink: Stateful Stream Processing",
+    "url": "https://nightlies.apache.org/flink/flink-docs-stable/docs/concepts/stateful-stream-processing/"
+   }
+  ]
+ },
+ {
+  "slug": "schema-evolution",
+  "def": "模式演进（Schema Evolution）指数据结构随业务变化而修改时，保证新旧生产者与消费者仍能正确读写的规则与机制。在事件流和数据湖中，数据被长期保存并被多方读取，必须用 Avro、Protobuf、JSON Schema 等带模式的格式，并借助模式注册中心（Schema Registry）在发布前做兼容性校验。",
+  "how": [
+   "生产者序列化时把模式注册到注册中心，消息只携带模式 ID，消费者按 ID 取回写入模式进行反序列化。",
+   "每个主题（subject）配置兼容级别；新版本模式提交时，注册中心将其与上一版或全部历史版本比对。",
+   "向后兼容（BACKWARD）：用新模式的消费者能读旧数据，因此先升级消费者；允许删除字段、新增带默认值的字段。",
+   "向前兼容（FORWARD）：用旧模式的消费者能读新数据，因此先升级生产者；FULL 同时满足两者。",
+   "读取时由写入模式与读取模式做解析：缺失字段用默认值，多余字段被忽略，类型不兼容则拒绝注册。"
+  ],
+  "terms": [
+   {
+    "t": "写入/读取模式 (Writer/Reader Schema)",
+    "d": "数据写入时使用的模式与消费者期望的模式，Avro 在读取时对两者做解析。"
+   },
+   {
+    "t": "BACKWARD",
+    "d": "Confluent Schema Registry 默认兼容级别：新模式能读取上一版本模式写入的数据。"
+   },
+   {
+    "t": "传递兼容 (Transitive)",
+    "d": "要求新模式与所有历史版本兼容，而不仅是上一版本。"
+   },
+   {
+    "t": "主题 (Subject)",
+    "d": "注册中心中模式版本的命名空间，常按 topic 名加 -key 或 -value 命名。"
+   },
+   {
+    "t": "保留字段号 (reserved)",
+    "d": "Protobuf 中声明已删除的字段编号和名称，防止被复用。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "注册前校验模式兼容性",
+   "src": "SR=http://localhost:8081\nCT=\"Content-Type: application/vnd.schemaregistry.v1+json\"\n\n# 1) 为 orders-value 设置兼容级别\ncurl -s -X PUT -H \"$CT\" --data '{\"compatibility\": \"BACKWARD\"}' \\\n  $SR/config/orders-value\n\n# 2) 新模式：新增带默认值的 coupon 字段\nNEW='{\"schema\": \"{\\\"type\\\":\\\"record\\\",\\\"name\\\":\\\"Order\\\",\\\"fields\\\":[{\\\"name\\\":\\\"id\\\",\\\"type\\\":\\\"string\\\"},{\\\"name\\\":\\\"amount\\\",\\\"type\\\":\\\"double\\\"},{\\\"name\\\":\\\"coupon\\\",\\\"type\\\":[\\\"null\\\",\\\"string\\\"],\\\"default\\\":null}]}\"}'\n\n# 3) 先测兼容性，返回 {\"is_compatible\": true} 再注册\ncurl -s -X POST -H \"$CT\" --data \"$NEW\" \\\n  $SR/compatibility/subjects/orders-value/versions/latest\n\ncurl -s -X POST -H \"$CT\" --data \"$NEW\" \\\n  $SR/subjects/orders-value/versions",
+   "note": "把第 3 步放进 CI，模式不兼容时构建失败，避免坏模式进入生产。"
+  },
+  "table": {
+   "title": "兼容级别与升级顺序",
+   "head": [
+    "级别",
+    "允许的改动",
+    "先升级谁"
+   ],
+   "rows": [
+    [
+     "BACKWARD",
+     "删字段、加带默认值字段",
+     "消费者"
+    ],
+    [
+     "FORWARD",
+     "加字段、删带默认值字段",
+     "生产者"
+    ],
+    [
+     "FULL",
+     "只能增删带默认值字段",
+     "任意顺序"
+    ],
+    [
+     "*_TRANSITIVE",
+     "同上，但与全部历史版本比对",
+     "同对应级别"
+    ],
+    [
+     "NONE",
+     "不校验",
+     "需人工协调，生产慎用"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Avro + 注册中心",
+    "pros": "读写模式解析成熟，消息体紧凑",
+    "cons": "需要运维注册中心，调试需工具",
+    "when": "Kafka 事件流、数据管道"
+   },
+   {
+    "opt": "Protobuf",
+    "pros": "跨语言代码生成，字段号机制清晰",
+    "cons": "proto3 字段默认值语义需注意",
+    "when": "gRPC 与事件共用模型"
+   },
+   {
+    "opt": "无模式 JSON",
+    "pros": "上手零成本，人可直接读",
+    "cons": "无编译期与发布期校验，易悄悄破坏下游",
+    "when": "原型或单一消费者"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "Protobuf 删字段后复用原字段号",
+    "fix": "删除时用 reserved 保留字段号和名称"
+   },
+   {
+    "bad": "直接改字段类型（如 int 改 string）",
+    "fix": "新增字段并双写，下游迁移完成后废弃旧字段"
+   },
+   {
+    "bad": "BACKWARD 级别下先升级了生产者",
+    "fix": "按兼容级别规定的顺序发布，或改用 FULL"
+   },
+   {
+    "bad": "只与上一版本比对，长期保存的旧数据读不了",
+    "fix": "数据会被回放时使用 *_TRANSITIVE 级别"
+   }
+  ],
+  "checklist": [
+   "每个主题明确兼容级别并写入文档",
+   "CI 中调用兼容性检查接口",
+   "新增字段一律提供默认值",
+   "删除字段前确认无消费者依赖",
+   "Protobuf 已删字段号全部 reserved",
+   "发布顺序与兼容级别一致"
+  ],
+  "interview": [
+   {
+    "q": "BACKWARD 和 FORWARD 兼容分别保护谁？",
+    "a": "BACKWARD 保证用新模式的读者能读旧数据，保护的是先升级的消费者以及历史数据回放；FORWARD 保证旧读者能读新数据，保护的是尚未升级的消费者。选择取决于谁先发布：消费者先升级用 BACKWARD，生产者先升级用 FORWARD。"
+   },
+   {
+    "q": "如何安全地重命名一个字段？",
+    "a": "重命名对多数格式等同于删除加新增。安全做法：新增新名字段并带默认值，生产者双写；消费者逐步切换到新字段；确认没有读取方后再删除旧字段。Avro 可用 aliases 辅助读取，但仍需评估各语言实现的支持程度。"
+   },
+   {
+    "q": "为什么数据湖也需要模式演进管理？",
+    "a": "湖中数据会被多年后的作业重读，表格式要能用当前模式读取旧文件。Iceberg 按列 ID 而非列名跟踪字段，支持安全地加列、删列、重命名和部分类型提升；若绕过表格式直接写文件，模式漂移会让查询出错或静默产生空值。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Confluent: Schema Evolution and Compatibility",
+    "url": "https://docs.confluent.io/platform/current/schema-registry/fundamentals/schema-evolution.html"
+   },
+   {
+    "title": "Protocol Buffers: Updating A Message Type",
+    "url": "https://protobuf.dev/programming-guides/proto3/"
+   },
+   {
+    "title": "Apache Avro Specification",
+    "url": "https://avro.apache.org/docs/1.11.1/specification/"
+   }
+  ]
+ },
+ {
+  "slug": "mvcc",
+  "def": "多版本并发控制（MVCC）是数据库的并发控制机制：写操作创建数据的新版本而不覆盖旧版本，每个事务基于自己的快照读取可见版本，从而读不阻塞写、写不阻塞读。PostgreSQL、MySQL InnoDB、Oracle 等主流数据库都采用 MVCC，它是实现读已提交、可重复读、快照隔离的基础。",
+  "how": [
+   "每个版本记录创建它的事务 ID 和删除它的事务 ID（PostgreSQL 为元组的 xmin/xmax）；InnoDB 在行上保存最近修改的事务 ID 与指向 undo 日志的回滚指针。",
+   "事务开始或语句开始时获取快照，记录当时哪些事务已提交、哪些仍活跃。",
+   "读取时沿版本链找到对当前快照可见的版本：PostgreSQL 在堆中保留多个元组，InnoDB 通过 undo 日志重建旧版本。",
+   "写写冲突仍需行锁：两个事务改同一行时后者等待，在可重复读级别下可能因更新冲突而失败重试。",
+   "不再被任何快照需要的旧版本由后台清理：PostgreSQL 的 VACUUM、InnoDB 的 purge 线程。"
+  ],
+  "terms": [
+   {
+    "t": "快照 (Snapshot)",
+    "d": "某一时刻已提交事务集合的视图，决定事务能看到哪些版本。"
+   },
+   {
+    "t": "死元组 (Dead Tuple)",
+    "d": "PostgreSQL 中已被更新或删除、对所有事务都不可见的旧行版本。"
+   },
+   {
+    "t": "读视图 (Read View)",
+    "d": "InnoDB 中判断版本可见性的结构，记录活跃事务 ID 范围。"
+   },
+   {
+    "t": "写偏斜 (Write Skew)",
+    "d": "快照隔离下两个事务读同一数据、各改不同行，合起来违反约束的异常。"
+   },
+   {
+    "t": "事务 ID 回卷 (XID Wraparound)",
+    "d": "PostgreSQL 32 位事务 ID 用尽的风险，需通过 VACUUM 冻结旧元组避免。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "观察 PostgreSQL 的版本与膨胀",
+   "src": "-- 每行的系统列：xmin 为创建它的事务 ID\nSELECT xmin, xmax, id, balance FROM accounts WHERE id = 1;\n\nUPDATE accounts SET balance = balance - 10 WHERE id = 1;\n-- 再查：xmin 变了，说明是新元组；旧元组成为死元组\nSELECT xmin, xmax, id, balance FROM accounts WHERE id = 1;\n\n-- 各表死元组数量与最近一次自动清理时间\nSELECT relname, n_live_tup, n_dead_tup, last_autovacuum\nFROM pg_stat_user_tables\nORDER BY n_dead_tup DESC LIMIT 5;\n\n-- 找出长时间未结束的事务：它们会阻止旧版本被清理\nSELECT pid, state, now() - xact_start AS xact_age, left(query, 60)\nFROM pg_stat_activity\nWHERE xact_start IS NOT NULL\nORDER BY xact_start LIMIT 5;",
+   "note": "处于 idle in transaction 的会话持有旧快照，是表膨胀的常见元凶，可配置 idle_in_transaction_session_timeout。"
+  },
+  "table": {
+   "title": "PostgreSQL 与 InnoDB 实现差异",
+   "head": [
+    "维度",
+    "PostgreSQL",
+    "MySQL InnoDB"
+   ],
+   "rows": [
+    [
+     "旧版本存放",
+     "与新版本同在堆表中",
+     "undo 日志中"
+    ],
+    [
+     "更新方式",
+     "插入新元组，旧元组标记失效",
+     "原地更新，旧值写入 undo"
+    ],
+    [
+     "清理机制",
+     "VACUUM / autovacuum",
+     "purge 线程清理 undo"
+    ],
+    [
+     "主要风险",
+     "表膨胀、XID 回卷",
+     "长事务导致 undo 增长"
+    ],
+    [
+     "默认隔离级别",
+     "读已提交",
+     "可重复读"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "MVCC",
+    "pros": "读写互不阻塞，读多场景并发高",
+    "cons": "需存储旧版本并后台清理",
+    "when": "绝大多数 OLTP 业务"
+   },
+   {
+    "opt": "两阶段锁 (2PL)",
+    "pros": "可直接实现可串行化，无旧版本存储",
+    "cons": "读写互相阻塞，易死锁",
+    "when": "冲突极少或需严格串行化的老系统"
+   },
+   {
+    "opt": "MVCC + 可串行化快照隔离 (SSI)",
+    "pros": "在 MVCC 上消除写偏斜",
+    "cons": "可能出现序列化失败需应用重试",
+    "when": "强一致业务规则且能处理重试"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "连接池中事务开启后长时间不提交",
+    "fix": "设置事务和空闲事务超时，监控 xact_start 最老的会话"
+   },
+   {
+    "bad": "以为可重复读能防止所有并发异常",
+    "fix": "识别写偏斜场景，用 SELECT ... FOR UPDATE 或可串行化级别"
+   },
+   {
+    "bad": "大批量更新全表，瞬间产生大量死元组",
+    "fix": "分批更新，并在之后观察 autovacuum 或手动 VACUUM"
+   },
+   {
+    "bad": "关闭 autovacuum 以「提升性能」",
+    "fix": "保持开启并按表调优阈值，否则膨胀与回卷风险更大"
+   }
+  ],
+  "checklist": [
+   "监控最老事务年龄与 idle in transaction 会话",
+   "配置事务与空闲事务超时",
+   "关注高频更新表的死元组比例",
+   "autovacuum 参数按大表单独调优",
+   "监控 PostgreSQL 事务 ID 年龄",
+   "关键业务约束评估写偏斜风险"
+  ],
+  "interview": [
+   {
+    "q": "MVCC 下为什么读不阻塞写？",
+    "a": "写入不覆盖旧数据而是生成新版本，读事务依据自己的快照选择可见版本，所以不需要等写事务释放锁；写事务也不必等读者结束。只有两个事务同时写同一行时才需要行锁协调。"
+   },
+   {
+    "q": "PostgreSQL 表膨胀的根因和处理？",
+    "a": "UPDATE/DELETE 留下死元组，若存在长事务或复制槽持有旧快照，VACUUM 无法回收，表与索引持续变大。处理：找出并结束长事务，调优 autovacuum，必要时在线重整（如 pg_repack 扩展）或 VACUUM FULL（会锁表）。"
+   },
+   {
+    "q": "快照隔离下的写偏斜如何发生？",
+    "a": "例如规定至少一名医生值班，两个事务都读到两人在岗，各自把不同的人改为休息并提交，结果无人值班。两者改的是不同行，没有写写冲突。解决：对相关行加锁、用约束物化冲突，或使用可串行化隔离级别。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL: Concurrency Control (MVCC)",
+    "url": "https://www.postgresql.org/docs/current/mvcc-intro.html"
+   },
+   {
+    "title": "MySQL: InnoDB Multi-Versioning",
+    "url": "https://dev.mysql.com/doc/refman/8.0/en/innodb-multi-versioning.html"
+   },
+   {
+    "title": "PostgreSQL: Routine Vacuuming",
+    "url": "https://www.postgresql.org/docs/current/routine-vacuuming.html"
+   }
+  ]
+ },
+ {
+  "slug": "write-ahead-log",
+  "def": "预写日志（WAL）是数据库保证持久性与原子性的核心机制：任何数据页修改在写入数据文件之前，先把描述该修改的日志记录顺序写入并刷到持久存储。崩溃后通过重放日志恢复到一致状态。WAL 同时是物理复制、逻辑解码（CDC）和时间点恢复（PITR）的基础。",
+  "how": [
+   "事务修改内存中的数据页，同时生成 WAL 记录并分配单调递增的日志序列号（LSN）。",
+   "提交时只需把 WAL 刷盘（fsync），脏数据页可稍后由后台进程写回，顺序写日志比随机写数据页更快。",
+   "检查点定期把脏页写回数据文件并记录位置，崩溃恢复只需从最近检查点开始重放。",
+   "崩溃后数据库从检查点读取 WAL 依次重做（redo），确保已提交事务不丢、未完成事务不生效。",
+   "备库持续接收并重放主库 WAL 实现物理复制；归档 WAL 加基础备份可恢复到任意时间点。"
+  ],
+  "terms": [
+   {
+    "t": "LSN (Log Sequence Number)",
+    "d": "WAL 中的字节位置，用来比较日志进度与复制延迟。"
+   },
+   {
+    "t": "检查点 (Checkpoint)",
+    "d": "保证此前所有修改已写入数据文件的点，限定恢复需要重放的范围。"
+   },
+   {
+    "t": "整页写 (Full Page Writes)",
+    "d": "检查点后页面首次修改时写入整页镜像，防止部分写导致页损坏。"
+   },
+   {
+    "t": "复制槽 (Replication Slot)",
+    "d": "PostgreSQL 为消费者保留其尚未读取的 WAL，避免被提前回收。"
+   },
+   {
+    "t": "synchronous_commit",
+    "d": "PostgreSQL 参数，控制提交返回前是否等待本地或备库 WAL 落盘。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "检查 WAL 与复制槽占用",
+   "src": "-- 当前 WAL 写入位置与 WAL 级别\nSELECT pg_current_wal_lsn();\nSHOW wal_level;           -- replica / logical\nSHOW synchronous_commit;\n\n-- 复制槽为消费者保留了多少 WAL：不活跃的槽会让磁盘持续增长\nSELECT slot_name, slot_type, active,\n       pg_size_pretty(\n         pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn)\n       ) AS retained_wal\nFROM pg_replication_slots;\n\n-- 备库延迟（在主库执行）\nSELECT client_addr, state,\n       pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn)) AS replay_lag\nFROM pg_stat_replication;\n\n-- PostgreSQL 13+ 可用 max_slot_wal_keep_size 限制单个槽保留的 WAL\n-- 不再需要的槽：SELECT pg_drop_replication_slot('slot_name');",
+   "note": "废弃的 CDC 或备库复制槽是 WAL 撑满磁盘的常见原因，应纳入监控告警。"
+  },
+  "table": {
+   "title": "WAL 相关的持久性取舍",
+   "head": [
+    "设置",
+    "效果",
+    "风险"
+   ],
+   "rows": [
+    [
+     "fsync=on（默认）",
+     "提交时 WAL 真正落盘",
+     "无，生产必须开启"
+    ],
+    [
+     "synchronous_commit=off",
+     "提交不等 WAL 刷盘，延迟更低",
+     "崩溃可能丢最近少量已提交事务"
+    ],
+    [
+     "同步复制",
+     "提交等待备库确认",
+     "备库故障会阻塞写入"
+    ],
+    [
+     "full_page_writes=on",
+     "防止页部分写损坏",
+     "检查点后 WAL 量增加"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "严格持久（同步刷盘）",
+    "pros": "已确认提交绝不丢失",
+    "cons": "每次提交受磁盘刷新延迟限制",
+    "when": "交易、账务等核心数据"
+   },
+   {
+    "opt": "异步提交",
+    "pros": "写延迟显著降低，吞吐更高",
+    "cons": "崩溃窗口内可能丢少量事务，但不会损坏数据",
+    "when": "日志、埋点等可容忍少量丢失"
+   },
+   {
+    "opt": "同步复制到备库",
+    "pros": "主库宕机也不丢已提交事务",
+    "cons": "写延迟增加网络往返",
+    "when": "要求 RPO 为零的系统"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用 fsync=off 换取性能",
+    "fix": "保持 fsync 开启；需要低延迟时评估 synchronous_commit=off"
+   },
+   {
+    "bad": "复制槽的消费者下线后无人清理",
+    "fix": "监控 retained_wal 与 active 状态，设置 max_slot_wal_keep_size"
+   },
+   {
+    "bad": "只做数据目录快照，不归档 WAL",
+    "fix": "基础备份加持续 WAL 归档，才能做时间点恢复"
+   },
+   {
+    "bad": "检查点过于频繁导致 WAL 与 IO 激增",
+    "fix": "按写入量调整 max_wal_size 与 checkpoint_timeout"
+   }
+  ],
+  "checklist": [
+   "fsync 与 full_page_writes 处于开启状态",
+   "WAL 所在磁盘使用率有告警",
+   "所有复制槽都有明确负责人与监控",
+   "WAL 归档成功率被监控",
+   "定期演练从备份加 WAL 的恢复",
+   "持久性参数与业务 RPO 一致"
+  ],
+  "interview": [
+   {
+    "q": "为什么先写日志再写数据页能提升性能？",
+    "a": "WAL 是顺序追加写，数据页修改是分散的随机写。提交时只需把较小的日志顺序刷盘，数据页可以批量、延迟写回，多次修改同一页还能合并。崩溃时用日志重做即可恢复，因此兼顾持久性与性能。"
+   },
+   {
+    "q": "PostgreSQL 磁盘被 WAL 撑满，如何排查？",
+    "a": "先看 pg_replication_slots：不活跃或落后的复制槽会阻止 WAL 回收；再看归档是否失败（archive_command 报错会导致 WAL 堆积）；最后检查 max_wal_size 与检查点设置。处理后补上监控与槽保留上限。"
+   },
+   {
+    "q": "WAL 与 CDC 是什么关系？",
+    "a": "WAL 记录了所有已提交的修改。PostgreSQL 在 wal_level=logical 时可通过逻辑解码把 WAL 转成行级变更事件，Debezium 等工具基于复制槽读取，实现不侵入业务代码的变更数据捕获。复制槽也意味着消费者停摆时 WAL 会堆积。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL: Write-Ahead Logging",
+    "url": "https://www.postgresql.org/docs/current/wal-intro.html"
+   },
+   {
+    "title": "PostgreSQL: WAL Configuration Parameters",
+    "url": "https://www.postgresql.org/docs/current/runtime-config-wal.html"
+   },
+   {
+    "title": "SQLite: Write-Ahead Logging",
+    "url": "https://www.sqlite.org/wal.html"
+   }
+  ]
+ },
+ {
+  "slug": "btree-vs-lsm-tree",
+  "def": "B+ 树与 LSM 树（Log-Structured Merge-Tree）是两类主流存储引擎索引结构。B+ 树原地更新有序页，读取路径短而稳定，代表为 InnoDB、PostgreSQL 索引；LSM 树先把写入缓冲在内存，再顺序刷成不可变有序文件并后台合并，写吞吐高，代表为 RocksDB、Cassandra。选型本质是在读放大、写放大和空间放大之间取舍。",
+  "how": [
+   "B+ 树：数据按键有序存放在固定大小的页中，内部节点只存键与指针，叶子节点相互链接，便于范围扫描。",
+   "B+ 树写入需定位叶子页原地修改，页满则分裂；配合 WAL 保证崩溃一致，随机写较多。",
+   "LSM 树：写入先追加 WAL，再写入内存表（memtable）；内存表满后整体刷成磁盘上的有序文件（SSTable）。",
+   "LSM 读取需依次查内存表和多层 SSTable，通常借助每个文件的布隆过滤器跳过不含该键的文件。",
+   "LSM 后台合并（compaction）把多层文件归并，丢弃被覆盖的旧值与删除标记（tombstone），回收空间并控制读放大。"
+  ],
+  "terms": [
+   {
+    "t": "写放大 (Write Amplification)",
+    "d": "实际写入存储的数据量与用户写入数据量之比。"
+   },
+   {
+    "t": "读放大 (Read Amplification)",
+    "d": "完成一次查询需要读取的页或文件数量。"
+   },
+   {
+    "t": "SSTable",
+    "d": "按键排序且写入后不可变的磁盘文件，是 LSM 树的基本存储单元。"
+   },
+   {
+    "t": "分层/分级合并 (Leveled/Tiered)",
+    "d": "两种 compaction 策略，前者读与空间更优，后者写放大更低。"
+   },
+   {
+    "t": "墓碑 (Tombstone)",
+    "d": "LSM 中表示删除的标记，合并到最底层前不能丢弃。"
+   },
+   {
+    "t": "填充因子 (Fill Factor)",
+    "d": "B 树页预留空间比例，影响页分裂频率与空间利用率。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "极简 LSM 写读路径",
+   "src": "import bisect\nclass TinyLSM:\n    \"\"\"教学示例：内存表 + 不可变有序段，省略 WAL 与布隆过滤器\"\"\"\n    def __init__(self, limit=3):\n        self.mem, self.segments, self.limit = {}, [], limit\n    def put(self, k, v):            # 删除可用 v=None 作为墓碑\n        self.mem[k] = v\n        if len(self.mem) >= self.limit:\n            self.segments.append(sorted(self.mem.items()))  # 刷成有序段\n            self.mem = {}\n    def get(self, k):\n        if k in self.mem:\n            return self.mem[k]\n        for seg in reversed(self.segments):        # 新段优先\n            i = bisect.bisect_left(seg, (k,))\n            if i < len(seg) and seg[i][0] == k:\n                return seg[i][1]\n        return None\n    def compact(self):              # 合并所有段，新值覆盖旧值，丢弃墓碑\n        merged = {}\n        for seg in self.segments:\n            merged.update(seg)\n        self.segments = [sorted((k, v) for k, v in merged.items() if v is not None)]\ndb = TinyLSM()\nfor i in range(7):\n    db.put(f\"k{i}\", i)\ndb.put(\"k1\", None)\ndb.put(\"k2\", 20)\nprint(db.get(\"k2\"), len(db.segments))   # 20 3",
+   "note": "可见读要查多个段（读放大），合并会重写数据（写放大），这正是 LSM 的核心取舍。"
+  },
+  "table": {
+   "title": "B+ 树与 LSM 树对比",
+   "head": [
+    "维度",
+    "B+ 树",
+    "LSM 树"
+   ],
+   "rows": [
+    [
+     "写入模式",
+     "原地更新，随机写多",
+     "追加与顺序刷盘"
+    ],
+    [
+     "点查",
+     "路径固定、延迟稳定",
+     "可能查多层，依赖布隆过滤器"
+    ],
+    [
+     "范围扫描",
+     "叶子链表，效率高",
+     "需多路归并"
+    ],
+    [
+     "空间",
+     "页内有碎片",
+     "合并前存在冗余旧值"
+    ],
+    [
+     "性能抖动",
+     "页分裂",
+     "后台合并占用 IO 与 CPU"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "B+ 树引擎",
+    "pros": "读延迟稳定，事务与范围查询成熟",
+    "cons": "高写入下随机 IO 与页分裂开销大",
+    "when": "读多写少、OLTP 通用业务"
+   },
+   {
+    "opt": "LSM 分层合并",
+    "pros": "写吞吐高，空间与读放大较可控",
+    "cons": "合并写放大较高",
+    "when": "写多且仍有大量点查"
+   },
+   {
+    "opt": "LSM 分级合并",
+    "pros": "写放大最低",
+    "cons": "空间放大和读放大较高",
+    "when": "写入极多、读取较少，如时序与日志"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "LSM 引擎合并跟不上写入，触发写入降速",
+    "fix": "监控待合并量，预留 IO 余量，调整合并线程与策略"
+   },
+   {
+    "bad": "大量删除后空间不回收、范围扫描变慢",
+    "fix": "理解墓碑需合并到底层才清除，必要时手动触发范围合并"
+   },
+   {
+    "bad": "B+ 树主键用随机 UUID 导致频繁页分裂",
+    "fix": "使用有序 ID（如 UUIDv7、自增）减少随机插入"
+   },
+   {
+    "bad": "只看基准写吞吐就选 LSM",
+    "fix": "按真实读写比例、点查与范围查询分布压测"
+   }
+  ],
+  "checklist": [
+   "量化业务读写比例与查询模式",
+   "压测包含合并或页分裂期间的尾延迟",
+   "LSM 引擎监控待合并字节数与写停顿",
+   "B+ 树表主键尽量有序",
+   "评估空间放大对磁盘容量的影响",
+   "确认所选引擎的事务与备份能力"
+  ],
+  "interview": [
+   {
+    "q": "为什么 LSM 树写入快？",
+    "a": "写入只做 WAL 追加和内存表插入，内存表满后整体顺序写成有序文件，避免了 B+ 树定位叶子页后的随机写。代价是后台合并会多次重写数据（写放大），读取可能查多个文件（读放大）。"
+   },
+   {
+    "q": "布隆过滤器在 LSM 中起什么作用？",
+    "a": "每个 SSTable 附带布隆过滤器，点查时先判断键是否可能在该文件中。结果为「不存在」时一定不在，可直接跳过读盘，显著降低读放大。它对范围查询帮助不大，前缀布隆过滤器可部分缓解。"
+   },
+   {
+    "q": "什么是 RUM 猜想，它如何指导选型？",
+    "a": "RUM 猜想认为读开销（Read）、更新开销（Update）和内存或空间开销（Memory）三者不能同时最优，优化其二必然牺牲第三。B+ 树偏读，LSM 偏写，不同合并策略在写放大与空间放大间移动，选型要先明确主要瓶颈。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "O'Neil et al.: The Log-Structured Merge-Tree",
+    "url": "https://www.cs.umb.edu/~poneil/lsmtree.pdf"
+   },
+   {
+    "title": "RocksDB Wiki: Overview",
+    "url": "https://github.com/facebook/rocksdb/wiki/RocksDB-Overview"
+   },
+   {
+    "title": "Wikipedia: B+ tree",
+    "url": "https://en.wikipedia.org/wiki/B%2B_tree"
+   }
+  ]
+ },
+ {
+  "slug": "expand-contract-migrations",
+  "def": "扩展-收缩（Expand-Contract）迁移，也称并行变更（Parallel Change），是把破坏性的数据库或接口变更拆成多个各自向后兼容的步骤：先扩展出新结构并让新旧共存，再迁移数据和调用方，最后收缩删除旧结构。它让滚动发布期间新旧版本代码同时运行而不出错，实现零停机变更。",
+  "how": [
+   "扩展：新增列、表或索引，且不影响旧代码，例如新增可空列、在线创建索引。",
+   "双写：新版本代码同时写旧结构与新结构，读仍以旧结构为准，确保回滚安全。",
+   "回填：分批把历史数据迁移到新结构，控制每批大小与速率，避免长事务和复制延迟。",
+   "切换读取：校验新旧数据一致后，代码改为读新结构，可用功能开关逐步放量。",
+   "收缩：确认没有任何调用方再读写旧结构后，停止双写并删除旧列或旧表，每一步可单独发布与回退。"
+  ],
+  "terms": [
+   {
+    "t": "并行变更 (Parallel Change)",
+    "d": "Martin Fowler 命名的模式，即 expand、migrate、contract 三阶段。"
+   },
+   {
+    "t": "回填 (Backfill)",
+    "d": "为新结构补齐历史数据的批量任务。"
+   },
+   {
+    "t": "双写 (Dual Write)",
+    "d": "过渡期同时写入新旧两处，保证任一侧都完整。"
+   },
+   {
+    "t": "锁超时 (lock_timeout)",
+    "d": "PostgreSQL 参数，DDL 等锁超时即放弃，避免长时间阻塞业务。"
+   },
+   {
+    "t": "NOT VALID 约束",
+    "d": "PostgreSQL 先添加不校验存量数据的约束，再单独 VALIDATE，减少锁表时间。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "PostgreSQL 拆分 name 字段",
+   "src": "-- 第 1 次发布（扩展）：只加可空列，元数据操作，很快\nSET lock_timeout = '3s';\nALTER TABLE users ADD COLUMN first_name text, ADD COLUMN last_name text;\n\n-- 第 2 次发布：应用双写 name 与 first/last；后台分批回填\nUPDATE users\nSET first_name = split_part(name, ' ', 1),\n    last_name  = substr(name, length(split_part(name, ' ', 1)) + 2)\nWHERE id BETWEEN 1 AND 10000 AND first_name IS NULL;   -- 循环推进区间\n\n-- 在线建索引，不阻塞写入（不能放在事务块中）\nCREATE INDEX CONCURRENTLY idx_users_last_name ON users (last_name);\n\n-- 加非空约束：先 NOT VALID，再单独校验\nALTER TABLE users ADD CONSTRAINT first_name_nn\n  CHECK (first_name IS NOT NULL) NOT VALID;\nALTER TABLE users VALIDATE CONSTRAINT first_name_nn;\n\n-- 第 3 次发布：读改为新列；观察稳定后（收缩）\nALTER TABLE users DROP COLUMN name;",
+   "note": "每段对应一次独立发布；拆名规则仅为演示，真实姓名拆分需按业务规则处理。"
+  },
+  "table": {
+   "title": "常见变更的零停机做法",
+   "head": [
+    "变更",
+    "危险做法",
+    "扩展-收缩做法"
+   ],
+   "rows": [
+    [
+     "重命名列",
+     "直接 RENAME",
+     "加新列、双写、切读、删旧列"
+    ],
+    [
+     "改列类型",
+     "ALTER TYPE 重写全表",
+     "新建列回填后切换"
+    ],
+    [
+     "加非空列",
+     "带校验一次加上",
+     "可空列、回填、NOT VALID 后 VALIDATE"
+    ],
+    [
+     "加索引",
+     "普通 CREATE INDEX 锁写",
+     "CREATE INDEX CONCURRENTLY"
+    ],
+    [
+     "拆表",
+     "一次迁移并改代码",
+     "新表双写、回填、切读、删旧"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "扩展-收缩多次发布",
+    "pros": "全程不停机，每步可回退",
+    "cons": "周期长，过渡期代码更复杂",
+    "when": "高可用在线服务"
+   },
+   {
+    "opt": "维护窗口一次迁移",
+    "pros": "步骤简单，数据只有一种形态",
+    "cons": "需要停机，失败回退压力大",
+    "when": "内部系统或能接受停机"
+   },
+   {
+    "opt": "在线 schema 变更工具",
+    "pros": "自动处理影子表与切换（如 gh-ost）",
+    "cons": "引入额外工具与运维成本",
+    "when": "MySQL 大表结构变更"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "迁移与新代码同一次发布，旧实例读不到旧列",
+    "fix": "结构变更先行发布，代码变更随后，保证新旧代码都兼容"
+   },
+   {
+    "bad": "一个大 UPDATE 回填整张表",
+    "fix": "按主键分批、限速，并监控复制延迟与锁等待"
+   },
+   {
+    "bad": "DDL 等锁时排在长查询后面，阻塞所有后续请求",
+    "fix": "设置 lock_timeout 并重试，避开长事务"
+   },
+   {
+    "bad": "忘记收缩，旧列和双写代码长期残留",
+    "fix": "为收缩步骤建工单或截止日期，纳入技术债跟踪"
+   }
+  ],
+  "checklist": [
+   "每一步迁移都与当前和上一版本代码兼容",
+   "DDL 设置了 lock_timeout",
+   "回填分批执行且可断点续跑",
+   "切换读取前有新旧数据一致性校验",
+   "每一步都有回退方案",
+   "收缩步骤有明确时间与负责人"
+  ],
+  "interview": [
+   {
+    "q": "为什么不能在同一次发布里加列并删旧列？",
+    "a": "滚动发布期间新旧两版代码会同时运行。若删掉旧列，旧版本实例的查询立刻报错；若改名，同理。扩展-收缩保证任一时刻数据库结构同时满足正在运行的所有代码版本，也让每一步可以独立回滚。"
+   },
+   {
+    "q": "回填大表时需要注意什么？",
+    "a": "按主键区间分批、每批独立小事务，避免长事务导致 MVCC 膨胀和锁等待；限速并监控复制延迟与 CPU；任务可幂等、可断点续跑；回填期间新写入由双写保证，最后做一致性核对。"
+   },
+   {
+    "q": "AI 生成迁移脚本时如何把关？",
+    "a": "检查是否包含会重写全表或长时间持锁的操作（改列类型、普通建索引、带校验的约束）；要求拆成多次发布并说明每步兼容哪些代码版本；确认有 lock_timeout、分批回填和回退脚本，先在生产规模数据的副本上演练。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Martin Fowler: ParallelChange",
+    "url": "https://martinfowler.com/bliki/ParallelChange.html"
+   },
+   {
+    "title": "PostgreSQL: ALTER TABLE",
+    "url": "https://www.postgresql.org/docs/current/sql-altertable.html"
+   },
+   {
+    "title": "PostgreSQL: CREATE INDEX (CONCURRENTLY)",
+    "url": "https://www.postgresql.org/docs/current/sql-createindex.html"
+   }
+  ]
+ },
+ {
+  "slug": "distributed-sql",
+  "def": "分布式 SQL（Distributed SQL，常称 NewSQL）数据库对外提供关系模型、SQL 与 ACID 事务，对内把数据按键范围自动分片到多台节点，并用 Raft/Paxos 共识复制，实现水平扩展和自动故障转移。代表有 Google Spanner、CockroachDB、TiDB、YugabyteDB。它试图同时获得单机关系库的易用性和 NoSQL 的扩展性。",
+  "how": [
+   "表数据按主键排序后切成连续的范围（CockroachDB 称 range，TiDB 称 region），超过阈值自动分裂并在节点间迁移以均衡负载。",
+   "每个范围有多个副本组成一个共识组，写入需多数派确认，少数节点故障不丢数据、不停服务。",
+   "SQL 层把查询拆解为对多个范围的读写，并尽量把过滤和聚合下推到存储节点执行。",
+   "跨范围事务借助全局时间戳与 MVCC：Spanner 用 TrueTime，CockroachDB 用混合逻辑时钟，TiDB 用中心化授时（TSO）。",
+   "事务提交采用基于共识日志的两阶段提交变体；冲突时事务可能被中止，要求客户端重试。"
+  ],
+  "terms": [
+   {
+    "t": "范围/Region (Range)",
+    "d": "按主键连续切分的数据片段，是复制、迁移与负载均衡的基本单位。"
+   },
+   {
+    "t": "多数派 (Quorum)",
+    "d": "共识组中超过半数的副本，写入获得多数派确认即视为提交。"
+   },
+   {
+    "t": "混合逻辑时钟 (HLC)",
+    "d": "结合物理时间与逻辑计数的时钟，用于在无原子钟环境下为事务排序。"
+   },
+   {
+    "t": "TrueTime",
+    "d": "Spanner 提供带误差区间的全局时间 API，依靠 GPS 与原子钟。"
+   },
+   {
+    "t": "热点 (Hotspot)",
+    "d": "写入集中在单个范围，如单调递增主键导致的尾部写入热点。"
+   },
+   {
+    "t": "事务重试错误 (40001)",
+    "d": "序列化冲突的 SQLSTATE，应用需要捕获并重试整个事务。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "避免热点的建表方式",
+   "src": "-- CockroachDB：用随机 UUID 主键分散写入，避免自增主键尾部热点\nCREATE TABLE orders (\n  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  user_id    UUID NOT NULL,\n  amount     DECIMAL(12, 2) NOT NULL,\n  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),\n  INDEX (user_id, created_at)\n);\n\n-- 查看数据被切成了哪些范围、分布在哪些节点\nSHOW RANGES FROM TABLE orders;\n\n-- 调整副本数（默认 3），提高容错\nALTER TABLE orders CONFIGURE ZONE USING num_replicas = 5;\n\n-- TiDB 的对应做法：AUTO_RANDOM 打散主键\n-- CREATE TABLE orders (id BIGINT PRIMARY KEY AUTO_RANDOM, ...);\n-- SHOW TABLE orders REGIONS;",
+   "note": "不同产品语法与默认值不同，以各自官方文档为准；应用端务必实现 40001 重试。"
+  },
+  "table": {
+   "title": "主流分布式 SQL 对比",
+   "head": [
+    "产品",
+    "SQL 兼容",
+    "授时方式",
+    "部署形态"
+   ],
+   "rows": [
+    [
+     "Google Spanner",
+     "GoogleSQL / PostgreSQL 方言",
+     "TrueTime",
+     "Google Cloud 托管"
+    ],
+    [
+     "CockroachDB",
+     "PostgreSQL 协议",
+     "混合逻辑时钟",
+     "自建或托管"
+    ],
+    [
+     "TiDB",
+     "MySQL 协议",
+     "PD 中心授时 (TSO)",
+     "自建或托管"
+    ],
+    [
+     "YugabyteDB",
+     "PostgreSQL 兼容",
+     "混合逻辑时钟",
+     "自建或托管"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "分布式 SQL",
+    "pros": "自动分片与故障转移，保留 SQL 与事务",
+    "cons": "单次写延迟更高，成本与运维复杂",
+    "when": "单机库容量或可用性到顶，需多地域"
+   },
+   {
+    "opt": "单机库 + 读副本",
+    "pros": "简单成熟，延迟最低",
+    "cons": "写入受单机上限约束",
+    "when": "绝大多数中小规模业务"
+   },
+   {
+    "opt": "应用层手动分库分表",
+    "pros": "可精确控制数据分布",
+    "cons": "跨分片查询与事务需自行处理",
+    "when": "已有大量 MySQL 资产且团队有经验"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "沿用自增主键，写入全部打到最后一个范围",
+    "fix": "使用随机或打散的主键，或哈希分片索引"
+   },
+   {
+    "bad": "应用不处理事务重试错误",
+    "fix": "捕获 40001 等可重试错误，整体重试事务并设置上限"
+   },
+   {
+    "bad": "把单机库的大事务直接搬过来",
+    "fix": "拆小事务，避免跨大量范围的长事务"
+   },
+   {
+    "bad": "多地域部署却忽略副本放置与就近读",
+    "fix": "按访问地域配置副本与 leader 位置，评估跨地域写延迟"
+   }
+  ],
+  "checklist": [
+   "确认单机方案确实无法满足容量或可用性",
+   "主键与索引设计避免写热点",
+   "客户端实现可重试事务逻辑",
+   "压测覆盖跨范围事务与节点故障",
+   "副本数与放置策略满足容灾要求",
+   "核对与原数据库的 SQL 兼容差异"
+  ],
+  "interview": [
+   {
+    "q": "分布式 SQL 如何做到强一致又可扩展？",
+    "a": "扩展靠按键范围自动分片，每片独立复制与迁移；一致性靠每个分片内的 Raft 多数派写入，加上全局时间戳与 MVCC 为跨分片事务排序，提交走基于共识的两阶段提交。代价是写入至少一次多数派往返，跨分片事务更慢。"
+   },
+   {
+    "q": "为什么自增主键在分布式 SQL 中是反模式？",
+    "a": "数据按主键范围切片，单调递增的键总是落在最后一个范围，所有写入集中到一个共识组的 leader，无法利用其他节点。使用随机 UUID、AUTO_RANDOM 或哈希前缀能把写入分散到多个范围。"
+   },
+   {
+    "q": "Spanner 的 TrueTime 解决了什么问题？",
+    "a": "它给出带误差上界的时间区间，事务提交时等待误差区间过去（commit wait），从而保证提交时间戳顺序与真实时间顺序一致，实现外部一致性。没有原子钟的系统用混合逻辑时钟加最大时钟偏移假设，偏移超限时需拒绝服务或重试。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Spanner: Google's Globally-Distributed Database",
+    "url": "https://research.google/pubs/spanner-googles-globally-distributed-database-2/"
+   },
+   {
+    "title": "CockroachDB: Architecture Overview",
+    "url": "https://www.cockroachlabs.com/docs/stable/architecture/overview"
+   },
+   {
+    "title": "TiDB Architecture",
+    "url": "https://docs.pingcap.com/tidb/stable/tidb-architecture"
+   }
+  ]
+ },
+ {
+  "slug": "kubernetes-operators",
+  "def": "Operator 是 Kubernetes 的扩展模式：用自定义资源（CRD）描述某类应用的期望状态，再用自定义控制器持续调和（reconcile），把部署、扩容、备份、升级、故障恢复等运维知识编码为程序。它让数据库、消息队列等有状态复杂软件也能像 Deployment 一样被声明式管理。",
+  "how": [
+   "定义 CRD，向 API Server 注册新的资源类型，如 PostgreSQL 集群，包含 spec（期望）与 status（现状）。",
+   "控制器通过 informer 监听自定义资源及其关联对象的变化，把对象键放入工作队列。",
+   "Reconcile 函数读取当前状态并与 spec 比较，创建或修改 StatefulSet、Service、Secret 等子资源，使现实趋近期望。",
+   "调和是电平触发且必须幂等：无论触发几次、从何种中间状态开始，结果都应一致；失败则带退避重新入队。",
+   "通过 ownerReferences 让子资源随父资源被垃圾回收，用 finalizer 在删除前执行清理（如删除外部备份）。"
+  ],
+  "terms": [
+   {
+    "t": "自定义资源定义 (CRD)",
+    "d": "向 Kubernetes API 注册新资源类型的方式，可带 OpenAPI 校验。"
+   },
+   {
+    "t": "调和循环 (Reconcile Loop)",
+    "d": "不断比较期望与实际状态并采取动作消除差异的控制逻辑。"
+   },
+   {
+    "t": "电平触发 (Level-triggered)",
+    "d": "根据当前完整状态决策，而不是依赖单个事件，丢事件也能自愈。"
+   },
+   {
+    "t": "Finalizer",
+    "d": "对象删除前必须被移除的标记，控制器借此完成外部资源清理。"
+   },
+   {
+    "t": "Kubebuilder / Operator SDK",
+    "d": "构建 Operator 的主流 Go 框架，基于 controller-runtime。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "用 CloudNativePG 声明集群",
+   "src": "# 前提：已安装 CloudNativePG Operator\napiVersion: postgresql.cnpg.io/v1\nkind: Cluster\nmetadata:\n  name: app-db\n  namespace: prod\nspec:\n  instances: 3               # 1 主 2 备，Operator 负责复制与故障切换\n  storage:\n    size: 20Gi\n  resources:\n    requests:\n      cpu: \"1\"\n      memory: 2Gi\n    limits:\n      memory: 2Gi\n  bootstrap:\n    initdb:\n      database: app\n      owner: app\n# kubectl apply -f app-db.yaml\n# kubectl get cluster -n prod app-db   # 查看 Operator 汇报的状态",
+   "note": "用户只写期望状态；创建 Pod、配置复制、主库故障后提升备库都由 Operator 调和完成。字段以官方文档为准。"
+  },
+  "table": {
+   "title": "扩展 Kubernetes 的方式",
+   "head": [
+    "方式",
+    "能做什么",
+    "复杂度"
+   ],
+   "rows": [
+    [
+     "Helm Chart",
+     "模板化安装一组资源",
+     "低，无运行期逻辑"
+    ],
+    [
+     "Operator",
+     "持续管理生命周期与故障恢复",
+     "高，需要开发与维护控制器"
+    ],
+    [
+     "准入 Webhook",
+     "创建/修改资源时校验或改写",
+     "中"
+    ],
+    [
+     "聚合 API Server",
+     "提供全新 API 后端",
+     "很高，少数场景使用"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "使用成熟社区 Operator",
+    "pros": "沉淀了大量运维经验，开箱即用",
+    "cons": "升级与行为受上游约束",
+    "when": "数据库、消息队列等通用中间件"
+   },
+   {
+    "opt": "自研 Operator",
+    "pros": "精确编码自家运维流程",
+    "cons": "开发与长期维护成本高，Bug 影响面大",
+    "when": "内部平台有重复且复杂的运维模式"
+   },
+   {
+    "opt": "托管云服务",
+    "pros": "无需运维控制器与存储",
+    "cons": "成本较高，可定制性低",
+    "when": "团队小、追求稳定"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "Reconcile 依赖事件类型做增量处理",
+    "fix": "每次都读取完整当前状态做决策，保证幂等与自愈"
+   },
+   {
+    "bad": "在 Reconcile 中频繁更新 status 触发自身无限循环",
+    "fix": "仅在状态真正变化时更新，并使用 status 子资源与 generation 判断"
+   },
+   {
+    "bad": "删除时未处理外部资源，留下孤儿云盘或备份",
+    "fix": "使用 finalizer 清理外部资源后再放行删除"
+   },
+   {
+    "bad": "Operator 拥有集群级管理员权限",
+    "fix": "按需授予最小 RBAC，限定命名空间与资源类型"
+   }
+  ],
+  "checklist": [
+   "CRD 带 OpenAPI 校验与版本策略",
+   "Reconcile 幂等，失败有退避重试",
+   "status 字段清晰反映就绪与错误",
+   "RBAC 权限最小化",
+   "Operator 自身升级路径经过演练",
+   "有 Operator 停止运行时的人工兜底方案"
+  ],
+  "interview": [
+   {
+    "q": "为什么 Operator 必须是电平触发而非边沿触发？",
+    "a": "事件可能丢失、重复或乱序，控制器也可能重启。若只按单个事件增量处理，状态会漂移。电平触发每次比较完整的期望与实际状态再行动，任何时刻重新运行都能收敛，这也要求操作幂等。"
+   },
+   {
+    "q": "什么时候不该写 Operator？",
+    "a": "若只是安装一组静态资源，Helm 或 Kustomize 就够；若运维动作很少、靠人偶尔执行即可，控制器的开发与维护成本不划算；有成熟社区 Operator 或托管服务时优先复用。Operator 适合需要持续自动化、复杂且重复的生命周期管理。"
+   },
+   {
+    "q": "finalizer 的作用和风险？",
+    "a": "它让对象删除被挂起，直到控制器完成清理并移除标记，用于删除云资源、备份等外部依赖。风险是控制器故障时 finalizer 永远不被移除，对象卡在 Terminating，命名空间也删不掉，需要监控并有人工处理流程。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Kubernetes: Operator pattern",
+    "url": "https://kubernetes.io/docs/concepts/extend-kubernetes/operator/"
+   },
+   {
+    "title": "The Kubebuilder Book",
+    "url": "https://book.kubebuilder.io/"
+   },
+   {
+    "title": "CloudNativePG Documentation",
+    "url": "https://cloudnative-pg.io/documentation/current/"
+   }
+  ]
+ },
+ {
+  "slug": "policy-as-code",
+  "def": "策略即代码（Policy as Code）把安全、合规与运维规则写成可版本化、可测试、可自动执行的代码，在 CI、部署准入和运行时由策略引擎统一判定。Open Policy Agent（OPA，CNCF 毕业项目）是通用策略引擎，使用声明式语言 Rego；Kubernetes 场景还常用基于 OPA 的 Gatekeeper 或 Kyverno。",
+  "how": [
+   "把规则写成策略文件，与代码一起放在 Git 中评审、测试和发布。",
+   "被检查对象以结构化数据（JSON/YAML）作为输入，如 Kubernetes 清单、Terraform 计划、API 请求。",
+   "策略引擎对输入求值，输出允许/拒绝及原因列表，业务系统只依据决策结果行动，实现决策与执行解耦。",
+   "在多个关口执行：本地与 CI 用 Conftest 检查配置，集群用准入控制器拦截，服务内部用 OPA 做授权。",
+   "通过审计模式先观察违规而不拦截，再逐步切换为强制执行。"
+  ],
+  "terms": [
+   {
+    "t": "Rego",
+    "d": "OPA 的声明式查询语言，规则描述在何种条件下产生决策。"
+   },
+   {
+    "t": "策略决策点 (PDP)",
+    "d": "负责计算策略结果的组件，如 OPA；执行点（PEP）据此放行或拒绝。"
+   },
+   {
+    "t": "准入控制 (Admission Control)",
+    "d": "Kubernetes 在对象持久化前调用 Webhook 校验或改写请求。"
+   },
+   {
+    "t": "Conftest",
+    "d": "用 Rego 策略测试结构化配置文件的命令行工具，常用于 CI。"
+   },
+   {
+    "t": "审计模式 (Audit/Dry-run)",
+    "d": "只记录违规不拦截，用于新策略上线前评估影响面。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "Conftest 检查 K8s 清单",
+   "src": "mkdir -p policy\ncat > policy/k8s.rego <<'EOF'\npackage main\nimport rego.v1\n\ndeny contains msg if {\n  input.kind == \"Deployment\"\n  some c in input.spec.template.spec.containers\n  not c.securityContext.runAsNonRoot\n  msg := sprintf(\"容器 %s 必须设置 runAsNonRoot: true\", [c.name])\n}\n\ndeny contains msg if {\n  input.kind == \"Deployment\"\n  some c in input.spec.template.spec.containers\n  not c.resources.limits.memory\n  msg := sprintf(\"容器 %s 缺少内存上限\", [c.name])\n}\nEOF\n\n# 在 CI 中执行：任一 deny 命中则返回非零退出码\nconftest test deploy/deployment.yaml --policy policy/",
+   "note": "同一份 Rego 可在 CI 与集群准入两处复用；import rego.v1 兼容 OPA 1.0 语法。"
+  },
+  "table": {
+   "title": "常见策略引擎对比",
+   "head": [
+    "工具",
+    "语言",
+    "主要场景"
+   ],
+   "rows": [
+    [
+     "OPA",
+     "Rego",
+     "通用：API 授权、配置、Terraform"
+    ],
+    [
+     "Gatekeeper",
+     "Rego（ConstraintTemplate）",
+     "Kubernetes 准入与审计"
+    ],
+    [
+     "Kyverno",
+     "YAML 声明",
+     "Kubernetes 校验、改写与生成资源"
+    ],
+    [
+     "Conftest",
+     "Rego",
+     "CI 中测试配置文件"
+    ],
+    [
+     "HashiCorp Sentinel",
+     "Sentinel",
+     "Terraform Cloud 等 HashiCorp 产品"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "CI 阶段检查",
+    "pros": "反馈最早，修复成本最低",
+    "cons": "可被绕过，不覆盖手工变更",
+    "when": "所有 IaC 与清单仓库"
+   },
+   {
+    "opt": "集群准入强制",
+    "pros": "无法绕过的最后关口",
+    "cons": "策略错误会阻断发布，需高可用",
+    "when": "生产集群的关键安全规则"
+   },
+   {
+    "opt": "运行时授权（OPA sidecar/库）",
+    "pros": "授权逻辑与业务代码解耦，统一审计",
+    "cons": "增加调用延迟与部署组件",
+    "when": "多服务需要一致的细粒度授权"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "新策略直接强制执行，阻断大量现有工作负载",
+    "fix": "先审计模式统计违规，修复存量后再强制"
+   },
+   {
+    "bad": "策略没有单元测试，改动后误放或误杀",
+    "fix": "用 opa test 或 conftest verify 为每条规则写正反用例"
+   },
+   {
+    "bad": "准入 Webhook 故障导致集群无法创建资源",
+    "fix": "多副本部署，合理设置 failurePolicy 与超时，排除系统命名空间"
+   },
+   {
+    "bad": "拒绝信息含糊，开发者不知道怎么改",
+    "fix": "消息写明违规字段与修复方法，并附文档链接"
+   }
+  ],
+  "checklist": [
+   "策略文件纳入版本控制与代码评审",
+   "每条策略有通过与拒绝的测试用例",
+   "CI 与准入复用同一套策略",
+   "新策略先审计后强制",
+   "准入组件高可用且有故障策略",
+   "例外有审批流程与到期时间"
+  ],
+  "interview": [
+   {
+    "q": "为什么把策略决策与执行分离？",
+    "a": "业务服务只询问「能否执行」，规则统一在策略引擎中维护，修改规则无需改动和发布每个服务；决策可集中记录审计；同一策略语言覆盖 Kubernetes、CI、API 授权等多个执行点，减少规则在各处重复实现而不一致。"
+   },
+   {
+    "q": "Gatekeeper 和 Kyverno 如何选？",
+    "a": "Gatekeeper 基于 OPA 与 Rego，表达力强，可与组织内其他 OPA 场景共享技能；Kyverno 用 Kubernetes 风格的 YAML 编写，上手快，并原生支持改写与生成资源。只管 Kubernetes 且团队不熟 Rego 时常选 Kyverno。"
+   },
+   {
+    "q": "AI 生成的 IaC 如何借助策略即代码把关？",
+    "a": "在 CI 中对 Terraform 计划与 Kubernetes 清单运行策略检查，拦截公开存储桶、特权容器、缺少资源限制等问题；把违规消息反馈给 Agent 让其自行修复，形成自动闭环，人工只审查例外与高风险变更。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Open Policy Agent Documentation",
+    "url": "https://www.openpolicyagent.org/docs/latest/"
+   },
+   {
+    "title": "Conftest",
+    "url": "https://www.conftest.dev/"
+   },
+   {
+    "title": "Kyverno Documentation",
+    "url": "https://kyverno.io/docs/"
+   }
+  ]
+ },
+ {
+  "slug": "platform-engineering",
+  "def": "平台工程（Platform Engineering）是构建和运营内部开发者平台（IDP）的工程实践：把基础设施、CI/CD、可观测性、安全合规等能力封装为自助服务和标准化「黄金路径」，以产品思维服务内部开发者，降低认知负担，提升交付速度与一致性。它通常由专门的平台团队负责。",
+  "how": [
+   "调研开发者在交付链路上的高频痛点，如新建服务、申请资源、配置流水线、查看日志。",
+   "把这些能力整合成平台接口：门户、CLI、API 或 GitOps 仓库，底层对接 Kubernetes、云资源与 CI。",
+   "提供黄金路径模板：新服务一键生成仓库、流水线、监控、告警与安全基线。",
+   "通过服务目录登记所有权、依赖与文档，用记分卡衡量各服务是否满足标准。",
+   "以产品方式运营：度量采用率、开发者满意度和交付指标，持续迭代，而非强制推行。"
+  ],
+  "terms": [
+   {
+    "t": "内部开发者平台 (IDP)",
+    "d": "面向内部开发者的自助能力集合，屏蔽底层基础设施复杂度。"
+   },
+   {
+    "t": "黄金路径 (Golden Path)",
+    "d": "平台推荐且全面支持的标准做法，可选而非强制。"
+   },
+   {
+    "t": "最薄可行平台 (TVP)",
+    "d": "Team Topologies 提出的理念：平台只做到足以加速团队的最小程度。"
+   },
+   {
+    "t": "Backstage",
+    "d": "Spotify 开源、CNCF 托管的开发者门户框架，含服务目录与软件模板。"
+   },
+   {
+    "t": "DORA 指标",
+    "d": "部署频率、变更前置时间、变更失败率、恢复时间等交付效能指标。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "Backstage 服务目录登记",
+   "src": "# catalog-info.yaml：放在服务仓库根目录，被 Backstage 目录收录\napiVersion: backstage.io/v1alpha1\nkind: Component\nmetadata:\n  name: payments-service\n  description: 支付下单与回调处理\n  annotations:\n    github.com/project-slug: acme/payments-service\n    backstage.io/techdocs-ref: dir:.\n  tags: [python, grpc]\nspec:\n  type: service\n  lifecycle: production\n  owner: team-payments          # 所有权明确，告警与工单有人认领\n  system: checkout\n  providesApis:\n    - payments-api\n  dependsOn:\n    - resource:payments-db",
+   "note": "服务目录是平台的基础数据：模板、记分卡、文档和告警路由都依赖准确的所有权与依赖信息。"
+  },
+  "table": {
+   "title": "DevOps、SRE 与平台工程",
+   "head": [
+    "实践",
+    "核心目标",
+    "主要产出"
+   ],
+   "rows": [
+    [
+     "DevOps",
+     "打通开发与运维的文化与流程",
+     "CI/CD、协作方式"
+    ],
+    [
+     "SRE",
+     "用工程方法保障可靠性",
+     "SLO、错误预算、事故流程"
+    ],
+    [
+     "平台工程",
+     "降低开发者认知负担、自助交付",
+     "内部开发者平台与黄金路径"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "自建门户（如 Backstage）",
+    "pros": "可深度定制，插件生态丰富",
+    "cons": "需要前端与插件维护投入",
+    "when": "工程团队规模较大、工具链多样"
+   },
+   {
+    "opt": "商业 IDP 产品",
+    "pros": "上线快，维护负担小",
+    "cons": "订阅成本，定制受限",
+    "when": "希望快速见效的中型团队"
+   },
+   {
+    "opt": "模板仓库 + 文档",
+    "pros": "成本最低，立刻可用",
+    "cons": "缺乏统一入口与度量",
+    "when": "团队小、服务数量少的起步期"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "先建大平台，再找用户",
+    "fix": "从一两个高频痛点做起，用最薄可行平台验证价值"
+   },
+   {
+    "bad": "强制所有团队迁移，忽视特殊需求",
+    "fix": "黄金路径可选且最省力，保留有支持的例外通道"
+   },
+   {
+    "bad": "平台变成新的工单队列",
+    "fix": "能力以 API 和自助方式提供，平台团队不做人工中转"
+   },
+   {
+    "bad": "没有度量，无法证明平台价值",
+    "fix": "跟踪采用率、DORA 指标与开发者满意度"
+   }
+  ],
+  "checklist": [
+   "平台路线图来自开发者调研数据",
+   "新服务模板包含 CI、监控与安全基线",
+   "所有服务在目录中有明确所有者",
+   "核心能力可自助完成，无需工单",
+   "定期度量采用率与满意度",
+   "平台自身有 SLO 与文档"
+  ],
+  "interview": [
+   {
+    "q": "平台工程和传统运维团队的区别？",
+    "a": "传统运维通过工单替开发者执行操作，平台工程把能力产品化为自助服务。平台团队把开发者当用户，关注体验与采用率，通过黄金路径让正确做法成为最省力的做法，而不是靠审批和人力把关。"
+   },
+   {
+    "q": "如何衡量内部开发者平台是否成功？",
+    "a": "看结果而非功能数量：新服务从零到上线的时间、DORA 指标变化、平台能力的采用率、自助完成比例、开发者满意度调查，以及工单数量是否下降。结合定性访谈找出仍然绕开平台的原因。"
+   },
+   {
+    "q": "AI 编码助手对平台工程有什么影响？",
+    "a": "Agent 能快速生成代码，但部署、权限与合规仍是瓶颈。平台提供标准化模板、API 和策略检查后，Agent 可以按黄金路径自助创建服务与预览环境，平台规则也能作为 Agent 的上下文，减少生成不合规配置。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "CNCF Platforms White Paper",
+    "url": "https://tag-app-delivery.cncf.io/whitepapers/platforms/"
+   },
+   {
+    "title": "Backstage Documentation",
+    "url": "https://backstage.io/docs/overview/what-is-backstage"
+   },
+   {
+    "title": "Backstage: Descriptor Format of Catalog Entities",
+    "url": "https://backstage.io/docs/features/software-catalog/descriptor-format"
+   }
+  ]
+ },
+ {
+  "slug": "namespaces-and-cgroups",
+  "def": "Linux 命名空间（Namespaces）和控制组（cgroups）是容器的两大内核基础。命名空间隔离进程能看到的系统资源视图，如进程号、网络、挂载点、主机名和用户；cgroups 对进程组的资源用量做限制、记账与优先级控制，如 CPU、内存、IO、进程数。容器本质上是共享宿主内核、被这两者约束的普通进程。",
+  "how": [
+   "运行时（如 runc）通过 clone 或 unshare 系统调用为容器进程创建一组新的命名空间。",
+   "PID 命名空间让容器内进程从 1 开始编号；网络命名空间提供独立网卡、路由与端口；挂载命名空间配合根文件系统切换提供独立文件视图。",
+   "用户命名空间可把容器内 root 映射为宿主上的非特权用户，降低逃逸后的危害。",
+   "运行时在 cgroup 层级中为容器建目录，写入 memory.max、cpu.max、pids.max 等限制并把进程加入。",
+   "内存超限时内核在该 cgroup 内触发 OOM 终止进程；CPU 超出配额则被节流。再配合 capabilities、seccomp 与 LSM 收紧权限。"
+  ],
+  "terms": [
+   {
+    "t": "PID 命名空间",
+    "d": "隔离进程号空间，容器内看不到宿主的其他进程。"
+   },
+   {
+    "t": "用户命名空间 (User Namespace)",
+    "d": "隔离 UID/GID 映射，容器内 root 可对应宿主普通用户。"
+   },
+   {
+    "t": "cgroup v2",
+    "d": "统一层级的新版控制组接口，目前主流发行版与 Kubernetes 推荐使用。"
+   },
+   {
+    "t": "cpu.max",
+    "d": "cgroup v2 CPU 配额，格式为「配额 周期」微秒，如 50000 100000 即半核。"
+   },
+   {
+    "t": "CPU 节流 (Throttling)",
+    "d": "进程在周期内用完配额后被暂停调度，表现为延迟升高。"
+   },
+   {
+    "t": "Linux Capabilities",
+    "d": "把 root 权限拆成细粒度能力，容器默认只保留一部分。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "手动体验命名空间与 cgroup",
+   "src": "# 需要 root 和 cgroup v2；仅用于学习，勿在生产机上随意操作\n# 1) 新的 PID/挂载/主机名命名空间：里面 ps 只能看到自己\nsudo unshare --pid --fork --mount-proc --uts bash -c 'hostname box; hostname; ps aux'\n\n# 2) 列出当前系统中的命名空间\nlsns | head\n\n# 3) cgroup v2：创建组并限制为半核 CPU、256MB 内存、最多 64 个进程\necho \"+cpu +memory +pids\" | sudo tee /sys/fs/cgroup/cgroup.subtree_control\nsudo mkdir -p /sys/fs/cgroup/demo\necho \"50000 100000\" | sudo tee /sys/fs/cgroup/demo/cpu.max\necho 256M          | sudo tee /sys/fs/cgroup/demo/memory.max\necho 64            | sudo tee /sys/fs/cgroup/demo/pids.max\necho $$            | sudo tee /sys/fs/cgroup/demo/cgroup.procs   # 当前 shell 加入\ncat /sys/fs/cgroup/demo/memory.events    # oom_kill 计数\n\n# 4) Docker 等价写法：运行时替你完成上述设置\ndocker run --rm --cpus=0.5 --memory=256m --pids-limit=64 alpine sh",
+   "note": "启用控制器的那行在部分系统上可能已由 systemd 完成；实验结束后把 shell 移出并删除 demo 目录。"
+  },
+  "table": {
+   "title": "主要命名空间类型",
+   "head": [
+    "命名空间",
+    "隔离内容",
+    "容器中的表现"
+   ],
+   "rows": [
+    [
+     "PID",
+     "进程号",
+     "容器主进程 PID 为 1"
+    ],
+    [
+     "Network",
+     "网卡、路由、端口",
+     "每个容器可独立监听 80 端口"
+    ],
+    [
+     "Mount",
+     "挂载点",
+     "独立的根文件系统视图"
+    ],
+    [
+     "UTS",
+     "主机名、域名",
+     "容器有自己的 hostname"
+    ],
+    [
+     "User",
+     "UID/GID 映射",
+     "容器内 root 不等于宿主 root"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "普通容器（命名空间 + cgroups）",
+    "pros": "启动快、开销低、密度高",
+    "cons": "共享内核，内核漏洞可导致逃逸",
+    "when": "可信或同租户工作负载"
+   },
+   {
+    "opt": "用户态内核（如 gVisor）",
+    "pros": "拦截系统调用，隔离更强",
+    "cons": "部分系统调用性能下降或不兼容",
+    "when": "运行不可信代码，如 AI 代码沙箱"
+   },
+   {
+    "opt": "轻量虚拟机（如 Firecracker、Kata）",
+    "pros": "独立内核，接近虚拟机隔离",
+    "cons": "启动与资源开销高于容器",
+    "when": "多租户强隔离、Serverless 平台"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "以为容器等于安全沙箱，直接运行不可信代码",
+    "fix": "不可信负载使用 gVisor、微虚拟机等更强隔离并禁止特权"
+   },
+   {
+    "bad": "设置过低的 CPU limit 导致严重节流",
+    "fix": "监控节流指标，按实测设置 limit，延迟敏感服务谨慎设 CPU 上限"
+   },
+   {
+    "bad": "容器内应用按宿主机总内存计算堆大小",
+    "fix": "使用能识别 cgroup 限制的运行时版本或显式配置堆上限"
+   },
+   {
+    "bad": "使用 --privileged 解决权限问题",
+    "fix": "只添加必需的 capability 或挂载，保持默认 seccomp"
+   }
+  ],
+  "checklist": [
+   "所有容器设置内存上限与进程数上限",
+   "监控 OOM 次数与 CPU 节流时间",
+   "禁止特权容器，最小化 capabilities",
+   "评估启用用户命名空间或非 root 运行",
+   "不可信代码运行在强隔离沙箱中",
+   "宿主内核及时打安全补丁"
+  ],
+  "interview": [
+   {
+    "q": "容器和虚拟机的隔离本质区别？",
+    "a": "虚拟机通过虚拟化硬件运行独立的客户机内核；容器是宿主内核上的普通进程，靠命名空间改变可见视图、cgroups 限制资源、capabilities 与 seccomp 限制系统调用。容器更轻但共享内核，内核漏洞会破坏所有容器的隔离。"
+   },
+   {
+    "q": "Kubernetes 的 requests 和 limits 落到内核是什么？",
+    "a": "在 cgroup v2 下，CPU request 转为 cpu.weight 用于争用时按比例分配，CPU limit 转为 cpu.max 配额会导致节流；内存 limit 转为 memory.max，超限触发 cgroup 内 OOM。内存 request 主要用于调度与驱逐判断。"
+   },
+   {
+    "q": "为什么 AI 代码执行沙箱常不只依赖 Docker？",
+    "a": "Agent 执行的代码不可信，普通容器与宿主共享内核，一旦存在内核或运行时漏洞就可能逃逸。因此常用 gVisor 拦截系统调用，或 Firecracker 等微虚拟机提供独立内核，再叠加网络出口限制、只读文件系统和资源配额。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "namespaces(7) - Linux manual page",
+    "url": "https://man7.org/linux/man-pages/man7/namespaces.7.html"
+   },
+   {
+    "title": "Linux Kernel: Control Group v2",
+    "url": "https://docs.kernel.org/admin-guide/cgroup-v2.html"
+   },
+   {
+    "title": "Kubernetes: About cgroup v2",
+    "url": "https://kubernetes.io/docs/concepts/architecture/cgroups/"
+   }
+  ]
+ },
+ {
+  "slug": "saga-pattern",
+  "def": "Saga 是处理跨服务长事务的模式，最早由 Garcia-Molina 与 Salem 于 1987 年提出：把一个全局事务拆成一串本地事务，每步提交后发布事件或由协调者推进下一步；任一步失败时，按相反顺序执行已完成步骤的补偿事务，使系统回到业务上一致的状态。它以最终一致取代分布式锁和两阶段提交。",
+  "how": [
+   "把业务流程拆成有序的本地事务 T1…Tn，每个只修改自己服务的数据并立即提交。",
+   "为每个可回滚步骤设计补偿事务 C1…Cn，在语义上撤销其效果，如退款、释放库存，而非数据库层面的回滚。",
+   "编排式由中央协调者驱动步骤与补偿；协同式由各服务监听事件自行决定下一步。",
+   "关键转折步骤（pivot）之后的步骤应设计为可重试直至成功，之前的步骤可补偿。",
+   "协调状态需持久化，步骤与补偿都必须幂等，并配合发件箱模式可靠发布事件。"
+  ],
+  "terms": [
+   {
+    "t": "补偿事务 (Compensating Transaction)",
+    "d": "在业务语义上撤销已提交步骤效果的操作，如取消订单、退款。"
+   },
+   {
+    "t": "编排 (Orchestration)",
+    "d": "由一个协调者集中决定调用哪个服务以及何时补偿。"
+   },
+   {
+    "t": "协同 (Choreography)",
+    "d": "无中心协调者，各服务订阅事件并发布新事件推进流程。"
+   },
+   {
+    "t": "转折事务 (Pivot Transaction)",
+    "d": "Saga 中的不可逆分界点，之后的步骤只能重试不能补偿。"
+   },
+   {
+    "t": "语义锁 (Semantic Lock)",
+    "d": "用 PENDING 等状态标记处理中的数据，应对 Saga 缺乏隔离性的问题。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "最小编排式 Saga",
+   "src": "class SagaFailed(Exception):\n    pass\n\ndef run_saga(steps, ctx):\n    \"\"\"steps: [(动作, 补偿)]，动作与补偿都必须幂等\"\"\"\n    done = []\n    for action, compensate in steps:\n        try:\n            action(ctx)\n            done.append(compensate or (lambda c: None))  # 无补偿的步骤占位\n        except Exception as e:\n            for comp in reversed(done):      # 逆序补偿已完成的步骤\n                comp(ctx)\n            raise SagaFailed(f\"失败于 {action.__name__}: {e}\") from e\n\ndef reserve(ctx): ctx[\"log\"].append(\"预留库存\")\ndef release(ctx): ctx[\"log\"].append(\"释放库存\")\ndef charge(ctx):  ctx[\"log\"].append(\"扣款\")\ndef refund(ctx):  ctx[\"log\"].append(\"退款\")\ndef ship(ctx):    raise RuntimeError(\"物流不可用\")\n\nctx = {\"log\": []}\ntry:\n    run_saga([(reserve, release), (charge, refund), (ship, None)], ctx)\nexcept SagaFailed as e:\n    print(e, ctx[\"log\"])\n# 失败于 ship: 物流不可用 ['预留库存', '扣款', '退款', '释放库存']",
+   "note": "演示补偿顺序；生产中协调状态需持久化，可用 Temporal 等持久化执行框架承载。"
+  },
+  "table": {
+   "title": "Saga 与两阶段提交",
+   "head": [
+    "维度",
+    "Saga",
+    "两阶段提交 (2PC)"
+   ],
+   "rows": [
+    [
+     "一致性",
+     "最终一致，中间态可见",
+     "强一致，原子提交"
+    ],
+    [
+     "锁持有",
+     "每步本地提交即释放",
+     "准备阶段到提交期间一直持有"
+    ],
+    [
+     "失败处理",
+     "执行补偿事务",
+     "协调者决定回滚或提交"
+    ],
+    [
+     "可用性",
+     "参与方故障不阻塞其他服务",
+     "协调者故障可能阻塞参与方"
+    ],
+    [
+     "适用",
+     "跨服务、长时间业务流程",
+     "同一信任域内短事务"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "编排式",
+    "pros": "流程集中可见，易于监控与修改",
+    "cons": "协调者成为关键组件，有耦合",
+    "when": "步骤多、分支复杂的流程"
+   },
+   {
+    "opt": "协同式",
+    "pros": "服务松耦合，无中心依赖",
+    "cons": "流程分散在事件中，难追踪与排查",
+    "when": "步骤少、团队自治度高"
+   },
+   {
+    "opt": "避免拆分（同库事务）",
+    "pros": "直接用 ACID，最简单",
+    "cons": "限制服务独立演进",
+    "when": "强一致需求且数据可放在同一服务"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "补偿不幂等，重试时重复退款",
+    "fix": "补偿使用幂等键，并记录已执行状态"
+   },
+   {
+    "bad": "忽略中间态被其他请求读到",
+    "fix": "使用 PENDING 等语义锁状态，读取方据此处理"
+   },
+   {
+    "bad": "把不可撤销操作（如发短信）放在早期步骤",
+    "fix": "不可逆步骤尽量后置，放在转折点之后"
+   },
+   {
+    "bad": "本地事务提交成功但事件发布丢失",
+    "fix": "使用发件箱模式，事件与业务数据同事务写入"
+   }
+  ],
+  "checklist": [
+   "每个步骤都定义了补偿或标记为可重试",
+   "步骤与补偿均幂等",
+   "Saga 状态持久化，可从中断处恢复",
+   "中间态对其他读者有明确语义",
+   "事件发布可靠（发件箱或 CDC）",
+   "补偿失败有告警与人工处理流程"
+  ],
+  "interview": [
+   {
+    "q": "Saga 缺少隔离性会导致什么问题？",
+    "a": "各步骤独立提交，其他事务可能读到中间结果（脏读类问题）、两个 Saga 交错导致更新丢失。常用对策：语义锁标记处理中状态、交换式更新、重读校验、调整步骤顺序把风险高的放后，或按业务键串行化同一实体的 Saga。"
+   },
+   {
+    "q": "补偿事务本身失败怎么办？",
+    "a": "补偿应设计为可重试且幂等，失败后按退避持续重试；超过阈值进入死信或人工处理队列并告警。设计上应确保补偿最终能够成功，例如退款失败可转为挂账待处理，而不是让流程停在不一致状态。"
+   },
+   {
+    "q": "为什么微服务通常不用 2PC 而用 Saga？",
+    "a": "2PC 要求所有参与者支持 XA 并在准备阶段持锁，协调者故障会阻塞，跨服务和跨技术栈时可用性与性能代价高。Saga 每步本地提交、释放资源，用补偿换取可用性，契合服务自治与异步通信。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "microservices.io: Saga pattern",
+    "url": "https://microservices.io/patterns/data/saga.html"
+   },
+   {
+    "title": "Azure Architecture Center: Saga design pattern",
+    "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/saga"
+   },
+   {
+    "title": "Garcia-Molina & Salem: Sagas (1987)",
+    "url": "https://www.cs.cornell.edu/andru/cs711/2002fa/reading/sagas.pdf"
+   }
+  ]
+ },
+ {
+  "slug": "crdts",
+  "def": "无冲突复制数据类型（CRDT）是一类特殊设计的数据结构，各副本可以在无协调、甚至离线的情况下独立修改，之后以任意顺序、任意次数交换并合并，最终都收敛到相同状态（强最终一致）。Shapiro 等人于 2011 年对其系统化。CRDT 是实时协同编辑、离线优先应用与多主复制的基础。",
+  "how": [
+   "基于状态的 CRDT（CvRDT）在副本间发送完整或增量状态，合并函数满足交换律、结合律和幂等律。",
+   "基于操作的 CRDT（CmRDT）广播操作，要求并发操作可交换，并依赖可靠的因果有序投递。",
+   "计数器类：G-Counter 为每个副本单独计数后求和，PN-Counter 用两个 G-Counter 支持减法。",
+   "集合与寄存器：LWW-Register 按时间戳保留最后写入；OR-Set 给每次添加打唯一标签以正确处理并发增删。",
+   "文本序列：为每个字符分配全局唯一且可排序的标识（如 RGA、Yjs 的 YATA），并发插入按规则确定先后，删除用墓碑标记。"
+  ],
+  "terms": [
+   {
+    "t": "强最终一致 (Strong Eventual Consistency)",
+    "d": "收到相同更新集合的副本必然处于相同状态，无需冲突解决。"
+   },
+   {
+    "t": "半格合并 (Join-semilattice)",
+    "d": "状态型 CRDT 的数学基础：合并取最小上界，满足三条代数律。"
+   },
+   {
+    "t": "OR-Set (Observed-Remove Set)",
+    "d": "只删除已观察到的添加标签，使并发添加优先于删除。"
+   },
+   {
+    "t": "墓碑 (Tombstone)",
+    "d": "被删除元素保留的标记，用于正确合并，需垃圾回收控制体积。"
+   },
+   {
+    "t": "Yjs / Automerge",
+    "d": "两个主流开源 CRDT 库，常用于协同文档、白板和本地优先应用。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "Yjs 两副本并发编辑合并",
+   "src": "// npm install yjs\nimport * as Y from 'yjs'\n\nconst a = new Y.Doc()\nconst b = new Y.Doc()\n\na.getText('note').insert(0, 'Hello')\nY.applyUpdate(b, Y.encodeStateAsUpdate(a))     // 同步初始内容\n\n// 断网状态下两端在同一位置并发插入\na.getText('note').insert(5, ' from A')\nb.getText('note').insert(5, ' from B')\n\n// 恢复网络后互相交换更新（顺序与次数都不影响结果）\nY.applyUpdate(a, Y.encodeStateAsUpdate(b))\nY.applyUpdate(b, Y.encodeStateAsUpdate(a))\n\nconsole.log(a.getText('note').toString())\nconsole.log(a.getText('note').toString() === b.getText('note').toString()) // true",
+   "note": "两端都保留了各自的插入，并按确定性规则排列；实际传输可用 y-websocket 等 provider。"
+  },
+  "table": {
+   "title": "协同编辑方案对比",
+   "head": [
+    "方案",
+    "原理",
+    "优势",
+    "代价"
+   ],
+   "rows": [
+    [
+     "CRDT",
+     "数据结构保证合并收敛",
+     "支持离线与点对点",
+     "元数据与墓碑占空间"
+    ],
+    [
+     "OT（操作转换）",
+     "服务端转换并发操作",
+     "文档体积小，久经验证",
+     "通常需中心服务器，算法复杂"
+    ],
+    [
+     "最后写入获胜",
+     "按时间戳覆盖",
+     "实现最简单",
+     "并发修改会静默丢失"
+    ],
+    [
+     "加锁编辑",
+     "同一时间只允许一人改",
+     "无冲突",
+     "协作体验差"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "成熟 CRDT 库",
+    "pros": "离线优先、实时协作开箱可用",
+    "cons": "文档历史与元数据增长，需压缩",
+    "when": "协同文档、白板、本地优先应用"
+   },
+   {
+    "opt": "服务端 OT",
+    "pros": "存储紧凑，权限集中控制",
+    "cons": "依赖中心服务器，实现难度大",
+    "when": "始终在线的集中式编辑器"
+   },
+   {
+    "opt": "简单字段级 LWW",
+    "pros": "易实现，存储开销小",
+    "cons": "并发编辑同字段会丢数据",
+    "when": "冲突极少的设置类数据"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "以为 CRDT 能保证业务语义正确",
+    "fix": "CRDT 只保证收敛；如余额不能为负等约束仍需协调或校验"
+   },
+   {
+    "bad": "自行实现序列 CRDT",
+    "fix": "优先使用 Yjs、Automerge 等经过验证的库"
+   },
+   {
+    "bad": "墓碑与历史无限增长，文档越来越慢",
+    "fix": "启用库提供的垃圾回收或快照压缩，归档旧历史"
+   },
+   {
+    "bad": "依赖本机时间戳做 LWW",
+    "fix": "使用逻辑时钟或混合逻辑时钟，避免时钟偏差导致错误覆盖"
+   }
+  ],
+  "checklist": [
+   "明确哪些数据需要协同，哪些需要强一致",
+   "选用成熟 CRDT 库并锁定版本",
+   "有离线后重连合并的端到端测试",
+   "文档体积与加载耗时被监控",
+   "权限校验在服务端完成",
+   "定义持久化与快照策略"
+  ],
+  "interview": [
+   {
+    "q": "状态型 CRDT 的合并为什么要满足交换、结合、幂等？",
+    "a": "网络中消息可能乱序、重复、经不同路径到达。交换律保证顺序无关，结合律保证分组无关，幂等律保证重复投递无害。三者合起来，任意副本只要收到相同的更新集合，就一定合并成同一状态。"
+   },
+   {
+    "q": "CRDT 和 OT 怎么选？",
+    "a": "需要离线编辑、点对点或多数据中心多主写入时，CRDT 更合适，因为不依赖中心转换。全程在线、已有中心服务、对文档体积敏感时，OT 也成熟可用。现代协作产品越来越多采用 CRDT 库以简化同步层。"
+   },
+   {
+    "q": "OR-Set 如何处理并发的添加和删除？",
+    "a": "每次添加元素都生成唯一标签，删除只移除当时观察到的标签。若一端删除元素的同时另一端重新添加，新添加带新标签不在删除集合中，合并后元素依然存在，即「添加获胜」语义，避免了简单集合的歧义。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "crdt.tech",
+    "url": "https://crdt.tech/"
+   },
+   {
+    "title": "Shapiro et al.: Conflict-free Replicated Data Types (2011)",
+    "url": "https://inria.hal.science/inria-00609399"
+   },
+   {
+    "title": "Yjs Docs",
+    "url": "https://docs.yjs.dev/"
+   }
+  ]
+ },
+ {
+  "slug": "durable-execution",
+  "def": "持久化执行（Durable Execution）是一种编程模型：开发者用普通代码编写长流程，运行时自动持久化每一步的执行进度与结果，进程崩溃、机器重启或等待数天后，都能从中断处继续，好像代码从未停过。代表实现有 Temporal（源自 Uber Cadence）、AWS Step Functions、Restate、DBOS 等，常用于订单流程、数据管道和长时间运行的 AI Agent。",
+  "how": [
+   "工作流（Workflow）代码负责编排逻辑；有副作用的操作（调用 API、写库、调用 LLM）封装为活动（Activity）。",
+   "每次活动调度、完成、计时器触发和外部信号都作为事件追加到持久化的事件历史中。",
+   "Worker 崩溃后，新的 Worker 通过重放事件历史重新执行工作流代码：已完成的活动直接返回记录的结果，不会重复执行。",
+   "因此工作流代码必须确定性：不能直接读系统时间、随机数或做 IO，这些都应通过 SDK 接口或活动完成。",
+   "活动失败按重试策略自动重试；持久计时器可等待数天；信号和查询让外部与运行中的工作流交互，如人工审批。"
+  ],
+  "terms": [
+   {
+    "t": "工作流 (Workflow)",
+    "d": "确定性的编排代码，其执行状态由事件历史完全决定。"
+   },
+   {
+    "t": "活动 (Activity)",
+    "d": "执行副作用的普通函数，可独立设置超时与重试策略。"
+   },
+   {
+    "t": "事件历史 (Event History)",
+    "d": "工作流执行过程中所有事件的追加日志，用于重放恢复。"
+   },
+   {
+    "t": "重放 (Replay)",
+    "d": "按事件历史重新运行工作流代码以恢复内存状态，跳过已完成的活动。"
+   },
+   {
+    "t": "信号 (Signal)",
+    "d": "外部向运行中工作流发送的异步消息，如审批通过。"
+   },
+   {
+    "t": "工作流版本化 (Versioning)",
+    "d": "修改运行中工作流代码时保证旧执行重放仍确定的机制。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Temporal Python 工作流",
+   "src": "# pip install temporalio ；需连接 Temporal Server\nimport asyncio\nfrom datetime import timedelta\nfrom temporalio import activity, workflow\nfrom temporalio.common import RetryPolicy\n\n@activity.defn\nasync def call_llm(prompt: str) -> str:\n    ...  # 真实的模型调用：有副作用，放在活动里\n    return \"summary\"\n\n@workflow.defn\nclass ResearchAgent:\n    @workflow.run\n    async def run(self, topic: str) -> str:\n        draft = await workflow.execute_activity(\n            call_llm, f\"研究 {topic}\",\n            start_to_close_timeout=timedelta(minutes=5),\n            retry_policy=RetryPolicy(maximum_attempts=5),\n        )\n        # 持久计时器：等待 1 天后复查，期间 Worker 可重启\n        await asyncio.sleep(timedelta(days=1).total_seconds())\n        return await workflow.execute_activity(\n            call_llm, f\"复查并更新：{draft}\",\n            start_to_close_timeout=timedelta(minutes=5),\n        )",
+   "note": "工作流内的 asyncio.sleep 会被 SDK 转为持久计时器；工作流代码中不要直接做网络请求或读当前时间。"
+  },
+  "table": {
+   "title": "长流程实现方式对比",
+   "head": [
+    "方式",
+    "崩溃恢复",
+    "长时间等待",
+    "开发体验"
+   ],
+   "rows": [
+    [
+     "普通脚本/进程",
+     "从头重跑",
+     "难",
+     "最简单"
+    ],
+    [
+     "队列 + 状态表",
+     "手写状态机恢复",
+     "需定时任务轮询",
+     "逻辑分散"
+    ],
+    [
+     "DAG 编排（如 Airflow）",
+     "按任务重跑",
+     "按调度周期",
+     "适合批处理管道"
+    ],
+    [
+     "持久化执行（如 Temporal）",
+     "重放续跑",
+     "原生持久计时器",
+     "用代码写流程，需遵守确定性"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Temporal 等自托管/云服务",
+    "pros": "能力完整，多语言 SDK，可观测性强",
+    "cons": "需运维服务端或付费，学习确定性约束",
+    "when": "核心业务流程、长时间 Agent"
+   },
+   {
+    "opt": "云厂商状态机（如 Step Functions）",
+    "pros": "全托管，与云服务集成好",
+    "cons": "用 JSON/DSL 描述流程，绑定厂商",
+    "when": "流程相对固定且已深度使用该云"
+   },
+   {
+    "opt": "数据库驱动轻量方案（如 DBOS）",
+    "pros": "复用现有 Postgres，部署简单",
+    "cons": "生态与规模能力需评估",
+    "when": "中小规模、希望少引入组件"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在工作流代码里直接调用 API 或 datetime.now()",
+    "fix": "副作用放进活动，时间和随机数使用 SDK 提供的确定性接口"
+   },
+   {
+    "bad": "直接修改运行中工作流的代码逻辑，重放时报不确定性错误",
+    "fix": "使用 SDK 的版本化或补丁机制，并保留旧分支直至旧执行结束"
+   },
+   {
+    "bad": "活动不幂等，重试导致重复扣款",
+    "fix": "活动使用幂等键，外部系统按键去重"
+   },
+   {
+    "bad": "在工作流中传递巨大的数据，事件历史膨胀",
+    "fix": "大数据放对象存储，工作流只传引用"
+   }
+  ],
+  "checklist": [
+   "所有副作用都在活动中执行",
+   "活动设置超时与重试策略且幂等",
+   "工作流代码变更遵循版本化流程",
+   "事件历史大小受控，必要时 continue-as-new",
+   "有工作流失败与卡住的告警",
+   "人工审批等外部输入通过信号实现"
+  ],
+  "interview": [
+   {
+    "q": "Temporal 如何做到崩溃后从断点继续？",
+    "a": "服务端持久化每个工作流的事件历史。Worker 恢复时重新执行工作流代码，遇到已记录完成的活动直接返回历史中的结果，而不是再次调用，从而重建到崩溃前的状态后继续执行。这要求工作流代码对相同历史产生相同的调度决策。"
+   },
+   {
+    "q": "为什么持久化执行适合 AI Agent？",
+    "a": "Agent 任务可能持续数小时、调用大量昂贵的模型与工具、需要等待人工确认。持久化执行让每次模型调用成为可重试的活动，崩溃不重复计费，能持久等待人工信号，还能完整记录执行历史用于审计与调试。"
+   },
+   {
+    "q": "工作流确定性约束具体指什么？",
+    "a": "给定相同事件历史，工作流代码必须做出相同的命令序列。因此不能在工作流中直接读系统时间、生成随机数、访问网络或文件、依赖全局可变状态或非确定性的迭代顺序。这些都应通过 SDK 的确定性 API 或放入活动。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Temporal Documentation",
+    "url": "https://docs.temporal.io/"
+   },
+   {
+    "title": "Temporal: Workflows",
+    "url": "https://docs.temporal.io/workflows"
+   },
+   {
+    "title": "GitHub: temporalio/sdk-python",
+    "url": "https://github.com/temporalio/sdk-python"
+   }
+  ]
+ },
+ {
+  "slug": "react-server-components",
+  "def": "React 服务端组件（RSC）是只在服务器（或构建时）执行的 React 组件，可直接访问数据库、文件系统和密钥，其渲染结果以序列化的 RSC 负载发送给客户端，组件代码本身不进入浏览器包。客户端组件用 'use client' 指令标记，负责状态与交互。RSC 在 React 19 中稳定，Next.js App Router 默认使用。",
+  "how": [
+   "在支持 RSC 的框架中，组件默认是服务端组件，可以是 async 函数，直接 await 数据。",
+   "服务器渲染组件树，生成描述 UI 的 RSC 负载：服务端组件被展开为结果，客户端组件以模块引用和序列化 props 占位。",
+   "'use client' 标记客户端边界：该文件及其导入的模块进入客户端包，可使用 useState、事件处理和浏览器 API。",
+   "服务端组件可把可序列化的 props 或其他服务端组件作为 children 传给客户端组件，反之客户端组件不能导入服务端组件。",
+   "客户端根据负载重建树并对客户端组件进行水合；配合 Suspense 可流式发送，'use server' 标记的服务器函数供客户端调用以修改数据。"
+  ],
+  "terms": [
+   {
+    "t": "RSC 负载 (RSC Payload)",
+    "d": "服务端组件树渲染结果的紧凑序列化格式，客户端据此构建 UI。"
+   },
+   {
+    "t": "'use client'",
+    "d": "放在文件顶部的指令，声明客户端组件边界及其依赖进入浏览器包。"
+   },
+   {
+    "t": "服务器函数 (Server Functions)",
+    "d": "用 'use server' 标记、可被客户端调用的服务端异步函数，原称 Server Actions。"
+   },
+   {
+    "t": "可序列化 Props",
+    "d": "跨边界传递的数据须可序列化，函数（服务器函数除外）和类实例不能传。"
+   },
+   {
+    "t": "server-only",
+    "d": "npm 包，导入后若模块被客户端引用则构建报错，防止泄露服务端代码。"
+   }
+  ],
+  "code": {
+   "lang": "typescript",
+   "title": "Next.js 服务端与客户端组件",
+   "src": "// app/posts/page.tsx —— 服务端组件（默认）\nimport 'server-only'\nimport { db } from '@/lib/db'          // 数据库客户端只存在于服务器\nimport LikeButton from './LikeButton'\n\nexport default async function PostsPage() {\n  const posts = await db.post.findMany({ take: 10 })   // 直接查库\n  return (\n    <ul>\n      {posts.map((p) => (\n        <li key={p.id}>\n          {p.title}\n          <LikeButton postId={p.id} initial={p.likes} />  {/* 只传可序列化数据 */}\n        </li>\n      ))}\n    </ul>\n  )\n}\n\n// app/posts/LikeButton.tsx —— 客户端组件\n'use client'\nimport { useState } from 'react'\n\nexport default function LikeButton({ postId, initial }: { postId: number; initial: number }) {\n  const [likes, setLikes] = useState(initial)\n  return <button onClick={() => setLikes(likes + 1)}>👍 {likes}</button>\n}",
+   "note": "两段为两个文件；db 的具体 ORM 写法为示意，以项目实际为准。'use client' 必须位于文件最顶部。"
+  },
+  "table": {
+   "title": "服务端组件与客户端组件",
+   "head": [
+    "能力",
+    "服务端组件",
+    "客户端组件"
+   ],
+   "rows": [
+    [
+     "async/await 取数",
+     "支持",
+     "不直接支持（用框架或 use）"
+    ],
+    [
+     "useState / useEffect",
+     "不支持",
+     "支持"
+    ],
+    [
+     "访问数据库与密钥",
+     "可以",
+     "不可以"
+    ],
+    [
+     "代码进入浏览器包",
+     "否",
+     "是"
+    ],
+    [
+     "事件处理（onClick）",
+     "不支持",
+     "支持"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "默认服务端组件，交互处下沉客户端",
+    "pros": "JS 包更小，数据就近获取，密钥不外泄",
+    "cons": "需要理解边界与序列化规则",
+    "when": "内容型页面、数据密集的后台"
+   },
+   {
+    "opt": "传统客户端渲染 SPA",
+    "pros": "心智模型简单，前后端完全分离",
+    "cons": "首屏依赖 JS 下载与 API 往返",
+    "when": "高度交互的工具型应用"
+   },
+   {
+    "opt": "SSR + 全量水合",
+    "pros": "首屏有 HTML，生态成熟",
+    "cons": "所有组件代码仍要下载并水合",
+    "when": "Pages Router 等既有项目"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在页面顶层加 'use client'，整棵树变成客户端组件",
+    "fix": "只给需要交互的叶子组件加 'use client'"
+   },
+   {
+    "bad": "把含密钥的配置对象作为 props 传给客户端组件",
+    "fix": "跨边界只传最少的可序列化数据，敏感模块导入 server-only"
+   },
+   {
+    "bad": "向客户端组件传递函数或类实例导致报错",
+    "fix": "传原始数据，或使用 'use server' 服务器函数"
+   },
+   {
+    "bad": "以为服务器函数天然有权限保护",
+    "fix": "服务器函数是公开端点，内部必须做认证与授权校验"
+   }
+  ],
+  "checklist": [
+   "'use client' 只出现在需要交互的组件",
+   "敏感模块导入 server-only",
+   "跨边界 props 均可序列化且最少化",
+   "服务器函数内做鉴权与输入校验",
+   "慢数据用 Suspense 流式加载",
+   "检查客户端包体积变化"
+  ],
+  "interview": [
+   {
+    "q": "RSC 和 SSR 的区别是什么？",
+    "a": "SSR 在服务器把组件渲染成 HTML，但组件代码仍会发到浏览器并水合；RSC 的服务端组件只在服务器运行，代码不进入客户端包，输出的是可与客户端组件组合的 RSC 负载。两者可同时使用：RSC 负载也可在服务器上进一步渲染成首屏 HTML。"
+   },
+   {
+    "q": "为什么客户端组件不能导入服务端组件？",
+    "a": "客户端组件及其导入都会打包进浏览器，而服务端组件可能依赖数据库和密钥，无法在浏览器运行。正确做法是在服务端组件中把服务端组件作为 children 或 props 传入客户端组件，由服务器先渲染好再组合。"
+   },
+   {
+    "q": "AI 生成 Next.js 代码常见的 RSC 错误？",
+    "a": "在服务端组件中使用 useState 或 onClick 导致报错；为消除报错在顶层滥加 'use client'，失去 RSC 收益；把环境变量或数据库对象传给客户端；服务器函数缺少鉴权。评审时应重点检查边界位置与跨边界数据。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "React: Server Components",
+    "url": "https://react.dev/reference/rsc/server-components"
+   },
+   {
+    "title": "React: 'use client' directive",
+    "url": "https://react.dev/reference/rsc/use-client"
+   },
+   {
+    "title": "Next.js: Server and Client Components",
+    "url": "https://nextjs.org/docs/app/getting-started/server-and-client-components"
+   }
+  ]
+ },
+ {
+  "slug": "web-workers",
+  "def": "Web Worker 是浏览器提供的后台线程机制，让 JavaScript 在主线程之外执行计算密集型任务，避免阻塞渲染与用户交互。Worker 拥有独立的全局作用域和事件循环，不能访问 DOM，通过 postMessage 与主线程异步通信。常见类型有专用 Worker、共享 Worker，Service Worker 则主要用于网络代理与离线缓存。",
+  "how": [
+   "主线程用 new Worker(url) 创建 Worker，现代浏览器支持 type: 'module' 以 ES 模块方式加载。",
+   "双方通过 postMessage 发送消息，数据默认经结构化克隆算法复制，监听 message 事件接收。",
+   "对 ArrayBuffer、MessagePort、OffscreenCanvas 等可转移对象，可在 postMessage 时转移所有权，实现零拷贝。",
+   "Worker 内可用 fetch、IndexedDB、WebAssembly 等能力，但不能访问 window 与 DOM，结果需发回主线程渲染。",
+   "需要真正共享内存时使用 SharedArrayBuffer 配合 Atomics，这要求页面启用跨源隔离（COOP 与 COEP 响应头）。"
+  ],
+  "terms": [
+   {
+    "t": "主线程 (Main Thread)",
+    "d": "负责执行页面 JS、样式计算、布局与绘制的线程，长任务会造成卡顿。"
+   },
+   {
+    "t": "结构化克隆 (Structured Clone)",
+    "d": "postMessage 默认使用的深拷贝算法，支持多数内置类型，不支持函数。"
+   },
+   {
+    "t": "可转移对象 (Transferable)",
+    "d": "可转移所有权而非复制的对象，转移后发送方不能再使用。"
+   },
+   {
+    "t": "跨源隔离 (Cross-Origin Isolation)",
+    "d": "通过 COOP/COEP 头启用的页面状态，是使用 SharedArrayBuffer 的前提。"
+   },
+   {
+    "t": "长任务 (Long Task)",
+    "d": "主线程上超过 50 毫秒的任务，会影响交互响应指标。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "模块 Worker 处理大数组",
+   "src": "// main.js —— 主线程\nconst worker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' })\n\nconst data = new Float64Array(10_000_000).map(() => Math.random())\nworker.postMessage(data.buffer, [data.buffer])   // 转移所有权，零拷贝\n// 此后 data.buffer 在主线程中已不可用（byteLength 变为 0）\n\nworker.onmessage = (e) => {\n  document.querySelector('#result').textContent = `均值：${e.data.mean.toFixed(4)}`\n  worker.terminate()                             // 用完释放线程\n}\nworker.onerror = (e) => console.error('Worker 出错', e.message)\n\n// worker.js —— 后台线程，无法访问 document\nself.onmessage = (e) => {\n  const arr = new Float64Array(e.data)\n  let sum = 0\n  for (let i = 0; i < arr.length; i++) sum += arr[i]\n  self.postMessage({ mean: sum / arr.length })\n}",
+   "note": "两段为两个文件；new URL(..., import.meta.url) 写法可被 Vite、webpack 5 等打包器识别。"
+  },
+  "table": {
+   "title": "浏览器中的几种 Worker",
+   "head": [
+    "类型",
+    "作用域",
+    "典型用途"
+   ],
+   "rows": [
+    [
+     "专用 Worker",
+     "仅创建它的页面",
+     "解析文件、图像处理、加密计算"
+    ],
+    [
+     "共享 Worker",
+     "同源多个页面共享",
+     "多标签页共享连接或状态"
+    ],
+    [
+     "Service Worker",
+     "按作用域拦截网络请求",
+     "离线缓存、推送、PWA"
+    ],
+    [
+     "Worklet",
+     "渲染管线特定阶段",
+     "音频处理、CSS Paint"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Web Worker",
+    "pros": "真正并行，不阻塞界面",
+    "cons": "通信开销，无法直接操作 DOM",
+    "when": "持续较长的 CPU 密集计算"
+   },
+   {
+    "opt": "主线程分片（时间切片）",
+    "pros": "无需额外线程，可访问 DOM",
+    "cons": "总耗时不变，只是让出主线程",
+    "when": "必须操作 DOM 的批量更新"
+   },
+   {
+    "opt": "交给服务器处理",
+    "pros": "不受设备性能限制",
+    "cons": "网络延迟，数据需上传",
+    "when": "数据量大或涉及敏感算法"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "频繁发送大对象，克隆开销抵消并行收益",
+    "fix": "使用可转移对象，或批量发送、减少消息次数"
+   },
+   {
+    "bad": "每个任务新建 Worker，启动开销大",
+    "fix": "复用 Worker 或使用 Worker 池"
+   },
+   {
+    "bad": "直接使用 SharedArrayBuffer 却报未定义",
+    "fix": "为页面配置 COOP/COEP 响应头启用跨源隔离"
+   },
+   {
+    "bad": "未处理 Worker 错误，任务静默失败",
+    "fix": "监听 error 与 messageerror 事件并向用户反馈"
+   }
+  ],
+  "checklist": [
+   "用性能面板确认瓶颈是主线程长任务",
+   "大数据通过可转移对象传递",
+   "Worker 有错误处理与超时机制",
+   "不再使用时调用 terminate 释放",
+   "打包器正确输出 Worker 文件",
+   "低端设备上实测交互响应"
+  ],
+  "interview": [
+   {
+    "q": "Web Worker 为什么不能访问 DOM？",
+    "a": "DOM 不是线程安全的，浏览器渲染引擎假设只有主线程修改它。若允许多线程并发修改，需要复杂锁机制并带来竞态。因此 Worker 只做计算，通过消息把结果交回主线程统一更新界面。"
+   },
+   {
+    "q": "postMessage 的结构化克隆和转移有什么区别？",
+    "a": "克隆会复制一份数据，双方各持一份，大对象耗时耗内存；转移只移交底层内存所有权，几乎零开销，但发送方的对象随即失效。适合一次性交给 Worker 处理的大缓冲区。"
+   },
+   {
+    "q": "在浏览器里跑本地 AI 模型时 Worker 有什么作用？",
+    "a": "模型加载与推理是重计算，放在主线程会冻结界面。常见做法是在 Worker 中加载 WebAssembly 或调用 WebGPU 推理，主线程只负责输入和渲染，通过消息流式接收生成结果，保持页面可滚动可点击。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "MDN: Using Web Workers",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers"
+   },
+   {
+    "title": "MDN: Transferable objects",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Transferable_objects"
+   },
+   {
+    "title": "HTML Standard: Web workers",
+    "url": "https://html.spec.whatwg.org/multipage/workers.html"
+   }
+  ]
+ }
+]

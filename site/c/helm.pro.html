@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="Helm 包管理 专业模式：Helm 是 Kubernetes 的包管理器，属于应用交付层。它把一组 K8s 资源清单模板化为 Chart，用 values 文件参数化不同环境，安装后形成">
+<title>🎓 Helm 包管理 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="helm" data-answer="0" data-prev="database-branching.pro.html" data-next="monorepo.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#devops">🔮 高级 · 🔭 可观测与交付</a><span>›</span><a href="helm.html">Helm 包管理</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.365 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="database-branching.pro.html" rel="prev"><small>‹ 上一个</small><b>🌿 数据库分支 (Neon / PlanetScale)</b></a><a class="pn next" href="monorepo.pro.html" rel="next"><small>下一个 ›</small><b>🏢 单体仓库 (Monorepo)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">⛵</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>Helm 包管理</h1><p class="en">Helm</p>
+    <div class="hbtns"><a class="prosw back" href="helm.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">Helm 是 Kubernetes 的包管理器，属于应用交付层。它把一组 K8s 资源清单模板化为 Chart，用 values 文件参数化不同环境，安装后形成带版本历史的 Release，支持升级、回滚和卸载。CNCF 毕业项目，是分发第三方组件（数据库、监控、Ingress）最常用的方式。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>Chart 由 Chart.yaml（元数据）、values.yaml（默认参数）和 templates/（Go 模板写的资源清单）组成。</p></li><li><span class="sn">2</span><p>执行 helm install/upgrade 时，Helm 合并默认 values、-f 文件与 --set 参数，渲染模板得到最终 YAML。</p></li><li><span class="sn">3</span><p>渲染结果提交给 Kubernetes API Server 创建或更新资源，Helm 3 不再需要集群内的 Tiller 组件。</p></li><li><span class="sn">4</span><p>每次安装或升级生成一个 Release 修订版本，默认以 Secret 形式存储在所在命名空间中。</p></li><li><span class="sn">5</span><p>helm rollback 用历史修订的清单重新应用；helm uninstall 删除该 Release 管理的资源。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>Chart</dt><dd>Helm 的打包格式，包含模板、默认配置与元数据。</dd></div><div class="term"><dt>Values</dt><dd>注入模板的参数，可分层覆盖以区分环境。</dd></div><div class="term"><dt>Release</dt><dd>Chart 在集群中的一次安装实例，带修订历史。</dd></div><div class="term"><dt>Repository / OCI Registry</dt><dd>存放和分发 Chart 的仓库，Helm 3 支持 OCI 镜像仓库。</dd></div><div class="term"><dt>Hook</dt><dd>在安装、升级等生命周期节点执行的特殊资源，如迁移 Job。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>安装、升级与回滚</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 添加仓库并安装（Bitnami 等仓库也提供 OCI 地址）
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+
+# 先渲染查看最终 YAML，不真正部署
+helm template my-redis bitnami/redis -f values-prod.yaml | less
+
+# 安装或升级（不存在则安装），失败自动回滚
+helm upgrade --install my-redis bitnami/redis \
+  -n data --create-namespace \
+  -f values-prod.yaml --atomic --timeout 5m
+
+# 查看修订历史并回滚到修订 1
+helm history my-redis -n data
+helm rollback my-redis 1 -n data</code></pre></div><p class="cnote">upgrade --install 实现幂等部署；--atomic 在失败时自动回滚，适合放进 CI。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">K8s 配置管理方案对比</h3><div class="tw"><table><thead><tr><th>方案</th><th>机制</th><th>适用</th></tr></thead><tbody><tr><td data-h="方案">原生 YAML + kubectl</td><td data-h="机制">直接应用清单</td><td data-h="适用">资源少、单环境</td></tr><tr><td data-h="方案">Kustomize</td><td data-h="机制">基础清单 + 补丁叠加</td><td data-h="适用">自有应用多环境</td></tr><tr><td data-h="方案">Helm</td><td data-h="机制">模板 + values + 版本历史</td><td data-h="适用">分发与复用第三方组件</td></tr><tr><td data-h="方案">Helm + GitOps</td><td data-h="机制">Argo CD/Flux 拉取同步</td><td data-h="适用">需要审计与自动对齐</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>使用社区 Chart</h4><p><b class="k-p">优点</b>开箱即用，维护者负责升级</p><p><b class="k-c">代价</b>模板复杂、默认值未必安全</p><p><b class="k-w">适用</b>标准组件如 Redis、Prometheus</p></div><div class="trd"><h4>自写 Chart</h4><p><b class="k-p">优点</b>完全掌控，贴合业务</p><p><b class="k-c">代价</b>模板维护成本，Go 模板可读性差</p><p><b class="k-w">适用</b>需分发给多团队/多客户的应用</p></div><div class="trd"><h4>Kustomize 替代</h4><p><b class="k-p">优点</b>纯 YAML 无模板，直观</p><p><b class="k-c">代价</b>缺少打包分发与版本历史</p><p><b class="k-w">适用</b>只有自家应用、环境差异小</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>在集群里 kubectl edit 改 Helm 管理的资源</p><p class="fix"><b>✓</b>所有修改走 values 并 helm upgrade，或交给 GitOps</p></li><li><p class="bad"><b>✗</b>Secret 明文写进 values 并提交 Git</p><p class="fix"><b>✓</b>用外部密钥管理（如 External Secrets、SOPS）注入</p></li><li><p class="bad"><b>✗</b>不固定 Chart 版本，upgrade 时意外升大版本</p><p class="fix"><b>✓</b>安装时用 --version 锁定，升级前读变更说明</p></li><li><p class="bad"><b>✗</b>只看 values 不看渲染结果就上生产</p><p class="fix"><b>✓</b>用 helm template 或 helm diff 插件审查最终清单</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>Chart 版本已锁定</span></label></li><li><label><input type="checkbox"><span>values 按环境分文件且进版本控制</span></label></li><li><label><input type="checkbox"><span>敏感值不以明文进入 values</span></label></li><li><label><input type="checkbox"><span>部署使用 --atomic 或等价失败回滚</span></label></li><li><label><input type="checkbox"><span>上线前审查渲染后的 YAML</span></label></li><li><label><input type="checkbox"><span>Release 历史保留数量合理（--history-max）</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Helm 3 相比 Helm 2 最大的架构变化？</summary><p>移除了集群内的 Tiller 服务端组件，客户端直接以用户凭据调用 API Server，权限由 K8s RBAC 控制；Release 信息默认存为命名空间内的 Secret；引入三方合并补丁与 OCI 支持。</p></details><details class="iv"><summary>Helm 和 Kustomize 怎么选？</summary><p>Helm 适合需要打包、分发、参数化和版本回滚的场景，尤其第三方组件；Kustomize 用纯 YAML 补丁叠加，透明无模板，适合自家应用多环境。二者也可组合使用。</p></details><details class="iv"><summary>helm rollback 能恢复数据吗？</summary><p>不能。它只重新应用旧版本的 K8s 清单；数据库 Schema 变更、PVC 中的数据不会回退。有状态升级需另做备份和迁移回滚方案。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://helm.sh/docs/" target="_blank" rel="noopener"><b>Helm 官方文档</b><small>helm.sh ↗</small></a></li><li><a href="https://helm.sh/docs/topics/charts/" target="_blank" rel="noopener"><b>Helm 文档：Charts</b><small>helm.sh ↗</small></a></li><li><a href="https://artifacthub.io/" target="_blank" rel="noopener"><b>Artifact Hub（Chart 仓库索引）</b><small>artifacthub.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="database-branching.pro.html" rel="prev"><small>‹ 上一个</small><b>🌿 数据库分支 (Neon / PlanetScale)</b></a><a class="pn next" href="monorepo.pro.html" rel="next"><small>下一个 ›</small><b>🏢 单体仓库 (Monorepo)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

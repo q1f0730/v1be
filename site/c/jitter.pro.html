@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="退避随机抖动 专业模式：抖动（Jitter）是在重试退避或定时任务的等待时间中加入随机量的技术。纯指数退避会让同时失败的大量客户端在相同时间点再次重试，形成同步尖峰；加入随机性可以把重">
+<title>🎓 退避随机抖动 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="jitter" data-answer="0" data-prev="bulkheads.pro.html" data-next="retry-storms.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#dist">🔮 高级 · 🕸️ 分布式</a><span>›</span><a href="jitter.html">退避随机抖动</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.288 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="bulkheads.pro.html" rel="prev"><small>‹ 上一个</small><b>🚢 舱壁隔离模式</b></a><a class="pn next" href="retry-storms.pro.html" rel="next"><small>下一个 ›</small><b>🌪️ 重试风暴</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🎲</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>退避随机抖动</h1><p class="en">Jitter</p>
+    <div class="hbtns"><a class="prosw back" href="jitter.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">抖动（Jitter）是在重试退避或定时任务的等待时间中加入随机量的技术。纯指数退避会让同时失败的大量客户端在相同时间点再次重试，形成同步尖峰；加入随机性可以把重试分散到时间窗口内，降低对恢复中服务的冲击。它是客户端重试策略中与超时、退避、重试上限配套的一环。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>客户端请求失败后，先计算指数退避上界：base × 2^attempt，并用 cap 封顶。</p></li><li><span class="sn">2</span><p>在 0 到上界之间随机取值（Full Jitter），或在一半到上界之间取值（Equal Jitter）。</p></li><li><span class="sn">3</span><p>大量客户端的重试时刻由此均匀散开，服务端看到的是平滑负载而非周期性尖峰。</p></li><li><span class="sn">4</span><p>同理，定时任务、缓存过期时间、连接重建也加随机偏移，避免同时触发。</p></li><li><span class="sn">5</span><p>同时配合最大重试次数和重试预算，防止随机化之后重试总量仍然过大。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>全抖动 (Full Jitter)</dt><dd>等待时间在 0 到退避上界间均匀随机。</dd></div><div class="term"><dt>等值抖动 (Equal Jitter)</dt><dd>保留一半退避时间，另一半随机，保证最小等待。</dd></div><div class="term"><dt>去相关抖动 (Decorrelated Jitter)</dt><dd>基于上次等待时间随机增长下一次等待的变体。</dd></div><div class="term"><dt>退避上限 (Cap)</dt><dd>单次等待时间的最大值，防止指数增长过长。</dd></div><div class="term"><dt>同步化 (Synchronization)</dt><dd>多个客户端行为在时间上对齐，导致负载尖峰。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>指数退避加全抖动</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import random, time
+import requests
+
+def get_with_retry(url, max_attempts=5, base=0.1, cap=10.0):
+    for attempt in range(max_attempts):
+        try:
+            r = requests.get(url, timeout=3)
+            if r.status_code &lt; 500:
+                return r              # 成功或 4xx 都不再重试
+        except requests.RequestException:
+            pass                       # 网络错误，进入重试
+        if attempt == max_attempts - 1:
+            break
+        # Full Jitter：在 [0, min(cap, base*2^n)] 内随机等待
+        sleep = random.uniform(0, min(cap, base * 2 ** attempt))
+        time.sleep(sleep)
+    raise RuntimeError(&quot;retries exhausted&quot;)</code></pre></div><p class="cnote">按 AWS 架构博客的 Full Jitter 公式实现，有重试上限并跳过 4xx。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">退避策略对比</h3><div class="tw"><table><thead><tr><th>策略</th><th>等待公式（概念）</th><th>特点</th></tr></thead><tbody><tr><td data-h="策略">固定间隔</td><td data-h="等待公式（概念）">sleep = c</td><td data-h="特点">最易同步，易打爆服务</td></tr><tr><td data-h="策略">指数退避</td><td data-h="等待公式（概念）">min(cap, base·2^n)</td><td data-h="特点">总量下降，但仍同步</td></tr><tr><td data-h="策略">Full Jitter</td><td data-h="等待公式（概念）">random(0, 指数上界)</td><td data-h="特点">分散最好，平均等待短</td></tr><tr><td data-h="策略">Equal Jitter</td><td data-h="等待公式（概念）">上界/2 + random(0, 上界/2)</td><td data-h="特点">保证最小间隔</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>Full Jitter</h4><p><b class="k-p">优点</b>分散效果好，总调用少</p><p><b class="k-c">代价</b>个别请求可能几乎不等待</p><p><b class="k-w">适用</b>大量客户端的默认选择</p></div><div class="trd"><h4>Equal Jitter</h4><p><b class="k-p">优点</b>保证最小退避</p><p><b class="k-c">代价</b>平均等待更长</p><p><b class="k-w">适用</b>需要强制冷却时间</p></div><div class="trd"><h4>不加抖动</h4><p><b class="k-p">优点</b>行为可预测</p><p><b class="k-c">代价</b>多客户端时形成同步尖峰</p><p><b class="k-w">适用</b>只有单个客户端的脚本</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>所有实例用同一随机种子或启动即同时开始，抖动失效。</p><p class="fix"><b>✓</b>使用系统随机源，不手动固定种子。</p></li><li><p class="bad"><b>✗</b>只给重试加抖动，定时任务全部整点触发。</p><p class="fix"><b>✓</b>cron 和缓存 TTL 同样加入随机偏移。</p></li><li><p class="bad"><b>✗</b>抖动后没有上限，退避时间无限增长。</p><p class="fix"><b>✓</b>设置 cap 与最大重试次数。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有重试都使用指数退避加抖动</span></label></li><li><label><input type="checkbox"><span>退避有上限，重试有次数限制</span></label></li><li><label><input type="checkbox"><span>仅对可重试错误重试</span></label></li><li><label><input type="checkbox"><span>定时任务和 TTL 加随机偏移</span></label></li><li><label><input type="checkbox"><span>SDK 默认重试策略已确认并统一</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么有了指数退避还需要抖动？</summary><p>指数退避减少了重试次数，但同一时刻失败的客户端仍按相同序列重试，请求在 1、2、4 秒处成簇到达。抖动把每个客户端的等待随机化，打散这些簇，让服务恢复期的负载平滑。</p></details><details class="iv"><summary>Full Jitter 和 Equal Jitter 如何选？</summary><p>AWS 的模拟显示 Full Jitter 在总调用次数和完成时间上表现好，适合作为默认；若业务需要保证两次重试间至少间隔一段时间，选 Equal Jitter。</p></details><details class="iv"><summary>抖动还能用在哪些地方？</summary><p>缓存 TTL 加随机偏移避免同时过期；定时任务错峰执行；客户端重连、心跳和轮询间隔；滚动发布中批次间隔。本质都是打破多实例的时间同步。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/" target="_blank" rel="noopener"><b>AWS 架构博客：Exponential Backoff And Jitter</b><small>aws.amazon.com ↗</small></a></li><li><a href="https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/" target="_blank" rel="noopener"><b>AWS Builders&#x27; Library：Timeouts, retries and backoff with jitter</b><small>aws.amazon.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="bulkheads.pro.html" rel="prev"><small>‹ 上一个</small><b>🚢 舱壁隔离模式</b></a><a class="pn next" href="retry-storms.pro.html" rel="next"><small>下一个 ›</small><b>🌪️ 重试风暴</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

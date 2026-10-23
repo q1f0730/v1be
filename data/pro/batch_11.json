@@ -1,0 +1,3686 @@
+[
+ {
+  "slug": "image-scanning",
+  "def": "容器镜像扫描（Image Scanning）是软件供应链安全的一环：解析镜像各层里的操作系统包与语言依赖，生成软件物料清单（SBOM），再与 CVE 等漏洞库比对，输出漏洞、严重级别和可修复版本，通常作为 CI 门禁和镜像仓库准入策略执行。",
+  "how": [
+   "解包镜像：按层读取文件系统，识别发行版（如 Debian、Alpine）及其包管理数据库。",
+   "盘点组件：解析 dpkg/apk/rpm 数据库和 package-lock、go.sum、jar 等语言清单，得到组件与版本列表（SBOM）。",
+   "匹配漏洞：用组件名+版本对照 NVD、发行版安全公告、GitHub Advisory 等数据源，得到 CVE 列表。",
+   "评级与过滤：按 CVSS/厂商严重级别分级，标记是否已有修复版本，并应用忽略清单（如 .trivyignore）。",
+   "策略执行：CI 中超过阈值即以非零退出码失败；仓库或准入控制器可拒绝未扫描或高危镜像。"
+  ],
+  "terms": [
+   {
+    "t": "软件物料清单 (SBOM)",
+    "d": "镜像内所有组件及版本的结构化清单，常见格式为 SPDX 与 CycloneDX。"
+   },
+   {
+    "t": "CVE (Common Vulnerabilities and Exposures)",
+    "d": "公开漏洞的统一编号体系，如 CVE-2021-44228。"
+   },
+   {
+    "t": "CVSS",
+    "d": "通用漏洞评分系统，0–10 分量化漏洞严重程度。"
+   },
+   {
+    "t": "可修复 (Fixed Version)",
+    "d": "上游已发布修复版本的漏洞，可通过升级包消除。"
+   },
+   {
+    "t": "VEX",
+    "d": "漏洞可利用性声明，说明某 CVE 在本产品中是否真正受影响。"
+   },
+   {
+    "t": "准入控制 (Admission Control)",
+    "d": "K8s 在创建资源前执行的策略校验，可拦截不合规镜像。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "Trivy 扫描并设门禁",
+   "src": "# 1) 只关心高危/严重，且仅统计已有修复版本的漏洞\ntrivy image \\\n  --severity HIGH,CRITICAL \\\n  --ignore-unfixed \\\n  --exit-code 1 \\\n  myapp:1.4.2          # 有命中则退出码为 1，CI 失败\n\n# 2) 生成 SBOM（CycloneDX 格式）留档\ntrivy image --format cyclonedx --output sbom.cdx.json myapp:1.4.2\n\n# 3) 之后数据库更新了，可直接对 SBOM 复扫，无需重新拉镜像\ntrivy sbom sbom.cdx.json\n\n# 4) 用 Grype 交叉验证，达到 high 级别即失败\ngrype myapp:1.4.2 --fail-on high",
+   "note": "把扫描变成可失败的 CI 步骤，并保存 SBOM 以便漏洞库更新后复扫。"
+  },
+  "table": {
+   "title": "常见扫描工具对比",
+   "head": [
+    "工具",
+    "形态",
+    "特点"
+   ],
+   "rows": [
+    [
+     "Trivy",
+     "开源 CLI",
+     "镜像/文件系统/IaC/SBOM 一体，CI 集成简单"
+    ],
+    [
+     "Grype + Syft",
+     "开源 CLI",
+     "Syft 生成 SBOM，Grype 负责匹配，可分开使用"
+    ],
+    [
+     "仓库内置扫描",
+     "托管服务",
+     "如 ECR、Harbor、Docker Scout，推送即扫"
+    ],
+    [
+     "商业平台",
+     "SaaS",
+     "可达性分析、优先级排序、合规报表"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "CI 构建时扫描",
+    "pros": "问题在合并前暴露，修复成本低",
+    "cons": "只反映构建当天的漏洞库",
+    "when": "所有项目的默认基线"
+   },
+   {
+    "opt": "仓库持续复扫",
+    "pros": "新 CVE 公布后能发现存量镜像风险",
+    "cons": "告警量大，需要归属和处理流程",
+    "when": "镜像长期在线运行"
+   },
+   {
+    "opt": "准入时强制拦截",
+    "pros": "运行时兜底，防止绕过 CI",
+    "cons": "误拦会影响发布，需例外机制",
+    "when": "生产集群、合规要求高"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "阈值设为任何漏洞都失败，团队很快学会跳过扫描",
+    "fix": "先只拦 CRITICAL/HIGH 且可修复，配合有到期时间的忽略清单"
+   },
+   {
+    "bad": "只在构建时扫一次，上线后不再关注",
+    "fix": "对仓库中在用镜像定期复扫或对 SBOM 复扫，新 CVE 触发工单"
+   },
+   {
+    "bad": "用 latest 标签扫描，扫的和部署的不是同一个镜像",
+    "fix": "按镜像 digest（sha256）扫描和部署，结果与制品一一对应"
+   },
+   {
+    "bad": "基础镜像臃肿，大量与业务无关的包贡献漏洞",
+    "fix": "换用 slim、distroless 等精简基础镜像，从源头减少攻击面"
+   }
+  ],
+  "checklist": [
+   "CI 中扫描步骤失败会阻断合并",
+   "阈值与忽略清单入库并有负责人",
+   "忽略项写明原因和到期日期",
+   "每个发布镜像都有对应 SBOM 存档",
+   "生产镜像按 digest 引用",
+   "在用镜像有定期复扫与告警"
+  ],
+  "interview": [
+   {
+    "q": "扫描报 200 个漏洞，你怎么排优先级？",
+    "a": "先按严重级别和是否有修复版本过滤；再看组件是否在运行路径上被加载（可达性）、是否暴露在网络面；结合 EPSS/KEV 判断是否已被在野利用。升级基础镜像通常一次消掉大半。"
+   },
+   {
+    "q": "镜像扫描和 SAST、依赖扫描有何区别？",
+    "a": "SAST 分析自研源码的缺陷；依赖扫描（SCA）看清单文件中的三方库；镜像扫描看最终制品，覆盖系统包和真正打进去的依赖，更贴近运行时，但看不到自研代码逻辑漏洞。"
+   },
+   {
+    "q": "为什么有了 SBOM 还要 VEX？",
+    "a": "SBOM 只说明包含什么组件，匹配出的 CVE 未必可利用，比如漏洞函数没被调用或配置未开启。VEX 由供应方声明不受影响/已修复/调查中，用来降噪，让下游只处理真实风险。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Trivy (GitHub)",
+    "url": "https://github.com/aquasecurity/trivy"
+   },
+   {
+    "title": "Grype (GitHub)",
+    "url": "https://github.com/anchore/grype"
+   },
+   {
+    "title": "CISA: Software Bill of Materials",
+    "url": "https://www.cisa.gov/sbom"
+   },
+   {
+    "title": "CycloneDX Specification",
+    "url": "https://cyclonedx.org/specification/overview/"
+   }
+  ]
+ },
+ {
+  "slug": "reproducible-builds",
+  "def": "可复现构建（Reproducible Builds）指在相同源码、相同构建环境与指令下，任何人都能独立产出逐位（bit-for-bit）相同的制品。它属于软件供应链完整性手段，用于证明二进制确实由公开源码构建、未被构建机植入后门，也让缓存和差异审计更可靠。",
+  "how": [
+   "固定输入：锁定源码提交、依赖版本（lockfile、哈希校验）和工具链版本，避免浮动版本。",
+   "消除时间戳：用 SOURCE_DATE_EPOCH 统一写入文件的时间，归档时设置固定 mtime。",
+   "消除环境差异：固定文件排序、时区、语言区域（locale）、用户/组 ID、构建路径等元数据。",
+   "隔离构建：在容器或 Nix/Bazel 等密封（hermetic）环境中构建，禁止构建期联网取浮动资源。",
+   "独立复验：两台或多台机器分别构建，比较产物哈希；不一致时用 diffoscope 定位差异来源。"
+  ],
+  "terms": [
+   {
+    "t": "SOURCE_DATE_EPOCH",
+    "d": "约定的环境变量，给构建工具提供统一的 Unix 时间戳。"
+   },
+   {
+    "t": "密封构建 (Hermetic Build)",
+    "d": "构建只依赖声明过的输入，不读取宿主机或网络上的隐式状态。"
+   },
+   {
+    "t": "diffoscope",
+    "d": "递归比较两个制品内部差异的工具，可深入压缩包和二进制。"
+   },
+   {
+    "t": "SLSA",
+    "d": "供应链制品完整性框架，按级别规定构建来源与防篡改要求。"
+   },
+   {
+    "t": "构建来源证明 (Provenance)",
+    "d": "描述制品由谁、用什么源码和流程构建的签名元数据。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "产出确定性 tar 包",
+   "src": "# 用最后一次提交时间作为统一时间戳\nexport SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)\nexport TZ=UTC LC_ALL=C\n\n# 固定排序、mtime、属主，去掉不确定元数据\ntar --sort=name \\\n    --mtime=\"@${SOURCE_DATE_EPOCH}\" \\\n    --owner=0 --group=0 --numeric-owner \\\n    -cf dist.tar src/\n\n# gzip -n：不写入原文件名和时间戳\ngzip -n -9 -f dist.tar\nsha256sum dist.tar.gz   # 在另一台机器重复，哈希应一致",
+   "note": "打包环节最常见的不确定来源是时间、顺序和属主，逐一固定即可复现。"
+  },
+  "table": {
+   "title": "不可复现的常见来源",
+   "head": [
+    "来源",
+    "表现",
+    "处理方式"
+   ],
+   "rows": [
+    [
+     "时间戳",
+     "归档/二进制内嵌构建时间",
+     "SOURCE_DATE_EPOCH、固定 mtime"
+    ],
+    [
+     "文件顺序",
+     "目录遍历顺序随文件系统变化",
+     "排序后再打包"
+    ],
+    [
+     "构建路径",
+     "绝对路径写入调试信息",
+     "路径映射或固定构建目录"
+    ],
+    [
+     "浮动依赖",
+     "版本范围解析到新版本",
+     "lockfile + 哈希校验"
+    ],
+    [
+     "随机性",
+     "哈希表顺序、随机 ID",
+     "固定种子或稳定排序输出"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "容器内构建+锁定依赖",
+    "pros": "改造成本低，多数项目可落地",
+    "cons": "基础镜像和系统包仍可能漂移",
+    "when": "普通业务服务"
+   },
+   {
+    "opt": "Nix / Bazel 密封构建",
+    "pros": "输入完全声明，复现性强",
+    "cons": "学习曲线陡，生态迁移成本高",
+    "when": "大型单仓、对供应链要求高"
+   },
+   {
+    "opt": "只做来源证明不追求逐位一致",
+    "pros": "实现快，满足 SLSA 部分级别",
+    "cons": "无法独立验证产物与源码对应",
+    "when": "短期合规、先补可追溯性"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "Dockerfile 里 apt-get install 不锁版本，每次构建结果不同",
+    "fix": "锁定基础镜像 digest，或使用快照源固定包版本"
+   },
+   {
+    "bad": "认为同一台机器构建两次一致就算可复现",
+    "fix": "在不同机器、不同路径和用户下构建再比对哈希"
+   },
+   {
+    "bad": "构建脚本里写入 date 或 git describe --dirty 等易变信息",
+    "fix": "版本信息只取自提交元数据，时间统一取 SOURCE_DATE_EPOCH"
+   }
+  ],
+  "checklist": [
+   "所有依赖有 lockfile 且校验哈希",
+   "基础镜像按 digest 固定",
+   "构建设置了 SOURCE_DATE_EPOCH",
+   "CI 有双构建比对哈希的任务",
+   "制品附带签名的来源证明",
+   "不一致时有 diffoscope 排查流程"
+  ],
+  "interview": [
+   {
+    "q": "可复现构建防的是什么威胁？",
+    "a": "主要防构建环节被篡改：构建机或 CI 被入侵后植入代码，源码审计也发现不了。多方独立构建出相同哈希，就能证明二进制与公开源码一致。它不能防源码本身或依赖源头被投毒。"
+   },
+   {
+    "q": "Docker 镜像为什么难以逐位复现？",
+    "a": "层的 tar 包含文件时间戳，镜像配置含创建时间，RUN 安装的系统包随软件源变化，构建工具也可能写入元数据。需要固定基础镜像、包版本，并利用 BuildKit 对 SOURCE_DATE_EPOCH 的支持。"
+   },
+   {
+    "q": "和 SLSA 来源证明是什么关系？",
+    "a": "来源证明是构建方签名的声明，说明产物如何生成，信任依赖构建平台；可复现构建允许第三方自行重建验证，不必信任构建方。两者互补，前者易落地，后者证明力更强。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Reproducible Builds",
+    "url": "https://reproducible-builds.org/"
+   },
+   {
+    "title": "SOURCE_DATE_EPOCH 规范",
+    "url": "https://reproducible-builds.org/docs/source-date-epoch/"
+   },
+   {
+    "title": "SLSA",
+    "url": "https://slsa.dev/"
+   },
+   {
+    "title": "diffoscope",
+    "url": "https://diffoscope.org/"
+   }
+  ]
+ },
+ {
+  "slug": "llm-as-a-judge",
+  "def": "LLM-as-a-Judge 是一种自动评测方法：用一个（通常更强的）大模型，依据评分细则（rubric）对另一个模型的输出打分或做两两比较，以近似人工评价。它位于评测（Evals）层，解决开放式生成任务难以用精确匹配评分、人工评审又慢又贵的问题。",
+  "how": [
+   "定义评测维度和细则：如正确性、完整性、简洁性，每档分数配描述与示例。",
+   "选择模式：单点打分（pointwise）、两两比较（pairwise）或对照参考答案打分（reference-based）。",
+   "构造评审提示：给出问题、待评回答、可选参考答案，要求先写理由再给结构化分数（JSON）。",
+   "去偏处理：两两比较时交换顺序各评一次，固定温度，必要时多次采样取多数或均值。",
+   "校准：用一小批人工标注样本计算与人工的一致率，调整细则后再大规模使用。"
+  ],
+  "terms": [
+   {
+    "t": "评分细则 (Rubric)",
+    "d": "每个维度、每档分数的明确判定标准，是评审一致性的基础。"
+   },
+   {
+    "t": "位置偏差 (Position Bias)",
+    "d": "两两比较时评审模型倾向偏好排在某一位置的回答。"
+   },
+   {
+    "t": "冗长偏差 (Verbosity Bias)",
+    "d": "评审倾向给更长的回答更高分，即便信息量并未增加。"
+   },
+   {
+    "t": "自我偏好 (Self-enhancement Bias)",
+    "d": "评审模型偏爱自己或同家族模型生成的回答。"
+   },
+   {
+    "t": "一致率 (Agreement Rate)",
+    "d": "评审结果与人工标注相同的比例，用于衡量裁判可信度。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "两两比较并交换顺序",
+   "src": "import json\nfrom openai import OpenAI\n\nclient = OpenAI()\nRUBRIC = \"按正确性、完整性、简洁性比较两个回答。先写理由，再输出 JSON：{\\\"reason\\\": str, \\\"winner\\\": \\\"A\\\"|\\\"B\\\"|\\\"tie\\\"}\"\n\ndef judge(q, a, b):\n    resp = client.chat.completions.create(\n        model=\"gpt-4o-mini\",\n        temperature=0,                      # 降低随机性\n        response_format={\"type\": \"json_object\"},\n        messages=[{\"role\": \"system\", \"content\": RUBRIC},\n                  {\"role\": \"user\", \"content\": f\"问题：{q}\\n回答A：{a}\\n回答B：{b}\"}],\n    )\n    return json.loads(resp.choices[0].message.content)[\"winner\"]\n\ndef compare(q, x, y):\n    r1 = judge(q, x, y)                     # x 在 A 位\n    r2 = judge(q, y, x)                     # 交换位置\n    r2 = {\"A\": \"B\", \"B\": \"A\"}.get(r2, r2)   # 映射回原顺序\n    return r1 if r1 == r2 else \"tie\"        # 不一致视为平局",
+   "note": "交换位置各评一次可抵消位置偏差，结论不一致时判平局更稳妥。"
+  },
+  "table": {
+   "title": "三种评审模式",
+   "head": [
+    "模式",
+    "输入",
+    "适用场景"
+   ],
+   "rows": [
+    [
+     "单点打分",
+     "问题+回答",
+     "监控线上质量、批量打分"
+    ],
+    [
+     "两两比较",
+     "问题+两个回答",
+     "模型/提示词 A/B 选型"
+    ],
+    [
+     "参考答案对照",
+     "问题+回答+标准答案",
+     "事实性问答、有标准解的任务"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "LLM 裁判",
+    "pros": "快、便宜、可大规模和持续运行",
+    "cons": "有系统性偏差，需人工校准",
+    "when": "迭代提示词、回归测试"
+   },
+   {
+    "opt": "人工评审",
+    "pros": "可信度高，能发现细微问题",
+    "cons": "慢、贵、评审者之间也不一致",
+    "when": "建立金标集、关键发布前"
+   },
+   {
+    "opt": "规则/程序化检查",
+    "pros": "确定、零成本、可解释",
+    "cons": "只能覆盖格式、可执行性等硬指标",
+    "when": "JSON 结构、代码能否通过测试"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用被测模型本身当裁判，分数虚高",
+    "fix": "换不同家族或更强的模型当裁判，并用人工样本校准"
+   },
+   {
+    "bad": "只让裁判给 1–10 分，没有细则，分数漂移",
+    "fix": "每档写明判定标准和示例，或改用两两比较"
+   },
+   {
+    "bad": "从不检查裁判与人工的一致性就上线",
+    "fix": "保留一份人工标注集，定期计算一致率并跟踪变化"
+   },
+   {
+    "bad": "能用程序验证的也交给 LLM 裁判",
+    "fix": "可执行的先跑测试或规则，LLM 只评主观维度"
+   }
+  ],
+  "checklist": [
+   "评分细则成文并有示例",
+   "裁判与被测模型不同源",
+   "两两比较做了位置交换",
+   "温度固定且输出结构化",
+   "有人工金标集校准一致率",
+   "裁判模型版本被记录"
+  ],
+  "interview": [
+   {
+    "q": "LLM 裁判有哪些已知偏差，如何缓解？",
+    "a": "位置偏差：交换顺序双评；冗长偏差：细则中明确不因长度加分，或控制长度；自我偏好：用不同家族模型；分数尺度漂移：改两两比较或给锚点示例。最后都要用人工样本校准。"
+   },
+   {
+    "q": "单点打分和两两比较怎么选？",
+    "a": "两两比较对细微差异更敏感、评审更稳定，适合选型和 A/B；但成本随候选数平方增长。单点打分可独立评每条，适合线上监控和趋势跟踪，但尺度容易漂移，需细则锚定。"
+   },
+   {
+    "q": "怎么证明你的裁判可信？",
+    "a": "抽取有代表性的样本做人工标注，计算裁判与人工的一致率或相关系数，并与人与人之间的一致率对比；接近人际一致水平才可替代。裁判模型或细则变更后要重新校准。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena",
+    "url": "https://arxiv.org/abs/2306.05685"
+   },
+   {
+    "title": "G-Eval: NLG Evaluation using GPT-4",
+    "url": "https://arxiv.org/abs/2303.16634"
+   },
+   {
+    "title": "OpenAI Evals (GitHub)",
+    "url": "https://github.com/openai/evals"
+   }
+  ]
+ },
+ {
+  "slug": "llm-observability",
+  "def": "大模型可观测（LLM Observability）是在传统日志、指标、链路追踪之上，记录每次模型调用和 Agent 步骤的输入输出、token 用量、延迟、成本、工具调用与评测分数，以 trace/span 形式串起来。它解决的是 LLM 应用不确定、难调试、成本难控的问题。",
+  "how": [
+   "埋点：通过 SDK 自动插桩或手动创建 span，包住模型调用、检索、工具调用等步骤。",
+   "记录属性：模型名、参数、输入输出 token 数、耗时、错误、提示词版本等写入 span 属性。",
+   "串联链路：同一次用户请求的所有步骤共享 trace ID，形成父子关系的调用树。",
+   "导出与存储：经 OTLP 等协议发送到后端（如 Langfuse、Phoenix 或通用 APM）。",
+   "分析与闭环：按成本、延迟、错误聚合看板；抽样 trace 做人工或自动评测，反哺提示词。"
+  ],
+  "terms": [
+   {
+    "t": "Trace / Span",
+    "d": "一次请求的完整链路及其中每个步骤的计时单元，可嵌套。"
+   },
+   {
+    "t": "GenAI 语义约定 (GenAI Semantic Conventions)",
+    "d": "OpenTelemetry 为生成式 AI 定义的 gen_ai.* 属性命名规范。"
+   },
+   {
+    "t": "OTLP",
+    "d": "OpenTelemetry 的标准传输协议，用于导出 trace、指标和日志。"
+   },
+   {
+    "t": "首 token 延迟 (TTFT)",
+    "d": "从发出请求到收到第一个输出 token 的时间，影响流式体验。"
+   },
+   {
+    "t": "会话 (Session)",
+    "d": "把同一用户多轮对话的多个 trace 归为一组便于回放。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "手动为 LLM 调用建 span",
+   "src": "from openai import OpenAI\nfrom opentelemetry import trace\n\ntracer = trace.get_tracer(\"my-llm-app\")\nclient = OpenAI()\n\ndef ask(question: str) -> str:\n    # 一个 span 对应一次模型调用，属性名遵循 gen_ai.* 约定\n    with tracer.start_as_current_span(\"chat gpt-4o-mini\") as span:\n        span.set_attribute(\"gen_ai.operation.name\", \"chat\")\n        span.set_attribute(\"gen_ai.request.model\", \"gpt-4o-mini\")\n        resp = client.chat.completions.create(\n            model=\"gpt-4o-mini\",\n            messages=[{\"role\": \"user\", \"content\": question}],\n        )\n        span.set_attribute(\"gen_ai.response.model\", resp.model)\n        span.set_attribute(\"gen_ai.usage.input_tokens\", resp.usage.prompt_tokens)\n        span.set_attribute(\"gen_ai.usage.output_tokens\", resp.usage.completion_tokens)\n        return resp.choices[0].message.content",
+   "note": "需另行配置 TracerProvider 与导出器；属性名采用 OTel GenAI 约定以便跨后端通用。"
+  },
+  "table": {
+   "title": "LLM 应用关键观测指标",
+   "head": [
+    "指标",
+    "含义",
+    "用途"
+   ],
+   "rows": [
+    [
+     "token 用量",
+     "输入/输出 token 数",
+     "成本核算、发现提示词膨胀"
+    ],
+    [
+     "TTFT / 总延迟",
+     "首 token 与完整响应耗时",
+     "体验 SLO、模型选型"
+    ],
+    [
+     "工具调用次数",
+     "Agent 每轮调用工具数",
+     "发现死循环与低效规划"
+    ],
+    [
+     "评测分数",
+     "裁判或用户反馈打分",
+     "质量回归监控"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "专用 LLM 观测平台",
+    "pros": "提示词、评测、会话回放开箱即用",
+    "cons": "多一套系统，与现有 APM 割裂",
+    "when": "LLM 是产品核心、需频繁调提示词"
+   },
+   {
+    "opt": "沿用通用 APM + OTel",
+    "pros": "与服务链路统一，复用告警体系",
+    "cons": "提示词管理和评测要自己补",
+    "when": "LLM 只是系统中的一环"
+   },
+   {
+    "opt": "只打日志",
+    "pros": "零依赖，最快上手",
+    "cons": "无法串联多步，难做聚合分析",
+    "when": "原型期、调用量很小"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把完整提示词和用户隐私原文无脱敏写入 trace",
+    "fix": "对敏感字段脱敏或只存哈希，按合规要求设置保留期"
+   },
+   {
+    "bad": "只记录最终回答，Agent 中间步骤不可见",
+    "fix": "为检索、每次工具调用、每轮规划都建子 span"
+   },
+   {
+    "bad": "不记录提示词和模型版本，质量下降无从对比",
+    "fix": "把 prompt 版本、模型名作为 span 属性，支持按版本切片"
+   }
+  ],
+  "checklist": [
+   "每次模型调用都有 span 与 token 数",
+   "Agent 每个工具调用可见",
+   "trace 中敏感数据已脱敏",
+   "有按模型/功能的成本看板",
+   "延迟与错误率有告警阈值",
+   "提示词与模型版本可追溯"
+  ],
+  "interview": [
+   {
+    "q": "LLM 可观测和传统 APM 有什么不同？",
+    "a": "传统 APM 关注延迟、错误率、吞吐；LLM 还要看输入输出内容、token 与成本、提示词版本和输出质量。输出不确定，所以需要回放具体 trace 并结合评测打分，而不仅仅看指标。"
+   },
+   {
+    "q": "Agent 跑了 40 步才失败，怎么定位？",
+    "a": "打开该请求的 trace 树，按 span 看每轮规划输出和工具调用参数/结果，找到首次偏离的步骤；对比成功 trace 的同一步。常见原因是工具返回过长被截断、错误信息未回传给模型、上下文溢出。"
+   },
+   {
+    "q": "为什么推荐 OpenTelemetry 约定？",
+    "a": "统一 gen_ai.* 属性名后，埋点与后端解耦，换观测平台不必改代码，且 LLM span 能与 HTTP、数据库 span 处在同一条链路。注意该约定截至 2026 年仍在演进，属性名可能调整。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OpenTelemetry GenAI Semantic Conventions",
+    "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/"
+   },
+   {
+    "title": "Langfuse 文档",
+    "url": "https://langfuse.com/docs"
+   },
+   {
+    "title": "Arize Phoenix (GitHub)",
+    "url": "https://github.com/Arize-ai/phoenix"
+   }
+  ]
+ },
+ {
+  "slug": "benchmarks-and-swe-bench",
+  "def": "基准测试（Benchmark）是固定数据集+固定评分规则的标准化测评，用于横向比较模型能力。SWE-bench 是面向软件工程的代表性基准：取自真实 GitHub 仓库的 issue 与修复 PR，要求模型生成补丁，并以仓库原有及新增单元测试是否通过来判定成败。",
+  "how": [
+   "构造任务：从开源 Python 仓库收集已合并的修 bug PR，提取 issue 描述与修复前代码快照。",
+   "给模型输入：仓库代码与 issue 文本，模型（或 Agent）自行定位文件并输出 diff 补丁。",
+   "环境执行：在每个任务专属的 Docker 环境中应用补丁，运行指定测试。",
+   "判定：FAIL_TO_PASS 测试需由失败转为通过，PASS_TO_PASS 测试需保持通过，才算解决。",
+   "汇总：以解决率（% Resolved）报告结果；Verified、Lite 等子集用于降低成本或去除有问题的样本。"
+  ],
+  "terms": [
+   {
+    "t": "SWE-bench Verified",
+    "d": "经人工核验、去除描述不清或测试不合理样本的 500 题子集。"
+   },
+   {
+    "t": "FAIL_TO_PASS",
+    "d": "修复前失败、修复后应通过的测试，用于验证问题被解决。"
+   },
+   {
+    "t": "PASS_TO_PASS",
+    "d": "修复前后都应通过的测试，用于检查是否引入回归。"
+   },
+   {
+    "t": "数据污染 (Contamination)",
+    "d": "测试题或答案已出现在训练数据中，导致成绩虚高。"
+   },
+   {
+    "t": "pass@k",
+    "d": "生成 k 个候选中至少一个通过的概率，衡量采样上限。"
+   },
+   {
+    "t": "脚手架 (Scaffold)",
+    "d": "包在模型外的 Agent 框架，同一模型换脚手架成绩可能差异很大。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "用官方 harness 评测",
+   "src": "# 安装官方评测工具（需要本机有 Docker）\ngit clone https://github.com/SWE-bench/SWE-bench.git\ncd SWE-bench && pip install -e .\n\n# preds.jsonl 每行一个预测，例如：\n# {\"instance_id\": \"astropy__astropy-12907\",\n#  \"model_name_or_path\": \"my-agent\",\n#  \"model_patch\": \"diff --git a/... b/...\"}\n\npython -m swebench.harness.run_evaluation \\\n  --dataset_name princeton-nlp/SWE-bench_Lite \\\n  --predictions_path preds.jsonl \\\n  --max_workers 8 \\\n  --run_id my-agent-lite-01\n# 结束后输出每个实例是否 resolved 及总体报告",
+   "note": "评测与生成解耦：只需提交补丁文件，harness 在隔离容器里应用补丁并跑测试。"
+  },
+  "table": {
+   "title": "代码类基准对比",
+   "head": [
+    "基准",
+    "任务形式",
+    "评判方式"
+   ],
+   "rows": [
+    [
+     "HumanEval",
+     "根据函数签名与文档写函数",
+     "单元测试，常报 pass@1"
+    ],
+    [
+     "SWE-bench",
+     "按真实 issue 修改整个仓库",
+     "仓库测试 FAIL_TO_PASS / PASS_TO_PASS"
+    ],
+    [
+     "SWE-bench Verified",
+     "SWE-bench 人工核验子集",
+     "同上，样本质量更高"
+    ],
+    [
+     "Terminal-Bench",
+     "在终端环境完成任务",
+     "任务脚本检查最终状态"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "看公开榜单",
+    "pros": "零成本，快速了解模型大致水平",
+    "cons": "存在污染与针对性优化，场景不同",
+    "when": "初筛候选模型"
+   },
+   {
+    "opt": "跑公开基准子集",
+    "pros": "可复现，可比较自家脚手架改动",
+    "cons": "算力与 Docker 环境成本不低",
+    "when": "评估 Agent 框架或提示词改动"
+   },
+   {
+    "opt": "自建内部基准",
+    "pros": "贴近自家代码库和真实需求",
+    "cons": "构建和维护数据集需持续投入",
+    "when": "决定是否在团队推广某工具"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "直接比较不同脚手架下的榜单分数，归因给模型",
+    "fix": "同一脚手架、同一预算下对比模型，或同一模型对比脚手架"
+   },
+   {
+    "bad": "把高分等同于在自己项目里好用",
+    "fix": "用自家仓库的历史 issue 抽样做小型内部评测"
+   },
+   {
+    "bad": "忽略成本与步数，只看解决率",
+    "fix": "同时报告每题 token、耗时和费用，做成本-效果曲线"
+   }
+  ],
+  "checklist": [
+   "明确数据集版本和子集",
+   "固定模型版本与采样参数",
+   "记录脚手架与工具配置",
+   "同时报告成本与解决率",
+   "抽查失败与成功样例",
+   "考虑数据污染影响"
+  ],
+  "interview": [
+   {
+    "q": "SWE-bench 为什么用测试而不是对比参考补丁？",
+    "a": "同一 bug 有多种正确修法，逐行对比参考补丁会误判；用测试判定行为是否正确更合理。代价是测试覆盖不足时可能放过错误补丁，或测试依赖特定实现而误杀，这也是 Verified 子集出现的原因。"
+   },
+   {
+    "q": "如何判断一个基准被污染？",
+    "a": "看题目发布时间与模型训练截止时间；比较模型在发布前后新增题上的表现差；检查模型能否复述题面或参考答案。SWE-bench 类基准可用训练截止后新提交的 issue 构建新题对照。"
+   },
+   {
+    "q": "Agent 的 SWE-bench 分数由哪些因素决定？",
+    "a": "基础模型能力只是一部分；脚手架的检索与定位策略、可用工具（运行测试、搜索）、步数与 token 预算、是否多次采样再挑选都会显著影响结果。报告时应说明这些设置。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "SWE-bench 官网",
+    "url": "https://www.swebench.com/"
+   },
+   {
+    "title": "SWE-bench 论文",
+    "url": "https://arxiv.org/abs/2310.06770"
+   },
+   {
+    "title": "SWE-bench (GitHub)",
+    "url": "https://github.com/SWE-bench/SWE-bench"
+   }
+  ]
+ },
+ {
+  "slug": "rlhf",
+  "def": "人类反馈强化学习（RLHF）是大模型对齐（alignment）阶段的训练方法：先收集人类对多个回答的偏好排序，训练奖励模型（Reward Model）学会打分，再用强化学习（常用 PPO）优化语言模型以获得更高奖励，同时用 KL 约束防止偏离原模型太远。",
+  "how": [
+   "监督微调（SFT）：用人工撰写的示范回答微调预训练模型，得到初始策略。",
+   "收集偏好：对同一提示采样多个回答，标注员比较好坏，形成 (chosen, rejected) 对。",
+   "训练奖励模型：常用 Bradley-Terry 损失，使 chosen 的分数高于 rejected。",
+   "强化学习优化：用 PPO 最大化奖励，并加入与参考模型的 KL 惩罚，避免奖励投机。",
+   "迭代评估：用人工评测和基准检查有用性、无害性，必要时补充偏好数据再训练。"
+  ],
+  "terms": [
+   {
+    "t": "奖励模型 (Reward Model)",
+    "d": "输入提示和回答、输出标量分数，用于近似人类偏好。"
+   },
+   {
+    "t": "PPO (Proximal Policy Optimization)",
+    "d": "限制每步策略更新幅度的策略梯度算法，RLHF 经典选择。"
+   },
+   {
+    "t": "KL 惩罚 (KL Penalty)",
+    "d": "惩罚策略与参考模型分布差异，防止模型为刷分变得怪异。"
+   },
+   {
+    "t": "奖励投机 (Reward Hacking)",
+    "d": "模型利用奖励模型漏洞拿高分，实际质量并未提升。"
+   },
+   {
+    "t": "DPO (Direct Preference Optimization)",
+    "d": "直接用偏好对优化策略，无需显式奖励模型和 RL 循环。"
+   },
+   {
+    "t": "RLAIF",
+    "d": "用 AI 生成的偏好标签替代或补充人类标注。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "奖励模型与 DPO 损失",
+   "src": "import torch.nn.functional as F\n\n# 1) 奖励模型：Bradley-Terry 成对损失\n#    r_chosen / r_rejected：奖励模型对两个回答的标量打分，形状 [batch]\ndef reward_loss(r_chosen, r_rejected):\n    return -F.logsigmoid(r_chosen - r_rejected).mean()\n\n# 2) DPO：直接用策略与参考模型的对数概率\n#    logp_*：整段回答的 log 概率之和，形状 [batch]\ndef dpo_loss(pi_logp_c, pi_logp_r, ref_logp_c, ref_logp_r, beta=0.1):\n    # 隐式奖励 = beta * (策略 logp - 参考 logp)\n    chosen = beta * (pi_logp_c - ref_logp_c)\n    rejected = beta * (pi_logp_r - ref_logp_r)\n    return -F.logsigmoid(chosen - rejected).mean()",
+   "note": "两者都在拉开 chosen 与 rejected 的差距；DPO 省去奖励模型和 PPO 采样循环。"
+  },
+  "table": {
+   "title": "偏好对齐方法对比",
+   "head": [
+    "方法",
+    "是否需奖励模型",
+    "特点"
+   ],
+   "rows": [
+    [
+     "RLHF (PPO)",
+     "需要",
+     "效果上限高，但训练不稳定、工程复杂"
+    ],
+    [
+     "DPO",
+     "不需要",
+     "离线训练，简单稳定，依赖偏好数据质量"
+    ],
+    [
+     "RLAIF",
+     "视实现而定",
+     "用 AI 标注降成本，需控制标注模型偏差"
+    ],
+    [
+     "可验证奖励 RL",
+     "用规则/测试替代",
+     "适合数学、代码等可自动判对的任务"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "PPO 式 RLHF",
+    "pros": "在线采样，可持续探索更优回答",
+    "cons": "需同时维护多个模型，调参难",
+    "when": "有大规模算力和成熟训练团队"
+   },
+   {
+    "opt": "DPO 等离线方法",
+    "pros": "实现简单，显存与算力需求低",
+    "cons": "无在线探索，易过拟合偏好集",
+    "when": "中小团队做领域偏好微调"
+   },
+   {
+    "opt": "仅 SFT",
+    "pros": "最简单，可控性强",
+    "cons": "难以学到细粒度偏好与拒答边界",
+    "when": "格式化任务、示范数据充足"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "去掉 KL 约束追求更高奖励，输出变得冗长讨好",
+    "fix": "保留 KL 惩罚并监控长度、多样性，结合人工评测"
+   },
+   {
+    "bad": "偏好数据标注标准不一，奖励模型学到噪声",
+    "fix": "制定标注指南、计算标注者一致性，剔除争议样本"
+   },
+   {
+    "bad": "只看奖励模型分数判断训练效果",
+    "fix": "用独立人工评测或留出基准验证，警惕奖励投机"
+   }
+  ],
+  "checklist": [
+   "SFT 基线已评测留档",
+   "偏好标注指南与一致性统计",
+   "奖励模型在留出集上验证",
+   "训练中监控 KL 与回答长度",
+   "有独立人工评测集",
+   "安全与拒答行为单独评估"
+  ],
+  "interview": [
+   {
+    "q": "RLHF 里为什么要加 KL 惩罚？",
+    "a": "奖励模型只是人类偏好的有限近似，策略若自由优化会找到其漏洞，生成高分但质量差的文本，同时丢失语言能力。KL 惩罚让策略保持在参考模型附近，在奖励和原有能力之间折中。"
+   },
+   {
+    "q": "DPO 和 PPO 式 RLHF 的本质区别？",
+    "a": "DPO 推导出最优策略与奖励的闭式关系，把奖励隐式表示为策略与参考模型的对数概率比，从而直接用偏好对做分类式训练；省掉奖励模型和在线采样，但失去在线探索能力。"
+   },
+   {
+    "q": "RLHF 可能带来哪些副作用？",
+    "a": "谄媚（迎合用户观点）、回答变长、过度拒答、多样性下降，以及校准性变差。根源多在偏好数据偏差和奖励投机，需要在数据、KL 系数和评测维度上共同控制。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "InstructGPT: Training language models to follow instructions with human feedback",
+    "url": "https://arxiv.org/abs/2203.02155"
+   },
+   {
+    "title": "Direct Preference Optimization",
+    "url": "https://arxiv.org/abs/2305.18290"
+   },
+   {
+    "title": "Hugging Face: Illustrating RLHF",
+    "url": "https://huggingface.co/blog/rlhf"
+   }
+  ]
+ },
+ {
+  "slug": "distillation",
+  "def": "模型蒸馏（Knowledge Distillation）是一种模型压缩与迁移方法：用大模型（教师）的输出分布或生成结果作为监督信号训练小模型（学生），让学生以更少参数和更低推理成本逼近教师效果。它常用于端侧部署、降本提速，以及把强模型能力迁移到专用小模型。",
+  "how": [
+   "准备教师：选定效果好的大模型，冻结参数，只用于产生监督信号。",
+   "产生软标签：对训练样本用带温度 T 的 softmax 得到概率分布，保留类别间相似度信息。",
+   "或生成数据：在 LLM 场景常让教师生成回答/推理过程，作为学生的 SFT 数据（序列级蒸馏）。",
+   "训练学生：损失通常为软标签 KL 散度（乘 T²）与真实标签交叉熵的加权和。",
+   "评估部署：对比学生与教师在目标任务上的差距、延迟与成本，必要时再量化。"
+  ],
+  "terms": [
+   {
+    "t": "软标签 (Soft Targets)",
+    "d": "教师输出的完整概率分布，比 one-hot 标签包含更多信息。"
+   },
+   {
+    "t": "温度 (Temperature)",
+    "d": "softmax 前除以 T，T 越大分布越平滑，暴露更多次要类别信息。"
+   },
+   {
+    "t": "暗知识 (Dark Knowledge)",
+    "d": "教师对错误类别的相对概率中隐含的相似性知识。"
+   },
+   {
+    "t": "序列级蒸馏 (Sequence-level KD)",
+    "d": "用教师生成的完整输出序列作为学生的训练目标。"
+   },
+   {
+    "t": "量化 (Quantization)",
+    "d": "降低权重数值精度以压缩模型，常与蒸馏配合使用。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "经典蒸馏损失",
+   "src": "import torch.nn.functional as F\n\ndef kd_loss(student_logits, teacher_logits, labels, T=2.0, alpha=0.5):\n    # 软标签部分：学生与教师在温度 T 下的 KL 散度\n    soft = F.kl_div(\n        F.log_softmax(student_logits / T, dim=-1),\n        F.softmax(teacher_logits / T, dim=-1),\n        reduction=\"batchmean\",\n    ) * (T * T)          # 乘 T^2，保持梯度量级与温度无关\n    # 硬标签部分：与真实标签的交叉熵\n    hard = F.cross_entropy(student_logits, labels)\n    return alpha * soft + (1 - alpha) * hard\n\n# 训练循环中：教师 no_grad 前向，学生正常反向传播",
+   "note": "Hinton 等提出的经典形式；T 与 alpha 是需要调的超参数。"
+  },
+  "table": {
+   "title": "蒸馏方式对比",
+   "head": [
+    "方式",
+    "监督信号",
+    "需要教师什么"
+   ],
+   "rows": [
+    [
+     "Logit 蒸馏",
+     "教师输出概率分布",
+     "能拿到 logits（白盒）"
+    ],
+    [
+     "特征蒸馏",
+     "中间层表示",
+     "能访问内部结构"
+    ],
+    [
+     "序列级/数据蒸馏",
+     "教师生成的文本",
+     "只需 API 输出（黑盒）"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "蒸馏小模型",
+    "pros": "推理快、成本低、可私有部署",
+    "cons": "能力上限受限，泛化可能下降",
+    "when": "任务明确、调用量大"
+   },
+   {
+    "opt": "直接调用大模型",
+    "pros": "能力最强，无需训练",
+    "cons": "单次成本和延迟高，依赖供应方",
+    "when": "任务多变、量小"
+   },
+   {
+    "opt": "量化/剪枝",
+    "pros": "无需重新设计训练流程",
+    "cons": "压缩幅度有限，可能掉点",
+    "when": "已有模型只需提速"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用闭源模型输出蒸馏但忽视服务条款",
+    "fix": "先核对模型提供方的使用条款是否允许用输出训练其他模型"
+   },
+   {
+    "bad": "教师数据覆盖面窄，学生在分布外样本上崩",
+    "fix": "按真实线上分布采样提示，覆盖长尾和边界情况"
+   },
+   {
+    "bad": "只在训练集分布上评估学生效果",
+    "fix": "保留独立测试集，并与教师逐项对比失败案例"
+   }
+  ],
+  "checklist": [
+   "教师与学生效果差距已量化",
+   "训练数据覆盖线上分布",
+   "符合教师模型的使用条款",
+   "延迟与成本收益已测",
+   "有分布外样本测试",
+   "失败时可回退到大模型"
+  ],
+  "interview": [
+   {
+    "q": "为什么软标签比硬标签更有用？",
+    "a": "硬标签只说明正确类别；软标签还体现教师认为哪些错误类别更相近，例如 2 像 3 而不像狗，这类相似结构提供了更多梯度信息，学生用更少数据学到更好的决策边界。"
+   },
+   {
+    "q": "损失里为什么要乘 T²？",
+    "a": "温度 T 下软标签梯度大约按 1/T² 缩小，乘 T² 可使软损失的梯度量级在不同温度下大致不变，便于与硬标签损失按 alpha 组合，避免调温度时还要重调权重。"
+   },
+   {
+    "q": "LLM 时代的蒸馏和经典蒸馏有何不同？",
+    "a": "大模型多通过 API 提供，拿不到 logits，常用教师生成的回答和推理链做 SFT（数据蒸馏）。重点转向提示多样性、数据筛选与质量控制，以及合规问题，而非损失函数设计。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Distilling the Knowledge in a Neural Network",
+    "url": "https://arxiv.org/abs/1503.02531"
+   },
+   {
+    "title": "DistilBERT",
+    "url": "https://arxiv.org/abs/1910.01108"
+   },
+   {
+    "title": "Sequence-Level Knowledge Distillation",
+    "url": "https://arxiv.org/abs/1606.07947"
+   }
+  ]
+ },
+ {
+  "slug": "parallel-agents-and-worktrees",
+  "def": "并行智能体（Parallel Agents）指同时运行多个编码 Agent 处理不同任务；Git Worktree 让同一仓库检出多个独立工作目录，每个目录有自己的分支和文件状态，共享同一份对象库。两者结合可避免多个 Agent 在同一目录互相覆盖文件，是 AI 编码提效的常用工作流。",
+  "how": [
+   "拆分任务：把工作拆成彼此文件交集小的独立任务，如不同模块或不同 bug。",
+   "创建工作树：git worktree add 为每个任务建目录与分支，共享 .git 对象，不必重复克隆。",
+   "各自启动 Agent：在每个工作树目录中运行一个 Agent 会话，各自安装依赖、跑测试。",
+   "人工审查：任务完成后分别查看 diff，通过 PR 或本地合并回主分支。",
+   "清理：合并后 git worktree remove 删除目录，git worktree prune 清理失效记录。"
+  ],
+  "terms": [
+   {
+    "t": "工作树 (Worktree)",
+    "d": "与某分支关联的独立检出目录，同一仓库可有多个。"
+   },
+   {
+    "t": "主工作树 (Main Worktree)",
+    "d": "git clone 或 git init 产生的原始工作目录。"
+   },
+   {
+    "t": "同分支限制",
+    "d": "默认同一分支不能同时被两个工作树检出，防止状态冲突。"
+   },
+   {
+    "t": "合并冲突 (Merge Conflict)",
+    "d": "多个分支修改同一处代码，合并时需人工裁决。"
+   },
+   {
+    "t": "后台 Agent (Background Agent)",
+    "d": "在云端或后台独立运行、完成后提交分支或 PR 的 Agent。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "为两个 Agent 建工作树",
+   "src": "# 在主仓库目录中，为两个任务各建一个工作树+新分支\ngit worktree add ../app-fix-login -b fix/login\ngit worktree add ../app-feat-export -b feat/export\n\ngit worktree list        # 查看所有工作树及其分支\n\n# 分别在两个终端里启动 Agent（以 Claude Code 为例）\ncd ../app-fix-login && claude\ncd ../app-feat-export && claude\n\n# 完成并合并后清理\ngit worktree remove ../app-fix-login\ngit branch -d fix/login\ngit worktree prune       # 清理已手动删除目录的残留记录",
+   "note": "每个 Agent 有独立目录和分支，互不覆盖；对象库共享，比多次 clone 省空间。"
+  },
+  "table": {
+   "title": "并行隔离方式对比",
+   "head": [
+    "方式",
+    "隔离程度",
+    "成本"
+   ],
+   "rows": [
+    [
+     "同目录多会话",
+     "无，文件互相覆盖",
+     "最低，但不可取"
+    ],
+    [
+     "Git Worktree",
+     "文件与分支隔离",
+     "低，共享对象库"
+    ],
+    [
+     "多次 clone",
+     "完全独立仓库",
+     "磁盘与同步成本较高"
+    ],
+    [
+     "容器/云端沙箱",
+     "环境、网络都隔离",
+     "最高，适合不可信任务"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "本地多工作树",
+    "pros": "启动快，可随时介入查看",
+    "cons": "端口、数据库等共享资源会冲突",
+    "when": "2–4 个中小任务并行"
+   },
+   {
+    "opt": "云端后台 Agent",
+    "pros": "不占本机资源，可大规模并行",
+    "cons": "环境配置成本，介入不便",
+    "when": "任务独立且定义清晰"
+   },
+   {
+    "opt": "串行单 Agent",
+    "pros": "无合并冲突，上下文连贯",
+    "cons": "总耗时长",
+    "when": "任务强耦合或涉及同一文件"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "并行任务改动同一批文件，最后合并冲突严重",
+    "fix": "拆任务时按模块边界划分，共享接口先在主分支定好"
+   },
+   {
+    "bad": "多个工作树的开发服务器抢同一端口或共用一个本地数据库",
+    "fix": "为每个工作树配置不同端口和独立数据库/环境变量"
+   },
+   {
+    "bad": "新工作树没装依赖或缺少 .env，Agent 反复报错",
+    "fix": "写初始化脚本：建树后自动安装依赖并复制所需配置"
+   },
+   {
+    "bad": "开太多并行任务，审查跟不上，质量下降",
+    "fix": "并行数以自己能认真审查的量为上限"
+   }
+  ],
+  "checklist": [
+   "任务间文件交集已评估",
+   "每个工作树端口/数据库独立",
+   "依赖与配置初始化已脚本化",
+   "每个分支有测试通过记录",
+   "合并前逐个审查 diff",
+   "合并后清理工作树与分支"
+  ],
+  "interview": [
+   {
+    "q": "Worktree 和多次 clone 有什么区别？",
+    "a": "Worktree 共享同一 .git 对象库和引用，新建快、省磁盘，分支在各工作树间立即可见；多次 clone 是完全独立的仓库，需要 push/fetch 同步。Worktree 默认禁止同一分支被两处检出。"
+   },
+   {
+    "q": "怎么拆任务才适合并行 Agent？",
+    "a": "选彼此独立、可单独验证的任务：不同模块、不同 bug、测试补全等。先在主分支确定共享接口或数据结构，再让各 Agent 实现。强耦合任务并行只会制造冲突，宜串行。"
+   },
+   {
+    "q": "并行 Agent 的瓶颈通常在哪？",
+    "a": "往往不在生成速度，而在人的审查与合并能力，以及共享资源冲突（端口、数据库、API 配额）。因此要控制并行度，给每个任务清晰的验收标准和自动化测试。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "git-worktree 文档",
+    "url": "https://git-scm.com/docs/git-worktree"
+   },
+   {
+    "title": "Claude Code: Common workflows",
+    "url": "https://docs.claude.com/en/docs/claude-code/common-workflows"
+   },
+   {
+    "title": "Claude Code Best Practices",
+    "url": "https://www.anthropic.com/engineering/claude-code-best-practices"
+   }
+  ]
+ },
+ {
+  "slug": "agent-permission-security",
+  "def": "智能体权限安全是为 AI Agent 设计访问控制的实践：按最小权限原则限定它能读写的文件、能执行的命令、能访问的网络与凭证，并对高风险操作要求人工确认。它针对的是提示注入、模型误判导致的越权操作和数据外泄，对应 OWASP 所说的过度授权（Excessive Agency）。",
+  "how": [
+   "盘点能力：列出 Agent 可用的工具、文件系统范围、网络出口和凭证。",
+   "最小授权：只开放完成任务所需的工具和路径，敏感文件（如 .env、密钥）显式拒绝。",
+   "分级确认：只读操作可自动放行，写入、删除、部署、付款等需人工审批。",
+   "隔离执行：在容器、虚拟机或沙箱中运行，限制网络出口，凭证用短期、低权限令牌。",
+   "审计与回滚：记录所有工具调用，保留版本控制和备份，异常时可追溯与撤销。"
+  ],
+  "terms": [
+   {
+    "t": "最小权限 (Least Privilege)",
+    "d": "只授予完成当前任务所必需的最小权限集合。"
+   },
+   {
+    "t": "提示注入 (Prompt Injection)",
+    "d": "恶意文本混入输入或网页，诱导模型执行非预期指令。"
+   },
+   {
+    "t": "过度授权 (Excessive Agency)",
+    "d": "Agent 拥有超出需要的功能、权限或自主性而导致风险。"
+   },
+   {
+    "t": "致命三要素 (Lethal Trifecta)",
+    "d": "同时具备私有数据访问、接触不可信内容和外传能力时风险最高。"
+   },
+   {
+    "t": "人在环 (Human-in-the-loop)",
+    "d": "关键动作执行前需要人确认的机制。"
+   }
+  ],
+  "code": {
+   "lang": "json",
+   "title": "Claude Code 权限配置",
+   "src": "{\n  \"permissions\": {\n    \"allow\": [\n      \"Bash(npm run test:*)\",\n      \"Bash(git diff:*)\",\n      \"Read(./src/**)\"\n    ],\n    \"ask\": [\n      \"Bash(git push:*)\"\n    ],\n    \"deny\": [\n      \"Read(./.env)\",\n      \"Read(./secrets/**)\",\n      \"Bash(curl:*)\",\n      \"WebFetch\"\n    ]\n  }\n}",
+   "note": "写在 .claude/settings.json：测试和查看自动放行，推送需确认，读取密钥和外联直接拒绝。"
+  },
+  "table": {
+   "title": "操作风险分级示例",
+   "head": [
+    "操作类型",
+    "风险",
+    "建议策略"
+   ],
+   "rows": [
+    [
+     "读代码、跑测试",
+     "低",
+     "自动放行"
+    ],
+    [
+     "改文件、装依赖",
+     "中",
+     "在版本控制下放行，事后审查"
+    ],
+    [
+     "git push、部署",
+     "高",
+     "每次人工确认"
+    ],
+    [
+     "读密钥、外发网络请求",
+     "极高",
+     "默认拒绝，按需临时开放"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "白名单放行",
+    "pros": "默认安全，边界清晰",
+    "cons": "初期频繁弹确认，打断节奏",
+    "when": "生产仓库、含敏感数据"
+   },
+   {
+    "opt": "沙箱内全自动",
+    "pros": "效率最高，Agent 可长时间自主",
+    "cons": "沙箱配置成本，需防网络外泄",
+    "when": "一次性任务、可丢弃环境"
+   },
+   {
+    "opt": "逐条人工确认",
+    "pros": "每步可控",
+    "cons": "效率低，人容易疲劳盲点",
+    "when": "首次接入陌生 Agent 或工具"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "为图省事开启跳过所有权限确认的模式在本机运行",
+    "fix": "只在无凭证、无敏感数据的容器或沙箱中使用全自动模式"
+   },
+   {
+    "bad": "把长期、高权限的云凭证放在 Agent 可读的环境变量里",
+    "fix": "使用短期、最小权限的令牌，敏感文件加入 deny 规则"
+   },
+   {
+    "bad": "认为写进系统提示的禁止事项就能防住注入",
+    "fix": "用工具层的硬性权限和网络隔离兜底，而非依赖模型自律"
+   },
+   {
+    "bad": "接入第三方 MCP 服务器不审查其工具和权限",
+    "fix": "只用可信来源，审查工具描述，限制其可访问的数据"
+   }
+  ],
+  "checklist": [
+   "密钥文件在 deny 列表",
+   "推送/部署需人工确认",
+   "网络出口有限制或白名单",
+   "凭证为短期低权限",
+   "工具调用有审计日志",
+   "第三方工具/MCP 已审查"
+  ],
+  "interview": [
+   {
+    "q": "为什么不能只靠系统提示约束 Agent？",
+    "a": "模型会被提示注入或误解指令覆盖，系统提示只是软约束。权限必须在工具执行层强制：路径白名单、命令黑白名单、网络隔离、凭证最小化，让模型即便想做也做不到。"
+   },
+   {
+    "q": "什么是致命三要素？怎么打破？",
+    "a": "Agent 同时能访问私有数据、会读取不可信内容（网页、邮件、issue）、又能对外发送数据时，注入即可导致外泄。打破任意一环即可：去掉外传通道、隔离不可信输入，或不给私有数据。"
+   },
+   {
+    "q": "给编码 Agent 设计权限，你会怎么分层？",
+    "a": "按风险分层：读与测试自动放行；文件修改在 Git 管控下放行并审查 diff；push、部署、数据库迁移需确认；读密钥和任意外联默认拒绝。全自动只在一次性沙箱里开，并配审计日志。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP LLM06:2025 Excessive Agency",
+    "url": "https://genai.owasp.org/llmrisk/llm062025-excessive-agency/"
+   },
+   {
+    "title": "Claude Code: Identity and Access Management",
+    "url": "https://docs.claude.com/en/docs/claude-code/iam"
+   },
+   {
+    "title": "Claude Code settings",
+    "url": "https://docs.claude.com/en/docs/claude-code/settings"
+   },
+   {
+    "title": "The lethal trifecta for AI agents (Simon Willison)",
+    "url": "https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/"
+   }
+  ]
+ },
+ {
+  "slug": "agent-harness",
+  "def": "智能体外壳（Agent Harness）是包在大模型外面的运行框架：负责组装系统提示与上下文、定义和执行工具、驱动「模型决策→调用工具→回传结果」循环，并处理权限、上下文压缩、错误重试与终止条件。同一模型配不同 harness，表现可能差异很大。",
+  "how": [
+   "组装上下文：系统提示、项目说明文件、对话历史和工具定义一起发给模型。",
+   "模型决策：模型输出文本或结构化的工具调用请求（工具名+参数）。",
+   "执行工具：harness 校验权限后在本地或沙箱执行，捕获输出与错误。",
+   "回传结果：把工具结果作为新消息追加，模型据此决定下一步，循环直至任务完成。",
+   "上下文管理：历史过长时摘要压缩或裁剪，并设置最大步数、超时等终止条件。"
+  ],
+  "terms": [
+   {
+    "t": "Agent 循环 (Agent Loop)",
+    "d": "模型反复调用工具并读取结果，直到给出最终答复。"
+   },
+   {
+    "t": "工具定义 (Tool Schema)",
+    "d": "用 JSON Schema 描述工具名称、用途与参数格式。"
+   },
+   {
+    "t": "上下文压缩 (Compaction)",
+    "d": "对过长历史做摘要以腾出上下文窗口空间。"
+   },
+   {
+    "t": "子智能体 (Subagent)",
+    "d": "由主 Agent 派生、拥有独立上下文处理子任务的 Agent。"
+   },
+   {
+    "t": "终止条件 (Stop Condition)",
+    "d": "结束循环的规则，如模型不再调用工具或超出步数。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "最小 Agent 循环",
+   "src": "import subprocess, anthropic\n\nclient = anthropic.Anthropic()\ntools = [{\"name\": \"run\", \"description\": \"执行 shell 命令并返回输出\",\n          \"input_schema\": {\"type\": \"object\",\n                           \"properties\": {\"cmd\": {\"type\": \"string\"}},\n                           \"required\": [\"cmd\"]}}]\nmessages = [{\"role\": \"user\", \"content\": \"统计当前目录下 .py 文件数量\"}]\n\nfor _ in range(10):                           # 最大步数，防止死循环\n    resp = client.messages.create(model=\"claude-sonnet-4-5\", max_tokens=1024,\n                                  tools=tools, messages=messages)\n    messages.append({\"role\": \"assistant\", \"content\": resp.content})\n    if resp.stop_reason != \"tool_use\":\n        break                                 # 模型给出最终答复\n    results = []\n    for b in resp.content:\n        if b.type == \"tool_use\":              # 真实 harness 在此做权限检查\n            out = subprocess.run(b.input[\"cmd\"], shell=True,\n                                 capture_output=True, text=True, timeout=30)\n            results.append({\"type\": \"tool_result\", \"tool_use_id\": b.id,\n                            \"content\": out.stdout + out.stderr})\n    messages.append({\"role\": \"user\", \"content\": results})\nprint(resp.content[-1].text)",
+   "note": "演示用：直接执行任意命令有风险，真实 harness 需加权限校验和沙箱。"
+  },
+  "table": {
+   "title": "Harness 的核心职责",
+   "head": [
+    "模块",
+    "作用",
+    "设计要点"
+   ],
+   "rows": [
+    [
+     "上下文组装",
+     "决定模型看到什么",
+     "项目说明、相关文件、精简历史"
+    ],
+    [
+     "工具层",
+     "把意图变成动作",
+     "描述清晰、参数校验、输出截断"
+    ],
+    [
+     "权限与沙箱",
+     "限制破坏范围",
+     "分级确认、隔离执行"
+    ],
+    [
+     "循环控制",
+     "决定何时停",
+     "步数上限、错误回传、压缩"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "现成 harness（Claude Code 等）",
+    "pros": "工具、权限、压缩都已打磨",
+    "cons": "定制受限，行为受厂商更新影响",
+    "when": "编码等通用场景"
+   },
+   {
+    "opt": "Agent SDK 二次开发",
+    "pros": "复用循环与工具机制，可定制",
+    "cons": "仍需理解框架约束",
+    "when": "做自有产品中的 Agent"
+   },
+   {
+    "opt": "从零自研循环",
+    "pros": "完全可控，依赖少",
+    "cons": "上下文管理、错误处理要自己补",
+    "when": "流程固定、工具很少"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "工具报错时吞掉错误，只回传空结果",
+    "fix": "把错误信息原样（截断后）回传给模型，让它能自我纠正"
+   },
+   {
+    "bad": "工具输出不截断，一次 cat 大文件撑爆上下文",
+    "fix": "对工具输出设长度上限，并提示可分段读取"
+   },
+   {
+    "bad": "没有步数或成本上限，Agent 陷入循环烧钱",
+    "fix": "设置最大轮数、token 预算与超时，超出即停止并汇报"
+   },
+   {
+    "bad": "工具描述含糊，模型选错工具或传错参数",
+    "fix": "像写 API 文档一样写工具描述，附参数示例与边界"
+   }
+  ],
+  "checklist": [
+   "工具描述与参数 schema 清晰",
+   "工具错误会回传给模型",
+   "输出有长度截断",
+   "有步数/token/时间上限",
+   "高危工具需确认或沙箱",
+   "每步调用可追踪"
+  ],
+  "interview": [
+   {
+    "q": "为什么说 harness 和模型一样重要？",
+    "a": "模型只能输出文本，能否完成任务取决于它看到的上下文、可用工具、错误反馈和停止策略。基准测试中同一模型换不同脚手架成绩差异明显，说明工程设计是能力的放大器或瓶颈。"
+   },
+   {
+    "q": "上下文窗口快满时 harness 该怎么做？",
+    "a": "常见做法：对早期历史做摘要压缩、丢弃冗长的工具输出只留结论、把中间产物写入文件按需读取、把子任务交给拥有独立上下文的子 Agent，主 Agent 只接收结果摘要。"
+   },
+   {
+    "q": "设计工具时最重要的原则是什么？",
+    "a": "让模型容易用对：名称和描述明确，参数少且有约束，返回结果精炼并包含可行动的错误信息。工具数量过多会增加选错概率，宜按任务精简，并用真实任务测试模型是否会正确调用。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Building effective agents (Anthropic)",
+    "url": "https://www.anthropic.com/engineering/building-effective-agents"
+   },
+   {
+    "title": "Tool use with Claude",
+    "url": "https://docs.claude.com/en/docs/agents-and-tools/tool-use/overview"
+   },
+   {
+    "title": "Claude Code Best Practices",
+    "url": "https://www.anthropic.com/engineering/claude-code-best-practices"
+   }
+  ]
+ },
+ {
+  "slug": "spec-driven-development",
+  "def": "规格驱动开发（Spec-Driven Development）是 AI 编码时代流行的工作方式：先把需求、验收标准、技术设计和任务拆分写成结构化文档（spec），经人审阅后再交给 Agent 按任务逐步实现与验证。spec 成为人与 AI 之间的契约和长期上下文，减少「凭感觉写码」的返工。",
+  "how": [
+   "写需求：用用户故事与可验证的验收标准描述要做什么，不涉及实现细节。",
+   "写设计：明确架构、数据模型、接口、依赖与约束，记录关键取舍。",
+   "拆任务：把设计拆成小而可独立验证的任务清单，并标明任务间的依赖顺序。",
+   "逐项实现：Agent 每次只做一项任务，按验收标准补测试并运行通过。",
+   "回写同步：需求或设计变更时先改 spec，再改代码，保持文档与实现一致。"
+  ],
+  "terms": [
+   {
+    "t": "验收标准 (Acceptance Criteria)",
+    "d": "可客观判定需求是否完成的条件，最好能转成测试。"
+   },
+   {
+    "t": "EARS 语法",
+    "d": "用 WHEN/IF…THE SYSTEM SHALL… 模板书写无歧义需求的方法。"
+   },
+   {
+    "t": "Spec Kit",
+    "d": "GitHub 开源的规格驱动开发工具包，提供规格、计划、任务等流程命令。"
+   },
+   {
+    "t": "凭感觉编程 (Vibe Coding)",
+    "d": "不写规格、靠对话即兴让 AI 写代码的方式。"
+   },
+   {
+    "t": "活文档 (Living Documentation)",
+    "d": "随代码持续更新、始终反映现状的文档。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "一份精简 spec 示例",
+   "src": "# Feature: 导出订单为 CSV\n\n## 需求（EARS 写法）\n- WHEN 用户在订单页点击「导出」 THE SYSTEM SHALL 下载当前筛选结果的 CSV\n- IF 结果超过 10000 行 THE SYSTEM SHALL 改为异步生成并邮件通知\n- THE SYSTEM SHALL 对金额列保留两位小数\n\n## 设计\n- 接口：GET /api/orders/export?status=&from=&to=\n- 复用 OrderQuery 的筛选逻辑；流式写出，避免整表进内存\n\n## 任务\n- [ ] 1. 抽取 OrderQuery 筛选为公共函数（含单测）\n- [ ] 2. 实现 export 接口，流式输出 CSV（含单测）\n- [ ] 3. 超过阈值走异步任务 + 邮件（含集成测试）\n- [ ] 4. 前端导出按钮与加载状态",
+   "note": "需求可测、设计有约束、任务可单独验证，Agent 可按条目逐个完成。"
+  },
+  "table": {
+   "title": "spec 三层文档",
+   "head": [
+    "文档",
+    "回答什么",
+    "谁主导"
+   ],
+   "rows": [
+    [
+     "需求",
+     "做什么、怎样算完成",
+     "产品/人"
+    ],
+    [
+     "设计",
+     "怎么做、为什么这么做",
+     "工程师与 AI 共同"
+    ],
+    [
+     "任务",
+     "按什么顺序做、每步怎么验证",
+     "AI 起草、人审阅"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "完整 spec 流程",
+    "pros": "返工少，可审阅，团队可协作",
+    "cons": "前期投入大，小改动显得繁琐",
+    "when": "新功能、多人协作、跨多文件"
+   },
+   {
+    "opt": "轻量计划后编码",
+    "pros": "兼顾速度与方向感",
+    "cons": "边界情况易遗漏",
+    "when": "中等规模改动"
+   },
+   {
+    "opt": "直接对话编码",
+    "pros": "最快，适合探索",
+    "cons": "难以复现决策，易偏离",
+    "when": "原型、一次性脚本"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "spec 写成泛泛的愿景，没有可验证标准",
+    "fix": "每条需求附可测试的验收标准，能转成测试用例"
+   },
+   {
+    "bad": "实现中改了方案，spec 不更新，后续 Agent 被误导",
+    "fix": "变更先改 spec 再改代码，把 spec 纳入代码审查"
+   },
+   {
+    "bad": "让 AI 写完 spec 不审就开工",
+    "fix": "人重点审需求边界和设计取舍，确认后再进入实现"
+   }
+  ],
+  "checklist": [
+   "每条需求有验收标准",
+   "设计写明约束与取舍",
+   "任务粒度可独立验证",
+   "spec 与代码同仓库管理",
+   "变更时 spec 同步更新",
+   "任务完成均有测试通过"
+  ],
+  "interview": [
+   {
+    "q": "规格驱动开发和传统瀑布有什么不同？",
+    "a": "它不是一次写完全部文档再长期开发，而是以功能为单位、小步循环；spec 由 AI 辅助快速起草和更新，且直接作为 Agent 的执行上下文和验收依据，迭代周期以小时或天计。"
+   },
+   {
+    "q": "spec 写到多细合适？",
+    "a": "细到 Agent 不需要猜关键决策即可：需求边界、错误处理、数据结构、接口约定要明确；具体代码实现留给 Agent。判断标准是两个不同 Agent 按 spec 做出的结果在行为上一致。"
+   },
+   {
+    "q": "怎么防止 spec 与代码脱节？",
+    "a": "spec 与代码放同一仓库并在 PR 中一起审查；任务清单与提交对应；验收标准尽量落成自动化测试，让测试成为可执行的规格，文档过时会在测试中暴露。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "GitHub Spec Kit",
+    "url": "https://github.com/github/spec-kit"
+   },
+   {
+    "title": "Kiro: Specs",
+    "url": "https://kiro.dev/docs/specs/"
+   },
+   {
+    "title": "EARS: Easy Approach to Requirements Syntax",
+    "url": "https://alistairmavin.com/ears/"
+   }
+  ]
+ },
+ {
+  "slug": "self-improving-agents",
+  "def": "自我进化智能体（Self-Improving Agents）指能从执行经验中积累知识并改进后续表现的 Agent，通常不修改模型权重，而是通过反思总结、长期记忆、可复用技能库和提示词/工具的迭代来实现。目标是减少重复犯错、沉淀团队经验，但需防止错误经验被固化。",
+  "how": [
+   "执行任务：Agent 按当前提示、已有记忆与技能完成任务，并留下完整执行轨迹。",
+   "获取反馈：信号可来自测试结果、环境返回、评测打分或人工评价。",
+   "反思总结：让模型分析失败原因，提炼成简短可复用的经验或规则。",
+   "写入记忆/技能：把经验存入记忆文件、技能库或提示词，下次按相关性检索加载。",
+   "验证与淘汰：在评测集上确认改进有效，过时或有害的经验及时删除。"
+  ],
+  "terms": [
+   {
+    "t": "反思 (Reflection)",
+    "d": "让模型对失败轨迹进行语言化分析并提出改进方向。"
+   },
+   {
+    "t": "情景记忆 (Episodic Memory)",
+    "d": "记录过去具体任务经历，供相似任务检索参考。"
+   },
+   {
+    "t": "技能库 (Skill Library)",
+    "d": "把验证过的解决方案存为可调用的代码或流程。"
+   },
+   {
+    "t": "Reflexion",
+    "d": "以语言反馈代替权重更新、让 Agent 迭代改进的方法。"
+   },
+   {
+    "t": "经验污染 (Memory Poisoning)",
+    "d": "错误或恶意内容写入记忆后持续影响后续行为。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "失败反思写入记忆",
+   "src": "import json, subprocess, pathlib\n\nMEM = pathlib.Path(\"lessons.json\")\n\ndef load_lessons():\n    return json.loads(MEM.read_text()) if MEM.exists() else []\n\ndef save_lesson(text):\n    lessons = load_lessons()\n    if text not in lessons:\n        lessons.append(text)\n        MEM.write_text(json.dumps(lessons[-50:], ensure_ascii=False))  # 只留最近 50 条\n\ndef run_tests():\n    r = subprocess.run([\"pytest\", \"-q\"], capture_output=True, text=True)\n    return r.returncode == 0, r.stdout[-2000:]   # 截断输出\n\n# 每次任务开始：把 load_lessons() 拼进系统提示\n# 任务结束：ok, log = run_tests()\n# 若失败：让模型基于 log 写一句「下次应当…」，再 save_lesson(...)",
+   "note": "最朴素的经验沉淀：以测试结果为反馈，把教训存成文件并在下次加载。"
+  },
+  "table": {
+   "title": "改进途径对比",
+   "head": [
+    "途径",
+    "改的是什么",
+    "特点"
+   ],
+   "rows": [
+    [
+     "反思记忆",
+     "提示中的经验条目",
+     "便宜、即时，可能积累噪声"
+    ],
+    [
+     "技能库",
+     "可复用代码/流程",
+     "可验证，复用性强"
+    ],
+    [
+     "提示词优化",
+     "系统提示本身",
+     "需评测集判断是否变好"
+    ],
+    [
+     "微调",
+     "模型权重",
+     "效果持久，但成本高、周期长"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "自动写入记忆",
+    "pros": "无需人工，经验持续积累",
+    "cons": "易积累错误或过拟合的规则",
+    "when": "有可靠自动反馈（如测试）"
+   },
+   {
+    "opt": "人工审核后写入",
+    "pros": "质量可控，团队可共享",
+    "cons": "需要人力，更新慢",
+    "when": "团队共享的项目规则"
+   },
+   {
+    "opt": "不做持久记忆",
+    "pros": "行为可预测，无污染风险",
+    "cons": "重复犯同样的错",
+    "when": "一次性任务、高安全要求"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把一次偶然失败总结成绝对规则，后续过度约束",
+    "fix": "记录经验的适用条件，定期复审和合并冲突条目"
+   },
+   {
+    "bad": "记忆无限增长，挤占上下文且相互矛盾",
+    "fix": "设置容量上限，按相关性检索，过期条目淘汰"
+   },
+   {
+    "bad": "把网页等不可信内容自动写进长期记忆",
+    "fix": "写入前过滤来源，敏感或外部内容需人工确认"
+   },
+   {
+    "bad": "声称变好了却没有评测对比",
+    "fix": "用固定评测集对比改进前后的成功率"
+   }
+  ],
+  "checklist": [
+   "反馈信号可靠且可自动获取",
+   "经验条目含适用条件",
+   "记忆有容量上限和淘汰",
+   "外部内容不直接入记忆",
+   "有固定评测集验证改进",
+   "可查看并编辑全部记忆"
+  ],
+  "interview": [
+   {
+    "q": "不改权重，Agent 怎么变好？",
+    "a": "通过上下文层面的改进：把反思得出的经验写入记忆并在相关任务中检索注入；把成功方案沉淀为技能或工具；迭代系统提示。本质是用更好的上下文和工具让同一模型做出更好决策。"
+   },
+   {
+    "q": "自我改进最大的风险是什么？",
+    "a": "错误经验被固化并反复放大，或被提示注入写入恶意规则（记忆污染）。缓解：经验必须有可靠反馈支撑、记录来源与适用条件、可审查可删除，并定期在评测集上回归。"
+   },
+   {
+    "q": "在 Claude Code 里怎么落地这类机制？",
+    "a": "用项目说明文件（如 CLAUDE.md）记录团队约定与踩坑经验，把重复流程沉淀为自定义命令或技能；新增条目通过代码审查，避免 Agent 随意写入未经验证的规则。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Reflexion: Language Agents with Verbal Reinforcement Learning",
+    "url": "https://arxiv.org/abs/2303.11366"
+   },
+   {
+    "title": "Voyager: An Open-Ended Embodied Agent",
+    "url": "https://arxiv.org/abs/2305.16291"
+   },
+   {
+    "title": "Claude Code: Manage memory",
+    "url": "https://docs.claude.com/en/docs/claude-code/memory"
+   }
+  ]
+ },
+ {
+  "slug": "timing-attacks",
+  "def": "时序侧信道攻击（Timing Attack）是一类侧信道攻击：攻击者测量系统处理不同输入所需的时间差，推断出密钥、令牌、密码或账号是否存在等秘密信息。常见根源是逐字节提前返回的比较、依赖秘密的分支与查表，防御核心是让耗时与秘密无关（常数时间）。",
+  "how": [
+   "找到依赖秘密的操作：如逐字节比较签名，遇到首个不同字节即返回。",
+   "构造输入：攻击者逐位枚举候选值，并针对每个候选值重复发送大量请求。",
+   "统计测量：对响应时间取中位数等统计量，消除网络抖动，识别略慢的候选。",
+   "逐步恢复：耗时更长说明匹配到更多前缀字节，据此一位一位还原秘密。",
+   "防御：使用常数时间比较、统一错误路径耗时、限流，并避免依赖秘密的分支。"
+  ],
+  "terms": [
+   {
+    "t": "侧信道 (Side Channel)",
+    "d": "通过时间、功耗、缓存等实现副作用泄露信息的途径。"
+   },
+   {
+    "t": "常数时间 (Constant-time)",
+    "d": "执行耗时不随秘密数据取值变化的实现方式。"
+   },
+   {
+    "t": "短路比较 (Early-exit Comparison)",
+    "d": "发现首个不同字节就返回的比较，耗时泄露匹配长度。"
+   },
+   {
+    "t": "用户枚举 (User Enumeration)",
+    "d": "通过响应差异判断某账号是否存在。"
+   },
+   {
+    "t": "缓存时序攻击 (Cache-timing)",
+    "d": "利用 CPU 缓存命中与否的时间差推断内存访问模式。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "常数时间比较签名",
+   "src": "import hmac, hashlib\n\nSECRET = b\"server-side-secret\"\n\ndef sign(msg: bytes) -> str:\n    return hmac.new(SECRET, msg, hashlib.sha256).hexdigest()\n\ndef verify_bad(msg: bytes, sig: str) -> bool:\n    return sign(msg) == sig          # 普通比较：可能提前返回，耗时泄露前缀匹配长度\n\ndef verify_good(msg: bytes, sig: str) -> bool:\n    # compare_digest 的耗时不取决于两者有多少前缀相同\n    return hmac.compare_digest(sign(msg), sig)\n\n# Node.js 等价写法：crypto.timingSafeEqual(bufA, bufB)（要求长度相同）\nprint(verify_good(b\"order=42\", sign(b\"order=42\")))   # True",
+   "note": "校验 HMAC、API 令牌、重置链接 token 时应使用常数时间比较。"
+  },
+  "table": {
+   "title": "常见泄露点与修复",
+   "head": [
+    "场景",
+    "泄露什么",
+    "修复"
+   ],
+   "rows": [
+    [
+     "签名/令牌比较",
+     "匹配的前缀长度",
+     "hmac.compare_digest / timingSafeEqual"
+    ],
+    [
+     "登录接口",
+     "账号是否存在",
+     "不存在的账号也执行一次哈希计算"
+    ],
+    [
+     "密码学实现",
+     "密钥位",
+     "使用经过审计的常数时间库"
+    ],
+    [
+     "数据库查找令牌",
+     "令牌前缀命中",
+     "查询只用令牌 ID，再常数时间比对密文部分"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "常数时间比较",
+    "pros": "从根源消除比较类时序泄露",
+    "cons": "需要开发者知道在哪些地方使用",
+    "when": "任何秘密值比较"
+   },
+   {
+    "opt": "统一响应耗时/加随机延迟",
+    "pros": "可遮掩部分业务流程差异",
+    "cons": "随机延迟可被统计平均掉，效果有限",
+    "when": "作为辅助手段"
+   },
+   {
+    "opt": "限流与锁定",
+    "pros": "大幅提高统计测量所需成本",
+    "cons": "不消除泄露本身，可能误伤用户",
+    "when": "所有认证相关接口"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用 == 比较 HMAC 签名或 Webhook 签名",
+    "fix": "使用语言提供的常数时间比较函数"
+   },
+   {
+    "bad": "登录时账号不存在直接返回，存在才算密码哈希",
+    "fix": "对不存在的账号也计算一次哈希，统一错误信息"
+   },
+   {
+    "bad": "认为网络抖动大，远程时序攻击不可行",
+    "fix": "统计大量样本可滤除抖动，仍按可被利用来防御"
+   },
+   {
+    "bad": "自己实现加密算法或比较逻辑",
+    "fix": "使用成熟、经过审计的密码学库"
+   }
+  ],
+  "checklist": [
+   "所有令牌/签名比较为常数时间",
+   "登录失败路径耗时一致",
+   "认证接口有限流",
+   "错误信息不区分账号是否存在",
+   "使用成熟密码学库",
+   "Webhook 校验用官方 SDK 或安全比较"
+  ],
+  "interview": [
+   {
+    "q": "为什么 == 比较字符串会有时序问题？",
+    "a": "多数语言的字符串比较在遇到第一个不同字符时立即返回，前缀匹配越长耗时越长。攻击者逐位尝试并统计耗时，就能一位位恢复正确签名，把指数级暴力破解降为线性。"
+   },
+   {
+    "q": "compare_digest 是怎么做到常数时间的？",
+    "a": "它遍历全部字节，对每对字节做异或并累积到一个结果变量，不在中途分支或返回，最后统一判断结果是否为零，因此耗时只与长度相关，与内容匹配程度无关。"
+   },
+   {
+    "q": "AI 生成的代码在这里常见什么问题？",
+    "a": "生成 Webhook 签名校验、API Key 鉴权时常直接用 == 或 ===；登录逻辑先查用户再验密码导致用户枚举。审查时应专门搜索秘密值比较，并要求使用常数时间函数。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Timing attack (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Timing_attack"
+   },
+   {
+    "title": "Python hmac.compare_digest",
+    "url": "https://docs.python.org/3/library/hmac.html"
+   },
+   {
+    "title": "Node.js crypto.timingSafeEqual",
+    "url": "https://nodejs.org/api/crypto.html"
+   },
+   {
+    "title": "Kocher: Timing Attacks on Implementations of Diffie-Hellman, RSA, DSS",
+    "url": "https://www.paulkocher.com/doc/TimingAttacks.pdf"
+   }
+  ]
+ },
+ {
+  "slug": "threat-modeling",
+  "def": "威胁建模（Threat Modeling）是在设计阶段系统性识别安全威胁的结构化方法：画出系统的数据流和信任边界，按 STRIDE 等框架逐项分析攻击者可能做什么，评估风险并确定缓解措施。它把安全前移到写代码之前，比上线后修补成本低得多。",
+  "how": [
+   "明确范围：我们在构建什么？画数据流图，标出组件、数据存储、外部实体。",
+   "标信任边界：用户与服务、服务与第三方、内网与公网之间的权限与信任变化处。",
+   "识别威胁：在每条跨边界的数据流上，按 STRIDE 六类逐项提问可能出什么问题。",
+   "评估与缓解：按可能性和影响排序，为每个威胁确定缓解、接受、转移或规避。",
+   "验证与迭代：缓解措施落到任务和测试中；架构变化时更新模型并复审。"
+  ],
+  "terms": [
+   {
+    "t": "STRIDE",
+    "d": "仿冒、篡改、抵赖、信息泄露、拒绝服务、权限提升六类威胁。"
+   },
+   {
+    "t": "数据流图 (DFD)",
+    "d": "用进程、数据存储、外部实体和数据流描述系统的图。"
+   },
+   {
+    "t": "信任边界 (Trust Boundary)",
+    "d": "数据或调用跨越不同信任级别的分界线。"
+   },
+   {
+    "t": "攻击面 (Attack Surface)",
+    "d": "攻击者可以接触和尝试利用的所有入口集合。"
+   },
+   {
+    "t": "攻击树 (Attack Tree)",
+    "d": "把攻击目标逐层分解为子目标与手段的树状模型。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "威胁登记表示例",
+   "src": "# threats.yaml：随设计文档一起入库、一起评审\nsystem: 文件分享服务\nboundaries:\n  - 浏览器 -> API 网关（公网）\n  - API -> 对象存储（内网）\nthreats:\n  - id: T1\n    stride: Spoofing\n    flow: 浏览器 -> API\n    desc: 攻击者重放窃取的会话令牌\n    mitigation: 短期令牌 + HttpOnly/Secure Cookie + 绑定刷新令牌\n    status: planned\n  - id: T2\n    stride: Information disclosure\n    flow: API -> 对象存储\n    desc: 可猜测的文件 URL 导致越权下载\n    mitigation: 短时效签名 URL，按用户校验所有权\n    status: done\n  - id: T3\n    stride: Denial of service\n    flow: 浏览器 -> API\n    desc: 超大文件上传耗尽存储与带宽\n    mitigation: 大小上限、配额、按用户限流\n    status: accepted-risk",
+   "note": "每条威胁对应数据流、STRIDE 类别、缓解与状态，可追踪到任务。"
+  },
+  "table": {
+   "title": "STRIDE 与安全属性",
+   "head": [
+    "威胁",
+    "破坏的属性",
+    "典型缓解"
+   ],
+   "rows": [
+    [
+     "仿冒 Spoofing",
+     "身份认证",
+     "MFA、强会话管理"
+    ],
+    [
+     "篡改 Tampering",
+     "完整性",
+     "签名、校验、最小写权限"
+    ],
+    [
+     "抵赖 Repudiation",
+     "不可抵赖性",
+     "审计日志、防篡改日志"
+    ],
+    [
+     "信息泄露 Info Disclosure",
+     "机密性",
+     "加密、访问控制"
+    ],
+    [
+     "权限提升 Elevation",
+     "授权",
+     "最小权限、服务端鉴权"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "STRIDE 逐项分析",
+    "pros": "系统全面，易教易推广",
+    "cons": "组件多时工作量大，易流于形式",
+    "when": "新系统或重大架构变更"
+   },
+   {
+    "opt": "攻击树",
+    "pros": "聚焦高价值目标，深入具体路径",
+    "cons": "依赖分析者经验，覆盖面窄",
+    "when": "关键资产、支付等高风险点"
+   },
+   {
+    "opt": "轻量问答式评审",
+    "pros": "成本低，可纳入每次设计评审",
+    "cons": "深度有限",
+    "when": "日常功能迭代"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "系统上线后才做威胁建模，只能补丁式修复",
+    "fix": "在设计评审阶段完成，并作为开工前置条件"
+   },
+   {
+    "bad": "做一次就归档，架构变了模型没更新",
+    "fix": "新增外部依赖、数据流或权限时触发复审"
+   },
+   {
+    "bad": "列出一堆威胁但没有负责人和跟踪",
+    "fix": "每条威胁转成工单，有缓解状态与验收测试"
+   },
+   {
+    "bad": "只关注外部攻击者，忽略内部人员与供应链",
+    "fix": "把内部角色、CI/CD、第三方依赖也画进数据流"
+   }
+  ],
+  "checklist": [
+   "数据流图覆盖所有外部交互",
+   "信任边界已标注",
+   "每条跨边界流做了 STRIDE",
+   "高风险威胁有负责人",
+   "缓解措施有对应测试",
+   "架构变化触发复审"
+  ],
+  "interview": [
+   {
+    "q": "威胁建模的四个核心问题是什么？",
+    "a": "我们在构建什么？可能出什么问题？我们打算怎么应对？我们做得够好吗？对应画模型、识别威胁、确定缓解、验证复盘四步，是 Shostack 等人推广的通用框架，与具体方法无关。"
+   },
+   {
+    "q": "为 LLM Agent 应用做威胁建模要额外注意什么？",
+    "a": "把模型视为不可信组件：外部内容可能携带提示注入；工具调用是新的权限提升路径；输出可能泄露上下文中的敏感数据。重点画出模型可调用的工具和可读取的数据，以及不可信输入的来源。"
+   },
+   {
+    "q": "如何避免威胁建模流于形式？",
+    "a": "限定范围、按变更触发而非按周期；用模板和检查清单降低门槛；产出必须落为可跟踪的工单和测试；邀请开发、运维、安全共同参与，让一线工程师成为主要建模者。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP Threat Modeling Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Threat_Modeling_Cheat_Sheet.html"
+   },
+   {
+    "title": "Threat Modeling Manifesto",
+    "url": "https://www.threatmodelingmanifesto.org/"
+   },
+   {
+    "title": "Microsoft Threat Modeling Tool: STRIDE",
+    "url": "https://learn.microsoft.com/en-us/azure/security/develop/threat-modeling-tool-threats"
+   },
+   {
+    "title": "OWASP Threat Dragon",
+    "url": "https://owasp.org/www-project-threat-dragon/"
+   }
+  ]
+ },
+ {
+  "slug": "sharding",
+  "def": "数据库水平分片（Sharding）把同一张逻辑表的数据按分片键拆分到多个独立数据库节点上，每个节点只存一部分行。它属于数据层的横向扩展手段，用于突破单机在存储容量、写入吞吐和连接数上的上限，代价是跨分片查询、事务和运维复杂度显著上升。",
+  "how": [
+   "选分片键：选择查询中最常用作过滤条件、取值分散的列，如租户 ID 或用户 ID。",
+   "定分片策略：哈希分片均匀但范围查询难；范围分片利于区间查询但易热点；目录分片灵活。",
+   "请求路由：应用层、代理层（如 Vitess）或数据库扩展（如 Citus）根据分片键定位节点。",
+   "跨分片操作：无分片键的查询需扇出到所有分片再合并，跨分片事务需分布式协议或避免。",
+   "扩容再平衡：新增节点后迁移部分数据，常用预先切多个逻辑分片再映射到物理节点。"
+  ],
+  "terms": [
+   {
+    "t": "分片键 (Shard Key)",
+    "d": "决定一行数据落到哪个分片的列或列组合。"
+   },
+   {
+    "t": "扇出查询 (Scatter-Gather)",
+    "d": "查询发往所有分片并汇总结果，成本随分片数增长。"
+   },
+   {
+    "t": "再平衡 (Rebalancing)",
+    "d": "增删节点后在分片间迁移数据以恢复均衡。"
+   },
+   {
+    "t": "逻辑分片 (Logical Shard)",
+    "d": "数量多于物理节点的虚拟分片，迁移时整块移动。"
+   },
+   {
+    "t": "共置 (Co-location)",
+    "d": "相关表按同一分片键放在同一节点，使关联查询本地执行。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "Citus 按租户分片",
+   "src": "-- PostgreSQL + Citus 扩展：按 tenant_id 把表分布到多个 worker 节点\nCREATE EXTENSION IF NOT EXISTS citus;\n\nCREATE TABLE orders (\n  tenant_id  bigint NOT NULL,\n  order_id   bigint NOT NULL,\n  amount     numeric(12,2),\n  created_at timestamptz DEFAULT now(),\n  PRIMARY KEY (tenant_id, order_id)     -- 主键需包含分布列\n);\n\nSELECT create_distributed_table('orders', 'tenant_id');\n\n-- 小而常被关联的维表复制到每个节点\nCREATE TABLE countries (code text PRIMARY KEY, name text);\nSELECT create_reference_table('countries');\n\n-- 带分片键的查询只路由到一个分片\nSELECT sum(amount) FROM orders WHERE tenant_id = 42;",
+   "note": "多租户 SaaS 常以租户 ID 为分片键，单租户查询与事务都留在一个分片内。"
+  },
+  "table": {
+   "title": "分片策略对比",
+   "head": [
+    "策略",
+    "优点",
+    "缺点"
+   ],
+   "rows": [
+    [
+     "哈希分片",
+     "分布均匀，避免顺序写热点",
+     "范围查询需扇出，扩容需迁移"
+    ],
+    [
+     "范围分片",
+     "区间查询高效",
+     "递增键导致最新分片成热点"
+    ],
+    [
+     "目录/查找表",
+     "映射灵活，可单独迁移大租户",
+     "查找表本身成为依赖与瓶颈"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "应用层自行分片",
+    "pros": "无额外组件，完全可控",
+    "cons": "路由、迁移、跨片查询全靠自研",
+    "when": "分片规则简单、团队有经验"
+   },
+   {
+    "opt": "中间件/扩展（Vitess、Citus）",
+    "pros": "路由和再平衡有成熟实现",
+    "cons": "引入新组件与运维学习成本",
+    "when": "MySQL/PG 体系下规模化"
+   },
+   {
+    "opt": "原生分布式数据库",
+    "pros": "分片对应用透明，支持分布式事务",
+    "cons": "迁移成本高，部分特性不兼容",
+    "when": "新系统且预期规模很大"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "过早分片，单机还远未到瓶颈就引入复杂度",
+    "fix": "先做索引、读写分离、缓存、分区和垂直扩容"
+   },
+   {
+    "bad": "分片键选了低基数或单调递增列，数据和流量倾斜",
+    "fix": "选高基数且与主要查询匹配的键，必要时用哈希"
+   },
+   {
+    "bad": "大量查询不带分片键，变成全分片扇出",
+    "fix": "按访问模式设计分片键，或为其他维度建冗余索引表"
+   },
+   {
+    "bad": "分片数与节点数一一对应，扩容需重切全部数据",
+    "fix": "预先划分较多逻辑分片，扩容时整片迁移"
+   }
+  ],
+  "checklist": [
+   "已证明单机方案到达瓶颈",
+   "分片键覆盖主要查询路径",
+   "评估了跨分片事务需求",
+   "有再平衡与扩容方案",
+   "监控各分片数据量与负载",
+   "备份恢复按分片演练过"
+  ],
+  "interview": [
+   {
+    "q": "分片键怎么选？",
+    "a": "看访问模式：高频查询和事务都带的列优先，如租户或用户 ID；要求基数高、分布均匀、不随时间单调递增；关联表尽量共置。最终目标是绝大多数请求只命中一个分片。"
+   },
+   {
+    "q": "分片后跨分片事务怎么办？",
+    "a": "首选通过分片键设计避免；无法避免时可用两阶段提交（性能和可用性代价高），或拆成本地事务配合 Saga、Outbox 实现最终一致。数据库扩展可能提供分布式事务，但要评估延迟。"
+   },
+   {
+    "q": "分片和分区的区别？",
+    "a": "分区在单个数据库实例内把表拆成多个子表，主要改善管理和查询裁剪，不增加机器；分片把数据分布到多台独立节点，解决单机容量与吞吐上限，但带来分布式问题。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "MongoDB Sharding",
+    "url": "https://www.mongodb.com/docs/manual/sharding/"
+   },
+   {
+    "title": "Citus 文档",
+    "url": "https://docs.citusdata.com/en/stable/"
+   },
+   {
+    "title": "Vitess 文档",
+    "url": "https://vitess.io/docs/"
+   },
+   {
+    "title": "Shard (database architecture) - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Shard_(database_architecture)"
+   }
+  ]
+ },
+ {
+  "slug": "partitioning",
+  "def": "表分区（Partitioning）在单个数据库实例内，把一张大表按分区键拆成多个物理子表，对应用仍呈现为一张逻辑表。它让查询只扫描相关分区（分区裁剪），并能整块删除或归档旧数据，常用于按时间增长的日志、订单、事件表，但不增加机器，也不解决单机容量上限。",
+  "how": [
+   "定义分区方式：范围（RANGE，常按时间）、列表（LIST，按枚举值）或哈希（HASH）。",
+   "创建子分区：为每个区间建子表，数据写入时数据库按分区键自动路由。",
+   "分区裁剪：查询条件包含分区键时，优化器跳过不相关分区，减少扫描量。",
+   "生命周期管理：提前创建未来分区，过期分区直接 DETACH/DROP，代替大批量 DELETE。",
+   "索引与约束：索引在各分区上分别维护，主键/唯一约束通常必须包含分区键。"
+  ],
+  "terms": [
+   {
+    "t": "分区键 (Partition Key)",
+    "d": "决定行归属哪个分区的列或表达式。"
+   },
+   {
+    "t": "分区裁剪 (Partition Pruning)",
+    "d": "根据查询条件排除不需要扫描的分区。"
+   },
+   {
+    "t": "声明式分区 (Declarative Partitioning)",
+    "d": "PostgreSQL 10 起支持的 PARTITION BY 语法。"
+   },
+   {
+    "t": "默认分区 (Default Partition)",
+    "d": "接收不匹配任何分区范围数据的兜底分区。"
+   },
+   {
+    "t": "分离分区 (Detach Partition)",
+    "d": "把子分区从父表拆出为独立表，便于归档或删除。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "PostgreSQL 按月分区",
+   "src": "-- 父表：按 created_at 做范围分区\nCREATE TABLE events (\n  id         bigint GENERATED ALWAYS AS IDENTITY,\n  created_at timestamptz NOT NULL,\n  payload    jsonb,\n  PRIMARY KEY (id, created_at)          -- 主键必须包含分区键\n) PARTITION BY RANGE (created_at);\n\n-- 子分区：区间左闭右开\nCREATE TABLE events_2026_10 PARTITION OF events\n  FOR VALUES FROM ('2026-10-01') TO ('2026-11-01');\nCREATE TABLE events_2026_11 PARTITION OF events\n  FOR VALUES FROM ('2026-11-01') TO ('2026-12-01');\n\n-- 查询带分区键，EXPLAIN 可看到只扫描一个分区\nEXPLAIN SELECT count(*) FROM events\nWHERE created_at >= '2026-10-15' AND created_at < '2026-10-16';\n\n-- 归档旧数据：分离后删除，代替大规模 DELETE\nALTER TABLE events DETACH PARTITION events_2026_10;\nDROP TABLE events_2026_10;",
+   "note": "按时间分区让查询只扫相关月份，删除旧数据从慢 DELETE 变成瞬间 DROP。"
+  },
+  "table": {
+   "title": "三种分区方式",
+   "head": [
+    "方式",
+    "适用数据",
+    "注意"
+   ],
+   "rows": [
+    [
+     "RANGE",
+     "时间序列、递增 ID",
+     "要提前建好未来分区"
+    ],
+    [
+     "LIST",
+     "地区、租户类型等枚举",
+     "新取值需新增分区或默认分区"
+    ],
+    [
+     "HASH",
+     "无自然区间、需均匀分散",
+     "无法按区间裁剪和整块归档"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "表分区",
+    "pros": "对应用透明，归档与裁剪高效",
+    "cons": "不增加机器，唯一约束受限",
+    "when": "单表很大、按时间增长"
+   },
+   {
+    "opt": "分库分片",
+    "pros": "突破单机容量与写入上限",
+    "cons": "分布式复杂度高",
+    "when": "单机资源确实不够"
+   },
+   {
+    "opt": "只靠索引",
+    "pros": "最简单，无结构变更",
+    "cons": "超大表维护、删除和 VACUUM 成本高",
+    "when": "表规模适中"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "查询条件不带分区键，反而扫描所有分区更慢",
+    "fix": "按主要查询模式选分区键，确保高频查询能裁剪"
+   },
+   {
+    "bad": "忘了提前创建新分区，写入报错或落入默认分区",
+    "fix": "用定时任务或 pg_partman 自动预建未来分区并监控"
+   },
+   {
+    "bad": "分区过多（数千个），规划与锁开销上升",
+    "fix": "控制分区粒度，如按月而非按小时，按数据量权衡"
+   }
+  ],
+  "checklist": [
+   "高频查询包含分区键",
+   "未来分区自动预建",
+   "过期分区有归档/删除任务",
+   "主键与唯一约束含分区键",
+   "分区数量在合理范围",
+   "EXPLAIN 确认发生裁剪"
+  ],
+  "interview": [
+   {
+    "q": "分区表为什么主键要包含分区键？",
+    "a": "数据库的唯一约束在各分区上分别用本地索引实现，没有跨分区的全局唯一索引；只有约束包含分区键，才能保证同一键值只可能落在一个分区里，从而用本地索引保证全局唯一。"
+   },
+   {
+    "q": "分区能提升所有查询性能吗？",
+    "a": "不能。只有条件包含分区键、能触发裁剪的查询受益；不带分区键的查询要扫描每个分区，计划和执行开销可能更大。分区的主要收益常在数据生命周期管理和维护操作上。"
+   },
+   {
+    "q": "按时间分区怎么删除一年前的数据？",
+    "a": "直接分离并删除对应时间段的分区，是元数据操作，几乎瞬时完成，不产生大量死元组和 WAL；相比 DELETE 数亿行后再等待 VACUUM，代价小得多。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL: Table Partitioning",
+    "url": "https://www.postgresql.org/docs/current/ddl-partitioning.html"
+   },
+   {
+    "title": "MySQL 8.0: Partitioning",
+    "url": "https://dev.mysql.com/doc/refman/8.0/en/partitioning.html"
+   },
+   {
+    "title": "pg_partman (GitHub)",
+    "url": "https://github.com/pgpartman/pg_partman"
+   }
+  ]
+ },
+ {
+  "slug": "hot-partitions",
+  "def": "热点分区（Hot Partition）指分布式存储或消息系统中，少数分区承接了不成比例的读写流量或数据量（数据倾斜），导致这些分区被限流或过载，而其他分区空闲。根源多是分区键选择不当，如低基数、单调递增或集中在少数大客户上，会让水平扩展失效。",
+  "how": [
+   "路由：每个请求按分区键做哈希或范围映射，最终落到某个具体分区上。",
+   "若键的分布不均（如某明星用户、当天日期），大量请求落到同一分区。",
+   "单分区有吞吐上限（如 DynamoDB 单分区有读写容量上限），超出后被限流。",
+   "表现：集群整体资源利用率并不高，但个别分区延迟飙升、错误率上升。",
+   "缓解：换更分散的键、对热键加随机后缀做写分片、加缓存、拆分热点租户。"
+  ],
+  "terms": [
+   {
+    "t": "数据倾斜 (Data Skew)",
+    "d": "数据或负载在分区间分布显著不均。"
+   },
+   {
+    "t": "热键 (Hot Key)",
+    "d": "访问频率远高于其他键的单个键。"
+   },
+   {
+    "t": "写分片 (Write Sharding)",
+    "d": "为热键追加后缀，把写入分散到多个分区。"
+   },
+   {
+    "t": "自适应容量 (Adaptive Capacity)",
+    "d": "DynamoDB 自动给热点分区借用更多吞吐的机制。"
+   },
+   {
+    "t": "基数 (Cardinality)",
+    "d": "某列不同取值的数量，低基数键易导致倾斜。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "热键写分片",
+   "src": "import random\n\nN_SUFFIX = 10   # 后缀数量，按热点流量估算\n\ndef write_key(campaign_id: str) -> str:\n    # 写入时随机加后缀：同一活动的数据分散到 10 个分区键\n    return f\"{campaign_id}#{random.randrange(N_SUFFIX)}\"\n\ndef read_keys(campaign_id: str) -> list[str]:\n    # 读取时需查询所有后缀再合并（读放大的代价）\n    return [f\"{campaign_id}#{i}\" for i in range(N_SUFFIX)]\n\n# 若需要按 ID 精确读取单条，可改用确定性后缀：\ndef stable_key(campaign_id: str, item_id: int) -> str:\n    return f\"{campaign_id}#{item_id % N_SUFFIX}\"\n",
+   "note": "用读放大换写入均衡；确定性后缀可在不扇出的情况下按 ID 定位。"
+  },
+  "table": {
+   "title": "热点成因与对策",
+   "head": [
+    "成因",
+    "例子",
+    "对策"
+   ],
+   "rows": [
+    [
+     "单调递增键",
+     "以日期、自增 ID 做分区键",
+     "哈希化或加前缀打散"
+    ],
+    [
+     "超级用户/大租户",
+     "头部客户占大量流量",
+     "单独分片或二级拆分"
+    ],
+    [
+     "突发热点",
+     "秒杀商品、热门帖子",
+     "缓存、写分片、请求合并"
+    ],
+    [
+     "低基数键",
+     "以状态、国家做分区键",
+     "组合更高基数的列"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "随机后缀写分片",
+    "pros": "写入均匀分散",
+    "cons": "读取需扇出合并",
+    "when": "写多读少的计数、日志"
+   },
+   {
+    "opt": "前置缓存",
+    "pros": "直接削掉热点读",
+    "cons": "有一致性和缓存击穿问题",
+    "when": "热点以读为主"
+   },
+   {
+    "opt": "更换分区键",
+    "pros": "从根本上改善分布",
+    "cons": "需要数据迁移和代码改动",
+    "when": "倾斜是结构性的"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只看集群整体指标，没发现单个分区已被限流",
+    "fix": "监控按分区/按键的流量和限流次数，识别热键"
+   },
+   {
+    "bad": "以时间戳或日期作为分区键，当前时段全部写入一处",
+    "fix": "时间放到排序键，分区键用高基数实体 ID"
+   },
+   {
+    "bad": "Kafka 用固定或空值较多的 key，消息全进一个分区",
+    "fix": "检查 key 分布，避免大量相同或空 key 集中"
+   }
+  ],
+  "checklist": [
+   "分区键高基数且分布均匀",
+   "有按分区的流量与限流监控",
+   "识别出头部租户与热键",
+   "热点读有缓存兜底",
+   "压测覆盖热点场景",
+   "有拆分热点的预案"
+  ],
+  "interview": [
+   {
+    "q": "如何发现热点分区？",
+    "a": "看按分区或按键的指标：请求数、限流次数、延迟、存储量；云数据库常提供热键诊断工具。典型信号是整体使用率不高但出现限流或个别分区延迟高。Kafka 中表现为某些分区消费滞后明显更大。"
+   },
+   {
+    "q": "写分片后读取怎么办？",
+    "a": "随机后缀需并行查询所有后缀再合并，读放大与后缀数成正比；若读按某 ID，可用确定性后缀直接定位。也可用异步任务把分散数据定期聚合为汇总记录供读取。"
+   },
+   {
+    "q": "为什么扩容解决不了热点？",
+    "a": "热点是单个键或分区的负载超过单分区上限，增加分区数并不会把同一个键拆开，热键仍落在一个分区。必须改变键的分布或在热键前加缓存、合并请求。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "DynamoDB: Designing partition keys",
+    "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/bp-partition-key-design.html"
+   },
+   {
+    "title": "DynamoDB: Write sharding",
+    "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/bp-partition-key-sharding.html"
+   },
+   {
+    "title": "Google Cloud Bigtable: Schema design",
+    "url": "https://cloud.google.com/bigtable/docs/schema-design"
+   }
+  ]
+ },
+ {
+  "slug": "postgres-vacuum",
+  "def": "VACUUM 是 PostgreSQL 的空间回收与维护机制。由于 MVCC 下 UPDATE/DELETE 不原地修改而是留下旧版本行（死元组），VACUUM 负责标记这些空间可复用、更新可见性映射和统计信息，并冻结旧事务 ID 以防事务 ID 回卷。日常由 autovacuum 后台进程自动执行。",
+  "how": [
+   "MVCC 写入：UPDATE 生成新行版本，旧版本在所有事务都不再需要前不能清理。",
+   "判定可回收：VACUUM 检查死元组是否已对所有活跃事务不可见，可见则标记空间可复用。",
+   "更新元数据：维护空闲空间映射（FSM）和可见性映射（VM），后者支撑仅索引扫描。",
+   "冻结事务 ID：把足够旧的行标记为冻结，防止 32 位事务 ID 回卷导致数据可见性错误。",
+   "自动触发：死元组超过阈值（默认 50 行 + 表行数 20%）时 autovacuum 自动执行。"
+  ],
+  "terms": [
+   {
+    "t": "死元组 (Dead Tuple)",
+    "d": "已被更新或删除、对所有事务都不可见的旧行版本。"
+   },
+   {
+    "t": "表膨胀 (Bloat)",
+    "d": "死元组和空闲空间过多导致表和索引体积远大于实际数据。"
+   },
+   {
+    "t": "事务 ID 回卷 (XID Wraparound)",
+    "d": "32 位事务 ID 耗尽循环，不冻结旧行会导致数据被误判不可见。"
+   },
+   {
+    "t": "VACUUM FULL",
+    "d": "重写整张表彻底回收空间，期间持有排他锁阻塞读写。"
+   },
+   {
+    "t": "可见性映射 (Visibility Map)",
+    "d": "标记哪些页全部可见，加速仅索引扫描并减少 VACUUM 工作。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "排查与调优 VACUUM",
+   "src": "-- 1) 哪些表死元组最多、上次 autovacuum 是什么时候\nSELECT relname, n_live_tup, n_dead_tup, last_autovacuum\nFROM pg_stat_user_tables\nORDER BY n_dead_tup DESC LIMIT 10;\n\n-- 2) 是否有长事务阻止清理（xact_start 很早的会话）\nSELECT pid, state, xact_start, left(query, 60)\nFROM pg_stat_activity\nWHERE xact_start IS NOT NULL ORDER BY xact_start LIMIT 5;\n\n-- 3) 各数据库距离回卷还有多远（年龄越大越危险）\nSELECT datname, age(datfrozenxid) FROM pg_database ORDER BY 2 DESC;\n\n-- 4) 大表单独调低触发比例，让 autovacuum 更早更频繁运行\nALTER TABLE orders SET (autovacuum_vacuum_scale_factor = 0.02);\n\n-- 5) 手动执行（不锁表读写），并更新统计信息\nVACUUM (VERBOSE, ANALYZE) orders;",
+   "note": "先看死元组和长事务，再针对大表调 autovacuum；普通 VACUUM 不阻塞读写。"
+  },
+  "table": {
+   "title": "VACUUM 变体对比",
+   "head": [
+    "命令",
+    "锁级别",
+    "效果"
+   ],
+   "rows": [
+    [
+     "VACUUM",
+     "不阻塞读写",
+     "标记空间可复用，一般不缩小文件"
+    ],
+    [
+     "VACUUM ANALYZE",
+     "不阻塞读写",
+     "同上并更新优化器统计信息"
+    ],
+    [
+     "VACUUM FULL",
+     "排他锁，阻塞读写",
+     "重写表，空间归还操作系统"
+    ],
+    [
+     "pg_repack（扩展）",
+     "仅短暂锁",
+     "在线重建表与索引，消除膨胀"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "调优 autovacuum",
+    "pros": "持续自动，避免膨胀积累",
+    "cons": "需理解参数，过激会占 I/O",
+    "when": "所有生产库的默认做法"
+   },
+   {
+    "opt": "定期手动 VACUUM",
+    "pros": "可安排在低峰时段",
+    "cons": "间隔内仍会膨胀，依赖运维",
+    "when": "批量导入或大批量删除后"
+   },
+   {
+    "opt": "VACUUM FULL / pg_repack",
+    "pros": "彻底回收已膨胀空间",
+    "cons": "FULL 锁表；repack 需额外空间",
+    "when": "已严重膨胀需要缩表"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "关闭 autovacuum 以减少 I/O 抖动",
+    "fix": "保持开启，按表调参数，必要时提高 autovacuum 的 I/O 配额"
+   },
+   {
+    "bad": "长时间空闲在事务中的连接，导致死元组无法清理",
+    "fix": "设置 idle_in_transaction_session_timeout，并监控长事务"
+   },
+   {
+    "bad": "生产高峰直接执行 VACUUM FULL",
+    "fix": "评估锁影响，优先用 pg_repack 在线处理"
+   },
+   {
+    "bad": "忽视事务 ID 年龄，直到数据库进入保护性只读",
+    "fix": "监控 age(datfrozenxid)，确保冻结持续进行"
+   }
+  ],
+  "checklist": [
+   "autovacuum 已开启",
+   "大表单独设置触发比例",
+   "监控死元组与表膨胀",
+   "监控长事务和空闲事务",
+   "监控事务 ID 年龄",
+   "复制槽未长期滞留"
+  ],
+  "interview": [
+   {
+    "q": "为什么 PostgreSQL 需要 VACUUM？",
+    "a": "MVCC 实现中更新和删除都保留旧版本以支持并发读，旧版本不会自动消失。VACUUM 在确认没有事务需要后回收这些空间，同时更新可见性映射和冻结旧事务 ID，后者关系到数据正确性。"
+   },
+   {
+    "q": "表一直膨胀，autovacuum 也在跑，可能是什么原因？",
+    "a": "常见是长事务、空闲事务、滞留的复制槽或备库 hot_standby_feedback 拖住了清理边界；也可能是大表 20% 比例阈值过高、vacuum 速度受 cost limit 限制跟不上写入速度。"
+   },
+   {
+    "q": "VACUUM 和 VACUUM FULL 怎么选？",
+    "a": "日常用普通 VACUUM，不阻塞读写，空间留给表内复用。只有表已严重膨胀且需要把空间还给操作系统时才考虑 FULL，它会重写表并持有排他锁；生产上常用 pg_repack 替代。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL: Routine Vacuuming",
+    "url": "https://www.postgresql.org/docs/current/routine-vacuuming.html"
+   },
+   {
+    "title": "PostgreSQL: VACUUM",
+    "url": "https://www.postgresql.org/docs/current/sql-vacuum.html"
+   },
+   {
+    "title": "PostgreSQL: Automatic Vacuuming 参数",
+    "url": "https://www.postgresql.org/docs/current/runtime-config-autovacuum.html"
+   }
+  ]
+ },
+ {
+  "slug": "change-data-capture",
+  "def": "变更数据捕获（CDC）是从源数据库持续捕获行级插入、更新、删除事件，并以有序事件流的形式发送给下游系统的技术。主流方式是读取数据库的事务日志（如 PostgreSQL WAL、MySQL binlog），用于数据同步到搜索引擎、数仓、缓存失效和微服务间事件传递。",
+  "how": [
+   "开启日志：数据库配置为输出足够信息，如 PostgreSQL wal_level=logical，MySQL binlog 行格式。",
+   "初始快照：连接器首次启动时对现有数据做一致性快照，记录对应的日志位点。",
+   "流式读取：之后从该位点持续读取事务日志，解析成包含前后镜像的变更事件。",
+   "发布事件：按表或主键把事件写入 Kafka 等消息系统，保持同一主键的顺序。",
+   "位点管理：定期提交已处理的日志位点（如复制槽 LSN），故障重启后从位点续传。"
+  ],
+  "terms": [
+   {
+    "t": "WAL / binlog",
+    "d": "数据库的事务日志，记录所有已提交的数据变更。"
+   },
+   {
+    "t": "逻辑解码 (Logical Decoding)",
+    "d": "PostgreSQL 把 WAL 解析成行级逻辑变更的机制。"
+   },
+   {
+    "t": "复制槽 (Replication Slot)",
+    "d": "记录消费位点的服务端对象，保证所需 WAL 不被删除。"
+   },
+   {
+    "t": "LSN (Log Sequence Number)",
+    "d": "WAL 中的位置编号，用于标识消费进度。"
+   },
+   {
+    "t": "Debezium",
+    "d": "基于 Kafka Connect 的开源 CDC 平台，支持多种数据库。"
+   }
+  ],
+  "code": {
+   "lang": "json",
+   "title": "Debezium PG 连接器",
+   "src": "{\n  \"name\": \"orders-cdc\",\n  \"config\": {\n    \"connector.class\": \"io.debezium.connector.postgresql.PostgresConnector\",\n    \"plugin.name\": \"pgoutput\",\n    \"database.hostname\": \"pg.internal\",\n    \"database.port\": \"5432\",\n    \"database.user\": \"cdc_user\",\n    \"database.password\": \"${file:/secrets/pg.properties:password}\",\n    \"database.dbname\": \"shop\",\n    \"topic.prefix\": \"shop\",\n    \"table.include.list\": \"public.orders,public.order_items\",\n    \"slot.name\": \"debezium_orders\"\n  }\n}",
+   "note": "提交到 Kafka Connect 后，变更写入 shop.public.orders 等主题；密码用配置提供器引用。"
+  },
+  "table": {
+   "title": "CDC 实现方式对比",
+   "head": [
+    "方式",
+    "原理",
+    "局限"
+   ],
+   "rows": [
+    [
+     "基于日志",
+     "读取 WAL/binlog",
+     "需数据库权限与配置，运维复杂"
+    ],
+    [
+     "基于查询轮询",
+     "按 updated_at 定期查询",
+     "捕获不到删除，有延迟和负载"
+    ],
+    [
+     "基于触发器",
+     "触发器写变更表",
+     "增加写入开销，侵入业务库"
+    ],
+    [
+     "应用双写",
+     "代码同时写库和发消息",
+     "无法保证原子性，易不一致"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "日志 CDC（Debezium）",
+    "pros": "捕获全部变更含删除，低侵入",
+    "cons": "需维护连接器和复制槽",
+    "when": "数据同步、事件驱动集成"
+   },
+   {
+    "opt": "轮询 updated_at",
+    "pros": "实现简单，无需特殊权限",
+    "cons": "漏删除，难做到实时",
+    "when": "小规模、可容忍延迟"
+   },
+   {
+    "opt": "Outbox + CDC",
+    "pros": "发布领域事件而非表结构变更",
+    "cons": "需要业务写 outbox 表",
+    "when": "微服务对外发布事件"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "连接器停了很久，复制槽滞留导致 WAL 堆积撑满磁盘",
+    "fix": "监控复制槽延迟和 WAL 大小，设置 max_slot_wal_keep_size 等上限"
+   },
+   {
+    "bad": "下游直接依赖源表结构，源库改表即下游崩",
+    "fix": "对外发布稳定的事件契约，或使用 Outbox 模式与 Schema Registry"
+   },
+   {
+    "bad": "假设事件只投递一次，下游非幂等",
+    "fix": "按主键和 LSN 做幂等写入，容忍重复事件"
+   }
+  ],
+  "checklist": [
+   "日志级别与权限已配置",
+   "复制槽延迟有监控告警",
+   "WAL 保留有上限",
+   "下游消费幂等",
+   "表结构变更有兼容策略",
+   "初始快照过程已演练"
+  ],
+  "interview": [
+   {
+    "q": "为什么基于日志的 CDC 优于轮询？",
+    "a": "日志包含所有已提交变更（含删除和中间状态），按提交顺序排列，延迟低，且不对业务表发额外查询；轮询依赖 updated_at，捕获不到物理删除，可能漏掉同一周期内的多次变更。"
+   },
+   {
+    "q": "CDC 能保证 exactly-once 吗？",
+    "a": "通常是至少一次：连接器在提交位点前崩溃会重放部分事件。端到端精确一次需下游幂等或事务性写入配合。设计上应假设会收到重复事件，用主键加版本或 LSN 去重。"
+   },
+   {
+    "q": "PostgreSQL 复制槽有什么风险？",
+    "a": "复制槽会阻止服务端删除消费者尚未确认的 WAL，消费者停止后 WAL 持续累积可能撑满磁盘，还会拖住 VACUUM 清理边界。需监控槽延迟、及时删除废弃槽并设置 WAL 保留上限。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Debezium PostgreSQL Connector",
+    "url": "https://debezium.io/documentation/reference/stable/connectors/postgresql.html"
+   },
+   {
+    "title": "PostgreSQL: Logical Decoding",
+    "url": "https://www.postgresql.org/docs/current/logicaldecoding.html"
+   },
+   {
+    "title": "Change data capture (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Change_data_capture"
+   }
+  ]
+ },
+ {
+  "slug": "outbox-pattern",
+  "def": "事务性发件箱（Transactional Outbox）是解决「更新数据库」与「发布消息」双写一致性的模式：业务数据与待发事件在同一个本地事务中写入数据库，事件存入 outbox 表；再由独立的中继进程（轮询或 CDC）把事件投递到消息系统。这样避免了提交成功但消息丢失，或消息发出但事务回滚。",
+  "how": [
+   "同一事务写入：业务表更新与 outbox 表插入事件在一个本地数据库事务中提交。",
+   "事件内容：outbox 行包含事件 ID、聚合类型与 ID、事件类型、负载和创建时间。",
+   "中继读取：轮询进程按顺序取未发送事件，或用 CDC 读取 outbox 表的变更日志。",
+   "投递消息：发送到 Kafka 等消息系统，成功后标记已发送或删除该行。",
+   "消费者去重：中继可能重复投递，消费者按事件 ID 幂等处理。"
+  ],
+  "terms": [
+   {
+    "t": "双写问题 (Dual Write)",
+    "d": "同时写数据库和消息系统，无法保证两者原子成功或失败。"
+   },
+   {
+    "t": "消息中继 (Message Relay)",
+    "d": "把 outbox 表中的事件搬运到消息代理的进程。"
+   },
+   {
+    "t": "至少一次投递 (At-least-once)",
+    "d": "消息保证送达但可能重复，需要消费者幂等。"
+   },
+   {
+    "t": "SKIP LOCKED",
+    "d": "行锁选项：跳过被其他事务锁定的行，便于多个中继并发取任务。"
+   },
+   {
+    "t": "收件箱模式 (Inbox Pattern)",
+    "d": "消费者记录已处理消息 ID，以实现幂等消费。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "写入与中继取件",
+   "src": "-- 业务事务：订单与事件一起提交，要么都成功，要么都回滚\nBEGIN;\nINSERT INTO orders (id, user_id, amount) VALUES (1001, 7, 99.00);\nINSERT INTO outbox (id, aggregate_type, aggregate_id, event_type, payload)\nVALUES (gen_random_uuid(), 'order', '1001', 'OrderCreated',\n        '{\"orderId\":1001,\"amount\":99.00}');\nCOMMIT;\n\n-- 中继进程：批量取未发送事件，多实例并发时互不抢同一行\nBEGIN;\nSELECT id, event_type, payload FROM outbox\nWHERE sent_at IS NULL\nORDER BY created_at\nLIMIT 100\nFOR UPDATE SKIP LOCKED;\n-- ……逐条发送到消息队列，成功后：\nUPDATE outbox SET sent_at = now() WHERE id = ANY($1);\nCOMMIT;",
+   "note": "PostgreSQL 写法；中继发送后再标记，崩溃时会重发，故消费者需幂等。"
+  },
+  "table": {
+   "title": "中继方式对比",
+   "head": [
+    "方式",
+    "延迟",
+    "运维成本"
+   ],
+   "rows": [
+    [
+     "轮询 outbox 表",
+     "取决于轮询间隔",
+     "低，但增加数据库查询负载"
+    ],
+    [
+     "CDC 读日志（如 Debezium）",
+     "低，接近实时",
+     "需维护连接器与复制槽"
+    ],
+    [
+     "数据库触发通知",
+     "较低",
+     "依赖特定数据库特性，可靠性需兜底"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Outbox 模式",
+    "pros": "本地事务保证不丢事件",
+    "cons": "多一张表和一个中继组件",
+    "when": "服务需可靠发布领域事件"
+   },
+   {
+    "opt": "直接双写",
+    "pros": "实现最简单",
+    "cons": "崩溃或网络故障时数据与消息不一致",
+    "when": "可容忍偶发丢失的非关键通知"
+   },
+   {
+    "opt": "分布式事务（2PC）",
+    "pros": "强一致",
+    "cons": "性能差，消息系统支持有限",
+    "when": "极少数强一致且组件都支持时"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "先提交事务再发消息，期间进程崩溃导致事件永久丢失",
+    "fix": "事件写入 outbox 并与业务数据同事务提交"
+   },
+   {
+    "bad": "outbox 表只增不删，越来越大拖慢查询",
+    "fix": "发送后删除或定期清理，并为未发送条件建索引"
+   },
+   {
+    "bad": "消费者假设不会重复，重复事件导致重复扣款",
+    "fix": "消费者按事件 ID 去重，业务操作幂等"
+   },
+   {
+    "bad": "多中继并发且无锁，同一事件被并发发送",
+    "fix": "使用 SKIP LOCKED、单活中继或按分区分配"
+   }
+  ],
+  "checklist": [
+   "业务与 outbox 同一事务",
+   "事件有全局唯一 ID",
+   "中继有监控与积压告警",
+   "outbox 定期清理",
+   "消费者幂等",
+   "事件格式有版本管理"
+  ],
+  "interview": [
+   {
+    "q": "Outbox 解决了什么问题？为什么不直接发消息？",
+    "a": "解决双写原子性：数据库提交与消息发送分属两个系统，任何一步失败都会导致不一致。Outbox 把发消息变成写本地表，借助数据库事务保证与业务数据一起成功或失败，再异步可靠投递。"
+   },
+   {
+    "q": "Outbox 能保证 exactly-once 吗？",
+    "a": "不能，中继在发送成功但标记前崩溃会重发，属于至少一次投递。要达到效果上的一次处理，需要消费者按事件 ID 幂等，比如用收件箱表记录已处理 ID 或使用唯一约束。"
+   },
+   {
+    "q": "Outbox 中继如何保证顺序？",
+    "a": "按聚合 ID 作为消息 key 发送，使同一聚合的事件进同一分区；中继按创建顺序读取同一聚合的事件，失败时不跳过后续事件。全局顺序代价太高，一般只保证同一实体内有序。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Pattern: Transactional outbox",
+    "url": "https://microservices.io/patterns/data/transactional-outbox.html"
+   },
+   {
+    "title": "Debezium Outbox Event Router",
+    "url": "https://debezium.io/documentation/reference/stable/transformations/outbox-event-router.html"
+   }
+  ]
+ },
+ {
+  "slug": "nat-gateways",
+  "def": "NAT 网关（NAT Gateway）是网络层组件，对私有子网发出的流量做源地址转换（SNAT），把内网 IP 替换为公网 IP，让无公网地址的服务器能主动访问互联网（拉依赖、调外部 API），同时外部无法主动发起连接进入。云上通常是托管服务，按小时和流量计费。",
+  "how": [
+   "私有子网路由：默认路由 0.0.0.0/0 指向 NAT 网关，而非互联网网关。",
+   "源地址转换：NAT 把数据包源 IP 改为自己的公网 IP，并分配源端口。",
+   "连接跟踪：记录内网地址端口与外网端口的映射，回包据此转发回原主机。",
+   "拒绝入站：没有映射记录的外部主动连接被丢弃，形成单向出站访问。",
+   "出口固定：所有出站流量使用 NAT 的公网 IP，便于第三方配置 IP 白名单。"
+  ],
+  "terms": [
+   {
+    "t": "SNAT",
+    "d": "源地址转换，改写出站包的源 IP，用于共享公网地址出网。"
+   },
+   {
+    "t": "私有子网 (Private Subnet)",
+    "d": "路由表中没有直接指向互联网网关的子网。"
+   },
+   {
+    "t": "弹性公网 IP (Elastic IP)",
+    "d": "可固定分配给 NAT 网关的静态公网地址。"
+   },
+   {
+    "t": "端口耗尽 (Port Exhaustion)",
+    "d": "到同一目标的并发连接过多，可用源端口不足导致连接失败。"
+   },
+   {
+    "t": "VPC 端点 (VPC Endpoint)",
+    "d": "私网直连云服务的通道，不经 NAT 和公网。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "AWS 创建 NAT 网关",
+   "src": "# 1) 申请一个弹性公网 IP\naws ec2 allocate-address --domain vpc\n# → 记下 AllocationId，例如 eipalloc-0abc...\n\n# 2) 在「公有子网」中创建 NAT 网关\naws ec2 create-nat-gateway \\\n  --subnet-id subnet-0public123 \\\n  --allocation-id eipalloc-0abc123\n\n# 3) 私有子网路由表：默认路由指向 NAT 网关\naws ec2 create-route \\\n  --route-table-id rtb-0private456 \\\n  --destination-cidr-block 0.0.0.0/0 \\\n  --nat-gateway-id nat-0def789\n\n# Linux 自建 NAT 的等价规则（需开启 ip_forward）：\n# iptables -t nat -A POSTROUTING -s 10.0.1.0/24 -o eth0 -j MASQUERADE",
+   "note": "NAT 网关放公有子网，私有子网的默认路由指向它；ID 为示例占位。"
+  },
+  "table": {
+   "title": "出网方案对比",
+   "head": [
+    "方案",
+    "入站可达",
+    "典型用途"
+   ],
+   "rows": [
+    [
+     "公网 IP 直连",
+     "是",
+     "需对外提供服务的主机"
+    ],
+    [
+     "NAT 网关",
+     "否",
+     "私有服务器出网拉包、调 API"
+    ],
+    [
+     "VPC 端点",
+     "不涉及公网",
+     "访问对象存储等云服务"
+    ],
+    [
+     "出站代理",
+     "否",
+     "需要按域名审计和过滤出站流量"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "托管 NAT 网关",
+    "pros": "高可用、免运维、自动扩展",
+    "cons": "按小时+按 GB 计费，流量大时昂贵",
+    "when": "大多数生产 VPC"
+   },
+   {
+    "opt": "自建 NAT 实例",
+    "pros": "成本可控，可自定义规则",
+    "cons": "需自己做高可用与补丁",
+    "when": "流量大且预算敏感"
+   },
+   {
+    "opt": "VPC 端点替代",
+    "pros": "省 NAT 流量费，流量不出公网",
+    "cons": "只覆盖支持的云服务",
+    "when": "大量访问对象存储等服务"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只在一个可用区建 NAT，该区故障时所有私有子网断网",
+    "fix": "每个可用区各建一个 NAT，路由指向本区 NAT"
+   },
+   {
+    "bad": "大量流量访问对象存储也走 NAT，费用暴涨",
+    "fix": "为对象存储等服务配置 VPC 端点"
+   },
+   {
+    "bad": "高并发访问同一外部 API 时出现连接失败",
+    "fix": "复用长连接/连接池，或增加 NAT 公网 IP 分散端口"
+   },
+   {
+    "bad": "以为 NAT 等同于防火墙，忽略安全组配置",
+    "fix": "NAT 只阻止未请求的入站，仍需安全组与出站策略"
+   }
+  ],
+  "checklist": [
+   "每个可用区有独立 NAT",
+   "私有子网默认路由正确",
+   "云服务流量走 VPC 端点",
+   "NAT 流量与费用有监控",
+   "第三方白名单使用 NAT 固定 IP",
+   "有端口耗尽/错误指标告警"
+  ],
+  "interview": [
+   {
+    "q": "NAT 网关和互联网网关有什么区别？",
+    "a": "互联网网关为拥有公网 IP 的实例提供双向互联网访问；NAT 网关让只有私网 IP 的实例共享公网地址主动出站，不接受外部主动发起的入站连接。NAT 网关本身部署在公有子网并经互联网网关出网。"
+   },
+   {
+    "q": "为什么会出现 NAT 端口耗尽？",
+    "a": "NAT 用源 IP+源端口区分连接，到同一目标 IP 和端口时可用的源端口有限。大量短连接或不复用连接会迅速占满，加上 TIME_WAIT 延迟释放。解决：连接复用、增加 NAT IP、分散目标。"
+   },
+   {
+    "q": "怎么降低 NAT 网关费用？",
+    "a": "先看流量去向：访问对象存储、容器镜像仓库等云服务改走 VPC 端点；镜像与依赖使用私有仓库缓存；避免跨可用区访问 NAT 产生额外流量费；非生产环境评估自建 NAT 实例。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "AWS: NAT gateways",
+    "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html"
+   },
+   {
+    "title": "Google Cloud NAT overview",
+    "url": "https://cloud.google.com/nat/docs/overview"
+   },
+   {
+    "title": "RFC 3022: Traditional NAT",
+    "url": "https://www.rfc-editor.org/rfc/rfc3022"
+   }
+  ]
+ },
+ {
+  "slug": "service-mesh",
+  "def": "服务网格（Service Mesh）是微服务通信的基础设施层：在每个服务旁部署代理（sidecar，或节点级代理），由控制平面统一下发配置，透明地提供 mTLS 加密与身份认证、重试与超时、流量切分、熔断和可观测性，使这些能力不必写进每个服务的业务代码。",
+  "how": [
+   "数据平面：每个 Pod 注入代理（如 Envoy），透明拦截该服务的全部进出流量。",
+   "控制平面：如 istiod 汇总服务发现、路由规则和证书，推送给所有代理。",
+   "安全：代理之间自动建立 mTLS，基于工作负载身份做认证与授权。",
+   "流量治理：按规则执行重试、超时、按权重分流（金丝雀）、故障注入。",
+   "可观测：所有代理以统一格式产出请求指标、访问日志和链路追踪数据。"
+  ],
+  "terms": [
+   {
+    "t": "Sidecar 代理",
+    "d": "与业务容器同 Pod 运行、拦截其网络流量的代理容器。"
+   },
+   {
+    "t": "数据平面 / 控制平面",
+    "d": "前者转发实际流量，后者管理配置、证书与策略。"
+   },
+   {
+    "t": "mTLS (Mutual TLS)",
+    "d": "通信双方互相验证证书的 TLS，用于服务间身份认证。"
+   },
+   {
+    "t": "Ambient 模式",
+    "d": "Istio 的无 sidecar 模式，用节点级 ztunnel 与可选 waypoint 代理。"
+   },
+   {
+    "t": "金丝雀发布 (Canary)",
+    "d": "按比例把少量流量导到新版本观察后再扩大。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "Istio 分流+重试+mTLS",
+   "src": "apiVersion: networking.istio.io/v1\nkind: VirtualService\nmetadata:\n  name: reviews\nspec:\n  hosts: [\"reviews\"]\n  http:\n  - route:\n    - destination: {host: reviews, subset: v1}\n      weight: 90                      # 90% 流量到稳定版\n    - destination: {host: reviews, subset: v2}\n      weight: 10                      # 10% 金丝雀\n    retries: {attempts: 3, perTryTimeout: 2s}\n    timeout: 6s\n---\napiVersion: security.istio.io/v1\nkind: PeerAuthentication\nmetadata:\n  name: default\n  namespace: prod\nspec:\n  mtls: {mode: STRICT}                # 命名空间内只接受 mTLS 流量",
+   "note": "subset v1/v2 需在 DestinationRule 中定义；业务代码无需改动。"
+  },
+  "table": {
+   "title": "常见服务网格",
+   "head": [
+    "方案",
+    "数据平面",
+    "特点"
+   ],
+   "rows": [
+    [
+     "Istio（sidecar）",
+     "Envoy",
+     "功能最全，配置复杂"
+    ],
+    [
+     "Istio Ambient",
+     "ztunnel + waypoint",
+     "无 sidecar，降低资源与运维成本"
+    ],
+    [
+     "Linkerd",
+     "Rust 编写的专用代理",
+     "轻量，上手简单"
+    ],
+    [
+     "Cilium Service Mesh",
+     "eBPF + Envoy",
+     "与 CNI 集成，可省去部分 sidecar"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "引入服务网格",
+    "pros": "统一安全与流量治理，语言无关",
+    "cons": "额外延迟、资源占用和运维复杂度",
+    "when": "服务多、多语言、合规要求 mTLS"
+   },
+   {
+    "opt": "SDK/框架内实现",
+    "pros": "无额外组件，开销小",
+    "cons": "每种语言重复实现，升级困难",
+    "when": "服务少、技术栈统一"
+   },
+   {
+    "opt": "仅网关+NetworkPolicy",
+    "pros": "简单，覆盖南北向流量",
+    "cons": "服务间缺少加密与精细治理",
+    "when": "规模较小的集群"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "服务很少就上网格，运维成本远超收益",
+    "fix": "先评估是否真的需要 mTLS 与精细流量治理"
+   },
+   {
+    "bad": "应用层与网格都配重试，重试次数相乘放大故障",
+    "fix": "统一在一层配置重试，并设置总超时与重试预算"
+   },
+   {
+    "bad": "直接切 STRICT mTLS，未注入代理的服务调用全断",
+    "fix": "先用 PERMISSIVE 模式过渡，确认全部注入后再切换"
+   }
+  ],
+  "checklist": [
+   "已评估网格必要性",
+   "mTLS 迁移有过渡方案",
+   "重试只在一层配置",
+   "代理资源请求已设置",
+   "控制平面高可用",
+   "升级流程已演练"
+  ],
+  "interview": [
+   {
+    "q": "服务网格解决了哪些问题？",
+    "a": "把服务间通信的横切关注点从业务代码剥离：mTLS 加密与身份、授权策略、重试超时熔断、流量切分、统一的指标与追踪。多语言团队不必各自实现，策略可集中管理和审计。"
+   },
+   {
+    "q": "sidecar 模式的代价是什么？",
+    "a": "每个 Pod 多一个代理容器，占用 CPU 内存，请求多两跳增加延迟；代理升级需要重启 Pod；注入与启动顺序问题会导致偶发失败。Ambient 等无 sidecar 模式正是为降低这些成本。"
+   },
+   {
+    "q": "API 网关和服务网格的区别？",
+    "a": "API 网关处理南北向流量：外部请求入口、认证、限流、API 管理；服务网格处理东西向流量：集群内服务间通信的安全与治理。两者可以并存，部分产品同时覆盖两种场景。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "What is Istio?",
+    "url": "https://istio.io/latest/docs/overview/what-is-istio/"
+   },
+   {
+    "title": "Istio Ambient mode overview",
+    "url": "https://istio.io/latest/docs/ambient/overview/"
+   },
+   {
+    "title": "Linkerd: What is a service mesh?",
+    "url": "https://linkerd.io/what-is-a-service-mesh/"
+   },
+   {
+    "title": "What is Envoy",
+    "url": "https://www.envoyproxy.io/docs/envoy/latest/intro/what_is_envoy"
+   }
+  ]
+ },
+ {
+  "slug": "ingress-controllers",
+  "def": "Ingress 控制器是 Kubernetes 集群的 L7 入口组件：它监听 Ingress 资源中声明的域名、路径和 TLS 规则，配置底层反向代理（如 NGINX、Envoy、Traefik），把外部 HTTP/HTTPS 请求路由到集群内的 Service。Ingress 资源只是规则，需控制器才生效。",
+  "how": [
+   "部署控制器：以 Deployment 运行代理，并通过 LoadBalancer 或 NodePort 暴露。",
+   "声明规则：用户创建 Ingress 资源，指定 ingressClassName、主机名、路径与后端 Service。",
+   "监听变化：控制器监听 Ingress、Service、Endpoint 与 Secret，生成代理配置并热加载。",
+   "处理请求：按 Host 与路径匹配规则，终止 TLS 后转发到后端 Pod。",
+   "扩展能力：通过注解或自定义资源配置重写、限流、认证等，各控制器语法不同。"
+  ],
+  "terms": [
+   {
+    "t": "Ingress 资源",
+    "d": "声明 HTTP 路由规则的 K8s API 对象，本身不处理流量。"
+   },
+   {
+    "t": "IngressClass",
+    "d": "指定由哪个控制器处理某个 Ingress，支持多控制器并存。"
+   },
+   {
+    "t": "TLS 终止 (TLS Termination)",
+    "d": "在入口处解密 HTTPS，后端可以使用明文或重新加密。"
+   },
+   {
+    "t": "Gateway API",
+    "d": "Ingress 的后继 API，角色分离、表达力更强、可移植性更好。"
+   },
+   {
+    "t": "pathType",
+    "d": "路径匹配方式：Exact、Prefix 或 ImplementationSpecific。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "带 TLS 的 Ingress",
+   "src": "apiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: web\nspec:\n  ingressClassName: nginx            # 由哪个控制器处理\n  tls:\n  - hosts: [\"app.example.com\"]\n    secretName: app-tls              # 证书存放在该 Secret\n  rules:\n  - host: app.example.com\n    http:\n      paths:\n      - path: /api\n        pathType: Prefix\n        backend:\n          service: {name: api, port: {number: 8080}}\n      - path: /\n        pathType: Prefix\n        backend:\n          service: {name: frontend, port: {number: 80}}",
+   "note": "同一域名按路径分流到两个 Service；证书可由 cert-manager 自动签发到该 Secret。"
+  },
+  "table": {
+   "title": "入口方案对比",
+   "head": [
+    "方案",
+    "层级",
+    "特点"
+   ],
+   "rows": [
+    [
+     "Service LoadBalancer",
+     "L4",
+     "每个服务一个负载均衡器，成本高"
+    ],
+    [
+     "Ingress + 控制器",
+     "L7",
+     "共享入口，按域名/路径路由"
+    ],
+    [
+     "Gateway API",
+     "L4/L7",
+     "角色分离，标准化高级路由"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Ingress",
+    "pros": "生态成熟，资料多",
+    "cons": "高级功能依赖各家注解，不可移植",
+    "when": "简单的 HTTP 路由需求"
+   },
+   {
+    "opt": "Gateway API",
+    "pros": "标准化流量切分、跨命名空间授权",
+    "cons": "需选择支持它的实现，迁移有成本",
+    "when": "新集群或需要高级路由"
+   },
+   {
+    "opt": "云厂商 L7 负载均衡器",
+    "pros": "托管、与云 WAF 等集成",
+    "cons": "绑定厂商，功能受产品限制",
+    "when": "深度使用单一云"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "大量依赖某控制器的注解，换实现时全部重写",
+    "fix": "尽量用标准字段，复杂路由考虑 Gateway API"
+   },
+   {
+    "bad": "继续在新项目使用已退役的社区 ingress-nginx",
+    "fix": "该项目 2026 年 3 月起停止维护，应迁移到 Gateway API 或其他控制器"
+   },
+   {
+    "bad": "控制器只跑单副本，升级或节点故障时全站中断",
+    "fix": "多副本加 PodDisruptionBudget 与反亲和"
+   },
+   {
+    "bad": "未设置 ingressClassName，被意外的控制器接管",
+    "fix": "显式指定 ingressClassName 并配置默认类"
+   }
+  ],
+  "checklist": [
+   "显式指定 ingressClassName",
+   "控制器多副本且有 PDB",
+   "证书自动续期",
+   "核实所用控制器仍在维护",
+   "请求体大小与超时已配置",
+   "入口访问日志与指标可见"
+  ],
+  "interview": [
+   {
+    "q": "Ingress 和 Ingress Controller 的关系？",
+    "a": "Ingress 是声明式路由规则对象，只是数据；Ingress Controller 是实际运行的程序，监听这些对象并据此配置反向代理处理流量。集群没有控制器时，创建 Ingress 不会有任何效果。"
+   },
+   {
+    "q": "为什么社区在推 Gateway API？",
+    "a": "Ingress 只覆盖基础 HTTP 路由，高级功能靠各家注解，不可移植；也没有角色划分。Gateway API 把基础设施（GatewayClass/Gateway）与应用路由（HTTPRoute）分离，原生支持流量切分、头部匹配和多协议。"
+   },
+   {
+    "q": "ingress-nginx 退役对团队意味着什么？",
+    "a": "Kubernetes 社区宣布该项目 2026 年 3 月后不再发布版本和安全修复，现有部署仍可运行但风险逐步上升。应盘点使用的注解，选择替代实现并规划向 Gateway API 迁移。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Kubernetes: Ingress",
+    "url": "https://kubernetes.io/docs/concepts/services-networking/ingress/"
+   },
+   {
+    "title": "Kubernetes: Ingress Controllers",
+    "url": "https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/"
+   },
+   {
+    "title": "Gateway API",
+    "url": "https://gateway-api.sigs.k8s.io/"
+   },
+   {
+    "title": "Ingress NGINX Retirement (Kubernetes Blog)",
+    "url": "https://kubernetes.io/blog/2025/11/11/ingress-nginx-retirement/"
+   }
+  ]
+ },
+ {
+  "slug": "exactly-once-semantics",
+  "def": "精确一次语义（Exactly-Once Semantics，EOS）指每条消息对最终结果的影响恰好发生一次，既不丢也不重复。网络与故障下「投递」本身难以只发生一次，因此实践中靠至少一次投递加幂等或事务实现「效果上的精确一次」。Kafka 通过幂等生产者与事务在其内部读-处理-写链路上提供该保证。",
+  "how": [
+   "幂等生产者：broker 按生产者 ID 与序列号去重，生产者重试不会产生重复写入。",
+   "事务写入：生产者以 transactional.id 开启事务，把多分区写入原子提交或中止。",
+   "偏移量入事务：消费位点通过 sendOffsetsToTransaction 与输出消息一起提交。",
+   "隔离读取：下游消费者设置 isolation.level=read_committed，只读已提交事务的消息。",
+   "外部系统：写数据库等外部系统时，需用幂等写入或把位点与结果存入同一事务。"
+  ],
+  "terms": [
+   {
+    "t": "至少一次 (At-least-once)",
+    "d": "失败会重试，保证不丢但可能重复。"
+   },
+   {
+    "t": "至多一次 (At-most-once)",
+    "d": "不重试，保证不重复但可能丢失。"
+   },
+   {
+    "t": "幂等生产者 (Idempotent Producer)",
+    "d": "通过 PID 与序列号让 broker 丢弃重复的重试写入。"
+   },
+   {
+    "t": "transactional.id",
+    "d": "跨重启稳定的事务标识，用于隔离旧实例（僵尸实例）。"
+   },
+   {
+    "t": "read_committed",
+    "d": "消费者隔离级别，跳过未提交或已中止事务的消息。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Kafka 事务性读-处理-写",
+   "src": "from confluent_kafka import Consumer, Producer\n\nconsumer = Consumer({\"bootstrap.servers\": \"kafka:9092\", \"group.id\": \"enricher\",\n                     \"enable.auto.commit\": False,\n                     \"isolation.level\": \"read_committed\"})\nproducer = Producer({\"bootstrap.servers\": \"kafka:9092\",\n                     \"transactional.id\": \"enricher-1\"})  # 隐含开启幂等\nconsumer.subscribe([\"orders\"])\nproducer.init_transactions()\n\nwhile True:\n    msg = consumer.poll(1.0)\n    if msg is None or msg.error():\n        continue\n    producer.begin_transaction()\n    producer.produce(\"orders-enriched\", key=msg.key(), value=msg.value().upper())\n    # 把消费位点与输出放进同一事务，原子提交\n    producer.send_offsets_to_transaction(\n        consumer.position(consumer.assignment()),\n        consumer.consumer_group_metadata())\n    producer.commit_transaction()      # 异常时应 abort_transaction() 并重处理",
+   "note": "输出消息与消费位点同事务提交，崩溃重启后不会出现输出了却未记位点的重复。"
+  },
+  "table": {
+   "title": "三种投递语义",
+   "head": [
+    "语义",
+    "实现方式",
+    "风险"
+   ],
+   "rows": [
+    [
+     "至多一次",
+     "先提交位点再处理",
+     "处理失败即丢消息"
+    ],
+    [
+     "至少一次",
+     "处理完再提交位点",
+     "崩溃后重复处理"
+    ],
+    [
+     "精确一次（效果）",
+     "至少一次 + 幂等/事务",
+     "实现复杂，有性能开销"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Kafka 事务",
+    "pros": "Kafka 内部链路端到端精确一次",
+    "cons": "吞吐下降、延迟增加，不覆盖外部系统",
+    "when": "Kafka 到 Kafka 的流处理"
+   },
+   {
+    "opt": "至少一次 + 幂等消费",
+    "pros": "通用、简单，适用任何下游",
+    "cons": "需要设计幂等键与去重存储",
+    "when": "写数据库、调第三方 API"
+   },
+   {
+    "opt": "位点与结果同库事务",
+    "pros": "对数据库下游实现精确一次",
+    "cons": "消费者需自管位点",
+    "when": "结果写入关系型数据库"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "以为开启 Kafka 事务后，写数据库和调外部 API 也只会一次",
+    "fix": "事务仅覆盖 Kafka 内部，外部副作用需幂等或同库事务"
+   },
+   {
+    "bad": "下游消费者仍用默认 read_uncommitted，读到中止事务数据",
+    "fix": "消费事务性主题时设置 isolation.level=read_committed"
+   },
+   {
+    "bad": "transactional.id 随机生成，重启后无法隔离僵尸实例",
+    "fix": "按实例或分区使用稳定的 transactional.id"
+   }
+  ],
+  "checklist": [
+   "明确精确一次的边界范围",
+   "生产者开启幂等",
+   "下游 read_committed",
+   "外部写入幂等或同事务",
+   "transactional.id 稳定",
+   "压测评估事务开销"
+  ],
+  "interview": [
+   {
+    "q": "真正的「精确一次投递」可能吗？",
+    "a": "在不可靠网络中，发送方无法区分消息丢失还是确认丢失，只能重试，因此投递层面最多做到至少一次。所谓精确一次是处理效果层面：通过去重、幂等或原子事务，使重复投递不产生重复影响。"
+   },
+   {
+    "q": "Kafka 幂等生产者怎么去重？",
+    "a": "每个生产者获得 PID，发往每个分区的消息带递增序列号；broker 记录各 PID 在该分区最近的序列号，收到重复或乱序序列号即拒绝或丢弃，从而消除重试带来的重复写入。"
+   },
+   {
+    "q": "消费 Kafka 写 MySQL 如何做到效果上一次？",
+    "a": "方式一：业务写入幂等，如用消息唯一 ID 做唯一键或 upsert；方式二：把消费位点存进 MySQL，与业务数据同一事务提交，启动时从库中读取位点继续消费。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Apache Kafka Documentation",
+    "url": "https://kafka.apache.org/documentation/"
+   },
+   {
+    "title": "KIP-98: Exactly Once Delivery and Transactional Messaging",
+    "url": "https://cwiki.apache.org/confluence/display/KAFKA/KIP-98+-+Exactly+Once+Delivery+and+Transactional+Messaging"
+   },
+   {
+    "title": "Exactly-Once Semantics in Kafka (Confluent)",
+    "url": "https://www.confluent.io/blog/exactly-once-semantics-are-possible-heres-how-apache-kafka-does-it/"
+   }
+  ]
+ },
+ {
+  "slug": "message-ordering",
+  "def": "消息顺序性保证是消息系统按发送顺序把消息交给消费者处理的能力。分布式消息系统通常只在一个分区或一个消息组内保证顺序，不提供全局顺序，因为全局有序意味着无法并行。设计时要先确定「需要在什么范围内有序」，再用分区键、消息组和消费策略来保证。",
+  "how": [
+   "确定有序范围：通常是同一实体（订单、账户）的消息需要有序，不同实体可并行。",
+   "按键路由：用实体 ID 作为分区键或消息组 ID，让同一实体的消息进入同一有序通道。",
+   "生产端保序：重试时防止乱序，如 Kafka 开启幂等生产者，SQS FIFO 用消息组。",
+   "消费端保序：同一分区或消息组内串行处理，避免多线程并发消费打乱顺序。",
+   "兜底：消息携带版本号或时间序号，消费者丢弃比当前状态更旧的消息。"
+  ],
+  "terms": [
+   {
+    "t": "分区内有序 (Per-partition Ordering)",
+    "d": "Kafka 只保证同一分区内消息的写入与读取顺序。"
+   },
+   {
+    "t": "消息组 (Message Group)",
+    "d": "SQS FIFO 中同一组内消息严格有序、逐条投递。"
+   },
+   {
+    "t": "队头阻塞 (Head-of-line Blocking)",
+    "d": "有序通道中一条消息处理失败会阻塞后续消息。"
+   },
+   {
+    "t": "乱序重试",
+    "d": "前一批发送失败重试时，后一批已成功写入导致顺序颠倒。"
+   },
+   {
+    "t": "版本号 (Sequence Number)",
+    "d": "随实体变更递增的序号，用于检测和丢弃过期消息。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "SQS FIFO 按订单保序",
+   "src": "import json, boto3\n\nsqs = boto3.client(\"sqs\")\nQUEUE = \"https://sqs.us-east-1.amazonaws.com/123456789012/orders.fifo\"\n\ndef publish(order_id: str, seq: int, event: dict):\n    sqs.send_message(\n        QueueUrl=QUEUE,\n        MessageBody=json.dumps({**event, \"seq\": seq}),\n        # 同一订单的事件进入同一消息组 → 组内严格有序\n        MessageGroupId=order_id,\n        # 去重 ID：同一 ID 在去重窗口内只会入队一次\n        MessageDeduplicationId=f\"{order_id}-{seq}\",\n    )\n\npublish(\"order-1001\", 1, {\"type\": \"Created\"})\npublish(\"order-1001\", 2, {\"type\": \"Paid\"})\npublish(\"order-2002\", 1, {\"type\": \"Created\"})   # 不同组可并行消费",
+   "note": "不同订单可并行，同一订单按序；消息带 seq 便于消费者再做兜底校验。"
+  },
+  "table": {
+   "title": "主流系统的顺序保证",
+   "head": [
+    "系统",
+    "有序范围",
+    "实现方式"
+   ],
+   "rows": [
+    [
+     "Kafka",
+     "单个分区",
+     "按 key 哈希到分区"
+    ],
+    [
+     "SQS FIFO",
+     "单个消息组",
+     "MessageGroupId"
+    ],
+    [
+     "SQS 标准队列",
+     "不保证",
+     "需业务自行处理"
+    ],
+    [
+     "RabbitMQ",
+     "单队列单消费者时",
+     "多消费者或重新入队会打乱"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "按实体分区有序",
+    "pros": "兼顾顺序与并行度",
+    "cons": "热点实体会形成热点分区",
+    "when": "大多数业务事件"
+   },
+   {
+    "opt": "全局单分区",
+    "pros": "严格全局顺序",
+    "cons": "无法水平扩展，吞吐受限",
+    "when": "量很小且确需全局序"
+   },
+   {
+    "opt": "不保序+版本号",
+    "pros": "最大并行，系统简单",
+    "cons": "消费者需处理乱序与过期消息",
+    "when": "只关心最终状态"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "同一分区内用线程池并发处理，顺序被打乱",
+    "fix": "按 key 分配到固定的工作线程，或分区内串行处理"
+   },
+   {
+    "bad": "扩容分区数后，同一 key 映射到新分区，短期乱序",
+    "fix": "规划好初始分区数，扩容时评估顺序影响或停写切换"
+   },
+   {
+    "bad": "处理失败的消息被丢到重试队列，后续消息先处理",
+    "fix": "有序场景中失败要阻塞重试或整组转入死信并告警"
+   },
+   {
+    "bad": "要求全局有序，导致系统无法扩展",
+    "fix": "分析业务真正需要的有序范围，通常按实体即可"
+   }
+  ],
+  "checklist": [
+   "已明确需要有序的范围",
+   "分区键/消息组按实体设置",
+   "生产端重试不会乱序",
+   "消费端分区内串行",
+   "消息带版本号可检测过期",
+   "失败重试策略不破坏顺序"
+  ],
+  "interview": [
+   {
+    "q": "Kafka 如何保证同一订单的消息有序？",
+    "a": "生产时用订单 ID 作 key，使其哈希到同一分区；开启幂等生产者避免重试乱序；消费端每个分区只由组内一个消费者读取，并在分区内串行处理。注意扩容分区会改变 key 映射。"
+   },
+   {
+    "q": "为什么不提供全局有序？",
+    "a": "全局有序需要所有消息经过单一序列化点，只能单分区单消费者，吞吐无法扩展且有单点问题。多数业务只需同一实体内有序，按实体分区即可同时获得顺序和并行度。"
+   },
+   {
+    "q": "有序消费中一条消息一直失败怎么办？",
+    "a": "有序意味着后续消息必须等待，因此先有限次重试；仍失败则需决策：阻塞并告警人工介入，或把该实体后续消息一起转入死信，避免跳过它导致状态错乱。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Amazon SQS FIFO queues",
+    "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/FIFO-queues.html"
+   },
+   {
+    "title": "Apache Kafka Documentation",
+    "url": "https://kafka.apache.org/documentation/"
+   }
+  ]
+ },
+ {
+  "slug": "kafka-consumer-groups",
+  "def": "Kafka 消费者组（Consumer Group）是一组共享同一 group.id 的消费者，共同消费一个或多个主题：每个分区在同一时刻只分配给组内一个消费者，从而实现并行处理与负载均衡；不同组相互独立，各自维护消费进度，实现同一数据被多个系统分别消费。",
+  "how": [
+   "加入组：消费者以相同 group.id 订阅主题，由组协调器（Group Coordinator）管理成员。",
+   "分区分配：按分配策略把分区分给各成员，同一分区只属于组内一个消费者。",
+   "拉取处理：每个消费者只从分配给自己的分区批量拉取消息并在本地处理。",
+   "提交位点：处理后把偏移量提交到内部主题 __consumer_offsets，记录组的进度。",
+   "再平衡：成员加入、离开或超时时重新分配分区，新的所有者从已提交位点继续。"
+  ],
+  "terms": [
+   {
+    "t": "消费位点 (Offset)",
+    "d": "消费者组在每个分区已处理到的位置。"
+   },
+   {
+    "t": "消费滞后 (Consumer Lag)",
+    "d": "分区最新位点与组已提交位点的差值，表示积压。"
+   },
+   {
+    "t": "再平衡 (Rebalance)",
+    "d": "组成员变化时重新分配分区的过程。"
+   },
+   {
+    "t": "协作式再平衡 (Cooperative Rebalancing)",
+    "d": "增量迁移分区，避免全部成员同时停止消费。"
+   },
+   {
+    "t": "静态成员 (Static Membership)",
+    "d": "配置 group.instance.id，短暂重启不触发再平衡。"
+   },
+   {
+    "t": "max.poll.interval.ms",
+    "d": "两次 poll 最大间隔，超出则被视为失效并触发再平衡。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "查看与重置消费进度",
+   "src": "# 查看组内每个分区的当前位点、最新位点和滞后（LAG）\nkafka-consumer-groups.sh --bootstrap-server kafka:9092 \\\n  --describe --group order-service\n\n# 列出所有消费者组\nkafka-consumer-groups.sh --bootstrap-server kafka:9092 --list\n\n# 先预演：把位点重置到某个时间点（不加 --execute 只显示结果）\nkafka-consumer-groups.sh --bootstrap-server kafka:9092 \\\n  --group order-service --topic orders \\\n  --reset-offsets --to-datetime 2026-10-20T00:00:00.000 --dry-run\n\n# 确认后执行（需先停掉该组所有消费者）\nkafka-consumer-groups.sh --bootstrap-server kafka:9092 \\\n  --group order-service --topic orders \\\n  --reset-offsets --to-datetime 2026-10-20T00:00:00.000 --execute",
+   "note": "LAG 是最重要的健康指标；重置位点用于回放数据或跳过坏消息，务必先预演。"
+  },
+  "table": {
+   "title": "分配策略对比",
+   "head": [
+    "策略",
+    "行为",
+    "适用"
+   ],
+   "rows": [
+    [
+     "Range",
+     "按主题连续分段分配",
+     "需同主题间分区对齐时"
+    ],
+    [
+     "RoundRobin",
+     "轮询均匀分配",
+     "订阅主题一致、求均衡"
+    ],
+    [
+     "Sticky",
+     "尽量保留原分配",
+     "减少再平衡后的迁移"
+    ],
+    [
+     "CooperativeSticky",
+     "增量再平衡",
+     "避免全组停顿，推荐默认考虑"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "增加组内消费者",
+    "pros": "提高并行度",
+    "cons": "超过分区数的消费者会空闲",
+    "when": "分区数大于当前消费者数"
+   },
+   {
+    "opt": "增加分区数",
+    "pros": "提高并行上限",
+    "cons": "改变 key 映射，影响顺序",
+    "when": "消费者数已达分区数上限"
+   },
+   {
+    "opt": "单消费者内多线程",
+    "pros": "不增分区也能提速",
+    "cons": "位点提交与顺序管理更复杂",
+    "when": "处理耗时长、无严格顺序要求"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "消费者数多于分区数，以为能继续提升吞吐",
+    "fix": "并行上限等于分区数，需要时先增加分区"
+   },
+   {
+    "bad": "单条处理过慢超过 max.poll.interval.ms，反复再平衡",
+    "fix": "减小 max.poll.records、异步处理或调大间隔"
+   },
+   {
+    "bad": "自动提交位点，处理未完成即提交，崩溃后丢消息",
+    "fix": "关闭自动提交，处理成功后手动提交"
+   },
+   {
+    "bad": "滚动发布时频繁触发全组再平衡，消费停顿",
+    "fix": "使用协作式分配策略，并配置静态成员"
+   }
+  ],
+  "checklist": [
+   "消费者数不超过分区数",
+   "监控各分区 LAG 并告警",
+   "处理成功后再提交位点",
+   "处理耗时小于 poll 间隔",
+   "使用协作式再平衡",
+   "位点重置流程有预演"
+  ],
+  "interview": [
+   {
+    "q": "为什么组内消费者数超过分区数没有意义？",
+    "a": "同一分区在同一时刻只能被组内一个消费者消费，以保证分区内有序和位点管理简单，所以多出的消费者分不到分区而空闲，只能作为热备。并行度上限由分区数决定。"
+   },
+   {
+    "q": "再平衡为什么会造成消费停顿？",
+    "a": "传统 eager 协议下所有成员先撤销全部分区再重新分配，期间整组停止消费。协作式再平衡只迁移需要变化的分区；静态成员避免短暂重启触发再平衡；新一代组协议（KIP-848）把分配移到 broker 端进一步改善。"
+   },
+   {
+    "q": "消费滞后持续增长，怎么排查？",
+    "a": "先看是否所有分区都滞后：全部滞后多为处理能力不足，可增加消费者/分区或优化处理逻辑；个别分区滞后多为热点 key 或某消费者卡住；再看是否频繁再平衡、下游依赖变慢。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Apache Kafka Documentation",
+    "url": "https://kafka.apache.org/documentation/"
+   },
+   {
+    "title": "Confluent: Kafka Consumer",
+    "url": "https://docs.confluent.io/platform/current/clients/consumer.html"
+   },
+   {
+    "title": "KIP-848: Next Generation Consumer Rebalance Protocol",
+    "url": "https://cwiki.apache.org/confluence/display/KAFKA/KIP-848%3A+The+Next+Generation+of+the+Consumer+Rebalance+Protocol"
+   }
+  ]
+ }
+]

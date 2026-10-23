@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="预发布/准生产环境 专业模式：预发布环境（Staging Environment）是在上线前用于最终验证的、尽可能贴近生产的独立环境：相同的构建产物、相近的基础设施与配置，但使用隔离的数据和">
+<title>🎓 预发布/准生产环境 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="staging-environments" data-answer="0" data-prev="feature-flags.pro.html" data-next="lockfiles.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#devops">🌊 中级 · 🔭 可观测与交付</a><span>›</span><a href="staging-environments.html">预发布/准生产环境</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.150 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="feature-flags.pro.html" rel="prev"><small>‹ 上一个</small><b>🎚️ 特性开关</b></a><a class="pn next" href="lockfiles.pro.html" rel="next"><small>下一个 ›</small><b>🔒 依赖版本锁文件</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🎭</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>预发布/准生产环境</h1><p class="en">Staging Environments</p>
+    <div class="hbtns"><a class="prosw back" href="staging-environments.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">预发布环境（Staging Environment）是在上线前用于最终验证的、尽可能贴近生产的独立环境：相同的构建产物、相近的基础设施与配置，但使用隔离的数据和第三方沙箱账号。它位于 CI/CD 流水线中测试与生产之间，用来发现单元测试与本地环境发现不了的集成、配置与部署问题。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>CI 构建出唯一制品后先部署到 staging，生产随后部署同一个制品，不重新构建。</p></li><li><span class="sn">2</span><p>staging 使用与生产相同的基础设施定义（IaC），仅规模和密钥不同。</p></li><li><span class="sn">3</span><p>数据使用脱敏的生产快照或合成数据，外部支付、邮件等接入沙箱账号。</p></li><li><span class="sn">4</span><p>在 staging 运行端到端测试、数据库迁移演练、冒烟测试和人工验收。</p></li><li><span class="sn">5</span><p>验证通过后经审批进入生产；有的团队用按 PR 创建的临时预览环境补充。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>环境一致性 (Dev/Prod Parity)</dt><dd>开发、预发、生产尽可能一致，减少「本地能跑」。</dd></div><div class="term"><dt>基础设施即代码 (IaC)</dt><dd>用代码定义环境资源，保证可复制。</dd></div><div class="term"><dt>预览环境 (Preview Environment)</dt><dd>按分支或 PR 临时创建的短期环境。</dd></div><div class="term"><dt>冒烟测试 (Smoke Test)</dt><dd>部署后快速验证核心路径是否可用。</dd></div><div class="term"><dt>配置漂移 (Configuration Drift)</dt><dd>环境间配置逐渐不一致的现象。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>GitHub Actions 分环境部署</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code>name: deploy
+on:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./scripts/build-image.sh &quot;$GITHUB_SHA&quot;   # 只构建一次
+  deploy-staging:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: staging            # 使用 staging 的独立密钥
+    steps:
+      - run: ./scripts/deploy.sh staging &quot;$GITHUB_SHA&quot;
+      - run: ./scripts/smoke-test.sh https://staging.example.com
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment: production         # 可在仓库设置中配置必需审批人
+    steps:
+      - run: ./scripts/deploy.sh production &quot;$GITHUB_SHA&quot;   # 同一制品</code></pre></div><p class="cnote">同一提交的制品依次进入 staging 与生产；environment 隔离密钥并可加人工审批。脚本为示意。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见环境分工</h3><div class="tw"><table><thead><tr><th>环境</th><th>数据</th><th>主要用途</th></tr></thead><tbody><tr><td data-h="环境">本地/开发</td><td data-h="数据">种子数据</td><td data-h="主要用途">日常开发与单元测试</td></tr><tr><td data-h="环境">预览环境</td><td data-h="数据">合成数据</td><td data-h="主要用途">按 PR 演示与评审</td></tr><tr><td data-h="环境">Staging</td><td data-h="数据">脱敏快照或合成</td><td data-h="主要用途">集成、迁移、验收</td></tr><tr><td data-h="环境">生产</td><td data-h="数据">真实数据</td><td data-h="主要用途">服务真实用户</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>长期 staging</h4><p><b class="k-p">优点</b>稳定，便于验收与演练</p><p><b class="k-c">代价</b>成本高，易与生产漂移</p><p><b class="k-w">适用</b>需要统一集成验证的团队</p></div><div class="trd"><h4>按 PR 预览环境</h4><p><b class="k-p">优点</b>并行验证，互不干扰</p><p><b class="k-c">代价</b>数据与依赖难做全</p><p><b class="k-w">适用</b>前端或无状态服务为主</p></div><div class="trd"><h4>生产灰度替代</h4><p><b class="k-p">优点</b>真实流量与数据</p><p><b class="k-c">代价</b>风险直接作用于用户</p><p><b class="k-w">适用</b>配合开关与金丝雀的成熟团队</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>staging 与生产各自构建，验证的不是同一份产物</p><p class="fix"><b>✓</b>构建一次，按环境注入配置后部署同一制品</p></li><li><p class="bad"><b>✗</b>直接复制生产数据到 staging</p><p class="fix"><b>✓</b>对个人信息脱敏或使用合成数据，并限制访问</p></li><li><p class="bad"><b>✗</b>staging 接真实支付或给真实用户发邮件</p><p class="fix"><b>✓</b>第三方一律使用沙箱账号与测试收件地址</p></li><li><p class="bad"><b>✗</b>staging 长期无人维护，配置与生产漂移</p><p class="fix"><b>✓</b>用同一套 IaC 管理，定期比对配置差异</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>生产部署的制品已在 staging 验证</span></label></li><li><label><input type="checkbox"><span>基础设施由同一套 IaC 定义</span></label></li><li><label><input type="checkbox"><span>数据已脱敏或为合成数据</span></label></li><li><label><input type="checkbox"><span>第三方服务使用沙箱</span></label></li><li><label><input type="checkbox"><span>迁移在 staging 演练过</span></label></li><li><label><input type="checkbox"><span>密钥按环境隔离</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>staging 测过了为什么生产还会出问题？</summary><p>数据规模与分布不同、真实流量模式与并发、第三方生产行为差异、配置漂移、缓存与时序问题等都难以在 staging 复现。因此还需要金丝雀、特性开关与可观测性兜底。</p></details><details class="iv"><summary>为什么强调「构建一次，到处部署」？</summary><p>每次重新构建都可能引入不同依赖版本或构建参数，导致验证过的产物与上线产物不一致。固定制品摘要、配置外置注入，才能保证 staging 的验证结论对生产有效。</p></details><details class="iv"><summary>staging 的数据怎么准备？</summary><p>优先合成数据覆盖边界场景；需要真实分布时用生产快照经过不可逆脱敏后导入，并控制访问权限与保留期。迁移演练需要接近生产的数据量。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://12factor.net/dev-prod-parity" target="_blank" rel="noopener"><b>The Twelve-Factor App：Dev/prod parity</b><small>12factor.net ↗</small></a></li><li><a href="https://docs.github.com/en/actions/deployment/targeting-different-environments/managing-environments-for-deployment" target="_blank" rel="noopener"><b>GitHub Docs：Managing environments for deployment</b><small>docs.github.com ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Deployment_environment" target="_blank" rel="noopener"><b>Wikipedia: Deployment environment</b><small>en.wikipedia.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="feature-flags.pro.html" rel="prev"><small>‹ 上一个</small><b>🎚️ 特性开关</b></a><a class="pn next" href="lockfiles.pro.html" rel="next"><small>下一个 ›</small><b>🔒 依赖版本锁文件</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="智能体轨迹评测 专业模式：轨迹评测（Trajectory Evaluation）是 Agent 评测的一种，除了检查最终结果，还检查 Agent 执行过程中的工具调用序列、参数、中间推理">
+<title>🎓 智能体轨迹评测 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="agent-trajectory-evaluation" data-answer="0" data-prev="ann-hnsw-index.pro.html" data-next="reward-hacking.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#ai">🔥 进阶 · 🤖 AI 与提示词</a><span>›</span><a href="agent-trajectory-evaluation.html">智能体轨迹评测</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.457 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="ann-hnsw-index.pro.html" rel="prev"><small>‹ 上一个</small><b>🕸️ 近似最近邻索引 (ANN / HNSW)</b></a><a class="pn next" href="reward-hacking.pro.html" rel="next"><small>下一个 ›</small><b>🎭 奖励投机 (Reward Hacking)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🗺️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>智能体轨迹评测</h1><p class="en">Agent Trajectory Evaluation</p>
+    <div class="hbtns"><a class="prosw back" href="agent-trajectory-evaluation.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">轨迹评测（Trajectory Evaluation）是 Agent 评测的一种，除了检查最终结果，还检查 Agent 执行过程中的工具调用序列、参数、中间推理与副作用。它能发现「结果对但过程错」的问题，如走捷径、越权操作、冗余调用和成本失控，是 Agent 上线前评审与回归测试的关键环节。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>通过日志或追踪（如 OpenTelemetry span）完整记录每一步：工具名、参数、返回值、耗时与 Token 消耗。</p></li><li><span class="sn">2</span><p>为评测用例定义参考轨迹或约束：必须调用的工具、禁止的动作、允许的顺序关系。</p></li><li><span class="sn">3</span><p>用确定性规则比对：精确匹配、按序包含、无序包含、子集/超集，或计算工具调用的精确率与召回率。</p></li><li><span class="sn">4</span><p>对难以规则化的部分，用 LLM 评审（LLM-as-a-judge）按评分细则判断每步是否合理。</p></li><li><span class="sn">5</span><p>汇总过程指标与结果指标，并多次重复运行，评估非确定性带来的稳定性差异。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>轨迹 (Trajectory)</dt><dd>Agent 从接收任务到结束的完整动作序列，含思考、工具调用与观察。</dd></div><div class="term"><dt>按序匹配 (In-order Match)</dt><dd>参考轨迹的步骤按相同顺序出现在实际轨迹中，允许中间有额外步骤。</dd></div><div class="term"><dt>工具调用精确率/召回率</dt><dd>实际调用中正确调用的占比，与参考调用被覆盖的占比。</dd></div><div class="term"><dt>pass^k</dt><dd>同一任务连续 k 次都成功的概率，衡量 Agent 的稳定性，见 τ-bench。</dd></div><div class="term"><dt>副作用检查 (Side-effect Check)</dt><dd>核验环境最终状态，如数据库是否被误改，而不只看文本输出。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>规则化轨迹打分</span><em>python</em><button class="ccopy">复制</button></div><pre><code># 每一步记录为 (工具名, 参数) ；示例为纯 Python，无第三方依赖
+FORBIDDEN = {&quot;delete_file&quot;, &quot;git_push_force&quot;}
+
+def in_order_match(actual, reference):
+    &quot;&quot;&quot;reference 中的工具按顺序出现在 actual 中即可&quot;&quot;&quot;
+    it = iter(name for name, _ in actual)
+    return all(ref in it for ref in reference)
+
+def score(actual, reference):
+    names = [n for n, _ in actual]
+    hits = sum(1 for r in reference if r in names)
+    return {
+        &quot;in_order&quot;: in_order_match(actual, reference),
+        &quot;recall&quot;: hits / len(reference),
+        &quot;forbidden&quot;: sorted(FORBIDDEN &amp; set(names)),
+        &quot;steps&quot;: len(actual),          # 冗余步骤也要关注
+    }
+
+actual = [(&quot;read_file&quot;, {&quot;path&quot;: &quot;app.py&quot;}), (&quot;edit_file&quot;, {}),
+          (&quot;delete_file&quot;, {&quot;path&quot;: &quot;test_app.py&quot;}), (&quot;run_tests&quot;, {})]
+print(score(actual, [&quot;read_file&quot;, &quot;edit_file&quot;, &quot;run_tests&quot;]))
+# in_order=True，但 forbidden=[&#x27;delete_file&#x27;]，应判定失败</code></pre></div><p class="cnote">结果与顺序都对，但删除了测试文件；轨迹规则能抓到仅看结果会漏掉的违规。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">轨迹匹配模式对比</h3><div class="tw"><table><thead><tr><th>模式</th><th>判定条件</th><th>适用场景</th></tr></thead><tbody><tr><td data-h="模式">精确匹配</td><td data-h="判定条件">工具序列完全一致</td><td data-h="适用场景">流程固定的业务操作</td></tr><tr><td data-h="模式">按序匹配</td><td data-h="判定条件">参考步骤按顺序出现</td><td data-h="适用场景">关键步骤有先后依赖</td></tr><tr><td data-h="模式">无序匹配</td><td data-h="判定条件">参考步骤都出现即可</td><td data-h="适用场景">步骤可并行或顺序无关</td></tr><tr><td data-h="模式">约束检查</td><td data-h="判定条件">无禁止动作、步数与成本在上限内</td><td data-h="适用场景">安全与成本兜底</td></tr><tr><td data-h="模式">LLM 评审</td><td data-h="判定条件">按评分细则判断合理性</td><td data-h="适用场景">开放式任务、路径多样</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>确定性规则匹配</h4><p><b class="k-p">优点</b>可复现、便宜、易进 CI</p><p><b class="k-c">代价</b>合理的替代路径会被误判</p><p><b class="k-w">适用</b>流程明确、工具集小的 Agent</p></div><div class="trd"><h4>LLM 评审轨迹</h4><p><b class="k-p">优点</b>能评价开放路径的合理性</p><p><b class="k-c">代价</b>有偏差和成本，需校准</p><p><b class="k-w">适用</b>编码、研究等路径多样的任务</p></div><div class="trd"><h4>只评最终状态</h4><p><b class="k-p">优点</b>实现最简单</p><p><b class="k-c">代价</b>漏掉作弊、越权与浪费</p><p><b class="k-w">适用</b>仅作为结果指标的一部分</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>参考轨迹写得过死，Agent 更优的路径被判失败</p><p class="fix"><b>✓</b>关键步骤用按序或无序匹配，其余用约束和结果检查兜底</p></li><li><p class="bad"><b>✗</b>只跑一次就下结论</p><p class="fix"><b>✓</b>每个用例多次运行，统计成功率与 pass^k</p></li><li><p class="bad"><b>✗</b>评测只看文本输出，没核对环境状态</p><p class="fix"><b>✓</b>在沙箱中检查文件、数据库等最终状态与副作用</p></li><li><p class="bad"><b>✗</b>日志缺失工具参数，事后无法复盘</p><p class="fix"><b>✓</b>结构化记录每步参数、返回与耗时，敏感字段脱敏</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每步工具调用与参数都被结构化记录</span></label></li><li><label><input type="checkbox"><span>定义了禁止动作清单并自动检查</span></label></li><li><label><input type="checkbox"><span>关键步骤有参考轨迹或顺序约束</span></label></li><li><label><input type="checkbox"><span>统计步数、Token 与耗时等成本指标</span></label></li><li><label><input type="checkbox"><span>同一用例多次运行评估稳定性</span></label></li><li><label><input type="checkbox"><span>LLM 评审有人工标注样本做校准</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么 Agent 评测不能只看最终答案？</summary><p>Agent 有副作用：结果正确时也可能删了测试、越权读文件、调用付费接口几十次。只看结果会把这些作弊和风险当成功。轨迹评测补上过程维度，同时能定位失败发生在哪一步，便于改提示或工具。</p></details><details class="iv"><summary>参考轨迹不唯一时怎么评？</summary><p>把轨迹拆成硬约束和软评价：硬约束如必须先读后写、禁止危险动作、步数上限用规则检查；路径选择是否合理交给 LLM 评审按细则打分，并用人工标注样本校准评审一致性。</p></details><details class="iv"><summary>τ-bench 的 pass^k 想说明什么？</summary><p>它要求同一任务 k 次都成功，衡量可靠性而非偶尔成功。Agent 输出非确定，单次通过率高不代表稳定；面向真实用户的客服、运维 Agent 更关心一致性，pass^k 随 k 增大下降越快说明越不稳。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://arxiv.org/abs/2406.12045" target="_blank" rel="noopener"><b>τ-bench (arXiv:2406.12045)</b><small>arxiv.org ↗</small></a></li><li><a href="https://github.com/langchain-ai/agentevals" target="_blank" rel="noopener"><b>GitHub: langchain-ai/agentevals</b><small>github.com ↗</small></a></li><li><a href="https://cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-agents" target="_blank" rel="noopener"><b>Google Cloud: Evaluate Gen AI agents</b><small>cloud.google.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="ann-hnsw-index.pro.html" rel="prev"><small>‹ 上一个</small><b>🕸️ 近似最近邻索引 (ANN / HNSW)</b></a><a class="pn next" href="reward-hacking.pro.html" rel="next"><small>下一个 ›</small><b>🎭 奖励投机 (Reward Hacking)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

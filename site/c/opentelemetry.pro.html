@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="OTel统一可观测标准 专业模式：OpenTelemetry（OTel）是 CNCF 的开源可观测性标准与工具集，定义了生成、采集和导出遥测数据（链路追踪、指标、日志）的统一 API、SDK、语">
+<title>🎓 OTel统一可观测标准 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="opentelemetry" data-answer="0" data-prev="capacity-planning.pro.html" data-next="metrics-cardinality.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#devops">🔥 进阶 · 🔭 可观测与交付</a><span>›</span><a href="opentelemetry.html">OTel统一可观测标准</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.445 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="capacity-planning.pro.html" rel="prev"><small>‹ 上一个</small><b>📐 容量规划工程</b></a><a class="pn next" href="metrics-cardinality.pro.html" rel="next"><small>下一个 ›</small><b>🗄️ 指标基数控制</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔌</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>OTel统一可观测标准</h1><p class="en">OpenTelemetry</p>
+    <div class="hbtns"><a class="prosw back" href="opentelemetry.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">OpenTelemetry（OTel）是 CNCF 的开源可观测性标准与工具集，定义了生成、采集和导出遥测数据（链路追踪、指标、日志）的统一 API、SDK、语义约定和 OTLP 传输协议，并提供 Collector 作为采集与处理管道。它让埋点与后端解耦，避免被单一监控厂商锁定。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>埋点：通过各语言 SDK 的自动插桩或手动 API 生成 span、指标和日志记录。</p></li><li><span class="sn">2</span><p>上下文传播：用 W3C traceparent 等请求头在服务间传递 trace ID，把调用串成链路。</p></li><li><span class="sn">3</span><p>SDK 处理：在进程内完成采样、批量缓冲，并补充服务名等资源属性后导出。</p></li><li><span class="sn">4</span><p>Collector：接收 OTLP 等多种格式的数据，经过滤、脱敏、批处理后转发到多个后端。</p></li><li><span class="sn">5</span><p>后端分析：Jaeger、Prometheus 或商业平台存储并展示数据，可随时切换后端。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>OTLP</dt><dd>OpenTelemetry 的原生传输协议，支持 gRPC 与 HTTP。</dd></div><div class="term"><dt>Collector</dt><dd>独立运行的遥测管道，由接收器、处理器、导出器组成。</dd></div><div class="term"><dt>语义约定 (Semantic Conventions)</dt><dd>统一的属性命名规范，如 http.request.method。</dd></div><div class="term"><dt>资源 (Resource)</dt><dd>描述遥测来源的属性，如 service.name、部署环境。</dd></div><div class="term"><dt>采样 (Sampling)</dt><dd>只保留部分链路以控制成本，分头部采样与尾部采样。</dd></div><div class="term"><dt>上下文传播 (Context Propagation)</dt><dd>跨进程传递追踪上下文，使调用能串联成链路。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Collector 基础管道</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code>receivers:
+  otlp:
+    protocols:
+      grpc: {endpoint: 0.0.0.0:4317}
+      http: {endpoint: 0.0.0.0:4318}
+
+processors:
+  memory_limiter:            # 防止 Collector 自身内存溢出，放在最前面
+    check_interval: 1s
+    limit_mib: 1024
+  batch: {}                  # 批量发送，降低导出开销
+
+exporters:
+  otlphttp:
+    endpoint: https://otel-backend.example.com
+  debug: {}                  # 调试时打印到 Collector 日志
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlphttp]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlphttp, debug]</code></pre></div><p class="cnote">应用统一发到 Collector，后端变化只需改导出器；处理器顺序会影响行为。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">OTel 组件分工</h3><div class="tw"><table><thead><tr><th>组件</th><th>职责</th><th>运行位置</th></tr></thead><tbody><tr><td data-h="组件">API</td><td data-h="职责">定义埋点接口，库作者依赖它</td><td data-h="运行位置">应用进程内</td></tr><tr><td data-h="组件">SDK</td><td data-h="职责">实现采样、处理、导出</td><td data-h="运行位置">应用进程内</td></tr><tr><td data-h="组件">自动插桩</td><td data-h="职责">无需改代码为常见框架埋点</td><td data-h="运行位置">应用进程内/代理</td></tr><tr><td data-h="组件">Collector</td><td data-h="职责">接收、处理、路由遥测数据</td><td data-h="运行位置">Sidecar、节点或网关</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>应用直连后端</h4><p><b class="k-p">优点</b>部署简单，少一跳</p><p><b class="k-c">代价</b>换后端或加处理需改应用配置</p><p><b class="k-w">适用</b>小规模、单一后端</p></div><div class="trd"><h4>经 Collector 转发</h4><p><b class="k-p">优点</b>集中脱敏、采样、多路导出</p><p><b class="k-c">代价</b>多维护一个组件</p><p><b class="k-w">适用</b>生产环境默认推荐</p></div><div class="trd"><h4>厂商私有 Agent</h4><p><b class="k-p">优点</b>开箱功能多</p><p><b class="k-c">代价</b>埋点与厂商绑定，迁移成本高</p><p><b class="k-w">适用</b>已深度使用某平台</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>各服务 service.name 不规范，链路和指标无法归属</p><p class="fix"><b>✓</b>统一设置资源属性，包括服务名、版本和环境</p></li><li><p class="bad"><b>✗</b>跨服务调用未传播上下文，链路断成多段</p><p class="fix"><b>✓</b>确保 HTTP/消息客户端插桩并传递 traceparent 头</p></li><li><p class="bad"><b>✗</b>全量采集链路，存储成本失控</p><p class="fix"><b>✓</b>按需配置头部或尾部采样，保留错误与慢请求</p></li><li><p class="bad"><b>✗</b>Collector 未配 memory_limiter，流量突增时 OOM</p><p class="fix"><b>✓</b>启用 memory_limiter 并为 Collector 设置资源限制</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>资源属性统一规范</span></label></li><li><label><input type="checkbox"><span>服务间上下文传播已验证</span></label></li><li><label><input type="checkbox"><span>采样策略已配置</span></label></li><li><label><input type="checkbox"><span>Collector 有内存限制</span></label></li><li><label><input type="checkbox"><span>敏感属性在管道中脱敏</span></label></li><li><label><input type="checkbox"><span>遵循语义约定命名</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>OpenTelemetry 解决了什么问题？</summary><p>过去每个监控厂商有自己的 SDK 和协议，换后端要重写埋点。OTel 统一了 API、数据模型和传输协议，埋点只做一次，可导出到任意兼容后端；同时统一三类信号的关联，如从指标跳到链路再到日志。</p></details><details class="iv"><summary>头部采样和尾部采样有何区别？</summary><p>头部采样在链路开始时就决定是否保留，开销小但可能丢掉之后才出错的链路；尾部采样在 Collector 等待整条链路结束后再按错误、延迟等条件决定，能保留有价值的链路，但需缓存数据、资源消耗更大。</p></details><details class="iv"><summary>为什么推荐使用 Collector？</summary><p>它把遥测处理从应用剥离：集中做批处理、重试、脱敏、采样和多后端路由；应用只需发 OTLP 到本地，换后端或调整策略不必重新发布应用；也能接收 Prometheus、Jaeger 等旧格式便于迁移。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://opentelemetry.io/docs/what-is-opentelemetry/" target="_blank" rel="noopener"><b>What is OpenTelemetry?</b><small>opentelemetry.io ↗</small></a></li><li><a href="https://opentelemetry.io/docs/collector/configuration/" target="_blank" rel="noopener"><b>OpenTelemetry Collector Configuration</b><small>opentelemetry.io ↗</small></a></li><li><a href="https://opentelemetry.io/docs/specs/otel/" target="_blank" rel="noopener"><b>OpenTelemetry Specification</b><small>opentelemetry.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="capacity-planning.pro.html" rel="prev"><small>‹ 上一个</small><b>📐 容量规划工程</b></a><a class="pn next" href="metrics-cardinality.pro.html" rel="next"><small>下一个 ›</small><b>🗄️ 指标基数控制</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="Webhook异步回调重试 专业模式：Webhook 重试（Webhook Retries）是事件提供方在 HTTP 回调失败时自动重新发送的机制。它属于跨系统集成的可靠性层：接收方返回非 2xx、">
+<title>🎓 Webhook异步回调重试 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="webhook-retries" data-answer="0" data-prev="at-least-once-delivery.pro.html" data-next="monolith-vs-microservices.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#cache">🔮 高级 · ⚡ 缓存与队列</a><span>›</span><a href="webhook-retries.html">Webhook异步回调重试</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.282 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="at-least-once-delivery.pro.html" rel="prev"><small>‹ 上一个</small><b>📬 至少一次投递语义</b></a><a class="pn next" href="monolith-vs-microservices.pro.html" rel="next"><small>下一个 ›</small><b>🧱 单体 vs 微服务</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔔</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>⚡ 缓存与队列</span><span>⏱ 约 10 分钟</span></div>
+    <h1>Webhook异步回调重试</h1><p class="en">Webhook Retries</p>
+    <div class="hbtns"><a class="prosw back" href="webhook-retries.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">Webhook 重试（Webhook Retries）是事件提供方在 HTTP 回调失败时自动重新发送的机制。它属于跨系统集成的可靠性层：接收方返回非 2xx、超时或连接失败时，提供方按退避策略在一段时间内多次重投。由此接收方面对的是至少一次投递，必须做签名校验、快速响应和按事件 ID 去重。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>业务事件发生后，提供方向接收方登记的 URL 发起 HTTPS POST，带上事件体和签名头。</p></li><li><span class="sn">2</span><p>接收方应在数秒内返回 2xx；超时、5xx 或连接错误会被提供方视为失败。</p></li><li><span class="sn">3</span><p>提供方按指数退避加抖动安排下一次投递，持续数小时到数天，具体周期由各平台决定。</p></li><li><span class="sn">4</span><p>多次失败后，部分平台会告警、禁用端点或标记失败，并提供手动重发入口。</p></li><li><span class="sn">5</span><p>接收方验证签名，按事件 ID 去重，入队后立即返回 200，耗时处理放到后台。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>签名校验 (Signature Verification)</dt><dd>用共享密钥对请求体做 HMAC，确认请求来自真实提供方且未被篡改。</dd></div><div class="term"><dt>事件 ID (Event ID)</dt><dd>提供方给每个事件的唯一标识，重试时保持不变，是去重依据。</dd></div><div class="term"><dt>重放攻击 (Replay Attack)</dt><dd>攻击者重发截获的合法请求，常用时间戳容差加去重防御。</dd></div><div class="term"><dt>指数退避 (Exponential Backoff)</dt><dd>每次重试间隔按倍数增长，避免持续冲击故障端点。</dd></div><div class="term"><dt>Standard Webhooks</dt><dd>一份开放的 webhook 签名与投递规范，统一了头字段和签名格式。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Stripe Webhook 接收端</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import stripe
+from flask import Flask, request
+
+app = Flask(__name__)
+ENDPOINT_SECRET = &quot;whsec_...&quot;  # 从 Stripe 控制台获取
+seen = set()  # 示意；生产中用数据库唯一约束
+
+@app.post(&quot;/webhooks/stripe&quot;)
+def stripe_webhook():
+    payload = request.get_data()
+    sig = request.headers.get(&quot;Stripe-Signature&quot;)
+    try:
+        event = stripe.Webhook.construct_event(payload, sig, ENDPOINT_SECRET)
+    except (ValueError, stripe.error.SignatureVerificationError):
+        return &quot;bad signature&quot;, 400   # 4xx：不要让对方重试伪造请求
+
+    if event[&quot;id&quot;] in seen:          # 重试带来的重复事件
+        return &quot;&quot;, 200
+    seen.add(event[&quot;id&quot;])
+    enqueue_job(event)               # 耗时逻辑丢给后台队列
+    return &quot;&quot;, 200                    # 尽快返回 2xx</code></pre></div><p class="cnote">先验签、再按 event.id 去重、入队后立刻返回 200，适配提供方的重试。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">主流平台的重试行为</h3><div class="tw"><table><thead><tr><th>平台</th><th>失败判定</th><th>重试方式（以官方文档为准）</th></tr></thead><tbody><tr><td data-h="平台">Stripe</td><td data-h="失败判定">非 2xx 或超时</td><td data-h="重试方式（以官方文档为准）">线上模式最长约 3 天指数退避</td></tr><tr><td data-h="平台">GitHub</td><td data-h="失败判定">非 2xx 或超时</td><td data-h="重试方式（以官方文档为准）">不自动重试，可手动重发</td></tr><tr><td data-h="平台">自建发送端</td><td data-h="失败判定">自定义</td><td data-h="重试方式（以官方文档为准）">指数退避加抖动，设总时限并记录日志</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>同步处理后返回</h4><p><b class="k-p">优点</b>实现简单，失败可直接让对方重试</p><p><b class="k-c">代价</b>易超时，引发重复投递</p><p><b class="k-w">适用</b>处理极快且幂等的轻量事件</p></div><div class="trd"><h4>入队后立即 200</h4><p><b class="k-p">优点</b>响应快，削峰，失败可内部重试</p><p><b class="k-c">代价</b>需要队列和后台任务</p><p><b class="k-w">适用</b>多数生产环境的推荐做法</p></div><div class="trd"><h4>轮询对方 API 补偿</h4><p><b class="k-p">优点</b>不依赖回调可达性</p><p><b class="k-c">代价</b>有延迟，消耗 API 配额</p><p><b class="k-w">适用</b>作为 webhook 丢失时的对账兜底</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>在 webhook 里同步调用多个外部服务，超时后被重复投递。</p><p class="fix"><b>✓</b>只做验签和入队，几秒内返回 2xx。</p></li><li><p class="bad"><b>✗</b>用解析后的 JSON 重新序列化去验签，签名总对不上。</p><p class="fix"><b>✓</b>用原始请求体字节验签，框架里读 raw body。</p></li><li><p class="bad"><b>✗</b>验签失败返回 500，伪造请求被提供方反复重试。</p><p class="fix"><b>✓</b>签名或格式错误返回 4xx，只有临时故障才返回 5xx。</p></li><li><p class="bad"><b>✗</b>假设事件按发生顺序到达。</p><p class="fix"><b>✓</b>以事件内时间戳或重新查询资源最新状态为准。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>使用原始请求体校验签名</span></label></li><li><label><input type="checkbox"><span>按事件 ID 去重并持久化</span></label></li><li><label><input type="checkbox"><span>响应时间控制在提供方超时之内</span></label></li><li><label><input type="checkbox"><span>错误码区分 4xx 与 5xx</span></label></li><li><label><input type="checkbox"><span>有失败事件的告警与对账补偿</span></label></li><li><label><input type="checkbox"><span>签名密钥可轮换且不进代码库</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Webhook 接收端应该返回什么状态码？</summary><p>成功入队就返回 2xx；签名错误、请求格式不对返回 4xx，表示重试无意义；依赖暂时不可用才返回 5xx，让提供方重试。注意部分平台对 4xx 也会重试，需看各自文档。</p></details><details class="iv"><summary>如何设计一个可靠的 webhook 发送端？</summary><p>事件先持久化到 outbox；按指数退避加抖动重试并设总时限；每次带相同事件 ID 和签名；记录投递日志供用户查看；连续失败告警并可禁用端点；提供手动重发和事件查询 API 作补偿。</p></details><details class="iv"><summary>怎样防止 webhook 重放攻击？</summary><p>签名中包含时间戳，接收端拒绝超过容差窗口（如几分钟）的请求；同时按事件 ID 去重，窗口内重复的直接忽略；全程 HTTPS，密钥定期轮换。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.stripe.com/webhooks" target="_blank" rel="noopener"><b>Stripe 文档：Webhooks</b><small>docs.stripe.com ↗</small></a></li><li><a href="https://docs.github.com/en/webhooks/using-webhooks/best-practices-for-using-webhooks" target="_blank" rel="noopener"><b>GitHub 文档：Webhooks 最佳实践</b><small>docs.github.com ↗</small></a></li><li><a href="https://www.standardwebhooks.com/" target="_blank" rel="noopener"><b>Standard Webhooks 规范</b><small>standardwebhooks.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="at-least-once-delivery.pro.html" rel="prev"><small>‹ 上一个</small><b>📬 至少一次投递语义</b></a><a class="pn next" href="monolith-vs-microservices.pro.html" rel="next"><small>下一个 ›</small><b>🧱 单体 vs 微服务</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

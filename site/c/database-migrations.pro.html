@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="数据库模式迁移 专业模式：数据库模式迁移（Schema Migration）是把表结构、索引、约束等变更写成有序、可版本控制的脚本，由迁移工具按顺序执行并记录已应用版本。它位于应用与数据">
+<title>🎓 数据库模式迁移 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="database-migrations" data-answer="0" data-prev="full-table-scans.pro.html" data-next="transactions.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#db">🌊 中级 · 🗄️ 数据库</a><span>›</span><a href="database-migrations.html">数据库模式迁移</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.126 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="full-table-scans.pro.html" rel="prev"><small>‹ 上一个</small><b>🔍 全表扫描</b></a><a class="pn next" href="transactions.pro.html" rel="next"><small>下一个 ›</small><b>🤝 数据库事务</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🏗️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>数据库模式迁移</h1><p class="en">Database Migrations</p>
+    <div class="hbtns"><a class="prosw back" href="database-migrations.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">数据库模式迁移（Schema Migration）是把表结构、索引、约束等变更写成有序、可版本控制的脚本，由迁移工具按顺序执行并记录已应用版本。它位于应用与数据库之间的发布流程层，解决多环境结构一致、变更可追溯、可重复部署的问题。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>每次结构变更生成一个带序号或时间戳的迁移文件，包含 up（应用）与可选的 down（回退）逻辑。</p></li><li><span class="sn">2</span><p>迁移工具在数据库中维护一张版本表（如 schema_migrations），记录已执行的迁移 ID。</p></li><li><span class="sn">3</span><p>部署时工具比对代码中的迁移与版本表，按顺序执行尚未应用的迁移，并写入记录。</p></li><li><span class="sn">4</span><p>多数工具会加锁（如 advisory lock）防止多个实例并发执行同一批迁移。</p></li><li><span class="sn">5</span><p>大表变更需拆为扩展—迁移数据—收缩多步，配合应用发布实现零停机。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>扩展-收缩 (Expand/Contract)</dt><dd>先加新结构兼容新旧代码，切流后再删旧结构的零停机模式。</dd></div><div class="term"><dt>版本表 (Migration Table)</dt><dd>数据库内记录已执行迁移 ID 与时间的元数据表。</dd></div><div class="term"><dt>DDL 事务性 (Transactional DDL)</dt><dd>DDL 能否在事务内回滚；PostgreSQL 支持，MySQL 大多不支持。</dd></div><div class="term"><dt>在线 DDL (Online DDL)</dt><dd>不长时间锁表的结构变更方式，如 CREATE INDEX CONCURRENTLY。</dd></div><div class="term"><dt>数据回填 (Backfill)</dt><dd>为新列或新表批量补齐历史数据的过程，通常分批执行。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>零停机重命名列（分步）</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- 迁移 0012：扩展——新增列，允许为空，不阻塞旧代码
+ALTER TABLE users ADD COLUMN display_name text;
+
+-- 迁移 0013：回填——分批更新，避免长事务与锁
+UPDATE users SET display_name = nickname
+WHERE id IN (
+  SELECT id FROM users
+  WHERE display_name IS NULL
+  LIMIT 5000
+);  -- 由脚本循环执行直到影响行数为 0
+
+-- 此时发布应用：双写 nickname 与 display_name，读新列
+
+-- 迁移 0014：收缩——确认无代码读旧列后再删除
+ALTER TABLE users DROP COLUMN nickname;
+
+-- PostgreSQL 建索引不锁写（不能放在事务块内）
+CREATE INDEX CONCURRENTLY idx_users_display_name
+  ON users (display_name);</code></pre></div><p class="cnote">直接 RENAME COLUMN 会让正在运行的旧版本报错；拆成三步可与滚动发布兼容。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见迁移工具</h3><div class="tw"><table><thead><tr><th>工具</th><th>生态</th><th>迁移形式</th></tr></thead><tbody><tr><td data-h="工具">Flyway</td><td data-h="生态">JVM / 通用</td><td data-h="迁移形式">版本化 SQL 文件</td></tr><tr><td data-h="工具">Alembic</td><td data-h="生态">Python / SQLAlchemy</td><td data-h="迁移形式">Python 脚本，可自动生成</td></tr><tr><td data-h="工具">Prisma Migrate</td><td data-h="生态">Node.js / TS</td><td data-h="迁移形式">由 schema 生成 SQL</td></tr><tr><td data-h="工具">Rails / Django migrations</td><td data-h="生态">Ruby / Python 框架</td><td data-h="迁移形式">框架 DSL 描述变更</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>手写 SQL 迁移</h4><p><b class="k-p">优点</b>完全可控，能用数据库专有特性</p><p><b class="k-c">代价</b>工作量大，易漏写回退</p><p><b class="k-w">适用</b>复杂变更、大表、性能敏感</p></div><div class="trd"><h4>ORM 自动生成迁移</h4><p><b class="k-p">优点</b>快，与模型定义保持同步</p><p><b class="k-c">代价</b>可能生成锁表或删列的危险语句</p><p><b class="k-w">适用</b>早期项目，生成后人工审查</p></div><div class="trd"><h4>声明式 schema diff</h4><p><b class="k-p">优点</b>只描述目标状态，工具算差异</p><p><b class="k-c">代价</b>重命名等意图难识别，可能误删</p><p><b class="k-w">适用</b>团队熟悉工具且有审查流程</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>修改已在生产执行过的迁移文件</p><p class="fix"><b>✓</b>已发布迁移视为不可变，修正应新增一个迁移</p></li><li><p class="bad"><b>✗</b>在同一迁移里加 NOT NULL 列并大表回填</p><p class="fix"><b>✓</b>先加可空列，分批回填，最后再加约束</p></li><li><p class="bad"><b>✗</b>依赖 down 迁移做生产回滚，删列后数据已丢</p><p class="fix"><b>✓</b>以前向修复为主，破坏性变更延后并先备份</p></li><li><p class="bad"><b>✗</b>让 AI 直接改 schema 并在生产 push，跳过迁移文件</p><p class="fix"><b>✓</b>要求生成迁移文件并走审查，生产只通过 CI 执行迁移</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>迁移文件纳入版本控制并经代码审查</span></label></li><li><label><input type="checkbox"><span>大表 DDL 评估锁级别与执行时长</span></label></li><li><label><input type="checkbox"><span>新旧版本应用都能兼容迁移后的结构</span></label></li><li><label><input type="checkbox"><span>回填分批执行并可中断续跑</span></label></li><li><label><input type="checkbox"><span>执行前有可恢复的备份或快照</span></label></li><li><label><input type="checkbox"><span>CI 中在空库与生产副本上各跑一遍</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>如何做到加 NOT NULL 列零停机？</summary><p>分步：先加可空列（或带默认值，新版本 PostgreSQL 加常量默认值不重写表）；应用开始写新列；分批回填历史数据；最后加 NOT NULL 约束，PostgreSQL 可先加 CHECK … NOT VALID 再 VALIDATE 降低锁影响。</p></details><details class="iv"><summary>迁移应在应用启动时执行还是单独步骤？</summary><p>多实例环境建议作为部署流水线中的独立步骤，避免多个实例竞争、启动超时和失败时应用不可用。若在启动时执行，必须有分布式锁且迁移足够快。</p></details><details class="iv"><summary>down 迁移有必要写吗？</summary><p>开发环境有用，便于来回切换。生产中删除列或表的回退无法恢复数据，实践上多采用前向修复（roll forward），并让每一步迁移本身向后兼容。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://documentation.red-gate.com/flyway" target="_blank" rel="noopener"><b>Flyway 文档</b><small>documentation.red-gate.com ↗</small></a></li><li><a href="https://alembic.sqlalchemy.org/en/latest/tutorial.html" target="_blank" rel="noopener"><b>Alembic 教程</b><small>alembic.sqlalchemy.org ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/sql-createindex.html" target="_blank" rel="noopener"><b>PostgreSQL 文档：CREATE INDEX（CONCURRENTLY）</b><small>postgresql.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="full-table-scans.pro.html" rel="prev"><small>‹ 上一个</small><b>🔍 全表扫描</b></a><a class="pn next" href="transactions.pro.html" rel="next"><small>下一个 ›</small><b>🤝 数据库事务</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

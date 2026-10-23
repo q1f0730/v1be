@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="首字延迟与出字速度 (TTFT / TPOT) 专业模式：TTFT（Time To First Token，首 token 延迟）指从发出请求到收到第一个输出 token 的时间；TPOT（Time Per Outpu">
+<title>🎓 首字延迟与出字速度 (TTFT / TPOT) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="ttft-and-tpot" data-answer="0" data-prev="attention-mechanism.pro.html" data-next="model-file-formats.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#llmops">🌊 中级 · 🧠 模型工程与推理部署</a><span>›</span><a href="ttft-and-tpot.html">首字延迟与出字速度 (TTFT / TPOT)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.186 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="attention-mechanism.pro.html" rel="prev"><small>‹ 上一个</small><b>👀 注意力机制 (Self-Attention)</b></a><a class="pn next" href="model-file-formats.pro.html" rel="next"><small>下一个 ›</small><b>📦 模型文件格式 (GGUF / safetensors)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">⏱️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🧠 模型工程与推理部署</span><span>⏱ 约 10 分钟</span></div>
+    <h1>首字延迟与出字速度 (TTFT / TPOT)</h1><p class="en">TTFT &amp; TPOT</p>
+    <div class="hbtns"><a class="prosw back" href="ttft-and-tpot.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">TTFT（Time To First Token，首 token 延迟）指从发出请求到收到第一个输出 token 的时间；TPOT（Time Per Output Token，每输出 token 时间）指首 token 之后平均每个 token 的生成间隔。二者分别对应推理的预填充（prefill）与解码（decode）阶段，是衡量 LLM 体感速度的核心指标。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>请求到达后先排队，再进入预填充：模型一次性处理全部输入 token 并建立 KV 缓存，输入越长耗时越久。</p></li><li><span class="sn">2</span><p>预填充结束产出第一个 token，TTFT = 网络 + 排队 + 预填充时间；流式输出下这正是用户看到首字的时刻。</p></li><li><span class="sn">3</span><p>随后进入解码：每步生成一个 token，受显存带宽限制，单步耗时相对稳定，平均值即 TPOT。</p></li><li><span class="sn">4</span><p>总延迟约为 TTFT + TPOT ×（输出 token 数 − 1）；输出越长，TPOT 对总时长的影响越大。</p></li><li><span class="sn">5</span><p>服务端批量越大，吞吐越高，但单请求 TPOT 往往变慢；需在吞吐与延迟间按 SLO 权衡并看 P50/P99 分布。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>预填充 (Prefill)</dt><dd>并行处理整段输入并写入 KV 缓存的阶段，决定 TTFT。</dd></div><div class="term"><dt>解码 (Decode)</dt><dd>逐 token 自回归生成的阶段，决定 TPOT。</dd></div><div class="term"><dt>ITL (Inter-Token Latency)</dt><dd>相邻两个 token 的到达间隔，TPOT 可视为其平均值。</dd></div><div class="term"><dt>吞吐 (Throughput)</dt><dd>单位时间内系统生成的 token 总数，常用 tokens/s。</dd></div><div class="term"><dt>连续批处理 (Continuous Batching)</dt><dd>按 token 步动态加入/移出请求，提高 GPU 利用率。</dd></div><div class="term"><dt>Prompt Caching</dt><dd>复用相同前缀的 KV 缓存，可明显降低长前缀请求的 TTFT。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>流式调用测 TTFT 与 TPOT</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import time
+from openai import OpenAI
+
+client = OpenAI()  # 读取 OPENAI_API_KEY；兼容接口可传 base_url
+start = time.perf_counter()
+first, stamps = None, []
+stream = client.chat.completions.create(
+    model=&quot;gpt-4o-mini&quot;,  # 示例模型名，以官方文档为准
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;用三句话介绍 Redis&quot;}],
+    stream=True,
+)
+for chunk in stream:
+    if chunk.choices and chunk.choices[0].delta.content:
+        now = time.perf_counter()
+        first = first or now
+        stamps.append(now)
+
+ttft = first - start
+# 注意：一个 chunk 可能含多个 token，这里是按 chunk 的近似值
+tpot = (stamps[-1] - first) / max(len(stamps) - 1, 1)
+print(f&quot;TTFT={ttft*1000:.0f}ms  TPOT≈{tpot*1000:.1f}ms/chunk&quot;)</code></pre></div><p class="cnote">客户端视角测量：TTFT 含网络与排队；按 chunk 计时只是近似，精确值需按 token 数换算。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">影响因素速查</h3><div class="tw"><table><thead><tr><th>因素</th><th>主要影响</th><th>优化手段</th></tr></thead><tbody><tr><td data-h="因素">输入长度</td><td data-h="主要影响">TTFT</td><td data-h="优化手段">裁剪上下文、Prompt Caching</td></tr><tr><td data-h="因素">输出长度</td><td data-h="主要影响">总时长</td><td data-h="优化手段">限制 max_tokens、要求简洁</td></tr><tr><td data-h="因素">模型规模</td><td data-h="主要影响">TTFT 与 TPOT</td><td data-h="优化手段">小模型路由、量化、投机解码</td></tr><tr><td data-h="因素">并发与批大小</td><td data-h="主要影响">TPOT、排队时间</td><td data-h="优化手段">容量规划、按 SLO 调批大小</td></tr><tr><td data-h="因素">网络与地域</td><td data-h="主要影响">TTFT</td><td data-h="优化手段">就近部署、长连接复用</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>大批量高吞吐</h4><p><b class="k-p">优点</b>单位 token 成本低</p><p><b class="k-c">代价</b>单请求 TPOT 变慢</p><p><b class="k-w">适用</b>离线批处理、后台任务</p></div><div class="trd"><h4>小批量低延迟</h4><p><b class="k-p">优点</b>TTFT、TPOT 都更好</p><p><b class="k-c">代价</b>GPU 利用率低、成本高</p><p><b class="k-w">适用</b>实时对话、编程助手</p></div><div class="trd"><h4>预填充与解码分离部署</h4><p><b class="k-p">优点</b>两阶段互不干扰，延迟更稳</p><p><b class="k-c">代价</b>架构复杂，需传输 KV 缓存</p><p><b class="k-w">适用</b>大规模在线推理服务</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>只看平均值，忽视长尾</p><p class="fix"><b>✓</b>报告 P50/P90/P99，并按输入长度分桶分析</p></li><li><p class="bad"><b>✗</b>把每个流式 chunk 当成一个 token</p><p class="fix"><b>✓</b>用 usage 中的输出 token 数换算，或按服务端指标统计</p></li><li><p class="bad"><b>✗</b>压测只用短提示，线上全是长文档</p><p class="fix"><b>✓</b>压测数据的输入/输出长度分布应与线上一致</p></li><li><p class="bad"><b>✗</b>推理模型的“思考”时间未计入体验</p><p class="fix"><b>✓</b>对思考型模型单独衡量首个可见输出时间，必要时展示进度</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>定义 TTFT 与 TPOT 的 P99 SLO</span></label></li><li><label><input type="checkbox"><span>默认开启流式输出</span></label></li><li><label><input type="checkbox"><span>监控按模型与输入长度分桶</span></label></li><li><label><input type="checkbox"><span>长系统提示启用 Prompt Caching</span></label></li><li><label><input type="checkbox"><span>压测数据贴近线上分布</span></label></li><li><label><input type="checkbox"><span>前端在首字前显示加载状态</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么长提示主要拖慢 TTFT 而不是 TPOT？</summary><p>预填充必须处理全部输入 token 才能产出首字，耗时随输入长度增长。解码阶段每步只算一个新 token，虽然要读更长的 KV 缓存会略慢，但主要瓶颈是读取权重的显存带宽，因此对 TPOT 的影响相对较小。</p></details><details class="iv"><summary>如何在吞吐和延迟之间做取舍？</summary><p>先按产品定义 SLO，例如交互式聊天要求较低的 TTFT 与 TPOT。然后在满足 P99 SLO 的前提下尽量增大批大小以提高吞吐、降低成本。离线任务没有延迟要求，可以用 Batch API 或大批量换最低单价。</p></details><details class="iv"><summary>人眼阅读速度对 TPOT 有什么意义？</summary><p>流式输出时，只要出字速度快于用户阅读速度，体感就是流畅的，继续压低 TPOT 的边际收益有限。此时优化重点应转向 TTFT 和总成本；但对代码生成等需要完整结果的任务，总时长更重要。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://developer.nvidia.com/blog/llm-benchmarking-fundamental-concepts/" target="_blank" rel="noopener"><b>NVIDIA：LLM Inference Benchmarking 基本概念</b><small>developer.nvidia.com ↗</small></a></li><li><a href="https://platform.openai.com/docs/guides/streaming-responses" target="_blank" rel="noopener"><b>OpenAI Streaming API 文档</b><small>platform.openai.com ↗</small></a></li><li><a href="https://docs.vllm.ai/en/latest/" target="_blank" rel="noopener"><b>vLLM 文档</b><small>docs.vllm.ai ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="attention-mechanism.pro.html" rel="prev"><small>‹ 上一个</small><b>👀 注意力机制 (Self-Attention)</b></a><a class="pn next" href="model-file-formats.pro.html" rel="next"><small>下一个 ›</small><b>📦 模型文件格式 (GGUF / safetensors)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

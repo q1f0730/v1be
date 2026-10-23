@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="Redis 内存数据库 专业模式：Redis 是基于内存的键值数据存储，提供字符串、哈希、列表、集合、有序集合、流等数据结构，以单线程执行命令保证单条命令原子性。它常用作缓存、会话存储、限流计数">
+<title>🎓 Redis 内存数据库 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="redis" data-answer="0" data-prev="technical-debt.pro.html" data-next="product-analytics.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#cache">🌊 中级 · ⚡ 缓存与队列</a><span>›</span><a href="redis.html">Redis 内存数据库</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.165 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="technical-debt.pro.html" rel="prev"><small>‹ 上一个</small><b>💳 技术债</b></a><a class="pn next" href="product-analytics.pro.html" rel="next"><small>下一个 ›</small><b>📈 产品埋点与事件分析</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">⚡</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>⚡ 缓存与队列</span><span>⏱ 约 10 分钟</span></div>
+    <h1>Redis 内存数据库</h1><p class="en">Redis</p>
+    <div class="hbtns"><a class="prosw back" href="redis.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">Redis 是基于内存的键值数据存储，提供字符串、哈希、列表、集合、有序集合、流等数据结构，以单线程执行命令保证单条命令原子性。它常用作缓存、会话存储、限流计数器、轻量队列、排行榜与分布式锁，属于缓存与中间件层。2024 年起 Redis 许可证有变化，社区分支 Valkey 也广泛使用。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>数据驻留内存，命令由单个主线程顺序执行，因此单命令天然原子；网络 I/O 可由多线程处理。</p></li><li><span class="sn">2</span><p>可为键设置 TTL，到期自动删除；内存达上限时按淘汰策略（如 allkeys-lru）驱逐键。</p></li><li><span class="sn">3</span><p>持久化可选 RDB 快照与 AOF 追加日志，用于重启恢复，但不应当作唯一数据源。</p></li><li><span class="sn">4</span><p>高可用通过主从复制 + Sentinel 自动故障转移；Redis Cluster 把键空间分为 16384 个槽分片。</p></li><li><span class="sn">5</span><p>MULTI/EXEC 事务、Lua 脚本或函数可把多个操作组合为原子执行。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>TTL</dt><dd>键的剩余生存时间，到期后自动删除。</dd></div><div class="term"><dt>淘汰策略 (Eviction Policy)</dt><dd>内存满时决定删除哪些键，如 LRU、LFU。</dd></div><div class="term"><dt>RDB / AOF</dt><dd>两种持久化方式：定期快照与写命令追加日志。</dd></div><div class="term"><dt>有序集合 (Sorted Set)</dt><dd>按分数排序的集合，常用于排行榜和延时队列。</dd></div><div class="term"><dt>Valkey</dt><dd>Redis 许可证变更后由 Linux 基金会托管的开源分支。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>缓存、限流与锁</span><em>python</em><button class="ccopy">复制</button></div><pre><code># pip install redis
+import json, time, uuid, redis
+
+r = redis.Redis(host=&quot;localhost&quot;, port=6379, decode_responses=True)
+
+# 1) 旁路缓存：先读缓存，未命中再查库并回填，带 TTL
+def get_product(pid, load_from_db):
+    key = f&quot;product:{pid}&quot;
+    if (cached := r.get(key)) is not None:
+        return json.loads(cached)
+    data = load_from_db(pid)
+    r.set(key, json.dumps(data), ex=300)   # 5 分钟过期
+    return data
+# 2) 固定窗口限流：每用户每分钟最多 60 次
+def allow(user_id, limit=60):
+    key = f&quot;rl:{user_id}:{int(time.time() // 60)}&quot;
+    pipe = r.pipeline()
+    pipe.incr(key)
+    pipe.expire(key, 60)
+    count, _ = pipe.execute()
+    return count &lt;= limit
+
+# 3) 简单互斥锁：NX 保证只有一个持有者，EX 防止死锁
+token = str(uuid.uuid4())
+if r.set(&quot;lock:daily-report&quot;, token, nx=True, ex=30):
+    try:
+        pass  # 执行任务
+    finally:
+        if r.get(&quot;lock:daily-report&quot;) == token:  # 生产中应用 Lua 脚本原子比较并删除
+            r.delete(&quot;lock:daily-report&quot;)</code></pre></div><p class="cnote">缓存必须带 TTL；锁释放要校验持有者，生产中用 Lua 脚本保证比较与删除的原子性。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">数据结构与典型用途</h3><div class="tw"><table><thead><tr><th>结构</th><th>典型命令</th><th>用途</th></tr></thead><tbody><tr><td data-h="结构">String</td><td data-h="典型命令">SET/GET/INCR</td><td data-h="用途">缓存、计数器、限流</td></tr><tr><td data-h="结构">Hash</td><td data-h="典型命令">HSET/HGETALL</td><td data-h="用途">对象字段、会话</td></tr><tr><td data-h="结构">List</td><td data-h="典型命令">LPUSH/BRPOP</td><td data-h="用途">简单队列</td></tr><tr><td data-h="结构">Sorted Set</td><td data-h="典型命令">ZADD/ZRANGE</td><td data-h="用途">排行榜、延时任务</td></tr><tr><td data-h="结构">Stream</td><td data-h="典型命令">XADD/XREADGROUP</td><td data-h="用途">带消费组的消息流</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>Redis 作缓存</h4><p><b class="k-p">优点</b>亚毫秒级读写，大幅减轻数据库压力</p><p><b class="k-c">代价</b>需处理一致性与缓存失效</p><p><b class="k-w">适用</b>读多写少的热点数据</p></div><div class="trd"><h4>Redis 作队列</h4><p><b class="k-p">优点</b>部署简单、延迟低</p><p><b class="k-c">代价</b>持久化与投递保证弱于专业 MQ</p><p><b class="k-w">适用</b>轻量后台任务</p></div><div class="trd"><h4>Redis 作主存储</h4><p><b class="k-p">优点</b>极快</p><p><b class="k-c">代价</b>内存成本高，持久化有丢数据窗口</p><p><b class="k-w">适用</b>可丢失或可重建的数据</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>Redis 无密码监听公网</p><p class="fix"><b>✓</b>只监听内网，启用 ACL/密码与 TLS，配合安全组</p></li><li><p class="bad"><b>✗</b>缓存不设 TTL，内存持续增长</p><p class="fix"><b>✓</b>所有缓存键设过期时间，并配置 maxmemory 与淘汰策略</p></li><li><p class="bad"><b>✗</b>生产环境执行 KEYS * 阻塞主线程</p><p class="fix"><b>✓</b>用 SCAN 渐进遍历，禁用或重命名危险命令</p></li><li><p class="bad"><b>✗</b>存超大值（大 key）导致延迟尖刺</p><p class="fix"><b>✓</b>拆分大对象，监控大 key，并用 UNLINK 异步删除</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>仅内网访问，开启认证</span></label></li><li><label><input type="checkbox"><span>设置 maxmemory 与淘汰策略</span></label></li><li><label><input type="checkbox"><span>缓存键均有 TTL 与命名规范</span></label></li><li><label><input type="checkbox"><span>无 KEYS 等阻塞命令</span></label></li><li><label><input type="checkbox"><span>确认持久化与高可用方案</span></label></li><li><label><input type="checkbox"><span>监控内存、命中率与慢日志</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Redis 单线程为什么还这么快？</summary><p>数据在内存，单条命令多为微秒级；单线程避免锁竞争与上下文切换；使用 I/O 多路复用处理大量连接；数据结构针对内存高度优化。较新版本还可把网络读写交给 I/O 线程。</p></details><details class="iv"><summary>用 SET NX EX 实现分布式锁有哪些问题？</summary><p>释放时必须校验持有者令牌并原子删除；任务超时会导致锁过期后被他人获取，需要续期或使用防护令牌；主从异步复制下故障转移可能丢锁。对正确性要求极高时考虑基于共识的协调服务。</p></details><details class="iv"><summary>缓存与数据库如何保持一致？</summary><p>常用旁路缓存：读时未命中回填，写时先更新数据库再删除缓存；配合 TTL 兜底；高并发下可用延迟双删或基于 CDC 的异步失效。强一致需求则不应依赖缓存读。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://redis.io/docs/latest/" target="_blank" rel="noopener"><b>Redis 官方文档</b><small>redis.io ↗</small></a></li><li><a href="https://redis.io/docs/latest/develop/data-types/" target="_blank" rel="noopener"><b>Redis 文档：Data types</b><small>redis.io ↗</small></a></li><li><a href="https://valkey.io/" target="_blank" rel="noopener"><b>Valkey 官网</b><small>valkey.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="technical-debt.pro.html" rel="prev"><small>‹ 上一个</small><b>💳 技术债</b></a><a class="pn next" href="product-analytics.pro.html" rel="next"><small>下一个 ›</small><b>📈 产品埋点与事件分析</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

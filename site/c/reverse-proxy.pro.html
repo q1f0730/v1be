@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="反向代理 (Nginx) 专业模式：反向代理（Reverse Proxy）是部署在服务端、代表后端服务接收客户端请求的中间层。客户端只与代理通信，代理再把请求转发给内部服务。它集中承担 TLS 终">
+<title>🎓 反向代理 (Nginx) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="reverse-proxy" data-answer="0" data-prev="load-balancer.pro.html" data-next="dns-propagation.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#net">🔮 高级 · 🌐 网络与 API</a><span>›</span><a href="reverse-proxy.html">反向代理 (Nginx)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.255 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="load-balancer.pro.html" rel="prev"><small>‹ 上一个</small><b>⚖️ 负载均衡</b></a><a class="pn next" href="dns-propagation.pro.html" rel="next"><small>下一个 ›</small><b>📮 DNS缓存传播延迟</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🛎️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>反向代理 (Nginx)</h1><p class="en">Reverse Proxy</p>
+    <div class="hbtns"><a class="prosw back" href="reverse-proxy.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">反向代理（Reverse Proxy）是部署在服务端、代表后端服务接收客户端请求的中间层。客户端只与代理通信，代理再把请求转发给内部服务。它集中承担 TLS 终止、路由、压缩、缓存、限流和安全过滤等横切职责，常见实现有 Nginx、Caddy、Envoy、Traefik。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>客户端 DNS 解析到代理的地址，与代理建立连接并完成 TLS 握手。</p></li><li><span class="sn">2</span><p>代理按 Host、路径等规则匹配，把请求转发给对应的上游服务。</p></li><li><span class="sn">3</span><p>转发时改写或添加请求头，如 X-Forwarded-For、X-Forwarded-Proto，告知后端原始信息。</p></li><li><span class="sn">4</span><p>代理接收上游响应，可先缓冲、压缩或写入缓存，再返回给客户端。</p></li><li><span class="sn">5</span><p>代理在入口统一实施超时、请求体大小限制、限流、访问日志等策略。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>正向代理 (Forward Proxy)</dt><dd>代表客户端访问外部，与反向代理方向相反。</dd></div><div class="term"><dt>TLS 终止 (TLS Termination)</dt><dd>在代理上解密 HTTPS，内部再转发。</dd></div><div class="term"><dt>X-Forwarded-For</dt><dd>事实标准请求头，记录经过的客户端与代理 IP 链。</dd></div><div class="term"><dt>Forwarded</dt><dd>RFC 7239 定义的标准化转发信息头。</dd></div><div class="term"><dt>响应缓冲 (Proxy Buffering)</dt><dd>代理先接收上游响应再发给客户端，影响流式输出。</dd></div><div class="term"><dt>可信代理 (Trusted Proxy)</dt><dd>后端只信任来自已知代理地址的转发头。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Nginx 反向代理配置</span><em>text</em><button class="ccopy">复制</button></div><pre><code>server {
+    listen 443 ssl;
+    server_name app.example.com;
+    ssl_certificate     /etc/ssl/app/fullchain.pem;
+    ssl_certificate_key /etc/ssl/app/privkey.pem;
+    client_max_body_size 20m;                    # 上传大小上限
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:3000;        # 转发给本机 Node 服务
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
+    }
+
+    location /api/stream {                      # SSE/AI 流式输出
+        proxy_pass http://127.0.0.1:3000;
+        proxy_buffering off;                     # 关闭缓冲，逐块下发
+        proxy_read_timeout 1h;
+    }
+
+    location /ws {                               # WebSocket 升级
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection &quot;upgrade&quot;;
+    }
+}</code></pre></div><p class="cnote">转发头告诉后端原始协议与 IP；流式接口需关缓冲，WebSocket 需透传 Upgrade。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见反向代理</h3><div class="tw"><table><thead><tr><th>实现</th><th>配置方式</th><th>特点</th></tr></thead><tbody><tr><td data-h="实现">Nginx</td><td data-h="配置方式">静态配置文件 + reload</td><td data-h="特点">成熟高性能，生态最广</td></tr><tr><td data-h="实现">Caddy</td><td data-h="配置方式">Caddyfile/JSON API</td><td data-h="特点">默认自动申请与续期 HTTPS</td></tr><tr><td data-h="实现">Envoy</td><td data-h="配置方式">xDS 动态配置</td><td data-h="特点">服务网格数据面，可观测性强</td></tr><tr><td data-h="实现">Traefik</td><td data-h="配置方式">从 Docker/K8s 自动发现</td><td data-h="特点">容器环境配置少</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>代理处终止 TLS</h4><p><b class="k-p">优点</b>证书集中管理，后端简单</p><p><b class="k-c">代价</b>代理到后端是明文，需内网隔离</p><p><b class="k-w">适用</b>可信内网的常规部署</p></div><div class="trd"><h4>端到端 TLS / mTLS</h4><p><b class="k-p">优点</b>内部流量也加密并鉴权</p><p><b class="k-c">代价</b>证书分发与轮换复杂</p><p><b class="k-w">适用</b>零信任或合规要求</p></div><div class="trd"><h4>托管边缘代理（CDN）</h4><p><b class="k-p">优点</b>抗 DDoS、全球就近接入</p><p><b class="k-c">代价</b>配置受平台限制，有费用</p><p><b class="k-w">适用</b>面向公网的大流量站点</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>后端无条件信任 X-Forwarded-For，IP 可被伪造</p><p class="fix"><b>✓</b>只信任来自已知代理的头，按跳数取真实 IP</p></li><li><p class="bad"><b>✗</b>AI 流式接口经代理后一次性才返回</p><p class="fix"><b>✓</b>关闭代理缓冲，后端设置 X-Accel-Buffering: no</p></li><li><p class="bad"><b>✗</b>后端生成的跳转链接变成 http 或内网地址</p><p class="fix"><b>✓</b>传递 Host 与 X-Forwarded-Proto，并配置框架信任代理</p></li><li><p class="bad"><b>✗</b>代理超时短于后端处理时间，返回 504</p><p class="fix"><b>✓</b>按接口设置合理超时，长任务改异步</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>转发 Host、X-Forwarded-For/Proto</span></label></li><li><label><input type="checkbox"><span>后端配置了可信代理列表</span></label></li><li><label><input type="checkbox"><span>流式与 WebSocket 路径单独配置</span></label></li><li><label><input type="checkbox"><span>请求体大小与超时按接口设置</span></label></li><li><label><input type="checkbox"><span>访问日志记录真实客户端 IP</span></label></li><li><label><input type="checkbox"><span>后端端口不直接暴露公网</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>反向代理和负载均衡器是什么关系？</summary><p>负载均衡是反向代理的一种功能。反向代理泛指在服务端代收请求的中间层，可只代理一个后端，侧重 TLS、路由、缓存、安全；当它把流量分到多个后端时就承担了负载均衡。Nginx、Envoy 两者兼备。</p></details><details class="iv"><summary>如何在代理链后正确获取客户端 IP？</summary><p>X-Forwarded-For 按“客户端, 代理1, 代理2”追加。应从右往左跳过已知可信代理，取第一个不可信的地址；框架中配置可信代理列表（如 Express 的 trust proxy）。最左边的值可被客户端伪造。</p></details><details class="iv"><summary>为什么 SSE 经过 Nginx 后不流式了？</summary><p>Nginx 默认开启 proxy_buffering，会先缓冲上游响应再发出，小块数据被攒起来。需在 location 中关闭缓冲，或由后端返回 X-Accel-Buffering: no；同时调大读超时，并关闭可能干扰的压缩。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://nginx.org/en/docs/http/ngx_http_proxy_module.html" target="_blank" rel="noopener"><b>NGINX: ngx_http_proxy_module</b><small>nginx.org ↗</small></a></li><li><a href="https://www.rfc-editor.org/rfc/rfc7239" target="_blank" rel="noopener"><b>RFC 7239: Forwarded HTTP Extension</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For" target="_blank" rel="noopener"><b>MDN: X-Forwarded-For</b><small>developer.mozilla.org ↗</small></a></li><li><a href="https://caddyserver.com/docs/caddyfile/directives/reverse_proxy" target="_blank" rel="noopener"><b>Caddy: reverse_proxy</b><small>caddyserver.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="load-balancer.pro.html" rel="prev"><small>‹ 上一个</small><b>⚖️ 负载均衡</b></a><a class="pn next" href="dns-propagation.pro.html" rel="next"><small>下一个 ›</small><b>📮 DNS缓存传播延迟</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

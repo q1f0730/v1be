@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="数据任务编排 (Airflow / Dagster) 专业模式：工作流编排（Workflow Orchestration）指用调度系统按依赖关系、时间表和重试策略自动执行一组任务，属于数据平台的控制层。它把「先抽数、再转换、">
+<title>🎓 数据任务编排 (Airflow / Dagster) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="workflow-orchestration" data-answer="0" data-prev="columnar-storage.pro.html" data-next="composite-indexes.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#data">🔮 高级 · 📊 数据工程</a><span>›</span><a href="workflow-orchestration.html">数据任务编排 (Airflow / Dagster)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.362 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="columnar-storage.pro.html" rel="prev"><small>‹ 上一个</small><b>🗂️ 列式存储 (Parquet)</b></a><a class="pn next" href="composite-indexes.pro.html" rel="next"><small>下一个 ›</small><b>📇 联合索引与最左前缀</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🎼</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>📊 数据工程</span><span>⏱ 约 10 分钟</span></div>
+    <h1>数据任务编排 (Airflow / Dagster)</h1><p class="en">Workflow Orchestration</p>
+    <div class="hbtns"><a class="prosw back" href="workflow-orchestration.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">工作流编排（Workflow Orchestration）指用调度系统按依赖关系、时间表和重试策略自动执行一组任务，属于数据平台的控制层。它把「先抽数、再转换、再出报表」这类流程建模为 DAG（有向无环图），提供调度、依赖管理、重试、回填、告警与可观测性。代表工具有 Apache Airflow、Dagster、Prefect。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>开发者用代码定义 DAG：节点是任务或数据资产，边是依赖关系，同时声明调度周期。</p></li><li><span class="sn">2</span><p>调度器（Scheduler）按时间表或上游事件创建一次运行（run），判断哪些任务的依赖已满足。</p></li><li><span class="sn">3</span><p>就绪任务被交给执行器（Executor）分发到 worker、容器或 K8s Pod 中运行。</p></li><li><span class="sn">4</span><p>任务失败按配置重试，超过次数则标记失败、阻塞下游并触发告警。</p></li><li><span class="sn">5</span><p>元数据库记录每次运行的状态与日志，支持重跑失败节点和对历史区间回填（backfill）。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>DAG (Directed Acyclic Graph)</dt><dd>有向无环图，表示任务间依赖且不允许循环。</dd></div><div class="term"><dt>回填 (Backfill)</dt><dd>对过去一段时间区间补跑任务，常用于修复或新上线。</dd></div><div class="term"><dt>幂等任务 (Idempotent Task)</dt><dd>同一输入重复执行结果一致，是安全重试的前提。</dd></div><div class="term"><dt>软件定义资产 (Software-defined Asset)</dt><dd>Dagster 的建模方式，以产出的数据表为中心而非任务。</dd></div><div class="term"><dt>传感器 (Sensor)</dt><dd>轮询外部条件（文件到达、表更新）满足后触发运行。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Airflow TaskFlow 定义 DAG</span><em>python</em><button class="ccopy">复制</button></div><pre><code>from datetime import datetime, timedelta
+from airflow.sdk import dag, task  # Airflow 3；2.x 用 airflow.decorators
+
+@dag(schedule=&quot;@daily&quot;, start_date=datetime(2026, 1, 1),
+     catchup=False,
+     default_args={&quot;retries&quot;: 2, &quot;retry_delay&quot;: timedelta(minutes=5)})
+def daily_report():
+    @task
+    def extract() -&gt; list[dict]:
+        return [{&quot;sku&quot;: &quot;A100&quot;, &quot;amount&quot;: 99}]  # 实际中从 API/数据库读取
+
+    @task
+    def transform(rows: list[dict]) -&gt; float:
+        return sum(r[&quot;amount&quot;] for r in rows)
+
+    @task
+    def load(total: float):
+        print(f&quot;GMV = {total}&quot;)  # 实际中写入数仓
+
+    load(transform(extract()))  # 函数调用关系即依赖
+
+daily_report()</code></pre></div><p class="cnote">函数间传参自动形成 extract→transform→load 依赖；失败重试 2 次，间隔 5 分钟。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">主流编排工具对比</h3><div class="tw"><table><thead><tr><th>工具</th><th>建模核心</th><th>特点</th></tr></thead><tbody><tr><td data-h="工具">Apache Airflow</td><td data-h="建模核心">任务 (Task) DAG</td><td data-h="特点">历史最久、插件与社区最多</td></tr><tr><td data-h="工具">Dagster</td><td data-h="建模核心">数据资产 (Asset)</td><td data-h="特点">强调血缘、类型与本地测试</td></tr><tr><td data-h="工具">Prefect</td><td data-h="建模核心">Python 函数流</td><td data-h="特点">动态流程友好，上手轻</td></tr><tr><td data-h="工具">cron</td><td data-h="建模核心">单条定时命令</td><td data-h="特点">无依赖、无重试、无可观测</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>cron + 脚本</h4><p><b class="k-p">优点</b>零依赖、最简单</p><p><b class="k-c">代价</b>无依赖管理、失败无感知</p><p><b class="k-w">适用</b>单个独立小任务</p></div><div class="trd"><h4>Airflow</h4><p><b class="k-p">优点</b>生态成熟、托管服务多</p><p><b class="k-c">代价</b>调度器较重，本地开发体验一般</p><p><b class="k-w">适用</b>任务多、团队已有经验</p></div><div class="trd"><h4>Dagster</h4><p><b class="k-p">优点</b>以资产为中心，血缘清晰</p><p><b class="k-c">代价</b>概念较多，需要学习</p><p><b class="k-w">适用</b>新建数据平台、重视数据质量</p></div><div class="trd"><h4>持久化执行框架（如 Temporal）</h4><p><b class="k-p">优点</b>长流程状态可靠恢复</p><p><b class="k-c">代价</b>偏应用工作流，不专为数据设计</p><p><b class="k-w">适用</b>业务流程编排</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>任务非幂等，重试导致数据重复写入</p><p class="fix"><b>✓</b>按分区覆盖写或 MERGE，用运行日期作为参数</p></li><li><p class="bad"><b>✗</b>在 DAG 顶层代码里查数据库或调 API</p><p class="fix"><b>✓</b>调度器会反复解析 DAG 文件；重操作放进任务内部</p></li><li><p class="bad"><b>✗</b>任务内部用 now() 取时间，回填结果错乱</p><p class="fix"><b>✓</b>使用调度传入的逻辑日期/数据区间</p></li><li><p class="bad"><b>✗</b>通过 XCom 等机制传大数据集</p><p class="fix"><b>✓</b>只传引用（路径、表名），数据放对象存储或数仓</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个任务幂等，可安全重跑</span></label></li><li><label><input type="checkbox"><span>设置重试、超时与失败告警</span></label></li><li><label><input type="checkbox"><span>使用逻辑日期而非系统当前时间</span></label></li><li><label><input type="checkbox"><span>关键产出有数据质量检查</span></label></li><li><label><input type="checkbox"><span>DAG 代码有 CI 测试</span></label></li><li><label><input type="checkbox"><span>密钥走 Connection/Secret 后端，不写死</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么编排任务必须设计为幂等？</summary><p>重试、回填、手动重跑都会让同一任务对同一区间执行多次；非幂等写入会重复或丢失数据。常用按分区 overwrite、MERGE upsert，以逻辑日期为键。</p></details><details class="iv"><summary>Airflow 的 logical date 和实际运行时间有何不同？</summary><p>logical date 表示这次运行负责的数据区间起点；按日调度通常在区间结束后才运行，所以实际执行时间晚于它。任务应据数据区间取数，回填才正确。</p></details><details class="iv"><summary>任务编排和持久化执行（durable execution）的区别？</summary><p>前者以定时批处理 DAG 为主，关注调度、回填与数据依赖；后者把任意长时业务流程的状态持久化，崩溃后从断点继续，适合订单、审批等应用工作流。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/index.html" target="_blank" rel="noopener"><b>Apache Airflow 文档：Core Concepts</b><small>airflow.apache.org ↗</small></a></li><li><a href="https://dagster.io/docs" target="_blank" rel="noopener"><b>Dagster 文档</b><small>dagster.io ↗</small></a></li><li><a href="https://docs.prefect.io/v3/get-started" target="_blank" rel="noopener"><b>Prefect 文档</b><small>docs.prefect.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="columnar-storage.pro.html" rel="prev"><small>‹ 上一个</small><b>🗂️ 列式存储 (Parquet)</b></a><a class="pn next" href="composite-indexes.pro.html" rel="next"><small>下一个 ›</small><b>📇 联合索引与最左前缀</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

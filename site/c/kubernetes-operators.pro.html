@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="K8s Operator 模式 专业模式：Operator 是 Kubernetes 的扩展模式：用自定义资源（CRD）描述某类应用的期望状态，再用自定义控制器持续调和（reconcile），把部署、扩">
+<title>🎓 K8s Operator 模式 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="kubernetes-operators" data-answer="0" data-prev="distributed-sql.pro.html" data-next="policy-as-code.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#devops">🔥 进阶 · 🔭 可观测与交付</a><span>›</span><a href="kubernetes-operators.html">K8s Operator 模式</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.470 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="distributed-sql.pro.html" rel="prev"><small>‹ 上一个</small><b>🌐 分布式 SQL 数据库 (NewSQL)</b></a><a class="pn next" href="policy-as-code.pro.html" rel="next"><small>下一个 ›</small><b>📜 策略即代码 (OPA)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🧑‍🔧</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>K8s Operator 模式</h1><p class="en">Kubernetes Operators</p>
+    <div class="hbtns"><a class="prosw back" href="kubernetes-operators.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">Operator 是 Kubernetes 的扩展模式：用自定义资源（CRD）描述某类应用的期望状态，再用自定义控制器持续调和（reconcile），把部署、扩容、备份、升级、故障恢复等运维知识编码为程序。它让数据库、消息队列等有状态复杂软件也能像 Deployment 一样被声明式管理。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>定义 CRD，向 API Server 注册新的资源类型，如 PostgreSQL 集群，包含 spec（期望）与 status（现状）。</p></li><li><span class="sn">2</span><p>控制器通过 informer 监听自定义资源及其关联对象的变化，把对象键放入工作队列。</p></li><li><span class="sn">3</span><p>Reconcile 函数读取当前状态并与 spec 比较，创建或修改 StatefulSet、Service、Secret 等子资源，使现实趋近期望。</p></li><li><span class="sn">4</span><p>调和是电平触发且必须幂等：无论触发几次、从何种中间状态开始，结果都应一致；失败则带退避重新入队。</p></li><li><span class="sn">5</span><p>通过 ownerReferences 让子资源随父资源被垃圾回收，用 finalizer 在删除前执行清理（如删除外部备份）。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>自定义资源定义 (CRD)</dt><dd>向 Kubernetes API 注册新资源类型的方式，可带 OpenAPI 校验。</dd></div><div class="term"><dt>调和循环 (Reconcile Loop)</dt><dd>不断比较期望与实际状态并采取动作消除差异的控制逻辑。</dd></div><div class="term"><dt>电平触发 (Level-triggered)</dt><dd>根据当前完整状态决策，而不是依赖单个事件，丢事件也能自愈。</dd></div><div class="term"><dt>Finalizer</dt><dd>对象删除前必须被移除的标记，控制器借此完成外部资源清理。</dd></div><div class="term"><dt>Kubebuilder / Operator SDK</dt><dd>构建 Operator 的主流 Go 框架，基于 controller-runtime。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>用 CloudNativePG 声明集群</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code># 前提：已安装 CloudNativePG Operator
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: app-db
+  namespace: prod
+spec:
+  instances: 3               # 1 主 2 备，Operator 负责复制与故障切换
+  storage:
+    size: 20Gi
+  resources:
+    requests:
+      cpu: &quot;1&quot;
+      memory: 2Gi
+    limits:
+      memory: 2Gi
+  bootstrap:
+    initdb:
+      database: app
+      owner: app
+# kubectl apply -f app-db.yaml
+# kubectl get cluster -n prod app-db   # 查看 Operator 汇报的状态</code></pre></div><p class="cnote">用户只写期望状态；创建 Pod、配置复制、主库故障后提升备库都由 Operator 调和完成。字段以官方文档为准。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">扩展 Kubernetes 的方式</h3><div class="tw"><table><thead><tr><th>方式</th><th>能做什么</th><th>复杂度</th></tr></thead><tbody><tr><td data-h="方式">Helm Chart</td><td data-h="能做什么">模板化安装一组资源</td><td data-h="复杂度">低，无运行期逻辑</td></tr><tr><td data-h="方式">Operator</td><td data-h="能做什么">持续管理生命周期与故障恢复</td><td data-h="复杂度">高，需要开发与维护控制器</td></tr><tr><td data-h="方式">准入 Webhook</td><td data-h="能做什么">创建/修改资源时校验或改写</td><td data-h="复杂度">中</td></tr><tr><td data-h="方式">聚合 API Server</td><td data-h="能做什么">提供全新 API 后端</td><td data-h="复杂度">很高，少数场景使用</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>使用成熟社区 Operator</h4><p><b class="k-p">优点</b>沉淀了大量运维经验，开箱即用</p><p><b class="k-c">代价</b>升级与行为受上游约束</p><p><b class="k-w">适用</b>数据库、消息队列等通用中间件</p></div><div class="trd"><h4>自研 Operator</h4><p><b class="k-p">优点</b>精确编码自家运维流程</p><p><b class="k-c">代价</b>开发与长期维护成本高，Bug 影响面大</p><p><b class="k-w">适用</b>内部平台有重复且复杂的运维模式</p></div><div class="trd"><h4>托管云服务</h4><p><b class="k-p">优点</b>无需运维控制器与存储</p><p><b class="k-c">代价</b>成本较高，可定制性低</p><p><b class="k-w">适用</b>团队小、追求稳定</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>Reconcile 依赖事件类型做增量处理</p><p class="fix"><b>✓</b>每次都读取完整当前状态做决策，保证幂等与自愈</p></li><li><p class="bad"><b>✗</b>在 Reconcile 中频繁更新 status 触发自身无限循环</p><p class="fix"><b>✓</b>仅在状态真正变化时更新，并使用 status 子资源与 generation 判断</p></li><li><p class="bad"><b>✗</b>删除时未处理外部资源，留下孤儿云盘或备份</p><p class="fix"><b>✓</b>使用 finalizer 清理外部资源后再放行删除</p></li><li><p class="bad"><b>✗</b>Operator 拥有集群级管理员权限</p><p class="fix"><b>✓</b>按需授予最小 RBAC，限定命名空间与资源类型</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>CRD 带 OpenAPI 校验与版本策略</span></label></li><li><label><input type="checkbox"><span>Reconcile 幂等，失败有退避重试</span></label></li><li><label><input type="checkbox"><span>status 字段清晰反映就绪与错误</span></label></li><li><label><input type="checkbox"><span>RBAC 权限最小化</span></label></li><li><label><input type="checkbox"><span>Operator 自身升级路径经过演练</span></label></li><li><label><input type="checkbox"><span>有 Operator 停止运行时的人工兜底方案</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么 Operator 必须是电平触发而非边沿触发？</summary><p>事件可能丢失、重复或乱序，控制器也可能重启。若只按单个事件增量处理，状态会漂移。电平触发每次比较完整的期望与实际状态再行动，任何时刻重新运行都能收敛，这也要求操作幂等。</p></details><details class="iv"><summary>什么时候不该写 Operator？</summary><p>若只是安装一组静态资源，Helm 或 Kustomize 就够；若运维动作很少、靠人偶尔执行即可，控制器的开发与维护成本不划算；有成熟社区 Operator 或托管服务时优先复用。Operator 适合需要持续自动化、复杂且重复的生命周期管理。</p></details><details class="iv"><summary>finalizer 的作用和风险？</summary><p>它让对象删除被挂起，直到控制器完成清理并移除标记，用于删除云资源、备份等外部依赖。风险是控制器故障时 finalizer 永远不被移除，对象卡在 Terminating，命名空间也删不掉，需要监控并有人工处理流程。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://kubernetes.io/docs/concepts/extend-kubernetes/operator/" target="_blank" rel="noopener"><b>Kubernetes: Operator pattern</b><small>kubernetes.io ↗</small></a></li><li><a href="https://book.kubebuilder.io/" target="_blank" rel="noopener"><b>The Kubebuilder Book</b><small>book.kubebuilder.io ↗</small></a></li><li><a href="https://cloudnative-pg.io/documentation/current/" target="_blank" rel="noopener"><b>CloudNativePG Documentation</b><small>cloudnative-pg.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="distributed-sql.pro.html" rel="prev"><small>‹ 上一个</small><b>🌐 分布式 SQL 数据库 (NewSQL)</b></a><a class="pn next" href="policy-as-code.pro.html" rel="next"><small>下一个 ›</small><b>📜 策略即代码 (OPA)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

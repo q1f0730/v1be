@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="跨环境一致性 专业模式：环境一致性（Environment Parity）指开发、测试、预发与生产环境在操作系统、运行时版本、依赖服务、配置结构和部署方式上尽量保持一致，减少只在线上出">
+<title>🎓 跨环境一致性 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="environment-parity" data-answer="0" data-prev="canary-releases.pro.html" data-next="12-factor-apps.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#devops">🔮 高级 · 🔭 可观测与交付</a><span>›</span><a href="environment-parity.html">跨环境一致性</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.327 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="canary-releases.pro.html" rel="prev"><small>‹ 上一个</small><b>🐤 金丝雀发布 / 灰度发布</b></a><a class="pn next" href="12-factor-apps.pro.html" rel="next"><small>下一个 ›</small><b>📦 十二要素云原生应用</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🪞</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>跨环境一致性</h1><p class="en">Environment Parity</p>
+    <div class="hbtns"><a class="prosw back" href="environment-parity.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">环境一致性（Environment Parity）指开发、测试、预发与生产环境在操作系统、运行时版本、依赖服务、配置结构和部署方式上尽量保持一致，减少只在线上出问题的情况。十二要素应用把它概括为缩小时间、人员和工具三方面的差距。容器镜像、基础设施即代码和 Testcontainers 等工具是实现它的主要手段。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>用同一个容器镜像在各环境运行，环境间只通过环境变量和密钥区分配置。</p></li><li><span class="sn">2</span><p>依赖服务使用与生产相同的类型和主版本，如本地也用 PostgreSQL 而非 SQLite。</p></li><li><span class="sn">3</span><p>基础设施用 IaC 模块定义，各环境调用同一模块、只改规模参数。</p></li><li><span class="sn">4</span><p>测试中用 Testcontainers 或 Compose 启动真实依赖，而不是全靠 Mock。</p></li><li><span class="sn">5</span><p>持续部署缩短代码写完到上线的时间差，让开发者对生产行为保持敏感。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>开发/生产一致 (Dev/Prod Parity)</dt><dd>十二要素的第十条，要求尽量缩小开发与生产的差距。</dd></div><div class="term"><dt>Testcontainers</dt><dd>在测试代码中按需启动真实依赖容器的库。</dd></div><div class="term"><dt>配置漂移 (Configuration Drift)</dt><dd>各环境配置随时间不受控地偏离。</dd></div><div class="term"><dt>后端服务 (Backing Services)</dt><dd>应用依赖的数据库、缓存、队列等，以资源形式挂接。</dd></div><div class="term"><dt>预发环境 (Staging)</dt><dd>尽量模拟生产、用于发布前验证的环境。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>用真实数据库做测试</span><em>python</em><button class="ccopy">复制</button></div><pre><code># pip install &quot;testcontainers[postgres]&quot; sqlalchemy psycopg2-binary
+import sqlalchemy
+from testcontainers.postgres import PostgresContainer
+
+def test_upsert_uses_real_postgres():
+    # 与生产相同的主版本，而不是 SQLite 或 Mock
+    with PostgresContainer(&quot;postgres:16&quot;) as pg:
+        engine = sqlalchemy.create_engine(pg.get_connection_url())
+        with engine.begin() as conn:
+            conn.execute(sqlalchemy.text(
+                &quot;CREATE TABLE kv (k TEXT PRIMARY KEY, v INT)&quot;))
+            # ON CONFLICT 是 PostgreSQL 语法，SQLite 版本差异可能让测试失真
+            conn.execute(sqlalchemy.text(
+                &quot;INSERT INTO kv VALUES (&#x27;a&#x27;, 1) &quot;
+                &quot;ON CONFLICT (k) DO UPDATE SET v = kv.v + 1&quot;))
+            v = conn.execute(sqlalchemy.text(&quot;SELECT v FROM kv&quot;)).scalar()
+        assert v == 1</code></pre></div><p class="cnote">测试时临时启动与生产同主版本的 PostgreSQL，结束后自动销毁。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见差异与对策</h3><div class="tw"><table><thead><tr><th>差异</th><th>风险</th><th>对策</th></tr></thead><tbody><tr><td data-h="差异">数据库类型或版本不同</td><td data-h="风险">语法与行为差异</td><td data-h="对策">各环境同类型同主版本</td></tr><tr><td data-h="差异">依赖安装方式不同</td><td data-h="风险">线上缺依赖或版本不一</td><td data-h="对策">构建一次镜像各环境复用</td></tr><tr><td data-h="差异">配置结构不同</td><td data-h="风险">线上缺配置项</td><td data-h="对策">统一配置模板与校验</td></tr><tr><td data-h="差异">数据规模不同</td><td data-h="风险">线上慢查询</td><td data-h="对策">用脱敏的生产规模数据压测</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>本地运行真实依赖</h4><p><b class="k-p">优点</b>行为接近生产</p><p><b class="k-c">代价</b>占用本机资源，启动较慢</p><p><b class="k-w">适用</b>集成测试、关键查询</p></div><div class="trd"><h4>Mock 依赖</h4><p><b class="k-p">优点</b>快速、隔离</p><p><b class="k-c">代价</b>可能与真实行为不符</p><p><b class="k-w">适用</b>单元测试</p></div><div class="trd"><h4>完整预发环境</h4><p><b class="k-p">优点</b>最接近生产</p><p><b class="k-c">代价</b>成本高、维护难</p><p><b class="k-w">适用</b>发布前验证</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>本地用 SQLite、线上用 PostgreSQL，SQL 行为差异上线后才暴露。</p><p class="fix"><b>✓</b>本地与测试也使用同类型同主版本数据库。</p></li><li><p class="bad"><b>✗</b>预发环境长期未同步配置，验证结果不可信。</p><p class="fix"><b>✓</b>用 IaC 与同一配置模板管理各环境。</p></li><li><p class="bad"><b>✗</b>测试环境数据极少，查询计划与生产完全不同。</p><p class="fix"><b>✓</b>用脱敏的生产规模数据做性能验证。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>各环境使用同一镜像</span></label></li><li><label><input type="checkbox"><span>依赖服务类型与主版本一致</span></label></li><li><label><input type="checkbox"><span>环境差异仅存在于配置</span></label></li><li><label><input type="checkbox"><span>基础设施由同一 IaC 模块生成</span></label></li><li><label><input type="checkbox"><span>集成测试使用真实依赖</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>十二要素中的环境一致指哪三个差距？</summary><p>时间差距：代码写完到部署的时间应尽量短；人员差距：写代码的人也参与部署和观察生产；工具差距：开发与生产使用相同的后端服务类型和版本。缩小这三者能减少只在生产出现的问题。</p></details><details class="iv"><summary>为什么不建议在测试中全部用 Mock？</summary><p>Mock 只反映开发者对依赖行为的假设，SQL 方言、事务隔离、序列化等真实差异无法覆盖。单元测试可用 Mock 保速度，关键集成路径应用真实依赖，例如用 Testcontainers 启动同版本数据库。</p></details><details class="iv"><summary>AI 生成代码时环境一致性为什么更重要？</summary><p>AI 常根据通用示例生成代码，可能默认使用与项目不同的数据库方言或依赖版本。在与生产一致的环境中运行测试，才能及早发现这些不匹配，而不是上线后才暴露。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://12factor.net/dev-prod-parity" target="_blank" rel="noopener"><b>The Twelve-Factor App：Dev/prod parity</b><small>12factor.net ↗</small></a></li><li><a href="https://testcontainers.com/" target="_blank" rel="noopener"><b>Testcontainers 官方网站</b><small>testcontainers.com ↗</small></a></li><li><a href="https://testcontainers-python.readthedocs.io/en/latest/" target="_blank" rel="noopener"><b>Testcontainers for Python 文档</b><small>testcontainers-python.readthedocs.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="canary-releases.pro.html" rel="prev"><small>‹ 上一个</small><b>🐤 金丝雀发布 / 灰度发布</b></a><a class="pn next" href="12-factor-apps.pro.html" rel="next"><small>下一个 ›</small><b>📦 十二要素云原生应用</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

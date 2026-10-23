@@ -1,47 +1,94 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="版本库分支保护规则：给主分支上锁，改它必须走审查">
 <title>🛡️ 版本库分支保护规则 · AI 造物指南</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
 <link rel="stylesheet" href="../assets/style.css">
-</head><body class="" data-root="../">
+</head><body class="is-concept" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
 <div id="readbar"></div>
-<header class="top"><a class="brand" href="../index.html">🧭 <b>AI 造物指南</b></a>
-<nav class="tools">
-<a href="../glossary.html" title="词汇表">📚<span>词汇表</span></a>
-<button data-act="rand" title="随便学一个">🎲<span>随机</span></button>
-<button data-act="font-" title="字变小">A-</button><button data-act="font+" title="字变大">A+</button>
-<button data-act="calm" title="宽松阅读：字距行距更大">🫧<span>宽松</span></button>
-<button data-act="focus" title="专注模式：只亮当前这块">🔦<span>专注</span></button>
-<button data-act="motion" title="暂停/播放动画">⏯️<span>动画</span></button>
-</nav></header>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
 
-<main class="cp l2" data-slug="branch-protection" data-answer="2">
-<nav class="crumb"><a href="../index.html">🏠 首页</a> › <a href="../index.html#l2">🌊 中级</a> › 🔭 可观测与交付</nav>
-<section class="hero blk" id="s-hero">
-  <div class="hemo">🛡️</div>
-  <div><div class="meta"><span class="lvb">🌊 中级</span><span>No.132 / 310</span><span>⏱ 约 2 分钟</span></div>
-  <h1>版本库分支保护规则</h1><p class="en">Branch Protection</p></div>
-  <button class="say" data-say="s-hero s-one s-ana" title="读给我听">🔊 读给我听</button>
+<main class="cp l2" id="main" data-slug="branch-protection" data-pro="1" data-answer="2"
+  data-prev="lockfiles.html" data-next="tokenizer.html"
+  data-next-name="🔪 分词器 (Tokenizer / BPE)">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#devops">🌊 中级 · 🔭 可观测与交付</a><span>›</span><b>版本库分支保护规则</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb">🌊 中级</span><span class="muted">No.152 / 500</span></div>
+    <ol class="rail-list"><li><a href="#s-one" data-sec="s-one"><span class="re">🎯</span><span class="rl">一句话</span><i class="rc">✓</i></a></li><li><a href="#s-ana" data-sec="s-ana"><span class="re">🧸</span><span class="rl">打个比方</span><i class="rc">✓</i></a></li><li><a href="#s-anim" data-sec="s-anim"><span class="re">🎬</span><span class="rl">动起来看</span><i class="rc">✓</i></a></li><li><a href="#s-tab" data-sec="s-tab"><span class="re">📊</span><span class="rl">对比表</span><i class="rc">✓</i></a></li><li><a href="#s-how" data-sec="s-how"><span class="re">👣</span><span class="rl">怎么做</span><i class="rc">✓</i></a></li><li><a href="#s-oops" data-sec="s-oops"><span class="re">💥</span><span class="rl">翻车现场</span><i class="rc">✓</i></a></li><li><a href="#s-ai" data-sec="s-ai"><span class="re">🤖</span><span class="rl">给 AI 的话</span><i class="rc">✓</i></a></li><li><a href="#s-quiz" data-sec="s-quiz"><span class="re">✅</span><span class="rl">小测一下</span><i class="rc">✓</i></a></li><li><a href="#s-words" data-sec="s-words"><span class="re">📚</span><span class="rl">词汇</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="lockfiles.html" rel="prev"><small>‹ 上一个</small><b>🔒 依赖版本锁文件</b></a><a class="pn next" href="tokenizer.html" rel="next"><small>下一个 ›</small><b>🔪 分词器 (Tokenizer / BPE)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🛡️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb">🌊 中级</span><span>🔭 可观测与交付</span><span>No.152 / 500</span><span>⏱ 约 2 分钟</span></div>
+    <h1>版本库分支保护规则</h1><p class="en">Branch Protection</p>
+    <div class="hbtns"><button class="say big" data-say="s-hero s-one s-ana">🔊 读给我听</button><a class="prosw" href="branch-protection.pro.html" data-mode="pro" title="更详细、更专业的版本">🎓 专业模式</a></div>
+  </div>
+  <img class="mascot-s" src="../assets/mascot-sm.webp" alt="" width="256" height="256">
 </section>
-<ol class="steps-nav" aria-label="本页进度">
-<li><a href="#s-one">🎯</a></li><li><a href="#s-ana">🧸</a></li><li><a href="#s-anim">🎬</a></li><li><a href="#s-tab">📊</a></li><li><a href="#s-how">👣</a></li><li><a href="#s-oops">💥</a></li><li><a href="#s-ai">🤖</a></li><li><a href="#s-quiz">✅</a></li></ol>
-<section class="blk one" id="s-one"><h2>🎯 一句话</h2><p class="big">给主分支上锁，改它必须走审查</p></section>
-<section class="blk" id="s-ana"><h2>🧸 打个比方</h2><p>法典母本放在玻璃柜里。想改一个字，要法官签字。还要过安检才行。</p><ul class="pts"><li>🌳 主分支 main 就是线上用的代码</li><li>👀 合并前必须有人审过</li><li>🤖 自动测试不过，按钮是灰的</li></ul>
-<button class="say sm" data-say="s-ana">🔊</button></section>
-<section class="blk" id="s-anim"><h2>🎬 动起来看</h2><div class="sc sc-flow"><div class="nd "><span class="ne">📝</span><span class="nl">提交PR</span></div><div class="trk"><i class="dot"></i></div><div class="nd pulse"><span class="ne">🔎</span><span class="nl">审查+测试</span></div><div class="trk"><i class="dot d2"></i></div><div class="nd "><span class="ne">🌳</span><span class="nl">合并主分支</span></div></div><p class="cap">👀 不过审查，进不了主分支</p></section>
-<section class="blk" id="s-tab"><h2>📊 开不开保护的区别</h2><div class="tw"><table><thead><tr><th>场景</th><th>没保护</th><th>有保护</th></tr></thead><tbody><tr><td>有人强推代码</td><td>直接覆盖</td><td>被拦下</td></tr><tr><td>测试没通过</td><td>照样合并</td><td>不让合并</td></tr><tr><td>没人审过</td><td>随便上线</td><td>必须审批</td></tr></tbody></table></div></section>
-<section class="blk" id="s-how"><h2>👣 你该怎么做</h2><ol class="how"><li><span class="sn">1</span><p>⚙️ 打开 GitHub 仓库的设置页</p></li><li><span class="sn">2</span><p>🛡️ 给 main 加一条分支保护规则</p></li><li><span class="sn">3</span><p>✅ 勾选：要求 PR 审查和测试通过</p></li></ol><button class="say sm" data-say="s-how">🔊</button></section>
-<section class="blk oops" id="s-oops"><h2>💥 翻车现场</h2><p>实习生直接往 main 强推了没测过的代码，安全扫描也绕过了，线上服务当场崩溃。</p></section>
-<section class="blk ai" id="s-ai"><h2>🤖 复制给 AI 的话</h2><pre class="prompt">请告诉我如何在 GitHub 给 main 分支开启分支保护：禁止强推，合并前必须有 PR 审查且 CI 测试通过。</pre><button class="copy">📋 一键复制</button></section>
-<section class="blk quiz" id="s-quiz"><h2>✅ 小测一下</h2><p class="q">开分支保护后，以下哪种会被拦下？</p><div class="opts"><button class="opt" data-i="0">A. 发起 PR 请人审查</button><button class="opt" data-i="1">B. 测试全过后合并</button><button class="opt" data-i="2">C. 直接强推到 main</button></div>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#s-one" data-sec="s-one"><span>🎯</span>一句话</a><a class="sc-chip" href="#s-ana" data-sec="s-ana"><span>🧸</span>打个比方</a><a class="sc-chip" href="#s-anim" data-sec="s-anim"><span>🎬</span>动起来看</a><a class="sc-chip" href="#s-tab" data-sec="s-tab"><span>📊</span>对比表</a><a class="sc-chip" href="#s-how" data-sec="s-how"><span>👣</span>怎么做</a><a class="sc-chip" href="#s-oops" data-sec="s-oops"><span>💥</span>翻车现场</a><a class="sc-chip" href="#s-ai" data-sec="s-ai"><span>🤖</span>给 AI 的话</a><a class="sc-chip" href="#s-quiz" data-sec="s-quiz"><span>✅</span>小测一下</a><a class="sc-chip" href="#s-words" data-sec="s-words"><span>📚</span>词汇</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento">
+<section class="t sec s-one t-lemon" id="s-one"><header class="th"><span class="tag">🎯 01 · 一句话</span><button class="say sm" data-say="s-one" aria-label="读这一块">🔊</button></header><p class="big">给主分支上锁，改它必须走审查</p></section>
+<section class="t sec s-ana" id="s-ana"><header class="th"><span class="tag">🧸 02 · 打个比方</span><button class="say sm" data-say="s-ana" aria-label="读这一块">🔊</button></header><p class="ana">法典母本放在玻璃柜里。想改一个字，要法官签字。还要过安检才行。</p><ul class="pts"><li>🌳 主分支 main 就是线上用的代码</li><li>👀 合并前必须有人审过</li><li>🤖 自动测试不过，按钮是灰的</li></ul></section>
+<section class="t sec s-anim t-sky" id="s-anim"><header class="th"><span class="tag">🎬 03 · 动起来看</span></header><div class="sc sc-flow"><div class="nd "><span class="ne">📝</span><span class="nl">提交PR</span></div><div class="trk"><i class="dot"></i></div><div class="nd pulse"><span class="ne">🔎</span><span class="nl">审查+测试</span></div><div class="trk"><i class="dot d2"></i></div><div class="nd "><span class="ne">🌳</span><span class="nl">合并主分支</span></div></div><p class="cap">👀 不过审查，进不了主分支</p></section>
+<section class="t sec s-tab" id="s-tab"><header class="th"><span class="tag">📊 04 · 对比表</span></header><h3 class="tt">开不开保护的区别</h3><div class="tw"><table><thead><tr><th>场景</th><th>没保护</th><th>有保护</th></tr></thead><tbody><tr><td data-h="场景">有人强推代码</td><td data-h="没保护">直接覆盖</td><td data-h="有保护">被拦下</td></tr><tr><td data-h="场景">测试没通过</td><td data-h="没保护">照样合并</td><td data-h="有保护">不让合并</td></tr><tr><td data-h="场景">没人审过</td><td data-h="没保护">随便上线</td><td data-h="有保护">必须审批</td></tr></tbody></table></div></section>
+<section class="t sec s-how t-pist" id="s-how"><header class="th"><span class="tag">👣 05 · 怎么做</span><button class="say sm" data-say="s-how" aria-label="读这一块">🔊</button></header><ol class="how"><li><span class="sn">1</span><p>⚙️ 打开 GitHub 仓库的设置页</p></li><li><span class="sn">2</span><p>🛡️ 给 main 加一条分支保护规则</p></li><li><span class="sn">3</span><p>✅ 勾选：要求 PR 审查和测试通过</p></li></ol></section>
+<section class="t sec s-oops t-blush" id="s-oops"><header class="th"><span class="tag">💥 06 · 翻车现场</span><button class="say sm" data-say="s-oops" aria-label="读这一块">🔊</button></header><p class="story">实习生直接往 main 强推了没测过的代码，安全扫描也绕过了，线上服务当场崩溃。</p></section>
+<section class="t sec s-ai t-lilac" id="s-ai"><header class="th"><span class="tag">🤖 07 · 给 AI 的话</span></header><pre class="prompt">请告诉我如何在 GitHub 给 main 分支开启分支保护：禁止强推，合并前必须有 PR 审查且 CI 测试通过。</pre><button class="btn pri copy">📋 一键复制</button></section>
+<section class="t sec s-quiz" id="s-quiz"><header class="th"><span class="tag">✅ 08 · 小测一下</span></header><p class="q">开分支保护后，以下哪种会被拦下？</p><div class="opts"><button class="opt" data-i="0"><span class="ok">A</span><span>发起 PR 请人审查</span></button><button class="opt" data-i="1"><span class="ok">B</span><span>测试全过后合并</span></button><button class="opt" data-i="2"><span class="ok">C</span><span>直接强推到 main</span></button></div>
 <p class="why" hidden>💡 保护规则禁止绕过审查，直接强推会被拒绝。</p></section>
-<section class="blk words"><h2>📚 顺便认识这些词</h2><div class="chips"><span class="chip">主分支 (main)</span><span class="chip">强制推送 (force push)</span><span class="chip">合并请求 (PR)</span><span class="chip">持续集成 (CI)</span></div>
-<h3>🔗 相关概念</h3><div class="rels"><a class="rel" href="branch.html">🌿 分支 (Branch)</a><a class="rel" href="pull-request.html">🙋 合并请求 (PR)</a><a class="rel" href="code-review.html">👀 代码审查</a><a class="rel" href="ci-cd.html">🏭 持续集成 / 持续交付 (CI/CD)</a></div></section>
-<div class="done-row"><button class="done">🙋 我学会了！</button></div>
-<nav class="pnav"><a class="pn prev" href="lockfiles.html">⬅️ <span>上一个</span><b>🔒 依赖版本锁文件</b></a><a class="pn next" href="multi-agent-systems.html"><span>下一个</span><b>👥 多智能体协作</b> ➡️</a></nav>
+<section class="t sec s-words" id="s-words"><header class="th"><span class="tag">📚 09 · 词汇</span></header><div class="chips"><span class="chip">主分支 (main)</span><span class="chip">强制推送 (force push)</span><span class="chip">合并请求 (PR)</span><span class="chip">持续集成 (CI)</span></div>
+<h3 class="relh">🔗 相关概念</h3><div class="rels"><a class="rel" href="branch.html"><span>🌿</span>分支 (Branch)</a><a class="rel" href="pull-request.html"><span>🙋</span>合并请求 (PR)</a><a class="rel" href="code-review.html"><span>👀</span>代码审查</a><a class="rel" href="ci-cd.html"><span>🏭</span>持续集成 / 持续交付 (CI/CD)</a></div></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">看完了？给自己打个卡</h2><p class="muted">进度只存在你的浏览器里。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="lockfiles.html" rel="prev"><small>‹ 上一个</small><b>🔒 依赖版本锁文件</b></a><a class="pn next" href="tokenizer.html" rel="next"><small>下一个 ›</small><b>🔪 分词器 (Tokenizer / BPE)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
 </main>
-<footer class="foot">🧭 AI 造物指南 · 给不会代码的人 · by Q1f730 · 内容可能有疏漏，欢迎在 GitHub 提 Issue</footer>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
 <script src="../assets/index.js"></script>
 <script src="../assets/app.js"></script>
 </body></html>

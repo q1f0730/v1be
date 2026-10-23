@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="备份恢复演练 专业模式：恢复演练（Restore Testing）是定期把备份真正恢复到独立环境，并验证数据完整性、可用性与恢复耗时的实践。备份任务显示“成功”只证明写出了文件，不证明">
+<title>🎓 备份恢复演练 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="testing-your-restores" data-answer="0" data-prev="materialized-views.pro.html" data-next="point-in-time-recovery.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#db">🔮 高级 · 🗄️ 数据库</a><span>›</span><a href="testing-your-restores.html">备份恢复演练</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.251 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="materialized-views.pro.html" rel="prev"><small>‹ 上一个</small><b>🧮 物化视图</b></a><a class="pn next" href="point-in-time-recovery.pro.html" rel="next"><small>下一个 ›</small><b>⏪ 时间点恢复 (PITR)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🧯</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>备份恢复演练</h1><p class="en">Testing Your Restores</p>
+    <div class="hbtns"><a class="prosw back" href="testing-your-restores.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">恢复演练（Restore Testing）是定期把备份真正恢复到独立环境，并验证数据完整性、可用性与恢复耗时的实践。备份任务显示“成功”只证明写出了文件，不证明能恢复。只有演练才能确认实际可达的 RPO（最多丢多少数据）和 RTO（多久恢复服务）。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>自动选取最新（或随机历史）备份，从异地存储下载到隔离环境。</p></li><li><span class="sn">2</span><p>在临时实例上执行完整恢复流程，与真实事故时使用的步骤一致。</p></li><li><span class="sn">3</span><p>校验数据：行数、关键表最近记录时间、校验和，以及应用的冒烟测试。</p></li><li><span class="sn">4</span><p>记录恢复耗时与最新数据时间点，对比 RTO/RPO 目标。</p></li><li><span class="sn">5</span><p>清理临时环境，任一步失败即告警；演练结果与发现的问题回写到运维手册。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>RPO (Recovery Point Objective)</dt><dd>可容忍丢失的最大数据时间窗口。</dd></div><div class="term"><dt>RTO (Recovery Time Objective)</dt><dd>从故障到恢复服务的最长可接受时间。</dd></div><div class="term"><dt>3-2-1 原则</dt><dd>至少 3 份数据、2 种介质、1 份异地。</dd></div><div class="term"><dt>不可变备份 (Immutable Backup)</dt><dd>写入后在保留期内不可修改或删除，防勒索。</dd></div><div class="term"><dt>逻辑备份 / 物理备份</dt><dd>导出 SQL 或数据，与拷贝数据文件的两种方式。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>每日自动恢复演练</span><em>bash</em><button class="ccopy">复制</button></div><pre><code>#!/usr/bin/env bash
+set -euo pipefail
+BUCKET=s3://my-backups/pg
+HOST=restore-test.internal   # 隔离的临时实例
+DB=restore_check
+
+# 1. 取最新的备份文件（pg_dump -Fc 生成的自定义格式）
+LATEST=$(aws s3 ls &quot;$BUCKET/&quot; | sort | tail -n 1 | awk &#x27;{print $4}&#x27;)
+aws s3 cp &quot;$BUCKET/$LATEST&quot; /tmp/latest.dump
+
+# 2. 恢复并计时
+dropdb -h &quot;$HOST&quot; --if-exists &quot;$DB&quot;
+createdb -h &quot;$HOST&quot; &quot;$DB&quot;
+START=$(date +%s)
+pg_restore -h &quot;$HOST&quot; -d &quot;$DB&quot; --no-owner -j 4 /tmp/latest.dump
+echo &quot;restore took $(( $(date +%s) - START ))s&quot;
+
+# 3. 校验：最近一天应当有订单，否则视为备份异常
+COUNT=$(psql -h &quot;$HOST&quot; -d &quot;$DB&quot; -Atc \
+  &quot;SELECT count(*) FROM orders WHERE created_at &gt; now() - interval &#x27;1 day&#x27;&quot;)
+[ &quot;$COUNT&quot; -gt 0 ] || { echo &quot;FAIL: no recent orders in backup&quot;; exit 1; }
+echo &quot;OK: $COUNT recent orders&quot;</code></pre></div><p class="cnote">真实执行恢复并校验业务数据新鲜度；退出码非 0 即接入告警。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">恢复演练分级</h3><div class="tw"><table><thead><tr><th>级别</th><th>内容</th><th>建议频率</th></tr></thead><tbody><tr><td data-h="级别">自动校验</td><td data-h="内容">备份可下载、可解析、校验和正确</td><td data-h="建议频率">每次备份后</td></tr><tr><td data-h="级别">自动恢复</td><td data-h="内容">恢复到临时实例并跑数据断言</td><td data-h="建议频率">每日或每周</td></tr><tr><td data-h="级别">应用级演练</td><td data-h="内容">应用连接恢复库跑冒烟测试</td><td data-h="建议频率">每月</td></tr><tr><td data-h="级别">灾难演练</td><td data-h="内容">按手册切换整套环境、计时</td><td data-h="建议频率">每季度或半年</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>全自动定期恢复</h4><p><b class="k-p">优点</b>持续验证，问题早发现</p><p><b class="k-c">代价</b>占用计算与存储成本</p><p><b class="k-w">适用</b>核心数据库默认要做</p></div><div class="trd"><h4>抽样手工演练</h4><p><b class="k-p">优点</b>能验证人和流程</p><p><b class="k-c">代价</b>频率低，依赖个人</p><p><b class="k-w">适用</b>配合自动化做年度演练</p></div><div class="trd"><h4>只监控备份任务成功</h4><p><b class="k-p">优点</b>几乎零成本</p><p><b class="k-c">代价</b>无法发现不可恢复的备份</p><p><b class="k-w">适用</b>不应作为唯一手段</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>备份脚本报成功，但文件是空的或被截断</p><p class="fix"><b>✓</b>每次备份后校验大小、校验和并抽样恢复</p></li><li><p class="bad"><b>✗</b>演练只恢复了数据库，忘了密钥、配置和对象存储</p><p class="fix"><b>✓</b>列出完整恢复依赖清单并一并演练</p></li><li><p class="bad"><b>✗</b>备份与生产在同一账号，被同一次误操作删除</p><p class="fix"><b>✓</b>异地、跨账号、不可变存储</p></li><li><p class="bad"><b>✗</b>从未计时，RTO 只是纸面数字</p><p class="fix"><b>✓</b>每次演练记录实际耗时并更新目标</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>备份满足 3-2-1 且有不可变副本</span></label></li><li><label><input type="checkbox"><span>至少每周自动恢复并校验一次</span></label></li><li><label><input type="checkbox"><span>校验包含业务数据新鲜度断言</span></label></li><li><label><input type="checkbox"><span>记录实际 RTO/RPO 并与目标对比</span></label></li><li><label><input type="checkbox"><span>恢复手册最近一次演练后已更新</span></label></li><li><label><input type="checkbox"><span>演练失败会触发告警</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么说没测过的备份等于没有备份？</summary><p>备份可能因权限、磁盘满、版本不兼容、加密密钥丢失、脚本静默失败而不可用，这些只有恢复时才暴露。2017 年 GitLab 数据库事故中，多种备份机制被发现未正常工作，就是典型案例。</p></details><details class="iv"><summary>如何定义 RPO 和 RTO？</summary><p>与业务一起定：RPO 看能接受丢多少数据，决定备份频率与是否需要 WAL 归档/PITR；RTO 看能停多久，决定恢复方式（快照、热备、多活）。目标必须经演练验证，而非估算。</p></details><details class="iv"><summary>演练中除了数据库还要验证什么？</summary><p>加密密钥与 KMS 权限、配置与密钥管理、对象存储文件、DNS 与连接串切换、依赖服务、监控告警，以及人员是否熟悉手册。很多恢复失败是因为数据之外的依赖缺失。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.postgresql.org/docs/current/backup.html" target="_blank" rel="noopener"><b>PostgreSQL: Backup and Restore</b><small>postgresql.org ↗</small></a></li><li><a href="https://about.gitlab.com/blog/2017/02/10/postmortem-of-database-outage-of-january-31/" target="_blank" rel="noopener"><b>GitLab: Postmortem of database outage of January 31</b><small>about.gitlab.com ↗</small></a></li><li><a href="https://sre.google/sre-book/data-integrity/" target="_blank" rel="noopener"><b>Google SRE Book: Data Integrity</b><small>sre.google ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="materialized-views.pro.html" rel="prev"><small>‹ 上一个</small><b>🧮 物化视图</b></a><a class="pn next" href="point-in-time-recovery.pro.html" rel="next"><small>下一个 ›</small><b>⏪ 时间点恢复 (PITR)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

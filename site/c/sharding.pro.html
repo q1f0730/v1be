@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="数据库水平分片 专业模式：数据库水平分片（Sharding）把同一张逻辑表的数据按分片键拆分到多个独立数据库节点上，每个节点只存一部分行。它属于数据层的横向扩展手段，用于突破单机在存储容">
+<title>🎓 数据库水平分片 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="sharding" data-answer="0" data-prev="threat-modeling.pro.html" data-next="partitioning.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#db">🔥 进阶 · 🗄️ 数据库</a><span>›</span><a href="sharding.html">数据库水平分片</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.415 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="threat-modeling.pro.html" rel="prev"><small>‹ 上一个</small><b>🗺️ 威胁建模</b></a><a class="pn next" href="partitioning.pro.html" rel="next"><small>下一个 ›</small><b>🗂️ 单实例表分区</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🍕</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>数据库水平分片</h1><p class="en">Sharding</p>
+    <div class="hbtns"><a class="prosw back" href="sharding.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">数据库水平分片（Sharding）把同一张逻辑表的数据按分片键拆分到多个独立数据库节点上，每个节点只存一部分行。它属于数据层的横向扩展手段，用于突破单机在存储容量、写入吞吐和连接数上的上限，代价是跨分片查询、事务和运维复杂度显著上升。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>选分片键：选择查询中最常用作过滤条件、取值分散的列，如租户 ID 或用户 ID。</p></li><li><span class="sn">2</span><p>定分片策略：哈希分片均匀但范围查询难；范围分片利于区间查询但易热点；目录分片灵活。</p></li><li><span class="sn">3</span><p>请求路由：应用层、代理层（如 Vitess）或数据库扩展（如 Citus）根据分片键定位节点。</p></li><li><span class="sn">4</span><p>跨分片操作：无分片键的查询需扇出到所有分片再合并，跨分片事务需分布式协议或避免。</p></li><li><span class="sn">5</span><p>扩容再平衡：新增节点后迁移部分数据，常用预先切多个逻辑分片再映射到物理节点。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>分片键 (Shard Key)</dt><dd>决定一行数据落到哪个分片的列或列组合。</dd></div><div class="term"><dt>扇出查询 (Scatter-Gather)</dt><dd>查询发往所有分片并汇总结果，成本随分片数增长。</dd></div><div class="term"><dt>再平衡 (Rebalancing)</dt><dd>增删节点后在分片间迁移数据以恢复均衡。</dd></div><div class="term"><dt>逻辑分片 (Logical Shard)</dt><dd>数量多于物理节点的虚拟分片，迁移时整块移动。</dd></div><div class="term"><dt>共置 (Co-location)</dt><dd>相关表按同一分片键放在同一节点，使关联查询本地执行。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Citus 按租户分片</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- PostgreSQL + Citus 扩展：按 tenant_id 把表分布到多个 worker 节点
+CREATE EXTENSION IF NOT EXISTS citus;
+
+CREATE TABLE orders (
+  tenant_id  bigint NOT NULL,
+  order_id   bigint NOT NULL,
+  amount     numeric(12,2),
+  created_at timestamptz DEFAULT now(),
+  PRIMARY KEY (tenant_id, order_id)     -- 主键需包含分布列
+);
+
+SELECT create_distributed_table(&#x27;orders&#x27;, &#x27;tenant_id&#x27;);
+
+-- 小而常被关联的维表复制到每个节点
+CREATE TABLE countries (code text PRIMARY KEY, name text);
+SELECT create_reference_table(&#x27;countries&#x27;);
+
+-- 带分片键的查询只路由到一个分片
+SELECT sum(amount) FROM orders WHERE tenant_id = 42;</code></pre></div><p class="cnote">多租户 SaaS 常以租户 ID 为分片键，单租户查询与事务都留在一个分片内。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">分片策略对比</h3><div class="tw"><table><thead><tr><th>策略</th><th>优点</th><th>缺点</th></tr></thead><tbody><tr><td data-h="策略">哈希分片</td><td data-h="优点">分布均匀，避免顺序写热点</td><td data-h="缺点">范围查询需扇出，扩容需迁移</td></tr><tr><td data-h="策略">范围分片</td><td data-h="优点">区间查询高效</td><td data-h="缺点">递增键导致最新分片成热点</td></tr><tr><td data-h="策略">目录/查找表</td><td data-h="优点">映射灵活，可单独迁移大租户</td><td data-h="缺点">查找表本身成为依赖与瓶颈</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>应用层自行分片</h4><p><b class="k-p">优点</b>无额外组件，完全可控</p><p><b class="k-c">代价</b>路由、迁移、跨片查询全靠自研</p><p><b class="k-w">适用</b>分片规则简单、团队有经验</p></div><div class="trd"><h4>中间件/扩展（Vitess、Citus）</h4><p><b class="k-p">优点</b>路由和再平衡有成熟实现</p><p><b class="k-c">代价</b>引入新组件与运维学习成本</p><p><b class="k-w">适用</b>MySQL/PG 体系下规模化</p></div><div class="trd"><h4>原生分布式数据库</h4><p><b class="k-p">优点</b>分片对应用透明，支持分布式事务</p><p><b class="k-c">代价</b>迁移成本高，部分特性不兼容</p><p><b class="k-w">适用</b>新系统且预期规模很大</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>过早分片，单机还远未到瓶颈就引入复杂度</p><p class="fix"><b>✓</b>先做索引、读写分离、缓存、分区和垂直扩容</p></li><li><p class="bad"><b>✗</b>分片键选了低基数或单调递增列，数据和流量倾斜</p><p class="fix"><b>✓</b>选高基数且与主要查询匹配的键，必要时用哈希</p></li><li><p class="bad"><b>✗</b>大量查询不带分片键，变成全分片扇出</p><p class="fix"><b>✓</b>按访问模式设计分片键，或为其他维度建冗余索引表</p></li><li><p class="bad"><b>✗</b>分片数与节点数一一对应，扩容需重切全部数据</p><p class="fix"><b>✓</b>预先划分较多逻辑分片，扩容时整片迁移</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>已证明单机方案到达瓶颈</span></label></li><li><label><input type="checkbox"><span>分片键覆盖主要查询路径</span></label></li><li><label><input type="checkbox"><span>评估了跨分片事务需求</span></label></li><li><label><input type="checkbox"><span>有再平衡与扩容方案</span></label></li><li><label><input type="checkbox"><span>监控各分片数据量与负载</span></label></li><li><label><input type="checkbox"><span>备份恢复按分片演练过</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>分片键怎么选？</summary><p>看访问模式：高频查询和事务都带的列优先，如租户或用户 ID；要求基数高、分布均匀、不随时间单调递增；关联表尽量共置。最终目标是绝大多数请求只命中一个分片。</p></details><details class="iv"><summary>分片后跨分片事务怎么办？</summary><p>首选通过分片键设计避免；无法避免时可用两阶段提交（性能和可用性代价高），或拆成本地事务配合 Saga、Outbox 实现最终一致。数据库扩展可能提供分布式事务，但要评估延迟。</p></details><details class="iv"><summary>分片和分区的区别？</summary><p>分区在单个数据库实例内把表拆成多个子表，主要改善管理和查询裁剪，不增加机器；分片把数据分布到多台独立节点，解决单机容量与吞吐上限，但带来分布式问题。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.mongodb.com/docs/manual/sharding/" target="_blank" rel="noopener"><b>MongoDB Sharding</b><small>mongodb.com ↗</small></a></li><li><a href="https://docs.citusdata.com/en/stable/" target="_blank" rel="noopener"><b>Citus 文档</b><small>docs.citusdata.com ↗</small></a></li><li><a href="https://vitess.io/docs/" target="_blank" rel="noopener"><b>Vitess 文档</b><small>vitess.io ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Shard_(database_architecture)" target="_blank" rel="noopener"><b>Shard (database architecture) - Wikipedia</b><small>en.wikipedia.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="threat-modeling.pro.html" rel="prev"><small>‹ 上一个</small><b>🗺️ 威胁建模</b></a><a class="pn next" href="partitioning.pro.html" rel="next"><small>下一个 ›</small><b>🗂️ 单实例表分区</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

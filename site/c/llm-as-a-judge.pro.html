@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="AI 当裁判 (LLM-as-Judge) 专业模式：LLM-as-a-Judge 是一种自动评测方法：用一个（通常更强的）大模型，依据评分细则（rubric）对另一个模型的输出打分或做两两比较，以近似人工评价。它">
+<title>🎓 AI 当裁判 (LLM-as-Judge) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="llm-as-a-judge" data-answer="0" data-prev="prometheus-and-grafana.pro.html" data-next="llm-observability.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#ai">🔥 进阶 · 🤖 AI 与提示词</a><span>›</span><a href="llm-as-a-judge.html">AI 当裁判 (LLM-as-Judge)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.403 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="prometheus-and-grafana.pro.html" rel="prev"><small>‹ 上一个</small><b>📈 指标监控 (Prometheus / Grafana)</b></a><a class="pn next" href="llm-observability.pro.html" rel="next"><small>下一个 ›</small><b>🔭 大模型可观测 (Tracing)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">⚖️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>AI 当裁判 (LLM-as-Judge)</h1><p class="en">LLM-as-a-Judge</p>
+    <div class="hbtns"><a class="prosw back" href="llm-as-a-judge.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">LLM-as-a-Judge 是一种自动评测方法：用一个（通常更强的）大模型，依据评分细则（rubric）对另一个模型的输出打分或做两两比较，以近似人工评价。它位于评测（Evals）层，解决开放式生成任务难以用精确匹配评分、人工评审又慢又贵的问题。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>定义评测维度和细则：如正确性、完整性、简洁性，每档分数配描述与示例。</p></li><li><span class="sn">2</span><p>选择模式：单点打分（pointwise）、两两比较（pairwise）或对照参考答案打分（reference-based）。</p></li><li><span class="sn">3</span><p>构造评审提示：给出问题、待评回答、可选参考答案，要求先写理由再给结构化分数（JSON）。</p></li><li><span class="sn">4</span><p>去偏处理：两两比较时交换顺序各评一次，固定温度，必要时多次采样取多数或均值。</p></li><li><span class="sn">5</span><p>校准：用一小批人工标注样本计算与人工的一致率，调整细则后再大规模使用。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>评分细则 (Rubric)</dt><dd>每个维度、每档分数的明确判定标准，是评审一致性的基础。</dd></div><div class="term"><dt>位置偏差 (Position Bias)</dt><dd>两两比较时评审模型倾向偏好排在某一位置的回答。</dd></div><div class="term"><dt>冗长偏差 (Verbosity Bias)</dt><dd>评审倾向给更长的回答更高分，即便信息量并未增加。</dd></div><div class="term"><dt>自我偏好 (Self-enhancement Bias)</dt><dd>评审模型偏爱自己或同家族模型生成的回答。</dd></div><div class="term"><dt>一致率 (Agreement Rate)</dt><dd>评审结果与人工标注相同的比例，用于衡量裁判可信度。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>两两比较并交换顺序</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import json
+from openai import OpenAI
+
+client = OpenAI()
+RUBRIC = &quot;按正确性、完整性、简洁性比较两个回答。先写理由，再输出 JSON：{\&quot;reason\&quot;: str, \&quot;winner\&quot;: \&quot;A\&quot;|\&quot;B\&quot;|\&quot;tie\&quot;}&quot;
+
+def judge(q, a, b):
+    resp = client.chat.completions.create(
+        model=&quot;gpt-4o-mini&quot;,
+        temperature=0,                      # 降低随机性
+        response_format={&quot;type&quot;: &quot;json_object&quot;},
+        messages=[{&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: RUBRIC},
+                  {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: f&quot;问题：{q}\n回答A：{a}\n回答B：{b}&quot;}],
+    )
+    return json.loads(resp.choices[0].message.content)[&quot;winner&quot;]
+
+def compare(q, x, y):
+    r1 = judge(q, x, y)                     # x 在 A 位
+    r2 = judge(q, y, x)                     # 交换位置
+    r2 = {&quot;A&quot;: &quot;B&quot;, &quot;B&quot;: &quot;A&quot;}.get(r2, r2)   # 映射回原顺序
+    return r1 if r1 == r2 else &quot;tie&quot;        # 不一致视为平局</code></pre></div><p class="cnote">交换位置各评一次可抵消位置偏差，结论不一致时判平局更稳妥。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">三种评审模式</h3><div class="tw"><table><thead><tr><th>模式</th><th>输入</th><th>适用场景</th></tr></thead><tbody><tr><td data-h="模式">单点打分</td><td data-h="输入">问题+回答</td><td data-h="适用场景">监控线上质量、批量打分</td></tr><tr><td data-h="模式">两两比较</td><td data-h="输入">问题+两个回答</td><td data-h="适用场景">模型/提示词 A/B 选型</td></tr><tr><td data-h="模式">参考答案对照</td><td data-h="输入">问题+回答+标准答案</td><td data-h="适用场景">事实性问答、有标准解的任务</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>LLM 裁判</h4><p><b class="k-p">优点</b>快、便宜、可大规模和持续运行</p><p><b class="k-c">代价</b>有系统性偏差，需人工校准</p><p><b class="k-w">适用</b>迭代提示词、回归测试</p></div><div class="trd"><h4>人工评审</h4><p><b class="k-p">优点</b>可信度高，能发现细微问题</p><p><b class="k-c">代价</b>慢、贵、评审者之间也不一致</p><p><b class="k-w">适用</b>建立金标集、关键发布前</p></div><div class="trd"><h4>规则/程序化检查</h4><p><b class="k-p">优点</b>确定、零成本、可解释</p><p><b class="k-c">代价</b>只能覆盖格式、可执行性等硬指标</p><p><b class="k-w">适用</b>JSON 结构、代码能否通过测试</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>用被测模型本身当裁判，分数虚高</p><p class="fix"><b>✓</b>换不同家族或更强的模型当裁判，并用人工样本校准</p></li><li><p class="bad"><b>✗</b>只让裁判给 1–10 分，没有细则，分数漂移</p><p class="fix"><b>✓</b>每档写明判定标准和示例，或改用两两比较</p></li><li><p class="bad"><b>✗</b>从不检查裁判与人工的一致性就上线</p><p class="fix"><b>✓</b>保留一份人工标注集，定期计算一致率并跟踪变化</p></li><li><p class="bad"><b>✗</b>能用程序验证的也交给 LLM 裁判</p><p class="fix"><b>✓</b>可执行的先跑测试或规则，LLM 只评主观维度</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>评分细则成文并有示例</span></label></li><li><label><input type="checkbox"><span>裁判与被测模型不同源</span></label></li><li><label><input type="checkbox"><span>两两比较做了位置交换</span></label></li><li><label><input type="checkbox"><span>温度固定且输出结构化</span></label></li><li><label><input type="checkbox"><span>有人工金标集校准一致率</span></label></li><li><label><input type="checkbox"><span>裁判模型版本被记录</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>LLM 裁判有哪些已知偏差，如何缓解？</summary><p>位置偏差：交换顺序双评；冗长偏差：细则中明确不因长度加分，或控制长度；自我偏好：用不同家族模型；分数尺度漂移：改两两比较或给锚点示例。最后都要用人工样本校准。</p></details><details class="iv"><summary>单点打分和两两比较怎么选？</summary><p>两两比较对细微差异更敏感、评审更稳定，适合选型和 A/B；但成本随候选数平方增长。单点打分可独立评每条，适合线上监控和趋势跟踪，但尺度容易漂移，需细则锚定。</p></details><details class="iv"><summary>怎么证明你的裁判可信？</summary><p>抽取有代表性的样本做人工标注，计算裁判与人工的一致率或相关系数，并与人与人之间的一致率对比；接近人际一致水平才可替代。裁判模型或细则变更后要重新校准。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://arxiv.org/abs/2306.05685" target="_blank" rel="noopener"><b>Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena</b><small>arxiv.org ↗</small></a></li><li><a href="https://arxiv.org/abs/2303.16634" target="_blank" rel="noopener"><b>G-Eval: NLG Evaluation using GPT-4</b><small>arxiv.org ↗</small></a></li><li><a href="https://github.com/openai/evals" target="_blank" rel="noopener"><b>OpenAI Evals (GitHub)</b><small>github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="prometheus-and-grafana.pro.html" rel="prev"><small>‹ 上一个</small><b>📈 指标监控 (Prometheus / Grafana)</b></a><a class="pn next" href="llm-observability.pro.html" rel="next"><small>下一个 ›</small><b>🔭 大模型可观测 (Tracing)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

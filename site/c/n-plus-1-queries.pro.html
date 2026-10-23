@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="N+1查询问题 专业模式：N+1 查询问题（N+1 Queries）是先用 1 次查询取出 N 条主记录，再在循环中为每条记录各发 1 次查询获取关联数据，共执行 N+1 次查询的性能反">
+<title>🎓 N+1查询问题 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="n-plus-1-queries" data-answer="0" data-prev="indexes.pro.html" data-next="full-table-scans.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#db">🌊 中级 · 🗄️ 数据库</a><span>›</span><a href="n-plus-1-queries.html">N+1查询问题</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.124 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="indexes.pro.html" rel="prev"><small>‹ 上一个</small><b>📑 数据库索引</b></a><a class="pn next" href="full-table-scans.pro.html" rel="next"><small>下一个 ›</small><b>🔍 全表扫描</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🏃</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>N+1查询问题</h1><p class="en">N+1 Queries</p>
+    <div class="hbtns"><a class="prosw back" href="n-plus-1-queries.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">N+1 查询问题（N+1 Queries）是先用 1 次查询取出 N 条主记录，再在循环中为每条记录各发 1 次查询获取关联数据，共执行 N+1 次查询的性能反模式。它常由 ORM 的懒加载（Lazy Loading）隐式触发，代码看起来简洁，数据量增长后网络往返和延迟急剧上升，是 AI 生成代码中的常见性能问题。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>代码先用一次查询取出一组主记录，例如最近发布的 20 篇文章。</p></li><li><span class="sn">2</span><p>遍历时访问每条记录的关联属性，如 post.author，ORM 懒加载为每次访问发出一条 SELECT。</p></li><li><span class="sn">3</span><p>总查询数随 N 线性增长，每次查询都有网络往返和解析开销，即使单条很快总耗时也很高。</p></li><li><span class="sn">4</span><p>解决方法是预先批量加载关联数据：JOIN 一次取回，或用 WHERE id IN (...) 第二次批量查询。</p></li><li><span class="sn">5</span><p>GraphQL 等嵌套解析场景常用 DataLoader 把同一轮请求中的单条查询合并为批量查询。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>懒加载 (Lazy Loading)</dt><dd>访问关联属性时才发起查询，是 N+1 的常见来源。</dd></div><div class="term"><dt>预加载 (Eager Loading)</dt><dd>查询主记录时一并加载关联数据。</dd></div><div class="term"><dt>selectinload</dt><dd>SQLAlchemy 用一次 IN 查询批量加载关联集合的策略。</dd></div><div class="term"><dt>joinedload</dt><dd>SQLAlchemy 用 JOIN 在同一查询中加载关联的策略。</dd></div><div class="term"><dt>DataLoader</dt><dd>把同一事件循环内的多次按键加载合并成一次批量请求的工具。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>SQLAlchemy 修复 N+1</span><em>python</em><button class="ccopy">复制</button></div><pre><code>from sqlalchemy import ForeignKey, create_engine, select
+from sqlalchemy.orm import (DeclarativeBase, Mapped, Session,
+                            mapped_column, relationship, selectinload)
+
+class Base(DeclarativeBase): pass
+
+class User(Base):
+    __tablename__ = &quot;users&quot;
+    id: Mapped[int] = mapped_column(primary_key=True)
+    posts: Mapped[list[&quot;Post&quot;]] = relationship(back_populates=&quot;author&quot;)
+
+class Post(Base):
+    __tablename__ = &quot;posts&quot;
+    id: Mapped[int] = mapped_column(primary_key=True)
+    author_id: Mapped[int] = mapped_column(ForeignKey(&quot;users.id&quot;))
+    author: Mapped[User] = relationship(back_populates=&quot;posts&quot;)
+
+engine = create_engine(&quot;sqlite://&quot;, echo=True)   # echo 打印每条 SQL
+Base.metadata.create_all(engine)
+
+with Session(engine) as s:
+    # N+1：每个 user.posts 都会触发一次懒加载查询
+    for u in s.scalars(select(User)):
+        len(u.posts)
+    # 修复：一次查用户 + 一次 IN 查询批量加载所有帖子
+    for u in s.scalars(select(User).options(selectinload(User.posts))):
+        len(u.posts)</code></pre></div><p class="cnote">开启 echo 可直观看到查询次数变化；一对多集合常用 selectinload，多对一可用 joinedload。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见框架的预加载写法</h3><div class="tw"><table><thead><tr><th>框架</th><th>N+1 写法</th><th>修复写法</th></tr></thead><tbody><tr><td data-h="框架">SQLAlchemy</td><td data-h="N+1 写法">循环访问 user.posts</td><td data-h="修复写法">options(selectinload(User.posts))</td></tr><tr><td data-h="框架">Django ORM</td><td data-h="N+1 写法">循环访问 post.author</td><td data-h="修复写法">select_related / prefetch_related</td></tr><tr><td data-h="框架">Prisma</td><td data-h="N+1 写法">循环中 findMany 关联</td><td data-h="修复写法">include: { posts: true }</td></tr><tr><td data-h="框架">Rails ActiveRecord</td><td data-h="N+1 写法">循环访问 post.author</td><td data-h="修复写法">includes(:author)</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>JOIN 预加载</h4><p><b class="k-p">优点</b>一次往返</p><p><b class="k-c">代价</b>一对多会产生重复行，结果集膨胀</p><p><b class="k-w">适用</b>多对一、一对一关联</p></div><div class="trd"><h4>IN 批量查询</h4><p><b class="k-p">优点</b>无重复行，结构清晰</p><p><b class="k-c">代价</b>两次往返，IN 列表过大需分批</p><p><b class="k-w">适用</b>一对多集合</p></div><div class="trd"><h4>DataLoader 批处理</h4><p><b class="k-p">优点</b>适配嵌套解析，自动合并</p><p><b class="k-c">代价</b>引入额外抽象</p><p><b class="k-w">适用</b>GraphQL、按需组合的接口</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>开发环境数据少，N+1 不易察觉</p><p class="fix"><b>✓</b>开启 SQL 日志，或在测试中断言查询次数</p></li><li><p class="bad"><b>✗</b>为解决 N+1 预加载了所有关联</p><p class="fix"><b>✓</b>只加载当前接口需要的关联，避免过度获取</p></li><li><p class="bad"><b>✗</b>在模板或序列化器中隐式访问关联</p><p class="fix"><b>✓</b>在查询层统一声明预加载，或开启懒加载报错模式</p></li><li><p class="bad"><b>✗</b>AI 生成的列表接口在循环里调用数据库</p><p class="fix"><b>✓</b>审查循环内的 I/O，要求改为批量查询</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>列表接口审查循环内查询</span></label></li><li><label><input type="checkbox"><span>开发环境开启 SQL 日志</span></label></li><li><label><input type="checkbox"><span>关键接口测试断言查询次数</span></label></li><li><label><input type="checkbox"><span>按需选择预加载策略</span></label></li><li><label><input type="checkbox"><span>APM 监控每请求查询数</span></label></li><li><label><input type="checkbox"><span>GraphQL 解析器使用批处理</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么单条查询很快，N+1 仍然慢？</summary><p>每次查询都有固定开销：网络往返、连接调度、SQL 解析和计划。单条 1 毫秒，1000 条就是 1 秒以上，而一次批量查询可能只要几毫秒。数据库在跨机器部署时往返延迟更大，问题会更加明显。</p></details><details class="iv"><summary>如何在项目中及早发现 N+1？</summary><p>开发时开启 ORM 的 SQL 日志；使用专门的检测工具，如 Rails 的 Bullet、Django 的 nplusone 等；在集成测试中断言某个接口的查询次数上限；生产环境用 APM 查看每请求的查询数量和重复语句。</p></details><details class="iv"><summary>JOIN 预加载和 IN 预加载如何选择？</summary><p>多对一（文章取作者）用 JOIN，结果行数不变；一对多（用户取所有文章）用 JOIN 会让主记录重复、数据量膨胀，用第二次 IN 查询更高效。也要注意 IN 列表过长时需分批，具体以 EXPLAIN 和实际耗时为准。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.sqlalchemy.org/en/20/orm/queryguide/relationships.html" target="_blank" rel="noopener"><b>SQLAlchemy Docs: Relationship Loading Techniques</b><small>docs.sqlalchemy.org ↗</small></a></li><li><a href="https://docs.djangoproject.com/en/stable/ref/models/querysets/#select-related" target="_blank" rel="noopener"><b>Django Docs: select_related / prefetch_related</b><small>docs.djangoproject.com ↗</small></a></li><li><a href="https://www.prisma.io/docs/orm/prisma-client/queries/query-optimization-performance" target="_blank" rel="noopener"><b>Prisma Docs: Query optimization</b><small>prisma.io ↗</small></a></li><li><a href="https://github.com/graphql/dataloader" target="_blank" rel="noopener"><b>DataLoader (GitHub)</b><small>github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="indexes.pro.html" rel="prev"><small>‹ 上一个</small><b>📑 数据库索引</b></a><a class="pn next" href="full-table-scans.pro.html" rel="next"><small>下一个 ›</small><b>🔍 全表扫描</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

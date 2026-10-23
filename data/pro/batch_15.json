@@ -1,0 +1,3583 @@
+[
+ {
+  "slug": "git-rebase",
+  "def": "Rebase（变基）是 Git 的历史改写操作：找出当前分支相对目标基点（upstream）多出的提交，把它们按顺序作为补丁重新应用到新基点之上，生成内容相同但哈希不同的新提交。它用来得到线性历史、整理提交（压缩、改信息、重排），代价是改写了已有提交的身份。",
+  "how": [
+   "Git 计算当前分支与 upstream 的合并基（merge base），收集从合并基到 HEAD 之间、upstream 中尚不存在的提交。",
+   "把 HEAD 重置到 upstream 指向的提交，然后逐个“摘取”（cherry-pick 语义）原提交，重新生成新的提交对象。",
+   "任一提交应用冲突时暂停，开发者解决后 git add 并执行 git rebase --continue，或用 --abort 回到开始前状态。",
+   "交互式 rebase（-i）先打开待办列表，可对每个提交选择 pick、reword、squash、fixup、drop 或调整顺序。",
+   "完成后分支指针指向新提交，旧提交仍可通过 reflog 找回，直到被垃圾回收；已推送分支需强制推送才能更新远端。"
+  ],
+  "terms": [
+   {
+    "t": "合并基 (Merge Base)",
+    "d": "两个分支最近的共同祖先提交，rebase 从这里之后开始收集提交。"
+   },
+   {
+    "t": "交互式变基 (Interactive Rebase)",
+    "d": "git rebase -i，可压缩、改写、重排、删除提交。"
+   },
+   {
+    "t": "--force-with-lease",
+    "d": "强推前确认远端仍是你上次看到的状态，比 --force 安全。"
+   },
+   {
+    "t": "reflog",
+    "d": "本地记录 HEAD 与分支指针每次移动的日志，用于找回 rebase 前的提交。"
+   },
+   {
+    "t": "--autosquash",
+    "d": "配合 fixup! 前缀的提交，在交互式 rebase 时自动排到目标提交后。"
+   },
+   {
+    "t": "rerere",
+    "d": "reuse recorded resolution，记住冲突解决方式，下次相同冲突自动套用。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "功能分支变基到最新 main",
+   "src": "# 1. 取回远端最新代码\ngit fetch origin\n\n# 2. 把当前功能分支的提交重放到 origin/main 之上\ngit rebase origin/main\n# 出现冲突：编辑文件后\ngit add <冲突文件>\ngit rebase --continue      # 或 git rebase --abort 放弃\n\n# 3. 推送前整理最近 3 个提交（压缩、改信息）\ngit rebase -i HEAD~3\n\n# 4. 分支已推送过，必须强推；用 lease 防止覆盖别人的提交\ngit push --force-with-lease\n\n# 5. 后悔了：查看 reflog 找回旧位置\ngit reflog\ngit reset --hard HEAD@{5}   # 以 reflog 实际输出为准",
+   "note": "展示 fetch→rebase→整理→安全强推→reflog 回滚的完整闭环。"
+  },
+  "table": {
+   "title": "rebase 与 merge 对比",
+   "head": [
+    "维度",
+    "git merge",
+    "git rebase"
+   ],
+   "rows": [
+    [
+     "历史形态",
+     "保留分叉，产生合并提交",
+     "线性，无合并提交"
+    ],
+    [
+     "提交哈希",
+     "不变",
+     "被重放的提交全部变化"
+    ],
+    [
+     "冲突处理",
+     "一次性解决",
+     "可能逐个提交解决"
+    ],
+    [
+     "对协作者影响",
+     "无",
+     "已共享的分支需对方重新同步"
+    ],
+    [
+     "可追溯性",
+     "完整保留真实时间线",
+     "更易读，但丢失分支上下文"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "rebase 后 fast-forward 合并",
+    "pros": "历史线性，git log 与 bisect 更友好",
+    "cons": "需强推功能分支，冲突可能多次解决",
+    "when": "个人短生命周期分支"
+   },
+   {
+    "opt": "普通 merge",
+    "pros": "不改写历史，协作零风险",
+    "cons": "合并提交多，历史图复杂",
+    "when": "长期共享分支、发布分支"
+   },
+   {
+    "opt": "Squash merge（平台合并）",
+    "pros": "每个 PR 一个提交，main 很干净",
+    "cons": "丢失 PR 内部细粒度提交",
+    "when": "PR 内提交杂乱、团队不需细节时"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在多人共享的分支上 rebase 并强推",
+    "fix": "遵守黄金法则：只 rebase 未共享或仅自己使用的分支"
+   },
+   {
+    "bad": "用 git push --force 覆盖了同事刚推的提交",
+    "fix": "改用 --force-with-lease，并开启分支保护禁止强推 main"
+   },
+   {
+    "bad": "冲突解决一半就慌乱执行 reset，以为代码丢了",
+    "fix": "先 git rebase --abort 回到起点，或用 reflog 找回原提交"
+   },
+   {
+    "bad": "让 AI Agent 自动 rebase 却不检查结果",
+    "fix": "要求 Agent 列出改写的提交并在完成后跑测试，再推送"
+   }
+  ],
+  "checklist": [
+   "只对自己的功能分支执行 rebase",
+   "main / release 分支开启禁止强推保护",
+   "强推统一使用 --force-with-lease",
+   "rebase 后本地跑通测试再推送",
+   "团队约定 PR 合并方式（merge / squash / rebase）",
+   "长期冲突频繁时启用 rerere"
+  ],
+  "interview": [
+   {
+    "q": "rebase 为什么会改变提交哈希？",
+    "a": "提交哈希由内容树、父提交、作者、提交者信息和时间等计算。rebase 把提交重放到新的父提交之上，父指针变了，哈希必然变化，即使代码改动完全相同。因此 rebase 本质是创建新提交，旧提交只是不再被分支引用。"
+   },
+   {
+    "q": "--force 和 --force-with-lease 有何区别？",
+    "a": "--force 无条件用本地分支覆盖远端。--force-with-lease 会检查远端分支是否仍等于本地记录的远端跟踪引用，若他人在此期间推送了新提交则拒绝，避免误删别人的工作。注意先 fetch 会刷新跟踪引用，削弱保护效果。"
+   },
+   {
+    "q": "rebase 出错如何恢复？",
+    "a": "进行中可 git rebase --abort 回到开始前。已完成可用 git reflog 找到 rebase 前 HEAD 的位置，再 git reset --hard 到该位置；ORIG_HEAD 通常也指向操作前的提交。旧对象在被垃圾回收前一直可找回。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Git 官方文档：git-rebase",
+    "url": "https://git-scm.com/docs/git-rebase"
+   },
+   {
+    "title": "Pro Git：变基",
+    "url": "https://git-scm.com/book/zh/v2/Git-%E5%88%86%E6%94%AF-%E5%8F%98%E5%9F%BA"
+   }
+  ]
+ },
+ {
+  "slug": "conventional-commits",
+  "def": "Conventional Commits（约定式提交）是一份关于提交信息结构的轻量规范：type(scope)!: description 加可选正文和脚注。它把提交信息变成机器可解析的数据，与语义化版本（SemVer）对应——fix 对应补丁号、feat 对应次版本号、BREAKING CHANGE 对应主版本号，从而支撑自动生成变更日志和自动发版。",
+  "how": [
+   "首行格式为 type(可选 scope)(可选 !): 描述，type 常用 feat、fix，规范也允许 docs、refactor、test、chore 等。",
+   "空一行后写可选正文，说明动机与细节；再空一行写脚注，格式类似 Git trailer，如 Refs: #123。",
+   "破坏性变更用两种方式之一标记：type 后加 !，或脚注写 BREAKING CHANGE: 说明，二者都映射为主版本号升级。",
+   "commitlint 等工具在 commit-msg 钩子里解析首行，不符合规则就拒绝提交，保证仓库历史一致。",
+   "semantic-release、release-please 等工具读取自上次发布以来的提交，推算下一个版本号并生成 CHANGELOG。"
+  ],
+  "terms": [
+   {
+    "t": "type",
+    "d": "提交类别，规范强制的只有 feat 与 fix，其余由团队约定。"
+   },
+   {
+    "t": "scope",
+    "d": "括号中的影响范围，如 feat(auth):，可选。"
+   },
+   {
+    "t": "BREAKING CHANGE",
+    "d": "脚注标记的不兼容变更，触发主版本号升级。"
+   },
+   {
+    "t": "Git Trailer",
+    "d": "提交信息末尾的 键: 值 元数据行，如 Co-authored-by。"
+   },
+   {
+    "t": "commitlint",
+    "d": "校验提交信息是否符合约定格式的 Node 工具。"
+   },
+   {
+    "t": "release-please",
+    "d": "Google 维护的工具，依据约定式提交生成发布 PR 与变更日志。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "约定式提交示例与校验配置",
+   "src": "# 新功能（次版本号 +1）\nfeat(auth): 支持通行密钥登录\n\n# 修复（补丁号 +1），正文与脚注\nfix(api): 分页游标为空时返回 400\n\n空游标此前导致 500，改为参数校验。\n\nRefs: #482\n\n# 破坏性变更（主版本号 +1）两种写法\nfeat(api)!: 移除 v1 用户接口\n\nrefactor: 重命名配置项\n\nBREAKING CHANGE: config.timeout 改为 config.timeoutMs\n\n# commitlint.config.js（配合 commit-msg 钩子）\n# export default { extends: [\"@commitlint/config-conventional\"] };",
+   "note": "展示 feat/fix/破坏性变更的写法与对应版本号变化，以及 commitlint 的最简配置。"
+  },
+  "table": {
+   "title": "提交类型与版本号映射",
+   "head": [
+    "提交内容",
+    "示例首行",
+    "SemVer 影响"
+   ],
+   "rows": [
+    [
+     "fix",
+     "fix: 修复空指针",
+     "PATCH，如 1.4.2→1.4.3"
+    ],
+    [
+     "feat",
+     "feat: 新增导出 CSV",
+     "MINOR，如 1.4.2→1.5.0"
+    ],
+    [
+     "! 或 BREAKING CHANGE",
+     "feat!: 删除旧接口",
+     "MAJOR，如 1.4.2→2.0.0"
+    ],
+    [
+     "docs / chore / test 等",
+     "docs: 更新 README",
+     "默认不触发发版（取决于工具配置）"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "本地 commit-msg 钩子强制",
+    "pros": "问题在提交时即被发现",
+    "cons": "可被 --no-verify 绕过",
+    "when": "个人或小团队项目"
+   },
+   {
+    "opt": "CI 校验 PR 标题",
+    "pros": "不依赖本地环境，强制力高",
+    "cons": "反馈较晚",
+    "when": "开源项目、使用 squash merge 时"
+   },
+   {
+    "opt": "只约定不校验",
+    "pros": "零成本",
+    "cons": "很快走样，自动发版不可靠",
+    "when": "原型期或无发版需求"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "squash merge 时只校验了单个提交，PR 标题却随意",
+    "fix": "squash 合并以 PR 标题为最终提交信息，应在 CI 中校验 PR 标题"
+   },
+   {
+    "bad": "把破坏性变更写成普通 feat",
+    "fix": "任何不兼容改动都加 ! 或 BREAKING CHANGE 脚注，否则自动发版会漏升主版本"
+   },
+   {
+    "bad": "type 种类无限扩张，每人自造",
+    "fix": "在 commitlint 配置中锁定 type-enum 白名单"
+   },
+   {
+    "bad": "让 AI 生成提交信息却不提供规范",
+    "fix": "在规则文件中写明格式与可用 type，让 Agent 按约定生成"
+   }
+  ],
+  "checklist": [
+   "团队文档写明允许的 type 与 scope",
+   "commit-msg 钩子或 CI 中启用 commitlint",
+   "squash 合并时校验 PR 标题",
+   "破坏性变更必须带 ! 或脚注",
+   "发版工具配置与约定保持一致",
+   "在 AI 规则文件中写入提交格式"
+  ],
+  "interview": [
+   {
+    "q": "约定式提交如何与 SemVer 联动？",
+    "a": "发版工具从上个 tag 起扫描提交：出现 BREAKING CHANGE 或 ! 则升主版本；否则有 feat 升次版本；否则有 fix 升补丁版本。其余类型默认不发版。1.0.0 之前的项目，部分工具会把破坏性变更降级处理，需看配置。"
+   },
+   {
+    "q": "为什么规范只强制 feat 和 fix？",
+    "a": "因为只有它们和 SemVer 直接对应。其他类型如 docs、refactor 来自 Angular 约定，团队可自由增减。规范保持最小，便于不同生态采纳，扩展部分交给 commitlint 配置约束。"
+   },
+   {
+    "q": "提交被 --no-verify 绕过怎么办？",
+    "a": "本地钩子只是第一道防线。应在 CI 上对 PR 标题或提交范围再跑一次 commitlint，并通过分支保护让检查成为合并的必要条件，这样绕过本地钩子也无法合入主分支。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Conventional Commits 1.0.0",
+    "url": "https://www.conventionalcommits.org/zh-hans/v1.0.0/"
+   },
+   {
+    "title": "commitlint 文档",
+    "url": "https://commitlint.js.org/"
+   },
+   {
+    "title": "Semantic Versioning 2.0.0",
+    "url": "https://semver.org/"
+   }
+  ]
+ },
+ {
+  "slug": "git-hooks",
+  "def": "Git Hooks（Git 钩子）是 Git 在特定事件（提交、推送等）前后自动执行的脚本，位于 .git/hooks 或 core.hooksPath 指定目录。客户端钩子用于在代码进入仓库前做格式化、静态检查和密钥扫描；pre-* 类钩子以非零退出码即可中止操作。因为 .git 目录不随仓库分发，团队通常借助 pre-commit、husky 等框架共享配置。",
+  "how": [
+   "Git 在执行 commit、push 等命令的固定节点查找同名可执行文件，如 pre-commit、commit-msg、pre-push。",
+   "pre-commit 在生成提交对象前运行，常只针对暂存区（staged）文件做 lint、格式化与密钥扫描。",
+   "commit-msg 收到提交信息临时文件路径作为参数，可读取并校验格式，例如约定式提交。",
+   "脚本退出码非 0 时 Git 中止当前操作；用户可用 --no-verify 跳过 pre-commit 与 commit-msg 钩子。",
+   "pre-commit 框架读取仓库内的 .pre-commit-config.yaml，执行 pre-commit install 写入钩子，按配置下载并缓存各工具环境。"
+  ],
+  "terms": [
+   {
+    "t": "core.hooksPath",
+    "d": "Git 配置项，指定钩子目录，可指向仓库内受版本控制的文件夹。"
+   },
+   {
+    "t": "客户端钩子 (Client-side Hook)",
+    "d": "在开发者本机运行，可被绕过，不能作为唯一安全措施。"
+   },
+   {
+    "t": "服务端钩子 (Server-side Hook)",
+    "d": "pre-receive 等，在远端仓库接收推送时运行，托管平台常以规则替代。"
+   },
+   {
+    "t": "--no-verify",
+    "d": "跳过 pre-commit 和 commit-msg 钩子的命令行参数。"
+   },
+   {
+    "t": "gitleaks",
+    "d": "开源密钥扫描工具，可作为 pre-commit 钩子检测提交中的凭证。"
+   },
+   {
+    "t": "lint-staged",
+    "d": "JS 生态工具，只对暂存文件运行指定命令，常与 husky 搭配。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "pre-commit 框架配置",
+   "src": "# 安装：pip install pre-commit && pre-commit install\n# rev 请改为各仓库当前发布的版本号\nrepos:\n  - repo: https://github.com/pre-commit/pre-commit-hooks\n    rev: v4.6.0\n    hooks:\n      - id: trailing-whitespace\n      - id: end-of-file-fixer\n      - id: check-yaml\n      - id: check-added-large-files\n      - id: detect-private-key     # 拦截私钥文件\n  - repo: https://github.com/gitleaks/gitleaks\n    rev: v8.18.0\n    hooks:\n      - id: gitleaks               # 扫描 API Key 等密钥\n# 手动对全部文件跑一遍：pre-commit run --all-files\n# 升级 rev：pre-commit autoupdate",
+   "note": "共享到仓库的钩子配置：基础卫生检查加私钥与密钥扫描，rev 以官方最新为准。"
+  },
+  "table": {
+   "title": "常用客户端钩子",
+   "head": [
+    "钩子",
+    "触发时机",
+    "可否中止",
+    "典型用途"
+   ],
+   "rows": [
+    [
+     "pre-commit",
+     "生成提交前",
+     "是",
+     "格式化、lint、密钥扫描"
+    ],
+    [
+     "prepare-commit-msg",
+     "打开编辑器前",
+     "是",
+     "预填模板或分支号"
+    ],
+    [
+     "commit-msg",
+     "提交信息写完后",
+     "是",
+     "校验提交信息格式"
+    ],
+    [
+     "post-commit",
+     "提交完成后",
+     "否",
+     "通知、统计"
+    ],
+    [
+     "pre-push",
+     "推送前",
+     "是",
+     "跑单元测试、阻止推 main"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "pre-commit 框架（Python）",
+    "pros": "多语言、环境隔离、生态丰富",
+    "cons": "需要 Python 环境",
+    "when": "多语言或非 JS 项目"
+   },
+   {
+    "opt": "husky + lint-staged",
+    "pros": "与 npm 生态无缝，安装自动化",
+    "cons": "主要服务 JS 项目",
+    "when": "前端 / Node 项目"
+   },
+   {
+    "opt": "手写脚本 + core.hooksPath",
+    "pros": "零依赖，完全可控",
+    "cons": "维护成本高，跨平台麻烦",
+    "when": "极简项目或特殊需求"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把钩子当作唯一的安全防线",
+    "fix": "钩子可被 --no-verify 绕过，CI 中必须重复执行同样的检查"
+   },
+   {
+    "bad": "pre-commit 里跑完整测试，每次提交等几分钟",
+    "fix": "提交钩子只做秒级检查，耗时测试放 pre-push 或 CI"
+   },
+   {
+    "bad": "密钥已经提交后才加扫描钩子",
+    "fix": "历史中的密钥仍可被取到，应立刻轮换密钥并清理历史"
+   },
+   {
+    "bad": "钩子只检查全部文件，改一行也很慢",
+    "fix": "只处理暂存文件（pre-commit 框架默认如此），用 run --all-files 做定期全量"
+   }
+  ],
+  "checklist": [
+   "钩子配置文件纳入版本控制",
+   "README 写明安装命令（如 pre-commit install）",
+   "包含密钥扫描与私钥检测",
+   "CI 中运行相同检查（pre-commit run --all-files）",
+   "提交钩子耗时控制在数秒内",
+   "定期 autoupdate 并审查版本变更"
+  ],
+  "interview": [
+   {
+    "q": "为什么钩子不能直接提交到仓库生效？",
+    "a": ".git 目录不受版本控制，克隆时不会带上 hooks。共享方式是把配置或脚本放在仓库内，再由 pre-commit install、husky 安装脚本或 core.hooksPath 让每个开发者本地启用。这也意味着必须有人执行安装，所以要在 CI 兜底。"
+   },
+   {
+    "q": "客户端钩子与 CI 检查如何分工？",
+    "a": "钩子负责快速反馈，在提交前拦住格式错误和明显的密钥泄露，降低 CI 噪音；CI 负责强制执行，因为钩子可被跳过或未安装。两者运行同一套配置，保证本地通过即 CI 通过。"
+   },
+   {
+    "q": "AI Agent 改代码时钩子有什么价值？",
+    "a": "Agent 执行 git commit 同样会触发钩子，格式与密钥问题会被当场拒绝，Agent 读到错误后可自行修复。注意要在规则中禁止 Agent 使用 --no-verify，否则它可能为了完成任务直接绕过。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Git 官方文档：githooks",
+    "url": "https://git-scm.com/docs/githooks"
+   },
+   {
+    "title": "pre-commit 官方文档",
+    "url": "https://pre-commit.com/"
+   },
+   {
+    "title": "Gitleaks",
+    "url": "https://github.com/gitleaks/gitleaks"
+   }
+  ]
+ },
+ {
+  "slug": "transformer",
+  "def": "Transformer 是 2017 年论文《Attention Is All You Need》提出的神经网络架构，用自注意力（Self-Attention）替代循环结构来建模序列中任意位置间的依赖。它由嵌入、位置编码和若干堆叠的注意力 + 前馈网络块组成，可高度并行训练，是 GPT、Claude、Llama 等主流大语言模型的共同骨架。",
+  "how": [
+   "分词器把文本切成 token，每个 token 映射为向量（嵌入），再注入位置信息（原论文为正弦位置编码，现代模型多用 RoPE 等）。",
+   "每个 Transformer 块先做多头自注意力，让每个位置按相关性聚合其他位置的信息，再经过逐位置的前馈网络（FFN）。",
+   "每个子层外包残差连接和层归一化，使几十上百层的深网络能稳定训练；现代 LLM 多采用 Pre-LN 结构。",
+   "仅解码器（decoder-only）模型使用因果掩码，每个位置只能看到之前的 token，以“预测下一个 token”为训练目标。",
+   "最后一层输出经线性层与 softmax 得到词表概率分布，按采样策略选出下一个 token，追加后重复，直到结束。"
+  ],
+  "terms": [
+   {
+    "t": "自注意力 (Self-Attention)",
+    "d": "序列内部每个位置对所有位置计算相关权重并加权求和。"
+   },
+   {
+    "t": "前馈网络 (FFN / MLP)",
+    "d": "注意力后逐位置的两层全连接网络，占据大部分参数。"
+   },
+   {
+    "t": "残差连接 (Residual Connection)",
+    "d": "把子层输入直接加到输出上，缓解深层网络梯度问题。"
+   },
+   {
+    "t": "仅解码器 (Decoder-only)",
+    "d": "只保留带因果掩码的解码器堆叠，GPT 系列等 LLM 采用。"
+   },
+   {
+    "t": "位置编码 (Positional Encoding)",
+    "d": "为无序的注意力注入 token 顺序信息，如正弦编码、RoPE。"
+   },
+   {
+    "t": "因果掩码 (Causal Mask)",
+    "d": "屏蔽未来位置，保证生成时只依赖已出现的 token。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "PyTorch 搭一个最小编码器",
+   "src": "import torch\nimport torch.nn as nn\n\nd_model, n_head, n_layer = 512, 8, 6   # 原论文 base 配置\nlayer = nn.TransformerEncoderLayer(\n    d_model=d_model, nhead=n_head,\n    dim_feedforward=2048, batch_first=True,\n    norm_first=True,          # Pre-LN，现代模型常用\n)\nencoder = nn.TransformerEncoder(layer, num_layers=n_layer)\n\nx = torch.randn(2, 10, d_model)      # (batch, 序列长度, 维度)\n# 因果掩码：上三角为 True 表示不可见\nmask = nn.Transformer.generate_square_subsequent_mask(10).bool()\ny = encoder(x, mask=mask, is_causal=True)\nprint(y.shape)                         # torch.Size([2, 10, 512])",
+   "note": "用 PyTorch 内置模块堆叠 6 层注意力+FFN 块，并加因果掩码模拟解码器式的单向可见性。"
+  },
+  "table": {
+   "title": "三种 Transformer 变体",
+   "head": [
+    "结构",
+    "代表模型",
+    "训练目标",
+    "典型用途"
+   ],
+   "rows": [
+    [
+     "仅编码器",
+     "BERT",
+     "掩码语言建模",
+     "分类、检索、嵌入"
+    ],
+    [
+     "编码器-解码器",
+     "T5、原始 Transformer",
+     "序列到序列",
+     "翻译、摘要"
+    ],
+    [
+     "仅解码器",
+     "GPT、Llama、Claude 等",
+     "下一个 token 预测",
+     "对话、代码生成、通用 LLM"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Transformer（稠密）",
+    "pros": "并行训练、长程依赖建模好",
+    "cons": "注意力计算随序列长度平方增长",
+    "when": "通用 LLM 的默认选择"
+   },
+   {
+    "opt": "混合专家 MoE",
+    "pros": "参数量大但每 token 只激活部分专家",
+    "cons": "显存占用大、路由训练复杂",
+    "when": "追求大容量又要控制推理计算"
+   },
+   {
+    "opt": "RNN / 状态空间模型",
+    "pros": "推理时每步成本与长度无关",
+    "cons": "并行训练难或生态较小",
+    "when": "超长序列或流式场景研究"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把“层数多”等同于“模型强”",
+    "fix": "能力取决于参数、数据量与训练计算的平衡，盲目加深难以训练且收益有限"
+   },
+   {
+    "bad": "以为模型能看见“字”",
+    "fix": "模型只看到 token 序列，拼写、数字位数等问题常源于分词"
+   },
+   {
+    "bad": "认为上下文窗口内信息被同等利用",
+    "fix": "注意力分配不均，长上下文中段信息常被弱化，关键内容应放首尾"
+   },
+   {
+    "bad": "把 Transformer 和“会推理”画等号",
+    "fix": "架构只决定计算方式，推理能力来自训练数据与后训练方法"
+   }
+  ],
+  "checklist": [
+   "理解所用模型的上下文长度与计费方式",
+   "长输入任务评估注意力成本与延迟",
+   "关键指令放在提示首尾",
+   "了解模型是否为 MoE 以估算显存",
+   "部署时确认支持的位置编码与上下文扩展"
+  ],
+  "interview": [
+   {
+    "q": "Transformer 为什么比 RNN 训练快？",
+    "a": "RNN 必须按时间步顺序计算，第 t 步依赖第 t-1 步的隐藏状态，无法在序列维度并行。Transformer 用注意力一次性计算所有位置间的关系，训练时整段序列可在 GPU 上并行矩阵运算，因而能扩展到更大数据和模型。"
+   },
+   {
+    "q": "为什么需要位置编码？",
+    "a": "自注意力对输入顺序是置换等变的：打乱 token 顺序，每个位置的计算结果只是跟着重排。不注入位置信息，模型无法区分“狗咬人”和“人咬狗”。因此要加绝对位置编码或 RoPE 等相对位置方案。"
+   },
+   {
+    "q": "FFN 在 Transformer 中起什么作用？",
+    "a": "注意力负责在位置之间搬运信息，FFN 负责在每个位置内做非线性变换，被认为存储了大量知识。FFN 隐藏层通常是模型维度的数倍（原论文为 4 倍），参数量占比最大，MoE 正是把 FFN 拆成多个专家。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Attention Is All You Need (arXiv)",
+    "url": "https://arxiv.org/abs/1706.03762"
+   },
+   {
+    "title": "The Illustrated Transformer",
+    "url": "https://jalammar.github.io/illustrated-transformer/"
+   },
+   {
+    "title": "PyTorch nn.Transformer 文档",
+    "url": "https://pytorch.org/docs/stable/generated/torch.nn.Transformer.html"
+   }
+  ]
+ },
+ {
+  "slug": "attention-mechanism",
+  "def": "注意力机制（Attention）让模型在处理某个位置时，按相关性对序列中其他位置的信息加权求和。Transformer 使用缩放点积自注意力：每个 token 生成查询（Q）、键（K）、值（V）三个向量，用 Q·K 计算相关分数并 softmax 归一化后加权 V。它决定了长上下文的计算与显存成本，是理解 KV 缓存与上下文定价的基础。",
+  "how": [
+   "输入向量分别乘以三个可学习矩阵，得到每个 token 的 Q、K、V；Q 代表“我在找什么”，K 代表“我能提供什么”。",
+   "计算 Q 与所有 K 的点积并除以 √d_k 缩放，防止数值过大导致 softmax 饱和、梯度变小。",
+   "解码器施加因果掩码，把未来位置的分数设为负无穷；softmax 后得到每行和为 1 的注意力权重。",
+   "用权重对 V 加权求和，得到融合上下文的新表示；多头注意力并行做多组投影，再拼接后线性变换。",
+   "序列长度为 n 时，分数矩阵为 n×n，计算量随 n 平方增长；推理时缓存历史 K、V（KV 缓存）避免重复计算。"
+  ],
+  "terms": [
+   {
+    "t": "查询/键/值 (Q/K/V)",
+    "d": "由同一输入经不同线性投影得到，用于计算相关性与聚合信息。"
+   },
+   {
+    "t": "缩放点积 (Scaled Dot-Product)",
+    "d": "softmax(QKᵀ/√d_k)V，Transformer 的标准注意力公式。"
+   },
+   {
+    "t": "多头注意力 (Multi-Head Attention)",
+    "d": "多组 Q/K/V 并行计算，捕捉不同类型的关系。"
+   },
+   {
+    "t": "KV 缓存 (KV Cache)",
+    "d": "生成时保存已算过的 K、V，新 token 只需算自己的那一行。"
+   },
+   {
+    "t": "GQA (Grouped-Query Attention)",
+    "d": "多个查询头共享一组 K/V 头，显著减小 KV 缓存。"
+   },
+   {
+    "t": "FlashAttention",
+    "d": "按块计算、减少显存读写的精确注意力实现，速度更快、省显存。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "NumPy 实现因果自注意力",
+   "src": "import numpy as np\n\ndef softmax(x):\n    x = x - x.max(-1, keepdims=True)   # 数值稳定\n    e = np.exp(x)\n    return e / e.sum(-1, keepdims=True)\n\ndef causal_attention(Q, K, V):\n    n, d_k = Q.shape\n    scores = Q @ K.T / np.sqrt(d_k)    # n x n 相关分数\n    mask = np.triu(np.ones((n, n)), k=1).astype(bool)\n    scores[mask] = -np.inf             # 看不到未来 token\n    w = softmax(scores)                # 每行和为 1\n    return w @ V, w\n\nrng = np.random.default_rng(0)\nn, d = 4, 8\nQ, K, V = (rng.standard_normal((n, d)) for _ in range(3))\nout, w = causal_attention(Q, K, V)\nprint(np.round(w, 2))                  # 下三角权重矩阵",
+   "note": "演示 QKᵀ/√d、因果掩码和 softmax 加权；n×n 矩阵就是长上下文成本的来源。"
+  },
+  "table": {
+   "title": "注意力变体对比",
+   "head": [
+    "方案",
+    "KV 缓存大小",
+    "说明"
+   ],
+   "rows": [
+    [
+     "MHA 多头注意力",
+     "最大，每个头一组 K/V",
+     "原始方案"
+    ],
+    [
+     "MQA 多查询注意力",
+     "最小，所有头共享一组",
+     "省显存，可能损失质量"
+    ],
+    [
+     "GQA 分组查询注意力",
+     "介于两者之间",
+     "许多开源 LLM 采用的折中"
+    ],
+    [
+     "滑动窗口注意力",
+     "只保留窗口内 K/V",
+     "每个 token 只看最近若干 token"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "全量注意力",
+    "pros": "任意位置直接交互，效果最好",
+    "cons": "O(n²) 计算，长序列昂贵",
+    "when": "上下文中等、追求质量"
+   },
+   {
+    "opt": "稀疏/滑动窗口注意力",
+    "pros": "长序列成本接近线性",
+    "cons": "远距离信息需多层间接传递",
+    "when": "超长文本、流式输入"
+   },
+   {
+    "opt": "检索后只放相关片段",
+    "pros": "输入短，成本和延迟低",
+    "cons": "依赖检索质量",
+    "when": "应用层控制长文档成本"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "认为上下文窗口越大越好，全量塞入资料",
+    "fix": "注意力成本随长度增长且中段易被忽略，先检索筛选相关内容"
+   },
+   {
+    "bad": "估算显存只看模型权重",
+    "fix": "长上下文和高并发下 KV 缓存可与权重同量级，需按层数、头数、长度估算"
+   },
+   {
+    "bad": "把注意力权重当作可靠的模型解释",
+    "fix": "注意力权重不等于因果贡献，解释性结论需谨慎"
+   },
+   {
+    "bad": "自己实现 softmax 不做数值稳定处理",
+    "fix": "减去每行最大值再求指数，避免溢出"
+   }
+  ],
+  "checklist": [
+   "评估输入长度对延迟与费用的影响",
+   "长文档先检索、再送入模型",
+   "部署时估算 KV 缓存显存占用",
+   "确认推理引擎启用 FlashAttention 等优化",
+   "关注模型是否使用 GQA 等节省缓存的结构"
+  ],
+  "interview": [
+   {
+    "q": "为什么要除以 √d_k？",
+    "a": "假设 Q、K 分量独立且方差为 1，点积方差约为 d_k。维度大时分数绝对值很大，softmax 会接近 one-hot，梯度几乎为零。除以 √d_k 把方差拉回约 1，使训练稳定。"
+   },
+   {
+    "q": "KV 缓存为什么能加速生成？",
+    "a": "自回归生成时，历史 token 的 K、V 不会改变。缓存后每步只为新 token 计算 Q、K、V，并与缓存做一行注意力，避免重算整段序列。代价是显存随序列长度和并发线性增长，这也是长对话推理昂贵的原因之一。"
+   },
+   {
+    "q": "自注意力和交叉注意力有什么不同？",
+    "a": "自注意力的 Q、K、V 来自同一序列；交叉注意力的 Q 来自一个序列（如解码器），K、V 来自另一个序列（如编码器输出或图像特征）。翻译模型和许多多模态模型用交叉注意力把两种信息对齐。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Attention Is All You Need (arXiv)",
+    "url": "https://arxiv.org/abs/1706.03762"
+   },
+   {
+    "title": "FlashAttention (arXiv)",
+    "url": "https://arxiv.org/abs/2205.14135"
+   },
+   {
+    "title": "GQA (arXiv)",
+    "url": "https://arxiv.org/abs/2305.13245"
+   }
+  ]
+ },
+ {
+  "slug": "ttft-and-tpot",
+  "def": "TTFT（Time To First Token，首 token 延迟）指从发出请求到收到第一个输出 token 的时间；TPOT（Time Per Output Token，每输出 token 时间）指首 token 之后平均每个 token 的生成间隔。二者分别对应推理的预填充（prefill）与解码（decode）阶段，是衡量 LLM 体感速度的核心指标。",
+  "how": [
+   "请求到达后先排队，再进入预填充：模型一次性处理全部输入 token 并建立 KV 缓存，输入越长耗时越久。",
+   "预填充结束产出第一个 token，TTFT = 网络 + 排队 + 预填充时间；流式输出下这正是用户看到首字的时刻。",
+   "随后进入解码：每步生成一个 token，受显存带宽限制，单步耗时相对稳定，平均值即 TPOT。",
+   "总延迟约为 TTFT + TPOT ×（输出 token 数 − 1）；输出越长，TPOT 对总时长的影响越大。",
+   "服务端批量越大，吞吐越高，但单请求 TPOT 往往变慢；需在吞吐与延迟间按 SLO 权衡并看 P50/P99 分布。"
+  ],
+  "terms": [
+   {
+    "t": "预填充 (Prefill)",
+    "d": "并行处理整段输入并写入 KV 缓存的阶段，决定 TTFT。"
+   },
+   {
+    "t": "解码 (Decode)",
+    "d": "逐 token 自回归生成的阶段，决定 TPOT。"
+   },
+   {
+    "t": "ITL (Inter-Token Latency)",
+    "d": "相邻两个 token 的到达间隔，TPOT 可视为其平均值。"
+   },
+   {
+    "t": "吞吐 (Throughput)",
+    "d": "单位时间内系统生成的 token 总数，常用 tokens/s。"
+   },
+   {
+    "t": "连续批处理 (Continuous Batching)",
+    "d": "按 token 步动态加入/移出请求，提高 GPU 利用率。"
+   },
+   {
+    "t": "Prompt Caching",
+    "d": "复用相同前缀的 KV 缓存，可明显降低长前缀请求的 TTFT。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "流式调用测 TTFT 与 TPOT",
+   "src": "import time\nfrom openai import OpenAI\n\nclient = OpenAI()  # 读取 OPENAI_API_KEY；兼容接口可传 base_url\nstart = time.perf_counter()\nfirst, stamps = None, []\nstream = client.chat.completions.create(\n    model=\"gpt-4o-mini\",  # 示例模型名，以官方文档为准\n    messages=[{\"role\": \"user\", \"content\": \"用三句话介绍 Redis\"}],\n    stream=True,\n)\nfor chunk in stream:\n    if chunk.choices and chunk.choices[0].delta.content:\n        now = time.perf_counter()\n        first = first or now\n        stamps.append(now)\n\nttft = first - start\n# 注意：一个 chunk 可能含多个 token，这里是按 chunk 的近似值\ntpot = (stamps[-1] - first) / max(len(stamps) - 1, 1)\nprint(f\"TTFT={ttft*1000:.0f}ms  TPOT≈{tpot*1000:.1f}ms/chunk\")",
+   "note": "客户端视角测量：TTFT 含网络与排队；按 chunk 计时只是近似，精确值需按 token 数换算。"
+  },
+  "table": {
+   "title": "影响因素速查",
+   "head": [
+    "因素",
+    "主要影响",
+    "优化手段"
+   ],
+   "rows": [
+    [
+     "输入长度",
+     "TTFT",
+     "裁剪上下文、Prompt Caching"
+    ],
+    [
+     "输出长度",
+     "总时长",
+     "限制 max_tokens、要求简洁"
+    ],
+    [
+     "模型规模",
+     "TTFT 与 TPOT",
+     "小模型路由、量化、投机解码"
+    ],
+    [
+     "并发与批大小",
+     "TPOT、排队时间",
+     "容量规划、按 SLO 调批大小"
+    ],
+    [
+     "网络与地域",
+     "TTFT",
+     "就近部署、长连接复用"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "大批量高吞吐",
+    "pros": "单位 token 成本低",
+    "cons": "单请求 TPOT 变慢",
+    "when": "离线批处理、后台任务"
+   },
+   {
+    "opt": "小批量低延迟",
+    "pros": "TTFT、TPOT 都更好",
+    "cons": "GPU 利用率低、成本高",
+    "when": "实时对话、编程助手"
+   },
+   {
+    "opt": "预填充与解码分离部署",
+    "pros": "两阶段互不干扰，延迟更稳",
+    "cons": "架构复杂，需传输 KV 缓存",
+    "when": "大规模在线推理服务"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只看平均值，忽视长尾",
+    "fix": "报告 P50/P90/P99，并按输入长度分桶分析"
+   },
+   {
+    "bad": "把每个流式 chunk 当成一个 token",
+    "fix": "用 usage 中的输出 token 数换算，或按服务端指标统计"
+   },
+   {
+    "bad": "压测只用短提示，线上全是长文档",
+    "fix": "压测数据的输入/输出长度分布应与线上一致"
+   },
+   {
+    "bad": "推理模型的“思考”时间未计入体验",
+    "fix": "对思考型模型单独衡量首个可见输出时间，必要时展示进度"
+   }
+  ],
+  "checklist": [
+   "定义 TTFT 与 TPOT 的 P99 SLO",
+   "默认开启流式输出",
+   "监控按模型与输入长度分桶",
+   "长系统提示启用 Prompt Caching",
+   "压测数据贴近线上分布",
+   "前端在首字前显示加载状态"
+  ],
+  "interview": [
+   {
+    "q": "为什么长提示主要拖慢 TTFT 而不是 TPOT？",
+    "a": "预填充必须处理全部输入 token 才能产出首字，耗时随输入长度增长。解码阶段每步只算一个新 token，虽然要读更长的 KV 缓存会略慢，但主要瓶颈是读取权重的显存带宽，因此对 TPOT 的影响相对较小。"
+   },
+   {
+    "q": "如何在吞吐和延迟之间做取舍？",
+    "a": "先按产品定义 SLO，例如交互式聊天要求较低的 TTFT 与 TPOT。然后在满足 P99 SLO 的前提下尽量增大批大小以提高吞吐、降低成本。离线任务没有延迟要求，可以用 Batch API 或大批量换最低单价。"
+   },
+   {
+    "q": "人眼阅读速度对 TPOT 有什么意义？",
+    "a": "流式输出时，只要出字速度快于用户阅读速度，体感就是流畅的，继续压低 TPOT 的边际收益有限。此时优化重点应转向 TTFT 和总成本；但对代码生成等需要完整结果的任务，总时长更重要。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "NVIDIA：LLM Inference Benchmarking 基本概念",
+    "url": "https://developer.nvidia.com/blog/llm-benchmarking-fundamental-concepts/"
+   },
+   {
+    "title": "OpenAI Streaming API 文档",
+    "url": "https://platform.openai.com/docs/guides/streaming-responses"
+   },
+   {
+    "title": "vLLM 文档",
+    "url": "https://docs.vllm.ai/en/latest/"
+   }
+  ]
+ },
+ {
+  "slug": "model-file-formats",
+  "def": "模型文件格式决定了权重张量、元数据和分词器如何序列化到磁盘，直接影响加载速度、安全性和可用的推理引擎。主流有 safetensors（只存张量、可 mmap、不含代码）、GGUF（llama.cpp 生态单文件格式，内置量化与元数据），以及基于 pickle 的 PyTorch .bin/.pt，后者加载时有任意代码执行风险。",
+  "how": [
+   "训练框架在内存中保存的是张量字典（参数名到多维数组），保存时需要选一种序列化格式写入磁盘。",
+   "PyTorch 传统的 torch.save 使用 pickle，反序列化时可执行任意 Python 对象构造逻辑，恶意文件可借此运行代码。",
+   "safetensors 文件开头 8 字节记录头部长度，随后是 JSON 头（张量名、dtype、形状、偏移），之后是连续的原始数据，可零拷贝 mmap 加载。",
+   "GGUF 在单文件内存储超参数、分词器、聊天模板等键值元数据和各张量，张量可使用 Q4_K、Q8_0 等量化类型，供 llama.cpp、Ollama 等直接加载。",
+   "大模型常按体积拆为多个分片（shard），配合 index JSON 记录每个张量位于哪个文件；GGUF 也支持分片文件。"
+  ],
+  "terms": [
+   {
+    "t": "safetensors",
+    "d": "只含张量与 JSON 头的安全格式，支持 mmap 与惰性加载。"
+   },
+   {
+    "t": "GGUF",
+    "d": "llama.cpp 定义的二进制格式，单文件包含权重、元数据和量化信息。"
+   },
+   {
+    "t": "pickle 反序列化风险",
+    "d": "加载 pickle 文件可能执行任意代码，不可信来源需避免。"
+   },
+   {
+    "t": "量化类型 (Quant Type)",
+    "d": "如 Q4_K_M、Q8_0，表示每个权重用的位数与分组方式。"
+   },
+   {
+    "t": "分片 (Shard)",
+    "d": "把大模型权重拆为多个文件，配合索引文件加载。"
+   },
+   {
+    "t": "内存映射 (mmap)",
+    "d": "把文件直接映射进地址空间，按需读取，加快加载并省内存。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "读写 safetensors 并查看文件头",
+   "src": "import json, struct\nimport torch\nfrom safetensors.torch import save_file, load_file\n\ntensors = {\"w\": torch.randn(4, 4), \"b\": torch.zeros(4)}\nsave_file(tensors, \"demo.safetensors\", metadata={\"note\": \"demo\"})\n\n# 文件结构：8 字节小端整数 = JSON 头长度，随后是 JSON 头\nwith open(\"demo.safetensors\", \"rb\") as f:\n    n = struct.unpack(\"<Q\", f.read(8))[0]\n    header = json.loads(f.read(n))\nprint(header[\"w\"])          # dtype、shape、data_offsets\n\nloaded = load_file(\"demo.safetensors\")   # 不经过 pickle\nprint(torch.equal(loaded[\"w\"], tensors[\"w\"]))  # True",
+   "note": "说明 safetensors 只是“JSON 头 + 原始字节”，加载过程不执行任何代码。"
+  },
+  "table": {
+   "title": "主流格式对比",
+   "head": [
+    "格式",
+    "主要生态",
+    "是否可执行代码",
+    "典型用途"
+   ],
+   "rows": [
+    [
+     "safetensors",
+     "Transformers、Diffusers",
+     "否",
+     "模型发布、训练、GPU 推理"
+    ],
+    [
+     "GGUF",
+     "llama.cpp、Ollama、LM Studio",
+     "否",
+     "本地 CPU/GPU 量化推理"
+    ],
+    [
+     "PyTorch .bin/.pt (pickle)",
+     "早期 PyTorch",
+     "可能",
+     "遗留模型与检查点"
+    ],
+    [
+     "ONNX",
+     "ONNX Runtime 等",
+     "否",
+     "跨框架部署、边缘设备"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "safetensors + GPU 推理引擎",
+    "pros": "精度高、生态完整、加载快",
+    "cons": "显存需求大",
+    "when": "有服务器 GPU、生产推理"
+   },
+   {
+    "opt": "GGUF 量化文件",
+    "pros": "单文件易分发，消费级硬件可跑",
+    "cons": "低比特量化有质量损失",
+    "when": "个人电脑、离线本地使用"
+   },
+   {
+    "opt": "自行转换格式",
+    "pros": "可定制量化与精度",
+    "cons": "转换脚本与版本兼容需验证",
+    "when": "官方未提供所需格式时"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "从不可信来源加载 .bin/.pt 文件",
+    "fix": "优先 safetensors；必须用 torch.load 时设 weights_only=True"
+   },
+   {
+    "bad": "只看参数量挑文件，忽略量化位数",
+    "fix": "按“参数量 × 每权重位数”估算体积，并为 KV 缓存留显存"
+   },
+   {
+    "bad": "GGUF 聊天模板与模型不匹配导致输出异常",
+    "fix": "使用文件内置模板或官方推荐模板，升级推理引擎"
+   },
+   {
+    "bad": "下载了 LoRA 适配器却当完整模型加载",
+    "fix": "检查是否为 adapter 文件，需与对应基座模型合并或一起加载"
+   }
+  ],
+  "checklist": [
+   "确认推理引擎支持的格式与量化类型",
+   "优先选择 safetensors 或 GGUF",
+   "校验文件来源与哈希",
+   "按显存选择量化等级并预留余量",
+   "检查模型许可证"
+  ],
+  "interview": [
+   {
+    "q": "为什么社区从 pickle 迁移到 safetensors？",
+    "a": "pickle 反序列化能调用任意可调用对象，模型文件可藏恶意代码，在共享平台上风险很大。safetensors 只描述张量布局，没有可执行逻辑，同时支持 mmap 零拷贝和按需加载单个张量，加载速度更快。"
+   },
+   {
+    "q": "GGUF 相比 safetensors 的定位差异？",
+    "a": "safetensors 是通用张量容器，通常保存 FP16/BF16 原始权重，配合 config 与 tokenizer 文件使用。GGUF 是面向推理的自包含格式，把元数据、分词器和量化权重打包在一个文件，便于本地工具开箱即用。"
+   },
+   {
+    "q": "如何估算 GGUF 文件能否在显卡上运行？",
+    "a": "文件体积约等于权重显存占用，再加上 KV 缓存（随上下文长度和并发增长）与运行时开销。显存不足时可部分层卸载到 CPU，但速度会下降。实际可用性以推理引擎的报告为准。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "safetensors 文档 (Hugging Face)",
+    "url": "https://huggingface.co/docs/safetensors/index"
+   },
+   {
+    "title": "GGUF 规范 (ggml)",
+    "url": "https://github.com/ggml-org/ggml/blob/master/docs/gguf.md"
+   },
+   {
+    "title": "Hugging Face Hub：GGUF",
+    "url": "https://huggingface.co/docs/hub/gguf"
+   }
+  ]
+ },
+ {
+  "slug": "openai-compatible-api",
+  "def": "OpenAI 兼容接口指第三方模型服务或本地推理引擎，按 OpenAI REST API 的路径、请求体与响应结构（最常见是 /v1/chat/completions）提供服务。客户端只需替换 base_url、API Key 和模型名，即可复用 OpenAI SDK 和现有代码，是多模型切换与本地部署的事实标准；兼容通常只覆盖核心字段。",
+  "how": [
+   "服务端实现与 OpenAI 相同的路径，如 POST /v1/chat/completions、/v1/embeddings、GET /v1/models。",
+   "鉴权沿用 Authorization: Bearer <key> 请求头；本地服务往往不校验，但 SDK 仍要求传入一个非空字符串。",
+   "请求体使用 messages 数组、model、temperature、max_tokens、stream 等字段；服务端忽略或报错其不支持的字段。",
+   "流式响应采用 SSE（Server-Sent Events），逐行返回 data: {...} 的 chunk，最后以 data: [DONE] 结束。",
+   "LLM 网关可在兼容层之上做路由、重试、限流与计费，把多家模型统一成一个入口。"
+  ],
+  "terms": [
+   {
+    "t": "base_url",
+    "d": "SDK 请求的根地址，替换它即可指向其他兼容服务。"
+   },
+   {
+    "t": "Chat Completions",
+    "d": "OpenAI 的对话补全接口，兼容生态最广泛的格式。"
+   },
+   {
+    "t": "SSE (Server-Sent Events)",
+    "d": "基于 HTTP 的单向流协议，用于流式返回 token。"
+   },
+   {
+    "t": "工具调用 (Tool Calling)",
+    "d": "tools / tool_calls 字段，各兼容实现支持程度不一。"
+   },
+   {
+    "t": "LLM 网关 (LLM Gateway)",
+    "d": "统一多家模型接口、做路由与观测的代理层。"
+   },
+   {
+    "t": "Responses API",
+    "d": "OpenAI 较新的接口，第三方兼容程度通常低于 Chat Completions。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "同一份代码切换多家服务",
+   "src": "import os\nfrom openai import OpenAI\n\n# 示例：.env 中按需切换（地址与模型名以各家官方文档为准）\n# OpenAI:  LLM_BASE_URL=https://api.openai.com/v1\n# Ollama:  LLM_BASE_URL=http://localhost:11434/v1\n# vLLM:    LLM_BASE_URL=http://localhost:8000/v1\nclient = OpenAI(\n    base_url=os.environ[\"LLM_BASE_URL\"],\n    api_key=os.environ.get(\"LLM_API_KEY\", \"not-needed\"),  # 本地服务也需非空\n)\n\nresp = client.chat.completions.create(\n    model=os.environ[\"LLM_MODEL\"],\n    messages=[\n        {\"role\": \"system\", \"content\": \"你是简洁的助手\"},\n        {\"role\": \"user\", \"content\": \"一句话解释 DNS\"},\n    ],\n    temperature=0.2,\n)\nprint(resp.choices[0].message.content)\nprint(resp.usage)  # 部分实现可能不返回 usage",
+   "note": "配置外置到环境变量，代码零修改即可在云端与本地兼容服务间切换。"
+  },
+  "table": {
+   "title": "兼容性需逐项核对的点",
+   "head": [
+    "能力",
+    "常见差异",
+    "验证方法"
+   ],
+   "rows": [
+    [
+     "工具调用",
+     "不支持、并行调用不支持或格式略有出入",
+     "用固定用例测 tool_calls"
+    ],
+    [
+     "结构化输出",
+     "json_schema 严格模式支持不一",
+     "检查是否返回合法 JSON"
+    ],
+    [
+     "流式 usage",
+     "可能不返回 token 统计",
+     "检查最后一个 chunk"
+    ],
+    [
+     "多模态输入",
+     "图片字段支持不一",
+     "发送图片测试"
+    ],
+    [
+     "错误码与限流",
+     "429 / Retry-After 行为不同",
+     "模拟超限请求"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "直接用兼容接口 + 官方 SDK",
+    "pros": "代码简单，切换成本低",
+    "cons": "只能用到各家公共子集",
+    "when": "原型、单一主力模型"
+   },
+   {
+    "opt": "经过 LLM 网关",
+    "pros": "统一路由、重试、观测与成本",
+    "cons": "多一跳延迟与一个组件",
+    "when": "多模型生产环境"
+   },
+   {
+    "opt": "使用各家原生 SDK",
+    "pros": "可用全部专有特性",
+    "cons": "切换成本高",
+    "when": "深度依赖某家特性时"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "假设兼容就等于行为一致",
+    "fix": "对工具调用、JSON 输出、流式结束信号做契约测试"
+   },
+   {
+    "bad": "把各家 API Key 写死在代码里",
+    "fix": "放环境变量或密钥管理服务，按环境注入"
+   },
+   {
+    "bad": "切换模型后不重跑评测",
+    "fix": "不同模型对同一提示表现不同，切换前跑回归评测集"
+   },
+   {
+    "bad": "本地服务直接暴露到公网且不鉴权",
+    "fix": "加反向代理鉴权或仅监听内网地址"
+   }
+  ],
+  "checklist": [
+   "base_url、密钥、模型名全部可配置",
+   "对关键能力做兼容性测试",
+   "超时、重试与 429 处理已实现",
+   "切换模型前跑评测集",
+   "本地推理服务未暴露公网"
+  ],
+  "interview": [
+   {
+    "q": "为什么 OpenAI 格式成了事实标准？",
+    "a": "Chat Completions 较早普及，SDK 与周边工具（LangChain、各类 IDE 插件）大量基于它构建。新厂商和开源推理引擎提供兼容层，就能让用户零改造接入，降低迁移阻力。这是生态网络效应，而非正式标准。"
+   },
+   {
+    "q": "兼容接口如何处理工具调用差异？",
+    "a": "先查目标服务文档确认是否支持 tools 以及 tool_choice、并行调用等细节。然后用固定用例做契约测试，比较返回的 tool_calls 结构。差异大时在网关或适配层做转换，或针对该模型调整提示与解析逻辑。"
+   },
+   {
+    "q": "如何设计可平滑切换模型的应用？",
+    "a": "把模型访问封装成内部接口，配置外置；记录每次请求的模型、token 与延迟；建立黄金评测集，切换前对比质量；在网关层实现回退策略，主模型失败时降级到备用模型。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OpenAI Python SDK (GitHub)",
+    "url": "https://github.com/openai/openai-python"
+   },
+   {
+    "title": "vLLM：OpenAI-Compatible Server",
+    "url": "https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html"
+   },
+   {
+    "title": "Ollama OpenAI 兼容说明",
+    "url": "https://docs.ollama.com/api/openai-compatibility"
+   }
+  ]
+ },
+ {
+  "slug": "batch-inference-api",
+  "def": "批量推理接口（Batch API）让调用方把大量独立请求打包成一个任务异步提交，由服务商在完成窗口内（OpenAI 与 Anthropic 文档均为 24 小时内）利用闲置算力处理，价格通常比同步调用低约一半（以官方定价为准），且限额独立于实时接口。适合分类、抽取、翻译、评测等不需要即时结果的离线任务。",
+  "how": [
+   "把每个请求写成一行 JSON（JSONL），包含自定义 ID 与完整请求体，ID 用于结果回填。",
+   "上传文件（OpenAI 需先上传 purpose=batch 的文件；Anthropic 可直接在请求中提交请求数组）并创建批任务。",
+   "服务端排队并分批调度执行，任务状态经历 validating、in_progress、completed 等阶段，可轮询查询。",
+   "完成后下载结果文件，每行含对应的自定义 ID 与响应或错误；结果顺序不保证与输入一致。",
+   "失败或过期的单条请求单独列出，调用方按 ID 重试，而不必重跑整批。"
+  ],
+  "terms": [
+   {
+    "t": "JSONL",
+    "d": "每行一个 JSON 对象的文本格式，批任务的输入输出格式。"
+   },
+   {
+    "t": "custom_id",
+    "d": "每条请求的自定义标识，用于把结果映射回原始数据。"
+   },
+   {
+    "t": "完成窗口 (Completion Window)",
+    "d": "服务商承诺处理完成的最长时间，如 24h。"
+   },
+   {
+    "t": "批处理限额 (Batch Quota)",
+    "d": "批任务的排队 token 上限，与实时速率限制分开计算。"
+   },
+   {
+    "t": "幂等重试",
+    "d": "按 custom_id 只重提失败条目，避免重复计费。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "OpenAI Batch API 提交与取回",
+   "src": "import json\nfrom openai import OpenAI\n\nclient = OpenAI()\nreviews = [\"物流很快\", \"质量太差了\", \"一般般\"]\n\nwith open(\"in.jsonl\", \"w\", encoding=\"utf-8\") as f:\n    for i, text in enumerate(reviews):\n        f.write(json.dumps({\n            \"custom_id\": f\"r-{i}\", \"method\": \"POST\",\n            \"url\": \"/v1/chat/completions\",\n            \"body\": {\"model\": \"gpt-4o-mini\",  # 以官方文档为准\n                     \"messages\": [{\"role\": \"user\",\n                                   \"content\": f\"情感分类(正/负/中)：{text}\"}]},\n        }, ensure_ascii=False) + \"\\n\")\n\nfile = client.files.create(file=open(\"in.jsonl\", \"rb\"), purpose=\"batch\")\nbatch = client.batches.create(input_file_id=file.id,\n    endpoint=\"/v1/chat/completions\", completion_window=\"24h\")\n\n# 之后轮询：status == \"completed\" 时下载\nb = client.batches.retrieve(batch.id)\nif b.status == \"completed\":\n    print(client.files.content(b.output_file_id).text)",
+   "note": "构造 JSONL、上传、创建批任务、轮询并下载结果；结果按 custom_id 对齐。"
+  },
+  "table": {
+   "title": "同步调用 vs 批量接口",
+   "head": [
+    "维度",
+    "同步调用",
+    "批量接口"
+   ],
+   "rows": [
+    [
+     "延迟",
+     "秒级",
+     "分钟到 24 小时"
+    ],
+    [
+     "单价",
+     "标准价",
+     "通常约为一半（以官方为准）"
+    ],
+    [
+     "速率限制",
+     "RPM/TPM 限制",
+     "独立的批处理队列额度"
+    ],
+    [
+     "失败处理",
+     "即时重试",
+     "按 custom_id 事后补跑"
+    ],
+    [
+     "适用",
+     "交互式产品",
+     "离线标注、评测、数据处理"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Batch API",
+    "pros": "成本低、不占实时限额",
+    "cons": "结果延迟不可控",
+    "when": "离线、量大、可等待"
+   },
+   {
+    "opt": "同步并发调用",
+    "pros": "结果快、实现直观",
+    "cons": "触发限流，按标准价计费",
+    "when": "量小或需要当天交付"
+   },
+   {
+    "opt": "自建推理批处理",
+    "pros": "极大批量时单价可更低",
+    "cons": "需 GPU 与运维能力",
+    "when": "长期、超大规模任务"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "custom_id 用行号，数据重排后无法对齐",
+    "fix": "使用稳定的业务主键作为 custom_id"
+   },
+   {
+    "bad": "默认结果按输入顺序返回",
+    "fix": "按 custom_id 建立映射，不依赖顺序"
+   },
+   {
+    "bad": "一个请求格式错导致整批校验失败才发现",
+    "fix": "提交前本地校验 JSONL，小批量先试跑"
+   },
+   {
+    "bad": "忽略单条失败与过期请求",
+    "fix": "解析错误文件，只重提失败条目"
+   }
+  ],
+  "checklist": [
+   "确认任务能接受最长 24 小时延迟",
+   "custom_id 唯一且可映射业务数据",
+   "本地校验 JSONL 格式",
+   "先用小批量试跑验证提示词",
+   "实现结果解析与失败重试",
+   "记录成本与对比同步调用"
+  ],
+  "interview": [
+   {
+    "q": "Batch API 为什么能更便宜？",
+    "a": "服务商可以把批任务安排在负载低谷，用更大的批大小和更灵活的调度提高 GPU 利用率，不必为其预留实时容量。用户用延迟换价格，服务商用灵活性换利用率，双方都受益。"
+   },
+   {
+    "q": "如何设计批任务的容错？",
+    "a": "以稳定业务 ID 作为 custom_id；结果入库前做 schema 校验；把 errored、expired 条目收集起来重新组批；整个流程做成幂等的工作流，重复执行不会产生重复写入或重复计费。"
+   },
+   {
+    "q": "什么场景不适合用 Batch API？",
+    "a": "需要即时反馈的交互式功能、后一步依赖前一步结果的多轮 Agent 流程，以及有严格时限（如几分钟内必须完成）的任务。这些场景应使用同步接口，配合并发控制和缓存降低成本。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OpenAI Batch API 指南",
+    "url": "https://platform.openai.com/docs/guides/batch"
+   },
+   {
+    "title": "Anthropic Message Batches",
+    "url": "https://docs.anthropic.com/en/docs/build-with-claude/batch-processing"
+   }
+  ]
+ },
+ {
+  "slug": "tcp-vs-udp",
+  "def": "TCP 与 UDP 是传输层的两种核心协议，都建立在 IP 之上，用端口区分应用。TCP 面向连接，提供可靠、有序、带流量控制和拥塞控制的字节流；UDP 无连接，只做最小封装，不保证送达与顺序，但开销小、延迟低。HTTP/1.1 与 HTTP/2 跑在 TCP 上，HTTP/3 则基于 UDP 之上的 QUIC。",
+  "how": [
+   "TCP 通过三次握手（SYN、SYN-ACK、ACK）建立连接，双方协商初始序列号。",
+   "TCP 发送的每个字节都有序列号，接收方回复确认（ACK）；超时或重复确认触发重传，接收端按序重组。",
+   "TCP 用滑动窗口做流量控制，用拥塞控制算法（如 CUBIC、BBR）根据丢包或延迟调整发送速率。",
+   "UDP 直接把数据报加上源/目的端口、长度和校验和发出，不建立连接、不确认、不重传。",
+   "应用可在 UDP 之上自行实现所需的可靠性，例如 QUIC 实现了加密、多路复用和按流重传。"
+  ],
+  "terms": [
+   {
+    "t": "三次握手 (Three-way Handshake)",
+    "d": "TCP 建立连接的 SYN、SYN-ACK、ACK 交换过程。"
+   },
+   {
+    "t": "队头阻塞 (Head-of-Line Blocking)",
+    "d": "一个丢失的包阻塞其后所有数据的交付。"
+   },
+   {
+    "t": "拥塞控制 (Congestion Control)",
+    "d": "根据网络状况调节发送速率，避免压垮网络。"
+   },
+   {
+    "t": "数据报 (Datagram)",
+    "d": "UDP 的独立消息单元，有边界，可能丢失或乱序。"
+   },
+   {
+    "t": "QUIC",
+    "d": "基于 UDP 的加密多路复用传输协议，HTTP/3 的底座。"
+   },
+   {
+    "t": "MTU",
+    "d": "链路单个帧可承载的最大字节数，影响分片与丢包。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "用 socket 对比 TCP 与 UDP",
+   "src": "import socket\n\n# TCP：先建立连接，再收发字节流\ntcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\ntcp.connect((\"example.com\", 80))          # 触发三次握手\ntcp.sendall(b\"HEAD / HTTP/1.1\\r\\nHost: example.com\\r\\nConnection: close\\r\\n\\r\\n\")\nprint(tcp.recv(200).decode(errors=\"ignore\").splitlines()[0])\ntcp.close()\n\n# UDP：无连接，直接发数据报（这里发一个 DNS 查询示意）\nudp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)\nudp.settimeout(2)                          # 可能丢包，需要自己处理超时\nquery = bytes.fromhex(\"abcd01000001000000000000\") + \\\n        b\"\\x07example\\x03com\\x00\" + b\"\\x00\\x01\\x00\\x01\"\nudp.sendto(query, (\"1.1.1.1\", 53))\ndata, _ = udp.recvfrom(512)\nprint(\"DNS 响应字节数:\", len(data))\nudp.close()",
+   "note": "TCP 需 connect 握手、sendall 保证全部送出；UDP 直接 sendto，超时与丢包由应用负责。"
+  },
+  "table": {
+   "title": "TCP 与 UDP 关键差异",
+   "head": [
+    "维度",
+    "TCP",
+    "UDP"
+   ],
+   "rows": [
+    [
+     "连接",
+     "面向连接，需握手",
+     "无连接"
+    ],
+    [
+     "可靠性",
+     "确认、重传、有序",
+     "不保证"
+    ],
+    [
+     "消息边界",
+     "字节流，无边界",
+     "保留数据报边界"
+    ],
+    [
+     "头部开销",
+     "至少 20 字节",
+     "8 字节"
+    ],
+    [
+     "典型协议",
+     "HTTP/1.1、HTTP/2、SSH、SMTP",
+     "DNS、QUIC/HTTP/3、RTP、游戏同步"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "TCP",
+    "pros": "可靠有序，生态成熟，穿透防火墙容易",
+    "cons": "握手延迟、队头阻塞",
+    "when": "网页、API、文件传输、数据库"
+   },
+   {
+    "opt": "UDP 原生",
+    "pros": "延迟最低，开销小",
+    "cons": "需自行处理丢包与乱序",
+    "when": "实时音视频、游戏状态同步"
+   },
+   {
+    "opt": "QUIC（UDP 之上）",
+    "pros": "0-RTT/1-RTT 建连，无 TCP 层队头阻塞",
+    "cons": "部分网络限制 UDP，CPU 开销更高",
+    "when": "移动网络、HTTP/3"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "以为一次 recv 就能收到完整消息",
+    "fix": "TCP 是字节流，需按长度前缀或分隔符自行分帧"
+   },
+   {
+    "bad": "用 UDP 传文件却不做校验与重传",
+    "fix": "需要可靠传输就用 TCP 或基于 QUIC 的方案"
+   },
+   {
+    "bad": "防火墙只开 TCP 端口，HTTP/3 或 DNS 失败",
+    "fix": "按协议分别放行 TCP 与 UDP 端口"
+   },
+   {
+    "bad": "高并发短连接耗尽端口，TIME_WAIT 堆积",
+    "fix": "使用连接池和 keep-alive 复用连接"
+   }
+  ],
+  "checklist": [
+   "确认服务使用的协议与端口",
+   "防火墙/安全组按 TCP、UDP 分别配置",
+   "TCP 应用层有明确的消息分帧",
+   "UDP 应用处理超时、丢包与乱序",
+   "启用连接复用，避免频繁握手"
+  ],
+  "interview": [
+   {
+    "q": "TCP 为什么需要三次握手而不是两次？",
+    "a": "需要双方都确认对方能收能发，并同步各自的初始序列号。两次握手时服务器无法确认客户端收到了自己的 SYN-ACK；此外三次握手可防止已失效的旧连接请求突然到达，导致服务器误建连接、浪费资源。"
+   },
+   {
+    "q": "HTTP/3 为什么改用 UDP？",
+    "a": "TCP 由内核实现，演进慢，且整条连接共享一个有序字节流，单个丢包会阻塞所有 HTTP/2 流。QUIC 在 UDP 上用户态实现，每个流独立重传，并把 TLS 1.3 握手合并进建连过程，减少往返次数。"
+   },
+   {
+    "q": "DNS 为什么主要用 UDP，什么时候用 TCP？",
+    "a": "典型 DNS 查询是一问一答的小报文，UDP 免握手更快。当响应过大被截断（TC 位）、进行区域传送（AXFR）或使用 DNS over TLS 时，会使用 TCP。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 9293: TCP",
+    "url": "https://www.rfc-editor.org/rfc/rfc9293"
+   },
+   {
+    "title": "RFC 768: UDP",
+    "url": "https://www.rfc-editor.org/rfc/rfc768"
+   },
+   {
+    "title": "RFC 9000: QUIC",
+    "url": "https://www.rfc-editor.org/rfc/rfc9000"
+   }
+  ]
+ },
+ {
+  "slug": "ssh",
+  "def": "SSH（Secure Shell）是用于在不安全网络上安全登录和执行命令的加密协议，默认使用 TCP 22 端口。它在传输层完成密钥交换与服务器身份验证，再以密码或公钥方式认证用户，并支持端口转发、文件传输（scp/sftp）。开发中最常见的用途是登录云服务器和以 SSH 方式访问 Git 托管平台。",
+  "how": [
+   "客户端连接服务器，双方协商协议版本与算法，并通过密钥交换（如 Curve25519）生成会话密钥，后续流量全部加密。",
+   "服务器出示主机公钥，客户端与 known_hosts 中的记录比对；首次连接会提示指纹，用于防范中间人攻击。",
+   "用户认证阶段，公钥认证要求客户端用私钥对会话数据签名，服务器用 authorized_keys 中的公钥验证。",
+   "认证成功后在加密通道内开启会话：交互式 shell、远程命令、端口转发或 SFTP 子系统。",
+   "ssh-agent 在内存中持有解锁后的私钥，供多次连接复用；agent 转发可在跳板机上使用本地密钥，但有安全风险。"
+  ],
+  "terms": [
+   {
+    "t": "authorized_keys",
+    "d": "服务器上允许登录的公钥列表，位于用户 ~/.ssh 下。"
+   },
+   {
+    "t": "known_hosts",
+    "d": "客户端记录已信任服务器主机公钥的文件。"
+   },
+   {
+    "t": "Ed25519",
+    "d": "基于椭圆曲线的签名算法，密钥短、速度快，当前推荐类型。"
+   },
+   {
+    "t": "ssh-agent",
+    "d": "保存解密后私钥的后台进程，避免反复输入口令。"
+   },
+   {
+    "t": "端口转发 (Port Forwarding)",
+    "d": "用 -L/-R 把本地或远端端口经 SSH 隧道转发。"
+   },
+   {
+    "t": "跳板机 (Bastion / ProxyJump)",
+    "d": "通过 -J 经中间主机访问内网服务器。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "生成密钥、配置别名并加固",
+   "src": "# 1. 生成 Ed25519 密钥（建议设置口令）\nssh-keygen -t ed25519 -C \"you@example.com\"\n\n# 2. 公钥上传到服务器（或粘贴到 GitHub 设置）\nssh-copy-id -i ~/.ssh/id_ed25519.pub deploy@203.0.113.10\nssh -T git@github.com          # 测试 GitHub 连接\n\n# 3. ~/.ssh/config 设置别名\ncat >> ~/.ssh/config <<CFG\nHost prod\n  HostName 203.0.113.10\n  User deploy\n  IdentityFile ~/.ssh/id_ed25519\nCFG\nssh prod\n\n# 4. 服务器 /etc/ssh/sshd_config 加固后重载\n#   PasswordAuthentication no\n#   PermitRootLogin no\nsudo systemctl reload ssh   # 部分发行版服务名为 sshd",
+   "note": "覆盖密钥生成、公钥分发、客户端别名与禁用密码登录；改配置前保持一个已登录会话以防锁死。"
+  },
+  "table": {
+   "title": "认证方式对比",
+   "head": [
+    "方式",
+    "安全性",
+    "适用场景"
+   ],
+   "rows": [
+    [
+     "密码认证",
+     "易被暴力破解",
+     "临时或内网测试，不推荐公网"
+    ],
+    [
+     "公钥认证",
+     "强，私钥不出本机",
+     "服务器登录、Git 推送"
+    ],
+    [
+     "SSH 证书 (CA 签发)",
+     "强，可设置有效期集中吊销",
+     "大规模团队与服务器集群"
+    ],
+    [
+     "硬件密钥 (FIDO2)",
+     "私钥存于硬件，防窃取",
+     "高安全要求的管理员"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "个人公钥直接加入服务器",
+    "pros": "简单直接",
+    "cons": "人员变动需逐台删除",
+    "when": "少量服务器、小团队"
+   },
+   {
+    "opt": "SSH 证书认证",
+    "pros": "集中签发、自动过期",
+    "cons": "需维护 CA 基础设施",
+    "when": "服务器与成员较多"
+   },
+   {
+    "opt": "云厂商会话管理（如 SSM、IAP）",
+    "pros": "无需开放 22 端口，带审计",
+    "cons": "绑定云平台",
+    "when": "云上生产环境"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "私钥不设口令且同步到网盘",
+    "fix": "设置口令、配合 ssh-agent，私钥只存本机"
+   },
+   {
+    "bad": "看到主机指纹变化直接删 known_hosts 继续",
+    "fix": "先核实服务器是否重装或换 IP，确认后再更新记录"
+   },
+   {
+    "bad": "修改 sshd_config 后直接断开会话",
+    "fix": "保留当前会话，新开窗口测试登录成功后再退出"
+   },
+   {
+    "bad": "对不可信跳板机开启 agent 转发",
+    "fix": "改用 ProxyJump，避免远端借用你的 agent"
+   }
+  ],
+  "checklist": [
+   "公网服务器禁用密码登录",
+   "禁止 root 直接登录",
+   "使用 Ed25519 或硬件密钥",
+   "安全组仅对可信来源开放 22 端口",
+   "离职人员公钥及时移除",
+   "启用 fail2ban 或等效防暴力破解措施"
+  ],
+  "interview": [
+   {
+    "q": "SSH 如何防止中间人攻击？",
+    "a": "依靠服务器主机密钥。首次连接时用户应通过可信渠道核对指纹，客户端将其记入 known_hosts；之后每次连接都校验主机密钥，若不一致会发出强烈警告并拒绝连接。也可用 SSHFP DNS 记录或主机证书自动验证。"
+   },
+   {
+    "q": "公钥认证时私钥会被发送到服务器吗？",
+    "a": "不会。服务器只持有公钥，客户端用私钥对包含会话标识的数据签名，服务器用公钥验证签名。私钥始终留在本机，因此即使服务器被攻破，攻击者也拿不到你的私钥。"
+   },
+   {
+    "q": "-L 和 -R 端口转发有什么区别？",
+    "a": "-L 是本地转发：把本机端口经 SSH 转发到远端可达的地址，常用于访问只在内网监听的数据库。-R 是远程转发：把远端服务器的端口转回本机，可让外部访问本地服务，类似简易内网穿透。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OpenSSH 手册",
+    "url": "https://www.openssh.com/manual.html"
+   },
+   {
+    "title": "GitHub：使用 SSH 连接",
+    "url": "https://docs.github.com/en/authentication/connecting-to-github-with-ssh"
+   },
+   {
+    "title": "RFC 4251: SSH 协议架构",
+    "url": "https://www.rfc-editor.org/rfc/rfc4251"
+   }
+  ]
+ },
+ {
+  "slug": "dns-record-types",
+  "def": "DNS 记录（Resource Record）是权威 DNS 区域中的条目，每条由名称、类型、TTL 和值组成，告诉解析器某个域名的地址、别名、邮件服务器或任意文本信息。常用类型有 A/AAAA（IPv4/IPv6 地址）、CNAME（别名）、MX（邮件交换）、TXT（文本，承载 SPF、DKIM、域名验证）、NS 和 CAA。",
+  "how": [
+   "注册商处设置 NS 记录，把域名委派给某个权威 DNS 服务商（如 Cloudflare、阿里云 DNS）。",
+   "在权威服务商的区域中添加记录；递归解析器查询时，从根、顶级域逐级找到权威服务器并取回记录。",
+   "A/AAAA 直接返回 IP；CNAME 返回另一个域名，解析器继续解析目标直到拿到地址。",
+   "发邮件时，发送方查询收件域的 MX 记录，按优先级（数值越小越优先）连接邮件服务器，并用 TXT 中的 SPF/DKIM/DMARC 校验。",
+   "每条记录带 TTL，解析器在 TTL 内缓存结果；修改记录后旧值可能在缓存中保留至 TTL 结束。"
+  ],
+  "terms": [
+   {
+    "t": "TTL (Time To Live)",
+    "d": "记录可被缓存的秒数，决定修改后生效所需时间。"
+   },
+   {
+    "t": "Apex / 根域",
+    "d": "不带子域的裸域名，如 example.com，按规范不能设 CNAME。"
+   },
+   {
+    "t": "CNAME 拉平 (CNAME Flattening)",
+    "d": "部分 DNS 服务商在根域模拟 CNAME 的功能，返回 A 记录。"
+   },
+   {
+    "t": "SPF / DKIM / DMARC",
+    "d": "通过 TXT 发布的邮件发件授权、签名公钥和处理策略。"
+   },
+   {
+    "t": "CAA",
+    "d": "指定哪些证书颁发机构可为该域名签发证书。"
+   },
+   {
+    "t": "NS",
+    "d": "声明负责该区域的权威 DNS 服务器。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "用 dig 检查各类记录",
+   "src": "# A / AAAA：域名 -> IP\ndig +short example.com A\ndig +short example.com AAAA\n\n# CNAME：子域 -> 另一个域名\ndig +short www.github.com CNAME\n\n# MX：邮件服务器及优先级\ndig +short gmail.com MX\n\n# TXT：SPF、域名验证等\ndig +short google.com TXT\n\n# NS：权威 DNS；直接问权威服务器可绕过缓存\ndig +short example.com NS\ndig @a.iana-servers.net example.com A +norecurse\n\n# 查看剩余 TTL（第二列）\ndig example.com A +noall +answer",
+   "note": "用 dig 逐类查询，并直接询问权威服务器以区分“没配对”与“缓存未过期”。"
+  },
+  "table": {
+   "title": "常见记录配置示例",
+   "head": [
+    "类型",
+    "名称",
+    "值示例",
+    "用途"
+   ],
+   "rows": [
+    [
+     "A",
+     "@",
+     "203.0.113.10",
+     "根域指向服务器"
+    ],
+    [
+     "CNAME",
+     "www",
+     "cname.vercel-dns.com（以平台提供为准）",
+     "子域接入托管平台"
+    ],
+    [
+     "MX",
+     "@",
+     "10 mx1.example-mail.com",
+     "接收邮件"
+    ],
+    [
+     "TXT",
+     "@",
+     "v=spf1 include:_spf.example.com ~all",
+     "SPF 发件授权"
+    ],
+    [
+     "CAA",
+     "@",
+     "0 issue \"letsencrypt.org\"",
+     "限制证书颁发机构"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "A 记录指向固定 IP",
+    "pros": "解析链短，根域可用",
+    "cons": "IP 变化需手动更新",
+    "when": "自有服务器、固定 IP"
+   },
+   {
+    "opt": "CNAME 指向平台域名",
+    "pros": "平台换 IP 无需改动",
+    "cons": "根域不能用标准 CNAME，多一次解析",
+    "when": "Vercel、CDN、SaaS 子域"
+   },
+   {
+    "opt": "ALIAS / CNAME 拉平",
+    "pros": "根域也能跟随平台变化",
+    "cons": "依赖服务商私有实现",
+    "when": "根域接入托管平台"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在根域设置 CNAME 导致 MX 等记录失效",
+    "fix": "根域用 A 记录或服务商提供的 ALIAS/拉平功能"
+   },
+   {
+    "bad": "同时存在两条 SPF TXT 记录",
+    "fix": "SPF 只能有一条，多个发件服务合并到同一条 include"
+   },
+   {
+    "bad": "迁移前未调低 TTL，切换后长时间不生效",
+    "fix": "提前一到两个 TTL 周期调低 TTL，迁移完成后再调回"
+   },
+   {
+    "bad": "Cloudflare 代理开启后邮件或 SSH 失效",
+    "fix": "代理只适用于 HTTP(S)，邮件和 SSH 相关记录设为仅 DNS"
+   }
+  ],
+  "checklist": [
+   "根域与 www 都已正确解析",
+   "MX、SPF、DKIM、DMARC 配置完整",
+   "变更前确认并调低 TTL",
+   "配置 CAA 限制证书签发",
+   "删除指向已释放资源的悬空记录",
+   "用 dig 直接查询权威服务器验证"
+  ],
+  "interview": [
+   {
+    "q": "为什么根域不能设置 CNAME？",
+    "a": "RFC 规定 CNAME 不能与同名的其他记录共存，而根域必须有 SOA 和 NS 记录，MX、TXT 也常放在根域。若根域使用 CNAME，会与这些记录冲突。服务商的 ALIAS 或 CNAME 拉平在服务端解析目标后返回 A 记录来规避这一限制。"
+   },
+   {
+    "q": "什么是子域接管（Subdomain Takeover）？",
+    "a": "CNAME 仍指向已删除的云资源（如过期的存储桶或平台项目），攻击者注册同名资源后即可控制该子域内容，用于钓鱼或窃取 Cookie。防范方法是下线资源时同步删除 DNS 记录，并定期审计悬空记录。"
+   },
+   {
+    "q": "改了 DNS 记录为什么各地生效时间不同？",
+    "a": "各递归解析器独立缓存旧记录，按收到时的 TTL 倒计时，过期才重新查询；部分解析器还会延长缓存。因此生效时间取决于旧 TTL 与各解析器行为，而非 DNS 在“传播”。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Wikipedia: List of DNS record types",
+    "url": "https://en.wikipedia.org/wiki/List_of_DNS_record_types"
+   },
+   {
+    "title": "RFC 1035: Domain Names",
+    "url": "https://www.rfc-editor.org/rfc/rfc1035"
+   },
+   {
+    "title": "MDN：DNS 词汇表",
+    "url": "https://developer.mozilla.org/en-US/docs/Glossary/DNS"
+   }
+  ]
+ },
+ {
+  "slug": "tunneling",
+  "def": "内网穿透（Tunneling）指让处于 NAT、防火墙后、没有公网 IP 的本地服务被公网访问的技术。主流方案由本地代理程序主动向公网中继或边缘节点建立出站长连接，外部请求先到达中继，再经该连接回传到本地端口。典型工具有 Cloudflare Tunnel（cloudflared）、ngrok、frp，以及 SSH 远程端口转发。",
+  "how": [
+   "本地运行代理客户端（如 cloudflared、ngrok agent），它向服务商边缘或自建中继发起出站 TLS 连接，无需在路由器上开放入站端口。",
+   "服务商为该隧道分配公网主机名（随机子域或绑定的自有域名），并在边缘终止 TLS。",
+   "外部用户访问该主机名，边缘根据主机名找到对应隧道，把 HTTP 请求经已建立的长连接转发给本地代理。",
+   "本地代理把请求转给配置的源地址（如 http://localhost:3000），再把响应原路返回。",
+   "可在边缘叠加访问控制（如 Cloudflare Access 身份验证、IP 限制），避免隧道成为未授权入口。"
+  ],
+  "terms": [
+   {
+    "t": "NAT 穿越 (NAT Traversal)",
+    "d": "让位于地址转换设备后的主机可被外部访问的技术总称。"
+   },
+   {
+    "t": "出站连接 (Outbound-only)",
+    "d": "隧道由内向外建立，因此不需要开放入站防火墙端口。"
+   },
+   {
+    "t": "Quick Tunnel",
+    "d": "cloudflared 无需账号即可生成 trycloudflare.com 临时地址的模式。"
+   },
+   {
+    "t": "反向隧道 (Reverse Tunnel)",
+    "d": "由内网主动连到外部，再由外部把流量反向送回内网。"
+   },
+   {
+    "t": "frp",
+    "d": "开源的自建内网穿透工具，需要一台有公网 IP 的服务器。"
+   },
+   {
+    "t": "零信任访问 (Zero Trust Access)",
+    "d": "在隧道入口按用户身份而非网络位置授权访问。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "三种方式暴露本地 3000 端口",
+   "src": "# 方式一：Cloudflare 临时隧道（无需账号，地址随机且不保证可用性）\ncloudflared tunnel --url http://localhost:3000\n# 输出类似 https://<random>.trycloudflare.com\n\n# 方式二：ngrok（需注册并配置 authtoken）\nngrok config add-authtoken <YOUR_TOKEN>\nngrok http 3000\n\n# 方式三：SSH 远程端口转发（需要一台公网 VPS）\n# 把 VPS 的 8080 转到本机 3000；VPS 的 sshd 需允许 GatewayPorts\nssh -N -R 0.0.0.0:8080:localhost:3000 user@203.0.113.10\n\n# 长期使用：cloudflared 命名隧道 + 自有域名\ncloudflared tunnel login\ncloudflared tunnel create myapp\ncloudflared tunnel route dns myapp dev.example.com\ncloudflared tunnel run --url http://localhost:3000 myapp",
+   "note": "临时演示用 Quick Tunnel 或 ngrok；长期用命名隧道绑定自有域名并加访问控制。"
+  },
+  "table": {
+   "title": "穿透方案对比",
+   "head": [
+    "方案",
+    "是否需公网服务器",
+    "优点",
+    "注意事项"
+   ],
+   "rows": [
+    [
+     "Cloudflare Tunnel",
+     "否",
+     "免费额度、可接入 Access 鉴权",
+     "需域名托管在 Cloudflare（命名隧道）"
+    ],
+    [
+     "ngrok",
+     "否",
+     "上手快，带请求检查面板",
+     "免费版有限制，以官方为准"
+    ],
+    [
+     "frp 自建",
+     "是",
+     "完全可控、协议灵活",
+     "需自行维护与加固服务器"
+    ],
+    [
+     "SSH -R",
+     "是",
+     "无需额外软件",
+     "稳定性需配合 autossh 等"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "托管隧道（Cloudflare/ngrok）",
+    "pros": "零运维，自动 HTTPS",
+    "cons": "流量经第三方，受其策略约束",
+    "when": "演示、Webhook 调试、小项目"
+   },
+   {
+    "opt": "自建 frp / SSH 中继",
+    "pros": "数据路径可控，可支持 TCP/UDP",
+    "cons": "需要 VPS 与安全维护",
+    "when": "有服务器、需非 HTTP 协议"
+   },
+   {
+    "opt": "直接公网 IP + 端口映射",
+    "pros": "无中间层",
+    "cons": "暴露家庭网络，安全风险高",
+    "when": "一般不推荐"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把开发服务器（含调试模式）直接暴露公网",
+    "fix": "只暴露需要的服务，关闭调试模式，加身份验证"
+   },
+   {
+    "bad": "临时隧道长期挂着当生产入口",
+    "fix": "生产使用正式部署；长期隧道用命名隧道加访问策略"
+   },
+   {
+    "bad": "本地服务只信任 localhost 来源，经隧道后被绕过",
+    "fix": "经代理后所有请求都像来自本机，不要以来源地址作为鉴权依据"
+   },
+   {
+    "bad": "调试 Webhook 时把签名校验关掉",
+    "fix": "保留签名校验，用服务商提供的测试密钥"
+   }
+  ],
+  "checklist": [
+   "只暴露必要的端口与路径",
+   "隧道入口启用身份验证或 IP 限制",
+   "用完立即关闭临时隧道",
+   "关闭框架调试模式",
+   "检查应用不以 localhost 来源做信任判断"
+  ],
+  "interview": [
+   {
+    "q": "隧道为什么不需要开放入站端口？",
+    "a": "因为连接方向是由内向外：本地代理主动连接服务商边缘并保持长连接，防火墙和 NAT 只看到普通的出站流量。外部请求到达边缘后，复用这条已建立的连接下发到本地，因此路由器无需端口映射。"
+   },
+   {
+    "q": "暴露本地服务到公网有哪些安全风险？",
+    "a": "开发服务器常开启调试接口、热更新端点和详细报错，可能泄露源码与密钥；本地应用若把来自 127.0.0.1 的请求视为可信，经隧道后外部请求同样显示为本机来源。应加认证、关调试、限时使用。"
+   },
+   {
+    "q": "Webhook 开发为什么常用隧道？",
+    "a": "支付、GitHub 等平台需要把事件推送到公网 HTTPS 地址，本地开发机无法直接接收。隧道提供临时公网地址，开发者可在本地断点调试回调逻辑；部分工具还能查看和重放请求。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Cloudflare Tunnel 文档",
+    "url": "https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/"
+   },
+   {
+    "title": "ngrok 文档",
+    "url": "https://ngrok.com/docs"
+   },
+   {
+    "title": "frp (GitHub)",
+    "url": "https://github.com/fatedier/frp"
+   }
+  ]
+ },
+ {
+  "slug": "passkeys",
+  "def": "通行密钥（Passkey）是基于 FIDO2/WebAuthn 标准的无密码凭据：设备为每个网站生成一对非对称密钥，私钥保存在平台认证器或安全硬件中并可跨设备同步，网站只保存公钥。登录时用户通过指纹、面容或 PIN 本地解锁，设备对服务器挑战签名。由于凭据绑定到域名，通行密钥天然抗钓鱼，也不会因服务器数据泄露而暴露可复用的秘密。",
+  "how": [
+   "注册时服务器生成随机挑战（challenge）和用户信息，前端调用 navigator.credentials.create() 请求认证器创建凭据。",
+   "认证器验证用户（生物识别或 PIN）后，为该依赖方 ID（rpId，通常是域名）生成密钥对，返回公钥与凭据 ID。",
+   "服务器验证返回数据中的挑战、来源（origin）和签名，存储凭据 ID 与公钥，关联到账号。",
+   "登录时服务器下发新挑战，前端调用 navigator.credentials.get()；浏览器只允许与 rpId 匹配的站点使用该凭据。",
+   "认证器用私钥签名挑战与客户端数据，服务器用存储的公钥验签并检查签名计数等字段后建立会话。"
+  ],
+  "terms": [
+   {
+    "t": "WebAuthn",
+    "d": "W3C 标准的浏览器 API，用于创建和使用公钥凭据。"
+   },
+   {
+    "t": "依赖方 (Relying Party, RP)",
+    "d": "接受通行密钥登录的网站，由 rpId（域名）标识。"
+   },
+   {
+    "t": "可发现凭据 (Discoverable Credential)",
+    "d": "存于认证器上、无需先输入用户名即可选择的凭据。"
+   },
+   {
+    "t": "用户验证 (User Verification)",
+    "d": "认证器通过生物识别或 PIN 确认是本人操作。"
+   },
+   {
+    "t": "挑战 (Challenge)",
+    "d": "服务器生成的一次性随机值，防止签名被重放。"
+   },
+   {
+    "t": "条件式界面 (Conditional UI)",
+    "d": "在用户名输入框的自动填充里直接提供通行密钥选项。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "浏览器端注册通行密钥",
+   "src": "// options 由服务器生成（推荐用 SimpleWebAuthn 等库，勿自行实现验签）\nconst options = {\n  challenge: Uint8Array.from(serverChallenge),   // 服务器下发的随机值\n  rp: { name: \"My App\", id: \"example.com\" },\n  user: {\n    id: Uint8Array.from(userIdBytes),            // 不要用邮箱等个人信息\n    name: \"ada@example.com\",\n    displayName: \"Ada\",\n  },\n  pubKeyCredParams: [\n    { type: \"public-key\", alg: -7 },   // ES256\n    { type: \"public-key\", alg: -257 }, // RS256\n  ],\n  authenticatorSelection: {\n    residentKey: \"required\",           // 可发现凭据 = 通行密钥\n    userVerification: \"preferred\",\n  },\n};\nconst cred = await navigator.credentials.create({ publicKey: options });\n// 把 cred（attestationObject、clientDataJSON 等）发回服务器验证并保存公钥\nawait fetch(\"/webauthn/register\", { method: \"POST\", body: JSON.stringify(cred) });",
+   "note": "演示 WebAuthn 注册调用的关键参数；PublicKeyCredential 支持 toJSON 序列化，服务端验证交给成熟库。"
+  },
+  "table": {
+   "title": "登录方式安全性对比",
+   "head": [
+    "方式",
+    "抗钓鱼",
+    "服务器泄露影响",
+    "用户体验"
+   ],
+   "rows": [
+    [
+     "密码",
+     "否",
+     "可能被离线破解后复用",
+     "需记忆"
+    ],
+    [
+     "密码 + 短信验证码",
+     "弱",
+     "验证码可被实时钓鱼",
+     "需等短信"
+    ],
+    [
+     "密码 + TOTP",
+     "弱",
+     "可被实时中间人钓鱼",
+     "需打开应用"
+    ],
+    [
+     "通行密钥",
+     "强，绑定域名",
+     "只泄露公钥",
+     "一次生物识别"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "通行密钥作为唯一登录方式",
+    "pros": "体验最佳，彻底消除密码风险",
+    "cons": "设备全丢时账号恢复难",
+    "when": "用户群设备较新、恢复流程完善"
+   },
+   {
+    "opt": "通行密钥 + 密码并存",
+    "pros": "渐进迁移，兼容旧设备",
+    "cons": "密码仍是可被攻击的入口",
+    "when": "大多数现有产品的过渡期"
+   },
+   {
+    "opt": "通行密钥作为第二因素",
+    "pros": "在现有流程上加强安全",
+    "cons": "体验提升有限",
+    "when": "高安全要求的企业系统"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "自己实现 CBOR 解析和签名验证",
+    "fix": "使用 SimpleWebAuthn、py_webauthn 等成熟库"
+   },
+   {
+    "bad": "rpId 设为错误的域名，换子域后无法登录",
+    "fix": "rpId 设为可注册域（如 example.com），覆盖所需子域"
+   },
+   {
+    "bad": "user.id 使用邮箱或手机号",
+    "fix": "使用随机生成的不透明字节，避免泄露个人信息"
+   },
+   {
+    "bad": "没有账号恢复方案",
+    "fix": "允许绑定多个通行密钥，并设计安全的恢复流程"
+   }
+  ],
+  "checklist": [
+   "使用成熟的 WebAuthn 服务端库",
+   "挑战一次性且有过期时间",
+   "校验 origin 与 rpId",
+   "支持一个账号绑定多个通行密钥",
+   "设计设备丢失后的恢复流程",
+   "登录页启用条件式界面自动填充"
+  ],
+  "interview": [
+   {
+    "q": "通行密钥为什么能防钓鱼？",
+    "a": "浏览器把凭据与 rpId 绑定，只在来源域名匹配时才允许调用；钓鱼站域名不同，根本无法请求真实网站的凭据。签名数据中还包含 origin，服务器会校验，因此即便中间人转发也无法通过验证。"
+   },
+   {
+    "q": "同步通行密钥和设备绑定通行密钥有何区别？",
+    "a": "同步通行密钥由平台（如 iCloud 钥匙串、Google 密码管理器）端到端加密同步到同一账号的设备，丢失单台设备也能登录。设备绑定的凭据存于安全密钥等硬件中，不可导出，安全性更高但需要备份密钥。"
+   },
+   {
+    "q": "服务器被拖库后通行密钥还安全吗？",
+    "a": "服务器只存公钥和凭据 ID，公钥无法用于登录或推导私钥，因此攻击者拿不到可复用的秘密。这与密码哈希泄露后可被离线破解形成鲜明对比，但会话令牌等其他数据仍需保护。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "passkeys.dev",
+    "url": "https://passkeys.dev/"
+   },
+   {
+    "title": "MDN：Web Authentication API",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API"
+   },
+   {
+    "title": "W3C WebAuthn Level 3",
+    "url": "https://www.w3.org/TR/webauthn-3/"
+   }
+  ]
+ },
+ {
+  "slug": "bot-protection-captcha",
+  "def": "人机验证（CAPTCHA 及其现代替代品）用于区分人类用户与自动化程序，防止批量注册、撞库、短信轰炸、爬取和刷单。现代方案如 Cloudflare Turnstile、reCAPTCHA v3、hCaptcha 多以浏览器信号、行为特征和隐式挑战为主，前端生成一次性 token，后端必须向服务商校验 token 后才放行业务请求。",
+  "how": [
+   "页面加载服务商脚本并渲染组件，组件在浏览器中运行检测（环境指纹、工作量证明、行为信号等），必要时才弹出交互挑战。",
+   "检测通过后生成一次性 token，随表单或请求一起提交到你的后端。",
+   "后端用私密的 secret key 调用服务商校验接口，确认 token 有效、未被使用、未过期，并可核对 hostname 与 action。",
+   "校验成功才执行注册、登录等敏感操作；失败或超时则拒绝并返回通用错误。",
+   "人机验证与限流、设备指纹、风控评分组合使用，形成纵深防御，而不是唯一防线。"
+  ],
+  "terms": [
+   {
+    "t": "Turnstile",
+    "d": "Cloudflare 的人机验证服务，强调无需用户解题。"
+   },
+   {
+    "t": "siteverify",
+    "d": "服务端校验 token 的接口，需用 secret key 调用。"
+   },
+   {
+    "t": "撞库 (Credential Stuffing)",
+    "d": "用泄露的账号密码批量尝试登录其他网站。"
+   },
+   {
+    "t": "分数制验证 (Score-based)",
+    "d": "如 reCAPTCHA v3，返回机器人可能性分数，由业务决定阈值。"
+   },
+   {
+    "t": "打码平台 (CAPTCHA Farm)",
+    "d": "雇人或用模型批量破解验证码的服务，说明验证码可被绕过。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "后端校验 Turnstile token",
+   "src": "import os\nimport requests\n\nVERIFY_URL = \"https://challenges.cloudflare.com/turnstile/v0/siteverify\"\n\ndef verify_turnstile(token: str, remote_ip: str | None = None) -> bool:\n    if not token:\n        return False\n    data = {\"secret\": os.environ[\"TURNSTILE_SECRET\"], \"response\": token}\n    if remote_ip:\n        data[\"remoteip\"] = remote_ip      # 可选\n    try:\n        r = requests.post(VERIFY_URL, data=data, timeout=5)\n        result = r.json()\n    except requests.RequestException:\n        return False                      # 校验服务异常时按失败处理\n    # 建议同时核对 hostname / action 是否符合预期\n    return result.get(\"success\") is True\n\n# 在注册接口中：\n# if not verify_turnstile(form[\"cf-turnstile-response\"], client_ip):\n#     return 403",
+   "note": "前端组件提交的 token 必须在后端用 secret 调用 siteverify 校验，token 一次性且有时效。"
+  },
+  "table": {
+   "title": "主流方案对比",
+   "head": [
+    "方案",
+    "交互方式",
+    "后端校验结果",
+    "备注"
+   ],
+   "rows": [
+    [
+     "Cloudflare Turnstile",
+     "多为无感，必要时交互",
+     "成功/失败",
+     "免费额度以官方为准"
+    ],
+    [
+     "reCAPTCHA v2",
+     "勾选框或图片题",
+     "成功/失败",
+     "用户体验较差"
+    ],
+    [
+     "reCAPTCHA v3",
+     "完全无感",
+     "0.0–1.0 分数",
+     "需自定阈值与兜底"
+    ],
+    [
+     "hCaptcha",
+     "图片题或无感模式",
+     "成功/失败",
+     "注重隐私的替代品"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "全站强制验证",
+    "pros": "防护面广",
+    "cons": "影响转化与无障碍体验",
+    "when": "遭受大规模攻击期间"
+   },
+   {
+    "opt": "仅敏感操作验证",
+    "pros": "体验与安全平衡",
+    "cons": "需识别全部敏感入口",
+    "when": "注册、登录、发短信、提交表单"
+   },
+   {
+    "opt": "风险自适应触发",
+    "pros": "正常用户无感",
+    "cons": "需要风控信号与调优",
+    "when": "中大型业务"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只在前端渲染组件，后端不校验 token",
+    "fix": "所有敏感接口在后端调用 siteverify 并拒绝失败请求"
+   },
+   {
+    "bad": "同一 token 重复使用或长期缓存",
+    "fix": "token 一次性使用，过期后重新获取"
+   },
+   {
+    "bad": "把 secret key 写进前端代码",
+    "fix": "secret 只放服务器环境变量，前端只用 site key"
+   },
+   {
+    "bad": "只靠验证码防刷短信",
+    "fix": "叠加按手机号、IP、设备的限流与每日上限"
+   }
+  ],
+  "checklist": [
+   "注册、登录、短信、找回密码均有防护",
+   "后端校验 token 并核对 hostname",
+   "secret key 仅存于服务端",
+   "校验失败时返回通用错误",
+   "搭配限流与告警",
+   "提供无障碍替代方案"
+  ],
+  "interview": [
+   {
+    "q": "为什么前端验证可以被绕过？",
+    "a": "攻击者可以不经过浏览器，直接构造 HTTP 请求调用你的接口，前端组件根本不会执行。只有后端向服务商校验 token，才能确认这次请求确实完成了验证，因此校验逻辑必须放在服务端。"
+   },
+   {
+    "q": "验证码能完全挡住机器人吗？",
+    "a": "不能。打码平台和多模态模型可以破解许多图片题，自动化浏览器也能模拟部分行为。验证码的价值是提高攻击成本，应与限流、风控评分、异常检测和业务上限一起构成纵深防御。"
+   },
+   {
+    "q": "分数制验证如何设阈值？",
+    "a": "先只记录分数不拦截，观察正常用户与已知恶意流量的分布；再按业务风险设定阈值，低分请求不直接拒绝，而是追加验证（如短信或交互挑战），并持续监控误杀率。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Cloudflare Turnstile 文档",
+    "url": "https://developers.cloudflare.com/turnstile/"
+   },
+   {
+    "title": "Turnstile 服务端校验",
+    "url": "https://developers.cloudflare.com/turnstile/get-started/server-side-validation/"
+   },
+   {
+    "title": "OWASP Automated Threats",
+    "url": "https://owasp.org/www-project-automated-threats-to-web-applications/"
+   }
+  ]
+ },
+ {
+  "slug": "serverless",
+  "def": "Serverless（无服务器）是一种云计算模型：开发者只提交函数或容器，平台负责服务器供给、扩缩容和运维，按实际调用次数与执行时长计费，空闲时可缩容到零。函数即服务（FaaS）如 AWS Lambda、Vercel Functions、Cloudflare Workers 是其代表；数据库、队列等托管服务的按量模式也常被归入其中。",
+  "how": [
+   "开发者编写处理函数并部署，平台把代码与依赖打包为可快速启动的运行单元。",
+   "请求或事件（HTTP、队列消息、定时任务、文件上传）到达时，平台路由到空闲实例；没有空闲实例就新建，即冷启动。",
+   "实例执行函数后可被保留一段时间复用（热启动），持续空闲则被回收；并发请求增多时平台横向扩出更多实例。",
+   "函数应无状态：实例随时可能被回收，持久数据需存入数据库、对象存储或缓存。",
+   "平台按调用次数和“内存 × 时长”等维度计费，并设有超时、内存、包大小与并发上限（如 Lambda 单次最长 15 分钟）。"
+  ],
+  "terms": [
+   {
+    "t": "FaaS (Function as a Service)",
+    "d": "以函数为单位部署和计费的无服务器形态。"
+   },
+   {
+    "t": "冷启动 (Cold Start)",
+    "d": "无可用实例时新建运行环境带来的额外延迟。"
+   },
+   {
+    "t": "缩容到零 (Scale to Zero)",
+    "d": "无流量时不保留实例，也不产生计算费用。"
+   },
+   {
+    "t": "并发上限 (Concurrency Limit)",
+    "d": "同时运行实例数的限制，超出会被限流。"
+   },
+   {
+    "t": "边缘函数 (Edge Function)",
+    "d": "在 CDN 边缘节点运行的轻量函数，常基于 V8 隔离。"
+   },
+   {
+    "t": "事件源 (Event Source)",
+    "d": "触发函数的来源，如 API 网关、队列、定时器。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "AWS Lambda 处理 HTTP 请求",
+   "src": "import json\nimport os\nimport boto3\n\n# 放在函数外：热启动时复用连接，减少冷启动后的开销\ntable = boto3.resource(\"dynamodb\").Table(os.environ[\"TABLE_NAME\"])\n\ndef lambda_handler(event, context):\n    # 经 API Gateway / 函数 URL 触发时，body 为字符串\n    body = json.loads(event.get(\"body\") or \"{}\")\n    if \"id\" not in body:\n        return {\"statusCode\": 400, \"body\": json.dumps({\"error\": \"id required\"})}\n\n    table.put_item(Item={\"id\": body[\"id\"], \"note\": body.get(\"note\", \"\")})\n    # 无状态：不要把数据存在全局变量里指望下次还在\n    return {\n        \"statusCode\": 201,\n        \"headers\": {\"Content-Type\": \"application/json\"},\n        \"body\": json.dumps({\"ok\": True}),\n    }",
+   "note": "处理函数无状态，客户端在全局初始化以复用；持久数据写入托管数据库。"
+  },
+  "table": {
+   "title": "计算形态对比",
+   "head": [
+    "形态",
+    "扩缩容",
+    "计费",
+    "典型限制"
+   ],
+   "rows": [
+    [
+     "VPS / 虚拟机",
+     "手动或自建",
+     "按实例时长",
+     "需自行运维"
+    ],
+    [
+     "容器平台 / PaaS",
+     "按实例数自动扩缩",
+     "按实例时长或资源",
+     "通常需保留最小实例"
+    ],
+    [
+     "FaaS",
+     "按请求自动，可缩到零",
+     "按调用与执行时长",
+     "超时、冷启动、包大小"
+    ],
+    [
+     "边缘函数",
+     "全球节点自动",
+     "按请求与 CPU 时间",
+     "运行时 API 受限、CPU 时间短"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Serverless 函数",
+    "pros": "免运维、空闲零成本、自动扩容",
+    "cons": "冷启动、时长限制、厂商锁定",
+    "when": "流量波动大、事件驱动、API 后端"
+   },
+   {
+    "opt": "长期运行的容器或 VM",
+    "pros": "无冷启动，可跑长任务和长连接",
+    "cons": "空闲也付费，需运维",
+    "when": "稳定高负载、WebSocket、长任务"
+   },
+   {
+    "opt": "混合架构",
+    "pros": "各取所长",
+    "cons": "系统复杂度上升",
+    "when": "核心服务常驻，突发任务用函数"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "每次调用都新建数据库连接，压垮数据库",
+    "fix": "使用连接池代理或 HTTP 型数据库驱动，并在全局复用客户端"
+   },
+   {
+    "bad": "函数递归触发自身（如写入同一个触发桶）",
+    "fix": "分离输入输出资源，设置并发上限与预算告警"
+   },
+   {
+    "bad": "把长时间任务塞进函数导致超时",
+    "fix": "拆分为队列任务或使用工作流编排、容器任务"
+   },
+   {
+    "bad": "依赖包过大，冷启动很慢",
+    "fix": "精简依赖、按需导入，必要时用预置并发"
+   }
+  ],
+  "checklist": [
+   "函数无状态，持久数据外置",
+   "设置超时、内存与并发上限",
+   "配置费用预算与告警",
+   "数据库连接已复用或走代理",
+   "监控冷启动与 P99 延迟",
+   "敏感配置来自环境变量或密钥服务"
+  ],
+  "interview": [
+   {
+    "q": "冷启动由哪些因素决定？",
+    "a": "包括运行时类型（解释型语言通常较快，JVM 较慢）、部署包大小、初始化代码耗时、是否处于 VPC、内存配置（与 CPU 配额相关）。缓解方式有精简依赖、延迟初始化、预置并发或保持定时预热。"
+   },
+   {
+    "q": "Serverless 一定更便宜吗？",
+    "a": "不一定。低流量和波动流量时按需计费很省；但持续高负载下，按调用与时长计费可能高于同等容量的常驻实例。还要计入 API 网关、数据传输等附加费用，应按实际流量模型测算。"
+   },
+   {
+    "q": "为什么说函数要无状态？",
+    "a": "平台可随时回收或新建实例，同一用户的连续请求可能落到不同实例上，内存和本地磁盘里的数据不保证存在。会话、文件和计数器必须存入外部存储，函数只做计算，才能安全地水平扩展。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "AWS Lambda 开发者指南",
+    "url": "https://docs.aws.amazon.com/lambda/latest/dg/welcome.html"
+   },
+   {
+    "title": "Cloudflare Workers 文档",
+    "url": "https://developers.cloudflare.com/workers/"
+   },
+   {
+    "title": "Wikipedia: Serverless computing",
+    "url": "https://en.wikipedia.org/wiki/Serverless_computing"
+   }
+  ]
+ },
+ {
+  "slug": "preview-deployments",
+  "def": "预览部署（Preview Deployment）是在每个分支或 Pull Request 上自动构建并部署一份独立环境、分配唯一 URL 的实践，常见于 Vercel、Netlify、Cloudflare Pages 等平台。它让评审者、设计和产品在合并前直接点开真实运行的版本验证改动，是持续部署（CD）与代码评审之间的桥梁，生产环境不受影响。",
+  "how": [
+   "平台通过 Git 集成监听推送事件；PR 打开或更新时触发构建流水线。",
+   "使用预览环境的环境变量完成构建，生成不可变的部署产物，分配唯一 URL（按提交或按分支）。",
+   "平台把预览链接以评论或状态检查的形式回写到 PR，供评审与自动化测试使用。",
+   "E2E 测试、视觉回归、Lighthouse 等检查可直接对预览 URL 运行，结果作为合并门禁。",
+   "PR 合并后，主分支触发生产部署；预览部署保留或按策略过期，对应的临时资源（如分支数据库）被清理。"
+  ],
+  "terms": [
+   {
+    "t": "不可变部署 (Immutable Deployment)",
+    "d": "每次部署生成独立且不再变化的产物和地址。"
+   },
+   {
+    "t": "分支数据库 (Database Branching)",
+    "d": "为预览环境创建隔离的数据库副本或分支。"
+   },
+   {
+    "t": "部署保护 (Deployment Protection)",
+    "d": "为预览链接加登录或密码，防止外泄。"
+   },
+   {
+    "t": "状态检查 (Status Check)",
+    "d": "回写到 PR 的构建/测试结果，可作为合并条件。"
+   },
+   {
+    "t": "环境作用域变量 (Scoped Env Vars)",
+    "d": "按 production / preview / development 区分的配置。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "CI 中用 Vercel CLI 发预览",
+   "src": "# .github/workflows/preview.yml（Vercel Git 集成可自动完成，此为 CLI 方式）\nname: Preview\non: pull_request\njobs:\n  deploy:\n    runs-on: ubuntu-latest\n    env:\n      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}\n      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm i -g vercel\n      # 拉取 preview 环境的配置与环境变量\n      - run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}\n      - run: vercel build --token=${{ secrets.VERCEL_TOKEN }}\n      # 部署预构建产物，输出预览 URL\n      - run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} > url.txt\n      - run: echo \"Preview: $(cat url.txt)\"",
+   "note": "在 CI 中显式构建并部署预览环境，拿到 URL 后可继续跑 E2E 测试或评论到 PR。"
+  },
+  "table": {
+   "title": "预览环境的数据策略",
+   "head": [
+    "策略",
+    "隔离性",
+    "成本",
+    "适用"
+   ],
+   "rows": [
+    [
+     "共享预发布数据库",
+     "低，PR 间互相干扰",
+     "低",
+     "只读或轻量改动"
+    ],
+    [
+     "每 PR 分支数据库",
+     "高",
+     "中，需自动清理",
+     "涉及迁移的改动"
+    ],
+    [
+     "Mock / 种子数据",
+     "高",
+     "低",
+     "前端与演示"
+    ],
+    [
+     "连接生产库",
+     "无",
+     "—",
+     "禁止"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "平台原生预览（Git 集成）",
+    "pros": "零配置，链接自动回写 PR",
+    "cons": "依赖平台能力",
+    "when": "前端与全栈 Web 项目"
+   },
+   {
+    "opt": "CI 自建预览环境",
+    "pros": "可定制，支持任意后端",
+    "cons": "维护成本高，需清理资源",
+    "when": "复杂后端、Kubernetes 项目"
+   },
+   {
+    "opt": "只用单一 staging",
+    "pros": "简单",
+    "cons": "多个 PR 互相覆盖",
+    "when": "团队小、改动少"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "预览环境使用生产密钥和生产数据库",
+    "fix": "为 preview 作用域配置独立的密钥与数据源"
+   },
+   {
+    "bad": "预览链接公开可访问，泄露未发布功能",
+    "fix": "开启部署保护或 SSO 访问限制"
+   },
+   {
+    "bad": "OAuth 回调只配了生产域名，预览登录失败",
+    "fix": "为预览域名配置回调或使用平台支持的通配方案"
+   },
+   {
+    "bad": "临时资源从不清理，费用累积",
+    "fix": "PR 关闭时自动销毁分支数据库等资源"
+   }
+  ],
+  "checklist": [
+   "每个 PR 自动生成预览链接",
+   "预览环境使用独立的变量与数据",
+   "预览链接受访问保护",
+   "E2E 测试对预览 URL 运行",
+   "PR 关闭后清理临时资源"
+  ],
+  "interview": [
+   {
+    "q": "预览部署与 staging 环境有何区别？",
+    "a": "staging 是长期存在的单一环境，多个改动合并后在其中验证；预览部署按 PR 生成，彼此隔离、短期存在，能在合并前单独验证每个改动。两者常并存：PR 级预览做功能验收，staging 做集成和发布前验证。"
+   },
+   {
+    "q": "预览环境的数据库怎么处理？",
+    "a": "前端改动可用 Mock 或共享只读数据；涉及 schema 迁移的改动最好使用分支数据库，每个 PR 获得隔离副本，迁移互不干扰。绝不连接生产库，并确保 PR 关闭时自动销毁临时数据库。"
+   },
+   {
+    "q": "预览部署如何融入 AI 编程流程？",
+    "a": "Agent 提交 PR 后，平台自动生成预览链接，人类评审可直接点开验收界面效果，无需本地拉代码；也可让 Agent 对预览 URL 跑 E2E 测试或截图对比，把结果作为合并前的检查项。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Vercel：Preview Deployments",
+    "url": "https://vercel.com/docs/deployments/environments#preview-environment-pre-production"
+   },
+   {
+    "title": "Netlify：Deploy Previews",
+    "url": "https://docs.netlify.com/site-deploys/deploy-previews/"
+   },
+   {
+    "title": "Cloudflare Pages：Preview deployments",
+    "url": "https://developers.cloudflare.com/pages/configuration/preview-deployments/"
+   }
+  ]
+ },
+ {
+  "slug": "integration-testing",
+  "def": "集成测试（Integration Testing）验证多个模块或系统组件组合在一起时能否正确协作，重点是接口与边界：代码与数据库、消息队列、外部 API、文件系统之间的交互。它位于测试金字塔中间层，比单元测试更接近真实环境、能发现映射、配置和协议不一致的问题，又比端到端测试更快、更易定位故障。",
+  "how": [
+   "确定测试边界：选择一组需要真实协作的组件（如服务层 + 仓储层 + 数据库），其余外部依赖用替身或沙箱。",
+   "准备真实或近似真实的依赖，例如用 Docker / Testcontainers 启动临时 PostgreSQL、Redis。",
+   "执行数据库迁移并写入种子数据，让每次测试都从同一个已知的初始状态开始。",
+   "通过公开接口（函数调用或 HTTP 请求）驱动被测流程，断言返回值以及数据库、消息等副作用。",
+   "每个测试结束后回滚事务或清理数据，保证测试彼此独立、可重复、可并行执行。"
+  ],
+  "terms": [
+   {
+    "t": "测试金字塔 (Test Pyramid)",
+    "d": "大量单元测试、适量集成测试、少量端到端测试的分层结构。"
+   },
+   {
+    "t": "测试替身 (Test Double)",
+    "d": "Mock、Stub、Fake 等替代真实依赖的对象。"
+   },
+   {
+    "t": "Testcontainers",
+    "d": "在测试代码中启动一次性 Docker 依赖的开源库。"
+   },
+   {
+    "t": "夹具 (Fixture)",
+    "d": "测试前后准备与清理环境的可复用代码。"
+   },
+   {
+    "t": "契约测试 (Contract Testing)",
+    "d": "验证服务间接口约定，常用于替代部分跨服务集成测试。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "用真实数据库做集成测试",
+   "src": "import pytest\nimport sqlalchemy as sa\nfrom testcontainers.postgres import PostgresContainer\n\n@pytest.fixture(scope=\"module\")\ndef engine():\n    # 启动临时 PostgreSQL 容器，测试结束自动销毁\n    with PostgresContainer(\"postgres:16\") as pg:\n        eng = sa.create_engine(pg.get_connection_url())\n        with eng.begin() as c:\n            c.execute(sa.text(\"CREATE TABLE users (id serial PRIMARY KEY, email text UNIQUE NOT NULL)\"))\n        yield eng\n\ndef register(conn, email):\n    conn.execute(sa.text(\"INSERT INTO users(email) VALUES (:e)\"), {\"e\": email})\n\ndef test_register_writes_row(engine):\n    with engine.begin() as c:\n        register(c, \"a@example.com\")\n        n = c.execute(sa.text(\"SELECT count(*) FROM users\")).scalar_one()\n    assert n == 1\n\ndef test_duplicate_email_rejected(engine):\n    with pytest.raises(sa.exc.IntegrityError), engine.begin() as c:\n        register(c, \"a@example.com\")   # 唯一约束生效",
+   "note": "用真实 PostgreSQL 验证 SQL 与约束行为，这是 Mock 无法覆盖的部分；需要本机 Docker。"
+  },
+  "table": {
+   "title": "三层测试对比",
+   "head": [
+    "维度",
+    "单元测试",
+    "集成测试",
+    "端到端测试"
+   ],
+   "rows": [
+    [
+     "范围",
+     "单个函数/类",
+     "多个组件+真实依赖",
+     "完整用户流程"
+    ],
+    [
+     "速度",
+     "毫秒级",
+     "秒级",
+     "秒到分钟级"
+    ],
+    [
+     "定位故障",
+     "精确",
+     "较精确",
+     "困难"
+    ],
+    [
+     "发现的问题",
+     "逻辑错误",
+     "映射、配置、SQL、协议",
+     "流程与环境问题"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "真实依赖（容器化数据库）",
+    "pros": "行为与生产一致，能测约束和 SQL 方言",
+    "cons": "需要 Docker，速度较慢",
+    "when": "数据访问层、迁移验证"
+   },
+   {
+    "opt": "内存替代（如 SQLite 代替 PostgreSQL）",
+    "pros": "快，无外部依赖",
+    "cons": "方言与约束差异导致假阳性",
+    "when": "早期原型，不推荐长期使用"
+   },
+   {
+    "opt": "Mock 外部服务",
+    "pros": "稳定、可模拟异常",
+    "cons": "可能与真实接口漂移",
+    "when": "第三方 API，配合契约测试"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用 SQLite 测试，生产是 PostgreSQL",
+    "fix": "使用与生产相同的数据库引擎和主版本"
+   },
+   {
+    "bad": "测试共享数据、顺序依赖，单独跑就失败",
+    "fix": "每个测试独立准备数据，结束后回滚或清理"
+   },
+   {
+    "bad": "集成测试 Mock 掉所有依赖，名不副实",
+    "fix": "明确边界：被测协作链路使用真实依赖"
+   },
+   {
+    "bad": "连接共享开发库或生产库跑测试",
+    "fix": "只使用一次性测试环境，凭据与生产隔离"
+   }
+  ],
+  "checklist": [
+   "关键数据流程有集成测试覆盖",
+   "测试数据库与生产同引擎同主版本",
+   "测试可独立、可重复、可并行",
+   "CI 中自动启动依赖并运行",
+   "外部 API 用沙箱或契约测试兜底"
+  ],
+  "interview": [
+   {
+    "q": "集成测试和端到端测试的边界在哪？",
+    "a": "集成测试关注一部分组件的协作，通常绕过 UI，直接调用服务或 API，并可替换部分外部依赖；端到端测试从用户界面出发，贯穿整个部署好的系统。前者定位快、稳定性高，后者最接近真实但慢且易不稳定。"
+   },
+   {
+    "q": "为什么不用 SQLite 代替 PostgreSQL 做测试？",
+    "a": "两者在类型系统、约束检查、SQL 语法、事务隔离和函数支持上都有差异，测试通过不代表生产可行。容器化真实数据库启动只需数秒，能验证迁移、索引和约束等真实行为，性价比更高。"
+   },
+   {
+    "q": "让 AI 写集成测试时要注意什么？",
+    "a": "明确告诉它使用临时测试数据库、禁止连接生产凭据；要求每个测试自行准备与清理数据；检查它是否为了让测试通过而 Mock 掉被测部分或放宽断言。测试应先在改动前失败、改动后通过，才说明有效。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Martin Fowler: IntegrationTest",
+    "url": "https://martinfowler.com/bliki/IntegrationTest.html"
+   },
+   {
+    "title": "The Practical Test Pyramid",
+    "url": "https://martinfowler.com/articles/practical-test-pyramid.html"
+   },
+   {
+    "title": "Testcontainers",
+    "url": "https://testcontainers.com/"
+   }
+  ]
+ },
+ {
+  "slug": "ab-testing",
+  "def": "A/B 测试是一种在线随机对照实验：把用户随机分配到对照组（A）和实验组（B），在同一时间段内只改变一个因素，比较预先定义的指标，用统计检验判断差异是否超出随机波动。它把产品决策从主观判断转为因果推断，常与功能开关、埋点分析平台配合使用。",
+  "how": [
+   "实验前定义假设、主指标（如转化率）、护栏指标（如退款率、延迟）和最小可检测效应（MDE）。",
+   "根据基线、MDE、显著性水平（常用 α=0.05）和统计功效（常用 80%）计算每组所需样本量与实验时长。",
+   "用稳定的用户 ID 哈希分桶，保证同一用户始终看到同一版本，分流比例与预期一致。",
+   "实验运行满预定样本量或完整周期（通常覆盖至少一周以消除周内效应），期间不因中途结果提前停止。",
+   "用双比例 z 检验、t 检验等方法计算 p 值与置信区间，同时检查样本比例失衡（SRM）与护栏指标后再决策。"
+  ],
+  "terms": [
+   {
+    "t": "最小可检测效应 (MDE)",
+    "d": "实验设计时希望可靠检测到的最小差异。"
+   },
+   {
+    "t": "统计功效 (Power)",
+    "d": "真实存在差异时检测到它的概率，常取 80%。"
+   },
+   {
+    "t": "样本比例失衡 (SRM)",
+    "d": "实际分组比例显著偏离设计比例，提示分流或埋点有问题。"
+   },
+   {
+    "t": "偷看问题 (Peeking)",
+    "d": "反复查看并在显著时停止，会显著抬高假阳性率。"
+   },
+   {
+    "t": "护栏指标 (Guardrail Metric)",
+    "d": "不希望被实验损害的关键指标，如收入、错误率。"
+   },
+   {
+    "t": "新奇效应 (Novelty Effect)",
+    "d": "用户因新鲜感短期行为变化，长期可能消退。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "样本量估算与显著性检验",
+   "src": "import hashlib\nfrom statsmodels.stats.power import NormalIndPower\nfrom statsmodels.stats.proportion import proportion_effectsize, proportions_ztest\n\n# 1. 稳定分桶：同一用户永远进同一组\ndef bucket(user_id: str, exp: str = \"signup_btn\") -> str:\n    h = int(hashlib.sha256(f\"{exp}:{user_id}\".encode()).hexdigest(), 16)\n    return \"B\" if h % 100 < 50 else \"A\"\n\n# 2. 样本量：基线 10%，希望检测到提升到 11%\nes = proportion_effectsize(0.11, 0.10)\nn = NormalIndPower().solve_power(effect_size=es, alpha=0.05, power=0.8)\nprint(f\"每组约需 {n:.0f} 人\")\n\n# 3. 实验结束后检验（示例数据）\nconversions = [1180, 1050]      # B, A 转化人数\nvisitors = [10000, 10000]\nz, p = proportions_ztest(conversions, visitors)\nprint(f\"z={z:.2f}, p={p:.4f}\")  # p < 0.05 才认为差异显著",
+   "note": "展示哈希分桶、事前样本量计算和事后双比例 z 检验；10%→11% 这类小提升每组需上万用户。"
+  },
+  "table": {
+   "title": "常见实验问题诊断",
+   "head": [
+    "现象",
+    "可能原因",
+    "处理"
+   ],
+   "rows": [
+    [
+     "A/B 人数比例明显不是 50:50",
+     "分流 bug、埋点丢失、机器人流量",
+     "做 SRM 卡方检验，排查后再看结果"
+    ],
+    [
+     "第一天显著，之后消失",
+     "新奇效应或偷看导致假阳性",
+     "跑满预定时长，按周期分析"
+    ],
+    [
+     "主指标涨、收入跌",
+     "局部优化损害整体",
+     "设置护栏指标并一票否决"
+    ],
+    [
+     "多个指标中有一个显著",
+     "多重比较",
+     "预先指定主指标，或做多重检验校正"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "固定样本频率学派检验",
+    "pros": "方法成熟，解释标准",
+    "cons": "必须跑满样本，不能中途看",
+    "when": "多数产品实验"
+   },
+   {
+    "opt": "序贯检验 / 始终有效推断",
+    "pros": "允许持续监控并提前停止",
+    "cons": "方法更复杂，功效略低",
+    "when": "需要快速止损的实验"
+   },
+   {
+    "opt": "多臂老虎机 (Bandit)",
+    "pros": "自动把流量导向更优版本",
+    "cons": "因果估计不如 A/B 清晰",
+    "when": "短期活动、推荐位优化"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "看到 p<0.05 就立即停止实验",
+    "fix": "预先确定样本量和时长，或使用序贯检验方法"
+   },
+   {
+    "bad": "按会话随机而非按用户，同一人看到两版",
+    "fix": "以稳定用户 ID 分桶，登录前后做身份关联"
+   },
+   {
+    "bad": "一次实验同时改文案、颜色和布局",
+    "fix": "一次只改一个因素，或用多因素实验设计"
+   },
+   {
+    "bad": "忽略 SRM 直接解读结果",
+    "fix": "先检验分组比例，失衡说明数据不可信"
+   }
+  ],
+  "checklist": [
+   "事先写明假设、主指标与护栏指标",
+   "样本量与实验时长已计算",
+   "分桶基于稳定用户 ID",
+   "实验覆盖完整的周周期",
+   "分析前检查 SRM",
+   "记录结论与决策，避免重复实验"
+  ],
+  "interview": [
+   {
+    "q": "什么是偷看问题，为什么危险？",
+    "a": "在固定样本检验中反复查看结果，只要某一刻 p<0.05 就停止，相当于做了多次检验，假阳性率会远高于名义的 5%。解决方法是预先固定样本量，或采用序贯检验、始终有效置信区间等支持持续监控的方法。"
+   },
+   {
+    "q": "如何确定实验需要多少样本？",
+    "a": "需要基线转化率、最小可检测效应、显著性水平和统计功效。效应越小、基线越低，所需样本越多，且大致与效应的平方成反比。若所需样本超出流量能力，应选更敏感的指标、增大改动幅度或接受更长周期。"
+   },
+   {
+    "q": "统计显著就代表应该上线吗？",
+    "a": "不一定。还要看效应大小是否有业务意义、置信区间下限是否可接受、护栏指标是否受损、是否存在新奇效应，以及实现与维护成本。显著只说明差异不太可能是随机产生的。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "statsmodels：power 与 proportion",
+    "url": "https://www.statsmodels.org/stable/stats.html"
+   },
+   {
+    "title": "Wikipedia: A/B testing",
+    "url": "https://en.wikipedia.org/wiki/A/B_testing"
+   },
+   {
+    "title": "Trustworthy Online Controlled Experiments（书籍官网）",
+    "url": "https://experimentguide.com/"
+   }
+  ]
+ },
+ {
+  "slug": "object-storage",
+  "def": "对象存储（Object Storage）是以“桶（Bucket）+ 键（Key）+ 对象（数据与元数据）”为模型的扁平存储服务，通过 HTTP API 读写，容量和吞吐可近乎无限扩展，按存储量、请求数和流出流量计费。AWS S3 定义了事实标准 API，Cloudflare R2、阿里云 OSS、MinIO 等大多提供 S3 兼容接口，常用于存放图片、视频、备份与日志。",
+  "how": [
+   "创建桶并设置区域、访问策略；对象以键名唯一标识，“目录”只是键名中的前缀约定。",
+   "客户端通过 PUT/GET/DELETE 等 HTTP 请求操作对象，请求用 AWS Signature V4 等签名鉴权。",
+   "后端可生成预签名 URL（presigned URL），在限定时间内授权浏览器直接上传或下载，不经过应用服务器。",
+   "大文件使用分段上传（multipart upload），各分段并行上传后合并，失败可只重传单个分段。",
+   "生命周期规则可自动转储到低频/归档存储或删除过期对象；版本控制可保留历史版本防止误删。"
+  ],
+  "terms": [
+   {
+    "t": "桶 (Bucket)",
+    "d": "对象的顶层容器，名称在命名空间内唯一，承载访问策略。"
+   },
+   {
+    "t": "预签名 URL (Presigned URL)",
+    "d": "带签名和过期时间的临时链接，授权特定操作。"
+   },
+   {
+    "t": "分段上传 (Multipart Upload)",
+    "d": "把大对象拆成多个分段上传后合并。"
+   },
+   {
+    "t": "存储类别 (Storage Class)",
+    "d": "标准、低频、归档等不同价格与取回时延的等级。"
+   },
+   {
+    "t": "流出费 (Egress Fee)",
+    "d": "数据从云存储传出到公网时收取的流量费。"
+   },
+   {
+    "t": "版本控制 (Versioning)",
+    "d": "同一键保留多个历史版本，可恢复被覆盖或删除的对象。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "生成预签名上传链接（S3 / R2）",
+   "src": "import os, uuid\nimport boto3\n\n# S3 兼容：换 R2 只需设置 endpoint_url（以官方文档为准）\ns3 = boto3.client(\n    \"s3\",\n    endpoint_url=os.environ.get(\"S3_ENDPOINT\"),  # R2: https://<ACCOUNT_ID>.r2.cloudflarestorage.com\n    aws_access_key_id=os.environ[\"S3_KEY\"],\n    aws_secret_access_key=os.environ[\"S3_SECRET\"],\n    region_name=os.environ.get(\"S3_REGION\", \"auto\"),\n)\n\ndef presign_avatar_upload(user_id: str) -> dict:\n    key = f\"avatars/{user_id}/{uuid.uuid4()}.png\"   # 服务端决定键名\n    url = s3.generate_presigned_url(\n        \"put_object\",\n        Params={\"Bucket\": os.environ[\"S3_BUCKET\"], \"Key\": key,\n                \"ContentType\": \"image/png\"},\n        ExpiresIn=600,                               # 10 分钟有效\n    )\n    return {\"url\": url, \"key\": key}\n\n# 前端：fetch(url, {method: \"PUT\", headers: {\"Content-Type\": \"image/png\"}, body: file})",
+   "note": "浏览器拿临时链接直传对象存储，服务器不承载文件流量；桶保持私有，键名由服务端生成。"
+  },
+  "table": {
+   "title": "存储方案对比",
+   "head": [
+    "方案",
+    "适合存什么",
+    "访问方式",
+    "扩展性"
+   ],
+   "rows": [
+    [
+     "对象存储",
+     "图片、视频、备份、日志",
+     "HTTP API / URL",
+     "近乎无限"
+    ],
+    [
+     "块存储（云盘）",
+     "数据库、虚拟机磁盘",
+     "挂载为磁盘",
+     "单卷有上限"
+    ],
+    [
+     "文件存储（NAS）",
+     "多机共享目录",
+     "NFS/SMB 挂载",
+     "中等"
+    ],
+    [
+     "数据库 BLOB",
+     "极小的二进制数据",
+     "SQL",
+     "差，拖慢备份与查询"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "浏览器预签名直传",
+    "pros": "节省服务器带宽，速度快",
+    "cons": "需在服务端校验结果与类型",
+    "when": "用户上传图片、文件"
+   },
+   {
+    "opt": "经应用服务器中转上传",
+    "pros": "可在中途检查、压缩",
+    "cons": "占用服务器带宽与内存",
+    "when": "需要实时处理的小文件"
+   },
+   {
+    "opt": "对象存储 + CDN 分发",
+    "pros": "降低延迟与流出费",
+    "cons": "缓存失效需管理",
+    "when": "公开静态资源、媒体"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "桶开启公开读或公开列表",
+    "fix": "默认私有，按需用预签名 URL 或经 CDN 签名访问"
+   },
+   {
+    "bad": "允许客户端指定任意键名，覆盖他人文件",
+    "fix": "键名由服务端生成并带用户前缀，限制可写范围"
+   },
+   {
+    "bad": "只信任客户端声明的 Content-Type",
+    "fix": "上传后服务端校验魔数与大小，必要时异步扫描"
+   },
+   {
+    "bad": "访问密钥权限过大并写进前端",
+    "fix": "最小权限密钥只留服务端，前端只拿临时 URL"
+   }
+  ],
+  "checklist": [
+   "桶默认私有并开启阻止公共访问",
+   "密钥最小权限且只在服务端",
+   "预签名 URL 设置较短有效期",
+   "上传文件校验大小与类型",
+   "开启版本控制或生命周期规则",
+   "评估流出费并结合 CDN"
+  ],
+  "interview": [
+   {
+    "q": "为什么不把文件直接存进数据库？",
+    "a": "数据库为结构化小数据和事务优化，大文件会撑大表空间、拖慢备份与复制、挤占缓冲池。对象存储单价低、可无限扩展且支持 CDN 分发。通常只在数据库中保存对象键和元数据。"
+   },
+   {
+    "q": "预签名 URL 的安全边界是什么？",
+    "a": "它把指定操作（如对某个键的 PUT）在有效期内授权给任何持有链接的人。因此要限定键名、内容类型和较短有效期，链接不要写入日志或长期存储；上传后仍需服务端校验，不能因已签名就信任内容。"
+   },
+   {
+    "q": "S3 的一致性模型如何？",
+    "a": "自 2020 年 12 月起，S3 对所有 PUT、DELETE 提供强读后写一致性，写入成功后立刻读取即可得到最新数据，列举操作也一致。其他 S3 兼容服务的一致性需查阅各自文档。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Amazon S3 用户指南",
+    "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html"
+   },
+   {
+    "title": "S3 预签名 URL",
+    "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-presigned-url.html"
+   },
+   {
+    "title": "Cloudflare R2 文档",
+    "url": "https://developers.cloudflare.com/r2/"
+   }
+  ]
+ },
+ {
+  "slug": "observability",
+  "def": "可观测性（Observability）指仅凭系统对外输出的遥测数据，就能推断其内部状态、回答事先没预料到的问题的能力。业界常用三类信号：指标（Metrics）、日志（Logs）和链路追踪（Traces），并通过 trace ID 等上下文相互关联。OpenTelemetry 是采集与传输这三类信号的开放标准。",
+  "how": [
+   "应用通过 SDK 或自动插桩产生遥测：计数器、直方图等指标，结构化日志，以及描述每个操作耗时的 span。",
+   "链路上下文（trace ID、span ID）通过 HTTP 头（W3C traceparent）在服务间传播，把分散的 span 串成一条 trace。",
+   "日志中写入当前 trace ID，使得从指标告警跳转到相关 trace，再定位到具体日志行成为可能。",
+   "遥测经 Collector 等代理处理（采样、脱敏、批量），发送到 Prometheus、Loki、Jaeger 或商业平台存储。",
+   "基于指标设置 SLO 告警，基于 trace 与日志做根因分析，形成“发现—定位—修复”闭环。"
+  ],
+  "terms": [
+   {
+    "t": "Span",
+    "d": "链路中的单个操作单元，含名称、起止时间、属性和父子关系。"
+   },
+   {
+    "t": "上下文传播 (Context Propagation)",
+    "d": "在进程与服务间传递 trace 信息，常用 W3C Trace Context。"
+   },
+   {
+    "t": "采样 (Sampling)",
+    "d": "只保留部分 trace 以控制成本，分头部采样和尾部采样。"
+   },
+   {
+    "t": "基数 (Cardinality)",
+    "d": "指标标签取值组合数，过高会导致存储和查询成本爆炸。"
+   },
+   {
+    "t": "OTLP",
+    "d": "OpenTelemetry 协议，用于传输指标、日志和 trace。"
+   },
+   {
+    "t": "Collector",
+    "d": "OpenTelemetry 的独立代理，负责接收、处理和导出遥测数据。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "OpenTelemetry 手动埋点",
+   "src": "import logging\nfrom opentelemetry import trace\nfrom opentelemetry.sdk.trace import TracerProvider\nfrom opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter\n\n# 生产环境把 ConsoleSpanExporter 换成 OTLP 导出器\nprovider = TracerProvider()\nprovider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))\ntrace.set_tracer_provider(provider)\ntracer = trace.get_tracer(\"checkout-service\")\nlogging.basicConfig(level=logging.INFO)\n\ndef checkout(order_id: str):\n    with tracer.start_as_current_span(\"checkout\") as span:\n        span.set_attribute(\"order.id\", order_id)\n        trace_id = format(span.get_span_context().trace_id, \"032x\")\n        logging.info(\"checkout start trace_id=%s\", trace_id)  # 日志关联 trace\n        with tracer.start_as_current_span(\"charge_card\"):\n            pass  # 调用支付服务\n        with tracer.start_as_current_span(\"write_db\"):\n            pass  # 写订单\n\ncheckout(\"o-123\")",
+   "note": "父 span 下嵌套子 span 记录每一步耗时，并把 trace ID 写进日志，实现信号关联。"
+  },
+  "table": {
+   "title": "三类信号对比",
+   "head": [
+    "信号",
+    "数据形态",
+    "擅长回答",
+    "成本特点"
+   ],
+   "rows": [
+    [
+     "指标",
+     "聚合数值时序",
+     "是否异常、趋势如何",
+     "低，但受标签基数影响"
+    ],
+    [
+     "日志",
+     "离散事件文本/JSON",
+     "具体发生了什么",
+     "随流量线性增长"
+    ],
+    [
+     "链路追踪",
+     "带因果关系的 span 树",
+     "慢在哪、错在哪个服务",
+     "高，通常需要采样"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "全量 trace",
+    "pros": "不漏任何异常请求",
+    "cons": "存储成本高",
+    "when": "流量小或关键交易链路"
+   },
+   {
+    "opt": "头部采样（固定比例）",
+    "pros": "实现简单、成本可控",
+    "cons": "可能漏掉罕见错误",
+    "when": "大流量常规服务"
+   },
+   {
+    "opt": "尾部采样（Collector 端）",
+    "pros": "优先保留错误与慢请求",
+    "cons": "需缓冲完整 trace，资源消耗高",
+    "when": "需要精准排障的生产系统"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "指标标签使用用户 ID、URL 全路径",
+    "fix": "只用低基数标签，高基数信息放日志或 trace 属性"
+   },
+   {
+    "bad": "日志无结构、不带 trace ID",
+    "fix": "使用结构化日志并自动注入 trace 上下文"
+   },
+   {
+    "bad": "各服务传播头不一致，trace 断裂",
+    "fix": "统一采用 W3C Trace Context，网关与消息队列也传播"
+   },
+   {
+    "bad": "遥测中包含密码、Token 等敏感数据",
+    "fix": "在 SDK 或 Collector 层做脱敏与字段过滤"
+   }
+  ],
+  "checklist": [
+   "核心服务暴露延迟、流量、错误、饱和度指标",
+   "日志结构化且带 trace ID",
+   "跨服务上下文传播完整",
+   "采样策略与成本已评估",
+   "遥测数据已脱敏",
+   "关键 SLO 配置告警"
+  ],
+  "interview": [
+   {
+    "q": "监控和可观测性有什么区别？",
+    "a": "监控针对已知问题，预先定义指标和阈值来判断“是否出问题”；可观测性强调能通过丰富、可关联的遥测数据回答事先没想到的问题，即“为什么出问题”。监控是可观测性的子集。"
+   },
+   {
+    "q": "为什么指标标签基数需要控制？",
+    "a": "时序数据库为每个标签组合存一条时间序列。若把用户 ID 等高基数字段作为标签，序列数会呈乘积增长，导致内存、存储和查询成本暴涨甚至服务崩溃。高基数维度应放在日志或 trace 中。"
+   },
+   {
+    "q": "如何在 Agent 或 LLM 应用中做可观测性？",
+    "a": "为每次模型调用、工具调用和检索步骤创建 span，记录模型名、token 用量、延迟和错误；用 trace 串起一次完整 Agent 运行。注意对提示和输出中的个人信息做脱敏，并控制大文本存储成本。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OpenTelemetry 文档",
+    "url": "https://opentelemetry.io/docs/"
+   },
+   {
+    "title": "OpenTelemetry Python",
+    "url": "https://opentelemetry.io/docs/languages/python/"
+   },
+   {
+    "title": "W3C Trace Context",
+    "url": "https://www.w3.org/TR/trace-context/"
+   }
+  ]
+ },
+ {
+  "slug": "uptime-monitoring",
+  "def": "可用性监控（Uptime Monitoring），又称拨测或合成监控（Synthetic Monitoring），是从外部站点按固定频率主动请求服务，检查其是否可达、响应正确且足够快，并在失败时告警。它从用户视角补充内部指标，能发现 DNS、证书、CDN、网络等内部监控看不到的故障，也用于统计可用率、验证 SLA。",
+  "how": [
+   "在多个地理位置部署探针，按设定间隔（常见 30 秒到 5 分钟）向目标 URL、端口或接口发请求。",
+   "对响应做断言：状态码、关键字、响应时间阈值、JSON 字段，以及 TLS 证书剩余有效期。",
+   "为避免误报，通常要求连续多次失败或多个地点同时失败才判定宕机。",
+   "判定宕机后通过邮件、短信、IM 或值班系统通知，并在恢复时发送恢复通知、记录故障时长。",
+   "心跳监控反向工作：定时任务完成后主动 ping 监控地址，超时未收到即告警，用于发现静默失败的 cron。"
+  ],
+  "terms": [
+   {
+    "t": "合成监控 (Synthetic Monitoring)",
+    "d": "用脚本模拟用户请求主动探测服务。"
+   },
+   {
+    "t": "心跳监控 (Heartbeat / Dead Man's Switch)",
+    "d": "任务定期上报，超时未上报即告警。"
+   },
+   {
+    "t": "多地点确认 (Multi-location Confirmation)",
+    "d": "多个探针同时失败才判定故障，降低误报。"
+   },
+   {
+    "t": "可用率 (Availability)",
+    "d": "正常时间占总时间的比例，如 99.9%。"
+   },
+   {
+    "t": "状态页 (Status Page)",
+    "d": "向用户公开展示服务状态与故障历史的页面。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "简易拨测与心跳脚本",
+   "src": "import time, ssl, socket, datetime\nimport requests\n\ndef check_http(url: str, keyword: str, max_ms: int = 2000) -> str | None:\n    t = time.perf_counter()\n    try:\n        r = requests.get(url, timeout=10)\n    except requests.RequestException as e:\n        return f\"请求失败: {e}\"\n    ms = (time.perf_counter() - t) * 1000\n    if r.status_code != 200: return f\"状态码 {r.status_code}\"\n    if keyword not in r.text: return \"关键字缺失\"\n    if ms > max_ms: return f\"过慢 {ms:.0f}ms\"\n    return None\n\ndef cert_days_left(host: str) -> int:\n    ctx = ssl.create_default_context()\n    with socket.create_connection((host, 443), timeout=10) as s:\n        with ctx.wrap_socket(s, server_hostname=host) as ss:\n            exp = ssl.cert_time_to_seconds(ss.getpeercert()[\"notAfter\"])\n    return int((exp - time.time()) // 86400)\n\nprint(check_http(\"https://example.com\", \"Example Domain\"))\nprint(\"证书剩余天数:\", cert_days_left(\"example.com\"))\n# cron 任务结束时上报心跳：requests.get(HEARTBEAT_URL, timeout=10)",
+   "note": "演示状态码、关键字、延迟、证书四类断言；生产中应使用多地点的托管或自建监控服务。"
+  },
+  "table": {
+   "title": "可用率与停机预算",
+   "head": [
+    "可用率",
+    "每月约允许停机",
+    "每年约允许停机"
+   ],
+   "rows": [
+    [
+     "99%",
+     "约 7.3 小时",
+     "约 3.65 天"
+    ],
+    [
+     "99.9%",
+     "约 43.8 分钟",
+     "约 8.77 小时"
+    ],
+    [
+     "99.95%",
+     "约 21.9 分钟",
+     "约 4.38 小时"
+    ],
+    [
+     "99.99%",
+     "约 4.4 分钟",
+     "约 52.6 分钟"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "托管拨测服务",
+    "pros": "多地点、开箱即用、带状态页",
+    "cons": "按监控数与频率收费",
+    "when": "大多数线上产品"
+   },
+   {
+    "opt": "自建（如 Uptime Kuma）",
+    "pros": "免费、可控",
+    "cons": "单点部署，监控自身也会挂",
+    "when": "个人项目、内网服务"
+   },
+   {
+    "opt": "只用内部指标",
+    "pros": "无额外成本",
+    "cons": "看不到 DNS、证书、网络问题",
+    "when": "不推荐单独使用"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只检查首页返回 200，接口挂了没发现",
+    "fix": "同时监控健康检查接口和关键 API，并做内容断言"
+   },
+   {
+    "bad": "单地点探测，网络抖动频繁误报",
+    "fix": "多地点确认、连续失败 N 次再告警"
+   },
+   {
+    "bad": "监控服务与被监控服务部署在同一台机器",
+    "fix": "监控部署在独立的基础设施或使用外部服务"
+   },
+   {
+    "bad": "后台定时任务静默失败无人知晓",
+    "fix": "为 cron 任务配置心跳监控"
+   }
+  ],
+  "checklist": [
+   "监控首页、健康检查与关键 API",
+   "断言状态码与关键内容",
+   "证书到期提前告警",
+   "多地点确认后再告警",
+   "告警接入值班渠道并测试送达",
+   "定时任务配置心跳监控"
+  ],
+  "interview": [
+   {
+    "q": "拨测和内部监控如何互补？",
+    "a": "内部指标能看到服务内部的延迟、错误和资源，但服务完全宕机时可能连指标都发不出来，也看不到 DNS、证书、CDN 和跨地域网络问题。拨测从外部模拟用户，能发现这些盲区，两者结合才能完整覆盖。"
+   },
+   {
+    "q": "如何减少拨测误报？",
+    "a": "使用多个地理位置的探针，要求多数地点同时失败；设置连续失败次数阈值；合理的超时；把维护窗口设为静默期。同时区分告警级别，非关键检查只发通知不呼叫值班。"
+   },
+   {
+    "q": "99.9% 可用率意味着什么？",
+    "a": "以 30 天计约允许 43 分钟停机，一年约 8.8 小时。这决定了故障响应和发布策略：要达到更高可用率，需要自动故障转移、多可用区部署和更快的告警响应，成本会显著上升。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Google SRE Book: Monitoring Distributed Systems",
+    "url": "https://sre.google/sre-book/monitoring-distributed-systems/"
+   },
+   {
+    "title": "Uptime Kuma (GitHub)",
+    "url": "https://github.com/louislam/uptime-kuma"
+   },
+   {
+    "title": "Wikipedia: Synthetic monitoring",
+    "url": "https://en.wikipedia.org/wiki/Synthetic_monitoring"
+   }
+  ]
+ },
+ {
+  "slug": "reranker",
+  "def": "重排序模型（Reranker）是检索流程中的第二阶段精排组件：对第一阶段（向量检索、BM25 等）召回的候选文档，逐一与查询联合编码并计算相关性分数，再按分数重新排序，只保留前若干条交给大模型。它通常采用交叉编码器（Cross-Encoder），准确率明显高于双塔检索，但计算成本更高，因此只用于小规模候选集。",
+  "how": [
+   "第一阶段用双编码器或 BM25 快速召回较多候选（如几十到上百条），优先保证召回率。",
+   "重排模型把“查询 + 候选文档”拼成一个输入，经 Transformer 让两者的 token 充分交互，输出一个相关性分数。",
+   "对所有候选打分后降序排列，可配合阈值过滤掉低相关文档。",
+   "取前 K 条（常见 3–10 条）放入大模型上下文，减少噪声与 token 消耗。",
+   "可选用开源模型本地部署（如 BGE、Jina 系列）或托管 API（如 Cohere Rerank），按延迟与成本选择。"
+  ],
+  "terms": [
+   {
+    "t": "交叉编码器 (Cross-Encoder)",
+    "d": "查询与文档拼接后共同编码，直接输出相关性分数。"
+   },
+   {
+    "t": "双编码器 (Bi-Encoder)",
+    "d": "查询与文档分别编码成向量再比相似度，可预先建索引。"
+   },
+   {
+    "t": "两阶段检索 (Retrieve-then-Rerank)",
+    "d": "先快速召回，再精排的检索架构。"
+   },
+   {
+    "t": "召回率 (Recall@K)",
+    "d": "相关文档出现在前 K 个结果中的比例。"
+   },
+   {
+    "t": "nDCG",
+    "d": "考虑排名位置的排序质量指标，越靠前的相关结果权重越高。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "用 Cross-Encoder 重排候选",
+   "src": "from sentence_transformers import CrossEncoder\n\n# 开源英文重排模型；中文可选 BAAI/bge-reranker 系列（以模型卡为准）\nmodel = CrossEncoder(\"cross-encoder/ms-marco-MiniLM-L-6-v2\")\n\nquery = \"How do I get a refund for return shipping?\"\ncandidates = [  # 第一阶段召回的候选（实际可能有几十条）\n    \"Orders ship within 2 business days.\",\n    \"Return shipping is refunded if the item is defective.\",\n    \"You can track your package in the app.\",\n    \"Refunds are issued to the original payment method.\",\n]\n\nscores = model.predict([(query, doc) for doc in candidates])\nranked = sorted(zip(candidates, scores), key=lambda x: x[1], reverse=True)\n\nTOP_K = 2\nfor doc, s in ranked[:TOP_K]:          # 只把前 K 条交给大模型\n    print(f\"{s:.2f}  {doc}\")",
+   "note": "交叉编码器对每个“查询-文档”对打分；候选越多越慢，所以只在召回之后使用。"
+  },
+  "table": {
+   "title": "双编码器 vs 交叉编码器",
+   "head": [
+    "维度",
+    "双编码器（检索）",
+    "交叉编码器（重排）"
+   ],
+   "rows": [
+    [
+     "计算方式",
+     "分别编码，向量相似度",
+     "拼接联合编码"
+    ],
+    [
+     "能否预建索引",
+     "能",
+     "不能，需实时计算"
+    ],
+    [
+     "适用规模",
+     "百万级文档",
+     "几十到上百条候选"
+    ],
+    [
+     "准确度",
+     "较好",
+     "通常更高"
+    ],
+    [
+     "延迟",
+     "毫秒级（有索引）",
+     "随候选数线性增长"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "不加重排",
+    "pros": "架构简单、延迟最低",
+    "cons": "排序噪声大，易答非所问",
+    "when": "原型或数据量很小"
+   },
+   {
+    "opt": "开源重排模型自部署",
+    "pros": "数据不出域，单次成本低",
+    "cons": "需要 GPU/CPU 资源与运维",
+    "when": "有隐私要求、调用量大"
+   },
+   {
+    "opt": "托管重排 API",
+    "pros": "接入快、效果稳定",
+    "cons": "按调用付费，数据需外发",
+    "when": "快速上线、调用量中等"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "召回数量太少（如只取 5 条）再重排",
+    "fix": "召回阶段多取一些（几十条），给重排留选择空间"
+   },
+   {
+    "bad": "对全库文档跑交叉编码器",
+    "fix": "只对召回候选重排，全库检索用双编码器或 BM25"
+   },
+   {
+    "bad": "中文场景用纯英文重排模型",
+    "fix": "选择支持中文或多语言的重排模型并做评测"
+   },
+   {
+    "bad": "没有评测集就判断“加了重排更好”",
+    "fix": "用标注问答对比较 Recall@K、nDCG 和最终答案准确率"
+   }
+  ],
+  "checklist": [
+   "召回候选数与重排后 Top-K 已调优",
+   "重排模型支持业务语言",
+   "评估重排带来的延迟",
+   "有评测集量化效果",
+   "长文档按模型最大长度截断或切块"
+  ],
+  "interview": [
+   {
+    "q": "为什么不直接用交叉编码器做检索？",
+    "a": "交叉编码器必须把查询和每个文档一起计算，无法预先离线编码建索引；对百万文档逐一打分延迟和成本都不可接受。因此用双编码器或 BM25 先召回小候选集，再用交叉编码器精排，兼顾速度和精度。"
+   },
+   {
+    "q": "重排模型如何影响 RAG 的整体效果？",
+    "a": "它提升送入上下文的文档质量：相关内容排到前面，无关内容被过滤，减少大模型被干扰和“中段遗忘”的概率，同时降低 token 成本。但它无法补救召回阶段漏掉的文档，召回率仍是上限。"
+   },
+   {
+    "q": "怎样选择召回数和重排后的 K？",
+    "a": "召回数越大，越不易漏掉相关文档，但重排延迟线性增加；K 越大，上下文越完整，但噪声和成本上升。应在评测集上网格搜索，在可接受延迟内找最优组合。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Sentence Transformers：Cross-Encoder",
+    "url": "https://www.sbert.net/docs/cross_encoder/usage/usage.html"
+   },
+   {
+    "title": "Cohere Rerank 文档",
+    "url": "https://docs.cohere.com/docs/rerank-overview"
+   },
+   {
+    "title": "BAAI/bge-reranker-v2-m3 模型卡",
+    "url": "https://huggingface.co/BAAI/bge-reranker-v2-m3"
+   }
+  ]
+ },
+ {
+  "slug": "hybrid-search",
+  "def": "混合检索（Hybrid Search）是同时运行稀疏检索（关键词匹配，常用 BM25）与稠密检索（向量语义相似度），再把两路结果融合成一个排序的检索方法。稀疏检索擅长精确匹配型号、人名、代码标识符，稠密检索擅长同义改写和语义相近的表达，二者互补，是生产级 RAG 的常见基线。",
+  "how": [
+   "离线阶段同时建立倒排索引（用于 BM25）和向量索引（用于 ANN 检索），文档切块后两者都要写入。",
+   "查询时并行执行两路检索：BM25 按词频与逆文档频率打分，向量检索按嵌入的余弦或点积相似度打分。",
+   "两路分数尺度不同，融合常用倒数排名融合（RRF）：按名次计算 1/(k+rank) 并求和，常用 k=60。",
+   "也可做分数归一化后线性加权（alpha 参数控制语义与关键词比重），但需要调参。",
+   "融合结果可再交给重排模型精排，最后取 Top-K 放入大模型上下文。"
+  ],
+  "terms": [
+   {
+    "t": "BM25",
+    "d": "基于词频、逆文档频率和文档长度归一化的经典关键词排序函数。"
+   },
+   {
+    "t": "稀疏向量 (Sparse Vector)",
+    "d": "维度为词表、多数为 0 的表示，如 BM25、SPLADE。"
+   },
+   {
+    "t": "稠密向量 (Dense Vector)",
+    "d": "由嵌入模型生成的低维连续向量，表示语义。"
+   },
+   {
+    "t": "倒数排名融合 (RRF)",
+    "d": "按各路排名的倒数求和融合结果，无需分数归一化。"
+   },
+   {
+    "t": "alpha 加权",
+    "d": "在归一化分数上按比例混合两路结果的融合方式。"
+   },
+   {
+    "t": "分词 (Tokenization)",
+    "d": "中文 BM25 需要合适的分词器，否则关键词匹配效果差。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "BM25 + 向量结果用 RRF 融合",
+   "src": "from rank_bm25 import BM25Okapi\n\ndocs = [\"iPhone 15 电池续航说明\", \"手机过热怎么办\", \"订单 A1023 物流查询\", \"iPhone 14 维修政策\"]\n# 中文建议先用 jieba 等分词，这里按单字粗略示意\nbm25 = BM25Okapi([list(d) for d in docs])\n\ndef bm25_rank(q):\n    scores = bm25.get_scores(list(q))\n    return sorted(range(len(docs)), key=lambda i: -scores[i])\n\ndef rrf(rankings, k=60):\n    fused = {}\n    for ranking in rankings:\n        for rank, doc_id in enumerate(ranking, start=1):\n            fused[doc_id] = fused.get(doc_id, 0) + 1 / (k + rank)\n    return sorted(fused, key=fused.get, reverse=True)\n\nq = \"手机发烫 iPhone 15\"\nkeyword = bm25_rank(q)\nvector = [1, 0, 3, 2]   # 假设这是向量检索返回的文档 ID 排名\nfor i in rrf([keyword, vector])[:3]:\n    print(docs[i])",
+   "note": "RRF 只用名次融合，避免 BM25 分数与余弦相似度量纲不同的问题；向量排名在此为示意。"
+  },
+  "table": {
+   "title": "两路检索互补性",
+   "head": [
+    "查询类型",
+    "BM25",
+    "向量检索"
+   ],
+   "rows": [
+    [
+     "精确型号/订单号",
+     "强",
+     "弱，可能混淆相近编号"
+    ],
+    [
+     "同义改写（发烫 vs 过热）",
+     "弱",
+     "强"
+    ],
+    [
+     "罕见专有名词",
+     "强",
+     "取决于嵌入模型是否见过"
+    ],
+    [
+     "长句自然语言问题",
+     "一般",
+     "强"
+    ],
+    [
+     "跨语言查询",
+     "弱",
+     "多语言模型下较强"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "RRF 融合",
+    "pros": "无需调参、对分数尺度不敏感",
+    "cons": "忽略分数差距信息",
+    "when": "默认首选"
+   },
+   {
+    "opt": "归一化 + alpha 加权",
+    "pros": "可按业务调节两路比重",
+    "cons": "需评测集调参，分布变化需重调",
+    "when": "有评测数据、追求极致效果"
+   },
+   {
+    "opt": "只用向量检索",
+    "pros": "架构最简单",
+    "cons": "精确匹配类查询效果差",
+    "when": "纯语义问答、无编号类查询"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "中文 BM25 不做分词或用英文分词器",
+    "fix": "使用中文分词（如 jieba）或 n-gram 分析器"
+   },
+   {
+    "bad": "直接把 BM25 分数和余弦相似度相加",
+    "fix": "用 RRF 或先归一化再加权"
+   },
+   {
+    "bad": "两个索引更新不同步，结果不一致",
+    "fix": "文档写入时同时更新两路索引，或使用原生支持混合检索的数据库"
+   },
+   {
+    "bad": "上线前没有对比单路与混合的效果",
+    "fix": "在评测集上比较 Recall@K 与答案准确率"
+   }
+  ],
+  "checklist": [
+   "两路索引同时维护且同步更新",
+   "中文分词器已正确配置",
+   "融合方式与参数经过评测",
+   "融合后接重排模型（视需要）",
+   "监控两路各自的贡献与延迟"
+  ],
+  "interview": [
+   {
+    "q": "为什么向量检索搜不准订单号？",
+    "a": "嵌入模型把文本压缩为语义向量，A1023 与 A1032 这类字符串在语义空间里非常接近，也缺乏训练语料中的含义，因此相似度区分度低。BM25 按精确词项匹配，能直接命中，这正是混合检索的价值。"
+   },
+   {
+    "q": "RRF 的原理和优点是什么？",
+    "a": "对每个文档在各路结果中的排名 r 计算 1/(k+r) 并求和，k 常取 60 用于平滑头部差距。它只依赖名次，不需要把不同量纲的分数归一化，也无需训练，鲁棒且实现简单。"
+   },
+   {
+    "q": "混合检索和重排是什么关系？",
+    "a": "混合检索属于召回阶段，目标是尽量把相关文档都找出来；重排属于精排阶段，在召回的候选上用更重的模型精确排序。生产中常组合为“混合检索召回 → 重排 → Top-K 送入大模型”。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Reciprocal Rank Fusion (Cormack et al., SIGIR 2009)",
+    "url": "https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf"
+   },
+   {
+    "title": "Wikipedia: Okapi BM25",
+    "url": "https://en.wikipedia.org/wiki/Okapi_BM25"
+   },
+   {
+    "title": "Elasticsearch：Reciprocal rank fusion",
+    "url": "https://www.elastic.co/guide/en/elasticsearch/reference/current/rrf.html"
+   }
+  ]
+ }
+]

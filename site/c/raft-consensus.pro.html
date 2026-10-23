@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="Raft分布式共识算法 专业模式：Raft 是一种为易理解而设计的分布式共识算法，让一组节点在部分节点故障时仍对同一份有序日志达成一致，从而构建复制状态机。它把问题拆为领导者选举、日志复制和安全">
+<title>🎓 Raft分布式共识算法 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="raft-consensus" data-answer="0" data-prev="strong-consistency.pro.html" data-next="leader-election.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#dist">🔥 进阶 · 🕸️ 分布式</a><span>›</span><a href="raft-consensus.html">Raft分布式共识算法</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.431 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="strong-consistency.pro.html" rel="prev"><small>‹ 上一个</small><b>🎯 强一致性 / 线性一致性</b></a><a class="pn next" href="leader-election.pro.html" rel="next"><small>下一个 ›</small><b>👑 主节点选举机制</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🗳️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>Raft分布式共识算法</h1><p class="en">Raft Consensus</p>
+    <div class="hbtns"><a class="prosw back" href="raft-consensus.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">Raft 是一种为易理解而设计的分布式共识算法，让一组节点在部分节点故障时仍对同一份有序日志达成一致，从而构建复制状态机。它把问题拆为领导者选举、日志复制和安全性三部分，etcd、Consul 等系统都基于它实现强一致存储。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>节点有三种角色：领导者、跟随者、候选人；时间按任期（term）递增编号。</p></li><li><span class="sn">2</span><p>选举：跟随者在随机超时内没收到心跳就成为候选人，获得多数票即成为领导者。</p></li><li><span class="sn">3</span><p>复制：客户端写入发给领导者，领导者用 AppendEntries 把日志条目发给跟随者。</p></li><li><span class="sn">4</span><p>提交：条目被多数节点持久化后即为已提交，领导者应用到状态机并回复客户端。</p></li><li><span class="sn">5</span><p>安全性：只有日志足够新的候选人才能当选，保证已提交条目不会丢失。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>任期 (Term)</dt><dd>单调递增的逻辑时钟，每任期至多一个领导者。</dd></div><div class="term"><dt>RequestVote</dt><dd>候选人请求投票的 RPC，携带其最后日志的任期与索引。</dd></div><div class="term"><dt>AppendEntries</dt><dd>领导者复制日志和发送心跳的 RPC，附带一致性检查。</dd></div><div class="term"><dt>提交索引 (Commit Index)</dt><dd>已知被多数派复制、可以安全应用的最大日志索引。</dd></div><div class="term"><dt>快照 (Snapshot)</dt><dd>压缩已应用日志的状态镜像，防止日志无限增长。</dd></div><div class="term"><dt>预投票 (Pre-Vote)</dt><dd>正式选举前先试探能否获胜，避免被隔离节点扰乱集群。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>观察 etcd 的 Raft 状态</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 三节点集群：查看谁是 leader、当前任期和日志索引
+etcdctl --endpoints=http://n1:2379,http://n2:2379,http://n3:2379 \
+  endpoint status --write-out=table
+# 输出列包含 IS LEADER、RAFT TERM、RAFT INDEX、RAFT APPLIED INDEX
+
+# 主动转移领导权到指定成员（如维护前）
+etcdctl move-leader &lt;目标成员ID&gt;
+
+# 调整心跳与选举超时（毫秒），选举超时应为心跳的数倍
+etcd --heartbeat-interval=100 --election-timeout=1000 ...
+
+# 停掉 leader 后再次查看：RAFT TERM 会增加，新 leader 被选出
+etcdctl endpoint status --cluster --write-out=table</code></pre></div><p class="cnote">etcd 默认心跳 100ms；任期号变化反映发生过选举，频繁变化说明集群不稳定。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">集群规模与容错</h3><div class="tw"><table><thead><tr><th>节点数</th><th>多数派</th><th>可容忍故障</th></tr></thead><tbody><tr><td data-h="节点数">3</td><td data-h="多数派">2</td><td data-h="可容忍故障">1</td></tr><tr><td data-h="节点数">5</td><td data-h="多数派">3</td><td data-h="可容忍故障">2</td></tr><tr><td data-h="节点数">4</td><td data-h="多数派">3</td><td data-h="可容忍故障">1（与 3 节点相同）</td></tr><tr><td data-h="节点数">7</td><td data-h="多数派">4</td><td data-h="可容忍故障">3</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>3 节点</h4><p><b class="k-p">优点</b>写延迟低，成本小</p><p><b class="k-c">代价</b>只容忍 1 个故障</p><p><b class="k-w">适用</b>多数生产集群</p></div><div class="trd"><h4>5 节点</h4><p><b class="k-p">优点</b>容忍 2 个故障，可跨 3 个可用区</p><p><b class="k-c">代价</b>每次写入需更多确认</p><p><b class="k-w">适用</b>高可用要求高的核心元数据</p></div><div class="trd"><h4>更多节点</h4><p><b class="k-p">优点</b>容错更高</p><p><b class="k-c">代价</b>写性能下降，可用非投票成员替代</p><p><b class="k-w">适用</b>极少需要</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>部署偶数个节点以为更可靠</p><p class="fix"><b>✓</b>用奇数节点；偶数节点不提升容错且多数派更大</p></li><li><p class="bad"><b>✗</b>磁盘 fsync 慢导致心跳超时，频繁重新选举</p><p class="fix"><b>✓</b>使用低延迟 SSD，监控 WAL fsync 延迟，调整超时参数</p></li><li><p class="bad"><b>✗</b>把 Raft 集群跨高延迟地域部署，写入极慢</p><p class="fix"><b>✓</b>控制节点间延迟，选举超时需远大于往返时间</p></li><li><p class="bad"><b>✗</b>直接替换故障节点而不做成员变更</p><p class="fix"><b>✓</b>先移除旧成员再加入新成员，按官方流程逐个变更</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>节点数为奇数</span></label></li><li><label><input type="checkbox"><span>节点分布在不同故障域</span></label></li><li><label><input type="checkbox"><span>磁盘 fsync 延迟有监控</span></label></li><li><label><input type="checkbox"><span>选举超时匹配网络延迟</span></label></li><li><label><input type="checkbox"><span>有快照与日志压缩配置</span></label></li><li><label><input type="checkbox"><span>成员变更流程已演练</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Raft 为什么用随机选举超时？</summary><p>若所有跟随者同时超时，会同时发起选举并瓜分选票，导致无人获得多数、反复重选。随机化超时使通常只有一个节点先超时并赢得选举，大幅减少选票分裂。</p></details><details class="iv"><summary>如何保证已提交日志不会被新领导者覆盖？</summary><p>投票限制：跟随者只投票给日志至少和自己一样新的候选人（比较最后条目的任期与索引）；已提交条目存在于多数派中，任何获胜者必然包含它。此外领导者只通过提交本任期条目来间接提交旧条目。</p></details><details class="iv"><summary>Raft 和 Paxos 的主要区别？</summary><p>两者容错能力相当。Raft 采用强领导者，日志只从领导者流向跟随者，并把问题分解为选举、复制、安全性，规范更完整易于实现；经典 Paxos 侧重单值共识，Multi-Paxos 的工程细节需要自行补全。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://raft.github.io/" target="_blank" rel="noopener"><b>The Raft Consensus Algorithm</b><small>raft.github.io ↗</small></a></li><li><a href="https://raft.github.io/raft.pdf" target="_blank" rel="noopener"><b>In Search of an Understandable Consensus Algorithm (Raft 论文)</b><small>raft.github.io ↗</small></a></li><li><a href="https://etcd.io/docs/v3.5/tuning/" target="_blank" rel="noopener"><b>etcd Tuning</b><small>etcd.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="strong-consistency.pro.html" rel="prev"><small>‹ 上一个</small><b>🎯 强一致性 / 线性一致性</b></a><a class="pn next" href="leader-election.pro.html" rel="next"><small>下一个 ›</small><b>👑 主节点选举机制</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

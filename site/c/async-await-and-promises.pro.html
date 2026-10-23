@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="异步编程 (Promise / async-await) 专业模式：Promise 是表示异步操作最终结果（成功值或失败原因）的对象，async/await 是基于 Promise 的语法糖，让异步代码以接近同步的顺序书写。它属">
+<title>🎓 异步编程 (Promise / async-await) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="async-await-and-promises" data-answer="0" data-prev="coupling-and-cohesion.pro.html" data-next="timezones-and-timestamps.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#base">🌊 中级 · 💻 电脑与网页地基</a><span>›</span><a href="async-await-and-promises.html">异步编程 (Promise / async-await)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.162 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="coupling-and-cohesion.pro.html" rel="prev"><small>‹ 上一个</small><b>🧲 耦合与内聚</b></a><a class="pn next" href="timezones-and-timestamps.pro.html" rel="next"><small>下一个 ›</small><b>🕐 时区与时间戳 (UTC)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">⏳</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>💻 电脑与网页地基</span><span>⏱ 约 10 分钟</span></div>
+    <h1>异步编程 (Promise / async-await)</h1><p class="en">Async/Await &amp; Promises</p>
+    <div class="hbtns"><a class="prosw back" href="async-await-and-promises.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">Promise 是表示异步操作最终结果（成功值或失败原因）的对象，async/await 是基于 Promise 的语法糖，让异步代码以接近同步的顺序书写。它属于语言运行时的并发模型层：JavaScript 单线程通过事件循环调度回调，Python asyncio 也采用类似的协程模型。网络请求、文件读写、LLM API 调用都依赖它。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>Promise 有三种状态：pending、fulfilled、rejected，状态一旦确定不可再变。</p></li><li><span class="sn">2</span><p>then/catch 注册的回调在 Promise 敲定后作为微任务进入队列，由事件循环在当前同步代码执行完后调度。</p></li><li><span class="sn">3</span><p>async 函数总是返回 Promise；await 暂停当前函数，等待 Promise 敲定后再恢复，期间线程可处理其他任务。</p></li><li><span class="sn">4</span><p>await 遇到 rejected 会抛出异常，可用 try/catch 捕获；未处理的 rejection 会触发运行时警告或进程退出。</p></li><li><span class="sn">5</span><p>Promise.all、allSettled、race、any 组合多个 Promise，实现并行、容错与超时竞速。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>微任务 (Microtask)</dt><dd>Promise 回调所在的队列，优先于定时器等宏任务执行。</dd></div><div class="term"><dt>Promise.all</dt><dd>全部成功才成功，任一失败立即失败。</dd></div><div class="term"><dt>Promise.allSettled</dt><dd>等待全部结束，返回每个的成功或失败结果。</dd></div><div class="term"><dt>AbortController</dt><dd>用于取消 fetch 等异步操作的标准接口。</dd></div><div class="term"><dt>未处理的拒绝 (Unhandled Rejection)</dt><dd>没有被 catch 的失败 Promise，Node.js 默认会终止进程。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>并行、容错与超时</span><em>javascript</em><button class="ccopy">复制</button></div><pre><code>// 1) 串行 vs 并行：互不依赖的请求应并行
+async function loadDashboard(userId) {
+  const [user, orders] = await Promise.all([
+    fetchJson(`/api/users/${userId}`),
+    fetchJson(`/api/orders?user=${userId}`),
+  ]);
+  return { user, orders };
+}
+
+// 2) 带超时与错误处理的请求
+async function fetchJson(url) {
+  const res = await fetch(url, { signal: AbortSignal.timeout(5000) }); // 5 秒超时
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
+  return res.json();
+}
+
+// 3) 部分失败也要继续：allSettled
+const results = await Promise.allSettled(urls.map(fetchJson));
+const ok = results.filter((r) =&gt; r.status === &quot;fulfilled&quot;).map((r) =&gt; r.value);
+
+// 4) 常见坑：forEach 不会等待 async 回调
+// items.forEach(async (it) =&gt; await save(it));   // 错：不等待、错误也丢失
+for (const it of items) await save(it);          // 需要顺序时用 for...of</code></pre></div><p class="cnote">fetch 只在网络失败时 reject，HTTP 4xx/5xx 需手动检查 res.ok；顶层 await 需 ES 模块。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">Promise 组合器对比</h3><div class="tw"><table><thead><tr><th>方法</th><th>何时完成</th><th>失败行为</th><th>适用</th></tr></thead><tbody><tr><td data-h="方法">Promise.all</td><td data-h="何时完成">全部成功</td><td data-h="失败行为">任一失败即失败</td><td data-h="适用">都必须成功</td></tr><tr><td data-h="方法">Promise.allSettled</td><td data-h="何时完成">全部结束</td><td data-h="失败行为">不失败，逐个报告</td><td data-h="适用">批量容错</td></tr><tr><td data-h="方法">Promise.race</td><td data-h="何时完成">第一个结束</td><td data-h="失败行为">第一个失败即失败</td><td data-h="适用">超时竞速</td></tr><tr><td data-h="方法">Promise.any</td><td data-h="何时完成">第一个成功</td><td data-h="失败行为">全部失败才失败</td><td data-h="适用">多源冗余请求</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>顺序 await</h4><p><b class="k-p">优点</b>逻辑清晰，便于依赖前一步结果</p><p><b class="k-c">代价</b>总耗时是各步之和</p><p><b class="k-w">适用</b>后一步依赖前一步</p></div><div class="trd"><h4>Promise.all 并行</h4><p><b class="k-p">优点</b>总耗时约等于最慢一个</p><p><b class="k-c">代价</b>并发过高可能触发限流</p><p><b class="k-w">适用</b>相互独立的少量请求</p></div><div class="trd"><h4>限并发池</h4><p><b class="k-p">优点</b>兼顾速度与下游压力</p><p><b class="k-c">代价</b>需额外实现或依赖库</p><p><b class="k-w">适用</b>批量调用 LLM 或第三方 API</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>漏写 await，拿到 Promise 对象或错误未被捕获</p><p class="fix"><b>✓</b>开启 no-floating-promises 等 Lint 规则与 TypeScript 检查</p></li><li><p class="bad"><b>✗</b>在 forEach/map 中用 async 回调期望顺序执行</p><p class="fix"><b>✓</b>顺序用 for...of + await，并行用 Promise.all(map)</p></li><li><p class="bad"><b>✗</b>无超时的外部请求导致请求堆积</p><p class="fix"><b>✓</b>为 fetch 设置 AbortSignal.timeout 或使用带超时的客户端</p></li><li><p class="bad"><b>✗</b>批量 Promise.all 上千个 LLM 请求触发 429</p><p class="fix"><b>✓</b>限制并发数并对 429 做退避重试</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>无悬空 Promise（Lint 已开启）</span></label></li><li><label><input type="checkbox"><span>所有外部调用有超时</span></label></li><li><label><input type="checkbox"><span>异步错误被捕获并记录</span></label></li><li><label><input type="checkbox"><span>独立请求已并行化</span></label></li><li><label><input type="checkbox"><span>批量请求有并发上限</span></label></li><li><label><input type="checkbox"><span>HTTP 错误状态被显式处理</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>await 会阻塞线程吗？</summary><p>不会。await 只暂停当前 async 函数的执行，把后续逻辑作为回调交还事件循环，线程可继续处理其他任务；但 await 之前或之后的同步重计算仍会阻塞事件循环。</p></details><details class="iv"><summary>以下输出顺序是什么：setTimeout、Promise.then、同步 log？</summary><p>先输出同步 log；当前任务结束后清空微任务队列，执行 Promise.then；最后才执行 setTimeout 的宏任务回调。原因是微任务在每个宏任务之后、下一个宏任务之前全部执行。</p></details><details class="iv"><summary>如何控制大量异步任务的并发？</summary><p>实现或使用并发池：维持固定数量的进行中 Promise，完成一个再启动下一个；配合超时、重试与退避；Python 中可用 asyncio.Semaphore，JavaScript 可用 p-limit 等库。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises" target="_blank" rel="noopener"><b>MDN：Using promises</b><small>developer.mozilla.org ↗</small></a></li><li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function" target="_blank" rel="noopener"><b>MDN：async function</b><small>developer.mozilla.org ↗</small></a></li><li><a href="https://docs.python.org/3/library/asyncio.html" target="_blank" rel="noopener"><b>Python 文档：asyncio</b><small>docs.python.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="coupling-and-cohesion.pro.html" rel="prev"><small>‹ 上一个</small><b>🧲 耦合与内聚</b></a><a class="pn next" href="timezones-and-timestamps.pro.html" rel="next"><small>下一个 ›</small><b>🕐 时区与时间戳 (UTC)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="分层架构 专业模式：分层架构（Layered Architecture）按职责把系统划分为若干水平层，典型为表现层、业务（领域）层、数据访问层，每层只依赖其下方的层并通过明确接口交">
+<title>🎓 分层架构 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="layered-architecture" data-answer="0" data-prev="diffusion-models.pro.html" data-next="coupling-and-cohesion.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#arch">🌊 中级 · 🏛️ 架构设计</a><span>›</span><a href="layered-architecture.html">分层架构</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.160 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="diffusion-models.pro.html" rel="prev"><small>‹ 上一个</small><b>🎨 扩散模型 (图像 / 视频生成)</b></a><a class="pn next" href="coupling-and-cohesion.pro.html" rel="next"><small>下一个 ›</small><b>🧲 耦合与内聚</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🍰</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🏛️ 架构设计</span><span>⏱ 约 10 分钟</span></div>
+    <h1>分层架构</h1><p class="en">Layered Architecture</p>
+    <div class="hbtns"><a class="prosw back" href="layered-architecture.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">分层架构（Layered Architecture）按职责把系统划分为若干水平层，典型为表现层、业务（领域）层、数据访问层，每层只依赖其下方的层并通过明确接口交互。它是最常见的应用架构风格，通过关注点分离降低修改影响面、方便测试与替换实现；六边形、整洁架构等可视为其依赖方向更严格的演进。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>表现层处理 HTTP/UI 交互：解析请求、校验格式、调用业务层并把结果转成响应。</p></li><li><span class="sn">2</span><p>业务层承载规则与用例编排，不关心数据来自哪个数据库，也不关心结果如何展示。</p></li><li><span class="sn">3</span><p>数据访问层（Repository/DAO）封装 SQL、ORM 或外部 API 调用，向上提供领域对象。</p></li><li><span class="sn">4</span><p>依赖自上而下单向流动；严格分层禁止跨层调用，宽松分层允许跳过中间层。</p></li><li><span class="sn">5</span><p>层间传递 DTO 或领域对象，避免把数据库实体或框架对象泄漏到上层。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>关注点分离 (Separation of Concerns)</dt><dd>不同职责放在不同模块，降低相互影响。</dd></div><div class="term"><dt>仓储模式 (Repository)</dt><dd>以集合式接口封装数据持久化细节。</dd></div><div class="term"><dt>服务层 (Service Layer)</dt><dd>定义应用用例边界、编排业务逻辑的层。</dd></div><div class="term"><dt>DTO (Data Transfer Object)</dt><dd>层间或跨进程传递数据的简单对象。</dd></div><div class="term"><dt>污水池反模式 (Sinkhole)</dt><dd>请求穿过各层却几乎不做处理，分层只增加样板代码。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>三层结构的最小示例</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import sqlite3
+
+# 数据访问层：只管怎么存取
+class UserRepo:
+    def __init__(self, conn: sqlite3.Connection):
+        self.conn = conn
+    def find_by_email(self, email: str):
+        return self.conn.execute(
+            &quot;SELECT id, email FROM users WHERE email = ?&quot;, (email,)).fetchone()
+    def insert(self, email: str) -&gt; int:
+        cur = self.conn.execute(&quot;INSERT INTO users(email) VALUES (?)&quot;, (email,))
+        return cur.lastrowid
+
+# 业务层：只管规则，不写 SQL、不碰 HTTP
+class UserService:
+    def __init__(self, repo: UserRepo):
+        self.repo = repo
+    def register(self, email: str) -&gt; int:
+        email = email.strip().lower()
+        if self.repo.find_by_email(email):
+            raise ValueError(&quot;邮箱已注册&quot;)
+        return self.repo.insert(email)
+
+# 表现层：只管输入输出格式
+def register_handler(body: dict, service: UserService) -&gt; dict:
+    try:
+        return {&quot;status&quot;: 201, &quot;id&quot;: service.register(body[&quot;email&quot;])}
+    except ValueError as e:
+        return {&quot;status&quot;: 409, &quot;error&quot;: str(e)}</code></pre></div><p class="cnote">换数据库只改 UserRepo；业务规则可脱离 HTTP 和真实数据库进行单元测试。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">各层职责边界</h3><div class="tw"><table><thead><tr><th>层</th><th>负责</th><th>不应包含</th></tr></thead><tbody><tr><td data-h="层">表现层</td><td data-h="负责">路由、参数校验、序列化</td><td data-h="不应包含">业务规则、SQL</td></tr><tr><td data-h="层">业务层</td><td data-h="负责">规则、用例、事务边界</td><td data-h="不应包含">HTTP 细节、SQL 字符串</td></tr><tr><td data-h="层">数据访问层</td><td data-h="负责">查询、持久化、映射</td><td data-h="不应包含">业务决策</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>经典分层</h4><p><b class="k-p">优点</b>易理解、团队上手快</p><p><b class="k-c">代价</b>业务层常依赖数据层实现细节</p><p><b class="k-w">适用</b>中小型 CRUD 应用</p></div><div class="trd"><h4>六边形/整洁架构</h4><p><b class="k-p">优点</b>业务核心不依赖基础设施，易测易换</p><p><b class="k-c">代价</b>接口与样板代码更多</p><p><b class="k-w">适用</b>业务复杂、生命周期长</p></div><div class="trd"><h4>不分层脚本式</h4><p><b class="k-p">优点</b>最快写出原型</p><p><b class="k-c">代价</b>规模变大后难维护</p><p><b class="k-w">适用</b>一次性工具、原型验证</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>在控制器或页面组件里直接写 SQL</p><p class="fix"><b>✓</b>数据访问集中到仓储层，上层只调接口</p></li><li><p class="bad"><b>✗</b>ORM 实体一路传到前端响应</p><p class="fix"><b>✓</b>在边界转换为 DTO，避免泄漏字段与懒加载问题</p></li><li><p class="bad"><b>✗</b>业务逻辑散落在仓储层的查询里</p><p class="fix"><b>✓</b>仓储只做数据存取，规则判断放业务层</p></li><li><p class="bad"><b>✗</b>为简单功能强行堆五六层空壳</p><p class="fix"><b>✓</b>层数匹配复杂度，无逻辑的层可合并</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>表现层无 SQL 与业务规则</span></label></li><li><label><input type="checkbox"><span>依赖方向自上而下单向</span></label></li><li><label><input type="checkbox"><span>业务层可脱离数据库单测</span></label></li><li><label><input type="checkbox"><span>层间传 DTO 而非框架对象</span></label></li><li><label><input type="checkbox"><span>目录结构反映分层</span></label></li><li><label><input type="checkbox"><span>规则文件告知 AI 分层约定</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>分层架构和六边形架构的核心区别？</summary><p>经典分层中业务层依赖数据访问层，依赖方向指向基础设施；六边形架构让业务核心定义端口接口，数据库、HTTP 等适配器实现这些接口，依赖指向核心，因此替换基础设施和单测更容易。</p></details><details class="iv"><summary>如何防止分层在演进中被破坏？</summary><p>用目录与包可见性约束；引入依赖规则检查工具在 CI 中拦截违规导入；Code Review 关注跨层调用；在规则文件中向 AI Agent 写明分层约定和禁止事项。</p></details><details class="iv"><summary>事务边界应放在哪一层？</summary><p>通常放在业务（服务）层的用例方法上：一个用例对应一个事务，保证多次仓储操作的原子性。放在数据访问层粒度太细，放在控制器层又把业务语义泄露到表现层。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://martinfowler.com/bliki/PresentationDomainDataLayering.html" target="_blank" rel="noopener"><b>Martin Fowler：Presentation Domain Data Layering</b><small>martinfowler.com ↗</small></a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/architecture/modern-web-apps-azure/common-web-application-architectures" target="_blank" rel="noopener"><b>Microsoft：Common web application architectures</b><small>learn.microsoft.com ↗</small></a></li><li><a href="https://martinfowler.com/eaaCatalog/serviceLayer.html" target="_blank" rel="noopener"><b>Martin Fowler：Service Layer</b><small>martinfowler.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="diffusion-models.pro.html" rel="prev"><small>‹ 上一个</small><b>🎨 扩散模型 (图像 / 视频生成)</b></a><a class="pn next" href="coupling-and-cohesion.pro.html" rel="next"><small>下一个 ›</small><b>🧲 耦合与内聚</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

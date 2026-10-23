@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="ReAct 推理-行动循环 专业模式：ReAct（Reasoning + Acting）是 2022 年论文提出的 Agent 范式：让大模型交替产生推理（Thought）与行动（Action，即调">
+<title>🎓 ReAct 推理-行动循环 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="react-agent-pattern" data-answer="0" data-prev="chunking-strategies.pro.html" data-next="computer-use-agents.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#ai">🔮 高级 · 🤖 AI 与提示词</a><span>›</span><a href="react-agent-pattern.html">ReAct 推理-行动循环</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.336 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="chunking-strategies.pro.html" rel="prev"><small>‹ 上一个</small><b>🔪 文档切块策略 (Chunking)</b></a><a class="pn next" href="computer-use-agents.pro.html" rel="next"><small>下一个 ›</small><b>🖱️ 电脑 / 浏览器操作智能体</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔄</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>ReAct 推理-行动循环</h1><p class="en">ReAct Pattern</p>
+    <div class="hbtns"><a class="prosw back" href="react-agent-pattern.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">ReAct（Reasoning + Acting）是 2022 年论文提出的 Agent 范式：让大模型交替产生推理（Thought）与行动（Action，即调用工具），并把工具返回的观察（Observation）加入上下文，循环直到得出最终答案。它把思维链推理与外部工具结合，减少凭空编造，是当今多数 Agent 框架和编程 Agent 循环的基础思想。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>系统提示定义任务、可用工具及其参数，并要求模型在每一步先给出推理，再选择行动或给出最终答案。</p></li><li><span class="sn">2</span><p>模型输出一个工具调用（现代实现多用原生 tool calling 的结构化格式，而非解析文本）。</p></li><li><span class="sn">3</span><p>运行时（harness）执行工具，把结果作为观察追加到消息历史中。</p></li><li><span class="sn">4</span><p>模型基于新的观察继续推理，决定下一次行动、修正计划，或判断信息足够后输出最终答案。</p></li><li><span class="sn">5</span><p>运行时施加终止条件：最大步数、token 预算、超时，以及对危险工具的人工确认。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>思考 (Thought)</dt><dd>模型对当前状态和下一步的推理文本。</dd></div><div class="term"><dt>行动 (Action)</dt><dd>模型选择调用的工具及参数。</dd></div><div class="term"><dt>观察 (Observation)</dt><dd>工具执行结果，作为下一轮输入。</dd></div><div class="term"><dt>Agent 循环 (Agent Loop)</dt><dd>模型调用、工具执行、结果回填的反复迭代。</dd></div><div class="term"><dt>终止条件 (Stop Condition)</dt><dd>最大步数、预算或模型声明完成等结束循环的规则。</dd></div><div class="term"><dt>Harness</dt><dd>包裹模型的运行时，负责工具执行、权限、上下文管理。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>最小 ReAct 循环（原生工具调用）</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import json
+from openai import OpenAI
+
+client = OpenAI()
+def get_weather(city: str) -&gt; str:          # 示例工具
+    return json.dumps({&quot;city&quot;: city, &quot;forecast&quot;: &quot;rain&quot;})
+TOOLS = {&quot;get_weather&quot;: get_weather}
+schema = [{&quot;type&quot;: &quot;function&quot;, &quot;function&quot;: {
+    &quot;name&quot;: &quot;get_weather&quot;, &quot;description&quot;: &quot;查询城市天气&quot;,
+    &quot;parameters&quot;: {&quot;type&quot;: &quot;object&quot;, &quot;properties&quot;: {&quot;city&quot;: {&quot;type&quot;: &quot;string&quot;}},
+                   &quot;required&quot;: [&quot;city&quot;]}}}]
+
+msgs = [{&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: &quot;先简述思考，再按需调用工具。&quot;},
+        {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;明天去杭州要带伞吗？&quot;}]
+for step in range(8):                        # 终止条件：最多 8 步
+    m = client.chat.completions.create(model=&quot;gpt-4o-mini&quot;,  # 以官方文档为准
+        messages=msgs, tools=schema).choices[0].message
+    msgs.append(m)
+    if not m.tool_calls:                     # 无工具调用 = 最终答案
+        print(m.content); break
+    for call in m.tool_calls:                # 行动 -&gt; 观察
+        result = TOOLS[call.function.name](**json.loads(call.function.arguments))
+        msgs.append({&quot;role&quot;: &quot;tool&quot;, &quot;tool_call_id&quot;: call.id, &quot;content&quot;: result})</code></pre></div><p class="cnote">模型决定行动，运行时执行并回填观察，直到不再调用工具；步数上限防止无限循环。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">Agent 范式对比</h3><div class="tw"><table><thead><tr><th>范式</th><th>流程</th><th>优点</th><th>缺点</th></tr></thead><tbody><tr><td data-h="范式">ReAct</td><td data-h="流程">想—做—看 逐步循环</td><td data-h="优点">灵活，能根据观察纠错</td><td data-h="缺点">步数多、成本与延迟高</td></tr><tr><td data-h="范式">Plan-and-Execute</td><td data-h="流程">先完整规划再逐步执行</td><td data-h="优点">结构清晰、可审阅计划</td><td data-h="缺点">计划失效时调整慢</td></tr><tr><td data-h="范式">单次工具调用</td><td data-h="流程">一次调用后直接回答</td><td data-h="优点">快、便宜</td><td data-h="缺点">无法处理多步任务</td></tr><tr><td data-h="范式">固定工作流</td><td data-h="流程">开发者编排步骤</td><td data-h="优点">可预测、易测试</td><td data-h="缺点">缺乏灵活性</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>自由 ReAct 循环</h4><p><b class="k-p">优点</b>适应开放任务</p><p><b class="k-c">代价</b>行为难预测，可能绕圈</p><p><b class="k-w">适用</b>探索性任务、编程 Agent</p></div><div class="trd"><h4>固定工作流 + 局部 ReAct</h4><p><b class="k-p">优点</b>可控性高</p><p><b class="k-c">代价</b>设计成本高</p><p><b class="k-w">适用</b>业务流程明确的生产系统</p></div><div class="trd"><h4>先规划后执行</h4><p><b class="k-p">优点</b>计划可被人审阅</p><p><b class="k-c">代价</b>对动态环境适应较差</p><p><b class="k-w">适用</b>长任务、需审批的场景</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>不设最大步数和预算，Agent 无限循环</p><p class="fix"><b>✓</b>设置步数、token、时间上限，并检测重复调用</p></li><li><p class="bad"><b>✗</b>工具报错只返回空字符串</p><p class="fix"><b>✓</b>返回结构化、可读的错误信息，帮助模型自我纠正</p></li><li><p class="bad"><b>✗</b>一次暴露几十个工具，模型选错</p><p class="fix"><b>✓</b>精简工具集，写清描述与参数约束，按任务动态加载</p></li><li><p class="bad"><b>✗</b>把工具结果中的指令当作可信输入</p><p class="fix"><b>✓</b>把观察视为不可信数据，敏感操作需人工确认</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>设置最大步数、超时与预算</span></label></li><li><label><input type="checkbox"><span>工具描述清晰且参数有 schema</span></label></li><li><label><input type="checkbox"><span>工具错误信息可读</span></label></li><li><label><input type="checkbox"><span>危险操作需要人工确认</span></label></li><li><label><input type="checkbox"><span>记录完整轨迹用于调试与评测</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>ReAct 和思维链（CoT）有什么区别？</summary><p>思维链只在模型内部推理，所有信息来自参数记忆，容易编造事实；ReAct 在推理中穿插工具调用，用外部观察校正推理。代价是更多轮调用，带来更高延迟和成本。</p></details><details class="iv"><summary>现代 Agent 还需要显式写出 Thought 吗？</summary><p>原论文用文本格式让模型写 Thought/Action。如今主流模型有原生工具调用，推理模型也有内部思考，因此不一定需要显式 Thought 文本，但“推理—行动—观察”的循环结构不变；保留简短的推理说明有助于调试与审计。</p></details><details class="iv"><summary>如何防止 Agent 陷入循环？</summary><p>设置最大步数与预算；检测相同工具和参数的重复调用；在观察中提供明确的成功或失败信号；上下文过长时压缩历史；必要时引入反思步骤或交给人工处理。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://arxiv.org/abs/2210.03629" target="_blank" rel="noopener"><b>ReAct 论文 (arXiv)</b><small>arxiv.org ↗</small></a></li><li><a href="https://react-lm.github.io/" target="_blank" rel="noopener"><b>ReAct 项目页</b><small>react-lm.github.io ↗</small></a></li><li><a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noopener"><b>Anthropic：Building effective agents</b><small>anthropic.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="chunking-strategies.pro.html" rel="prev"><small>‹ 上一个</small><b>🔪 文档切块策略 (Chunking)</b></a><a class="pn next" href="computer-use-agents.pro.html" rel="next"><small>下一个 ›</small><b>🖱️ 电脑 / 浏览器操作智能体</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

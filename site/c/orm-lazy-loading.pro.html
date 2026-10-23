@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="ORM延迟加载 专业模式：ORM 延迟加载（Lazy Loading）是对象关系映射框架的默认关联加载策略：查询主对象时不取关联数据，首次访问关联属性时才自动发出额外 SQL。它让简单场">
+<title>🎓 ORM延迟加载 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="orm-lazy-loading" data-answer="0" data-prev="point-in-time-recovery.pro.html" data-next="load-balancer.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#db">🔮 高级 · 🗄️ 数据库</a><span>›</span><a href="orm-lazy-loading.html">ORM延迟加载</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.253 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="point-in-time-recovery.pro.html" rel="prev"><small>‹ 上一个</small><b>⏪ 时间点恢复 (PITR)</b></a><a class="pn next" href="load-balancer.pro.html" rel="next"><small>下一个 ›</small><b>⚖️ 负载均衡</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">😴</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>ORM延迟加载</h1><p class="en">ORM Lazy Loading</p>
+    <div class="hbtns"><a class="prosw back" href="orm-lazy-loading.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">ORM 延迟加载（Lazy Loading）是对象关系映射框架的默认关联加载策略：查询主对象时不取关联数据，首次访问关联属性时才自动发出额外 SQL。它让简单场景代码简洁，但在循环中访问关联会产生经典的 N+1 查询问题，是 ORM 性能问题的头号来源。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>查询主实体时，ORM 只加载主表字段，关联属性被标记为“未加载”或用代理对象占位。</p></li><li><span class="sn">2</span><p>代码首次读取关联属性时，ORM 拦截访问，通过当前会话发出一条查询获取关联数据。</p></li><li><span class="sn">3</span><p>在循环中逐个访问 N 个对象的关联，会产生 1 条主查询加 N 条关联查询（N+1）。</p></li><li><span class="sn">4</span><p>预加载（eager loading）在主查询时用 JOIN 或第二条 IN 查询一次性取回关联，消除 N+1。</p></li><li><span class="sn">5</span><p>会话关闭后再访问未加载的关联会报错；异步 ORM 中隐式延迟加载通常被禁止。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>N+1 查询 (N+1 Query Problem)</dt><dd>1 条主查询后，为每条结果各发 1 条关联查询。</dd></div><div class="term"><dt>预加载 (Eager Loading)</dt><dd>在查询主对象时同时加载指定关联。</dd></div><div class="term"><dt>joinedload</dt><dd>SQLAlchemy 用 LEFT JOIN 同一条 SQL 取回关联。</dd></div><div class="term"><dt>selectinload</dt><dd>SQLAlchemy 用第二条 WHERE id IN (...) 查询批量加载。</dd></div><div class="term"><dt>raiseload</dt><dd>访问未预加载的关联时直接抛错，用于强制显式加载。</dd></div><div class="term"><dt>游离对象 (Detached Instance)</dt><dd>已脱离会话的对象，无法再触发延迟加载。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>SQLAlchemy 消除 N+1</span><em>python</em><button class="ccopy">复制</button></div><pre><code>from sqlalchemy import select
+from sqlalchemy.orm import selectinload, raiseload
+
+# 假设 User.posts 是一对多关系，engine 用 echo=True 可在日志看到 SQL
+
+# 反例：N+1，100 个用户 → 1 + 100 条 SQL
+users = session.scalars(select(User).limit(100)).all()
+for u in users:
+    print(u.name, len(u.posts))      # 每次访问 posts 都发一条查询
+
+# 修正：selectinload 批量加载 → 共 2 条 SQL
+stmt = select(User).options(selectinload(User.posts)).limit(100)
+for u in session.scalars(stmt):
+    print(u.name, len(u.posts))      # 不再触发查询
+
+# 防回归：除显式预加载外，禁止任何延迟加载
+stmt = select(User).options(selectinload(User.posts), raiseload(&quot;*&quot;))
+u = session.scalars(stmt).first()
+# 访问未预加载的关联会抛 InvalidRequestError，而不是悄悄查库
+
+# Django 对应写法：
+#   User.objects.prefetch_related(&quot;posts&quot;)   一对多/多对多
+#   Post.objects.select_related(&quot;author&quot;)    多对一，JOIN</code></pre></div><p class="cnote">selectinload 把 N 条查询合并为 1 条 IN 查询；raiseload 让遗漏的预加载在测试中暴露。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">加载策略对比</h3><div class="tw"><table><thead><tr><th>策略</th><th>SQL 形态</th><th>适用</th></tr></thead><tbody><tr><td data-h="策略">延迟加载</td><td data-h="SQL 形态">访问时逐条查询</td><td data-h="适用">只偶尔访问关联</td></tr><tr><td data-h="策略">JOIN 预加载</td><td data-h="SQL 形态">主查询 LEFT JOIN</td><td data-h="适用">多对一、一对一</td></tr><tr><td data-h="策略">IN 批量预加载</td><td data-h="SQL 形态">第二条 IN 查询</td><td data-h="适用">一对多、多对多</td></tr><tr><td data-h="策略">禁止加载 (raise)</td><td data-h="SQL 形态">访问即报错</td><td data-h="适用">接口层防 N+1 回归</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>默认延迟加载</h4><p><b class="k-p">优点</b>代码简洁，不取用不到的数据</p><p><b class="k-c">代价</b>循环中易出现 N+1</p><p><b class="k-w">适用</b>后台脚本、低频访问</p></div><div class="trd"><h4>按查询显式预加载</h4><p><b class="k-p">优点</b>SQL 数量可预期</p><p><b class="k-c">代价</b>需了解每个接口用到哪些关联</p><p><b class="k-w">适用</b>API 列表接口</p></div><div class="trd"><h4>JOIN 预加载一对多</h4><p><b class="k-p">优点</b>只需一条 SQL</p><p><b class="k-c">代价</b>结果行膨胀，分页易出错</p><p><b class="k-w">适用</b>关联数量很少时</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>序列化器（如返回 JSON）里隐式访问关联触发 N+1</p><p class="fix"><b>✓</b>在查询处预加载序列化需要的全部关联</p></li><li><p class="bad"><b>✗</b>一对多用 JOIN 预加载再 LIMIT，分页结果错乱</p><p class="fix"><b>✓</b>一对多改用 IN 批量加载或子查询分页</p></li><li><p class="bad"><b>✗</b>会话关闭后在模板中访问关联报错</p><p class="fix"><b>✓</b>在会话内完成加载，或返回 DTO</p></li><li><p class="bad"><b>✗</b>AI 生成的 ORM 代码通过了测试，但线上 SQL 数暴增</p><p class="fix"><b>✓</b>测试中断言查询次数，或开启 raiseload</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>列表接口的 SQL 数量与数据量无关</span></label></li><li><label><input type="checkbox"><span>序列化用到的关联都已预加载</span></label></li><li><label><input type="checkbox"><span>一对多预加载使用 IN 批量方式</span></label></li><li><label><input type="checkbox"><span>测试中有查询次数断言</span></label></li><li><label><input type="checkbox"><span>开发环境开启 SQL 日志或 N+1 检测</span></label></li><li><label><input type="checkbox"><span>异步 ORM 不依赖隐式延迟加载</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>如何在项目中系统地发现 N+1？</summary><p>开发环境开启 SQL 日志或 APM，按请求统计查询数；使用检测工具（如 Rails 的 Bullet、Django Debug Toolbar、nplusone）；测试中断言某接口查询次数上限；用 raiseload 把隐式加载变成错误。</p></details><details class="iv"><summary>joinedload 和 selectinload 怎么选？</summary><p>多对一/一对一用 JOIN，行数不膨胀，一条 SQL 完成。一对多/多对多用 selectinload，避免笛卡尔膨胀与分页问题，代价是多一次往返。关联层级深时 selectin 更可控。</p></details><details class="iv"><summary>为什么异步 ORM 不允许隐式延迟加载？</summary><p>延迟加载在属性访问时同步发起 IO，而异步代码需要显式 await。SQLAlchemy asyncio 下隐式加载会抛错（如 MissingGreenlet），需改用预加载或 AsyncAttrs 的 awaitable_attrs 显式等待。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.sqlalchemy.org/en/20/orm/queryguide/relationships.html" target="_blank" rel="noopener"><b>SQLAlchemy: Relationship Loading Techniques</b><small>docs.sqlalchemy.org ↗</small></a></li><li><a href="https://docs.djangoproject.com/en/5.0/ref/models/querysets/" target="_blank" rel="noopener"><b>Django: select_related / prefetch_related</b><small>docs.djangoproject.com ↗</small></a></li><li><a href="https://guides.rubyonrails.org/active_record_querying.html" target="_blank" rel="noopener"><b>Rails Guides: Eager Loading Associations</b><small>guides.rubyonrails.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="point-in-time-recovery.pro.html" rel="prev"><small>‹ 上一个</small><b>⏪ 时间点恢复 (PITR)</b></a><a class="pn next" href="load-balancer.pro.html" rel="next"><small>下一个 ›</small><b>⚖️ 负载均衡</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

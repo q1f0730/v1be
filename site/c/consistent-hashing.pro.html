@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="一致性哈希 专业模式：一致性哈希（Consistent Hashing）是一种把键映射到节点的分布方法：键和节点都映射到同一个哈希环上，键归属于顺时针方向遇到的第一个节点。增删节点时">
+<title>🎓 一致性哈希 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="consistent-hashing" data-answer="0" data-prev="distributed-locks.pro.html" data-next="bloom-filters.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#dist">🔥 进阶 · 🕸️ 分布式</a><span>›</span><a href="consistent-hashing.html">一致性哈希</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.437 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="distributed-locks.pro.html" rel="prev"><small>‹ 上一个</small><b>🔐 分布式锁</b></a><a class="pn next" href="bloom-filters.pro.html" rel="next"><small>下一个 ›</small><b>🧾 布隆过滤器</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🍎</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>一致性哈希</h1><p class="en">Consistent Hashing</p>
+    <div class="hbtns"><a class="prosw back" href="consistent-hashing.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">一致性哈希（Consistent Hashing）是一种把键映射到节点的分布方法：键和节点都映射到同一个哈希环上，键归属于顺时针方向遇到的第一个节点。增删节点时只有相邻区间的键需要迁移，约为总量的 1/N，而非普通取模哈希那样几乎全部重映射。常用于分布式缓存、存储分片和负载均衡。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>建环：把哈希值空间首尾相接成环，例如 0 到 2³²−1 的整数空间。</p></li><li><span class="sn">2</span><p>放节点：对每个节点标识做哈希，映射到环上的若干位置（虚拟节点）。</p></li><li><span class="sn">3</span><p>定位键：对键做哈希，沿环顺时针找到第一个节点位置，即为该键的归属节点。</p></li><li><span class="sn">4</span><p>增删节点：只影响新节点与其前驱之间的键区间，其余键保持原有归属不变。</p></li><li><span class="sn">5</span><p>虚拟节点：每个物理节点在环上放多个点，使负载更均匀，并可按机器权重调整。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>哈希环 (Hash Ring)</dt><dd>首尾相连的哈希值空间，节点与键都映射在上面。</dd></div><div class="term"><dt>虚拟节点 (Virtual Node)</dt><dd>一个物理节点在环上的多个映射点，用于均衡负载。</dd></div><div class="term"><dt>取模哈希 (Modulo Hashing)</dt><dd>hash(key) % N，节点数变化时几乎所有键都重映射。</dd></div><div class="term"><dt>Rendezvous 哈希 (HRW)</dt><dd>为每个键选择与之组合哈希值最大的节点，无需维护环。</dd></div><div class="term"><dt>Jump 一致性哈希</dt><dd>Google 提出的无内存开销算法，适合节点编号连续的场景。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>带虚拟节点的哈希环</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import bisect, hashlib
+
+def h(s: str) -&gt; int:
+    return int(hashlib.md5(s.encode()).hexdigest(), 16) % (2**32)
+
+class Ring:
+    def __init__(self, nodes, vnodes=100):
+        self.ring = sorted((h(f&quot;{n}#{i}&quot;), n) for n in nodes for i in range(vnodes))
+        self.keys = [k for k, _ in self.ring]
+
+    def get(self, key: str) -&gt; str:
+        i = bisect.bisect(self.keys, h(key)) % len(self.keys)  # 顺时针第一个
+        return self.ring[i][1]
+
+keys = [f&quot;user:{i}&quot; for i in range(10000)]
+r3 = Ring([&quot;A&quot;, &quot;B&quot;, &quot;C&quot;])
+r4 = Ring([&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;])
+moved = sum(r3.get(k) != r4.get(k) for k in keys)
+print(f&quot;新增一个节点后迁移比例: {moved / len(keys):.1%}&quot;)   # 约 25%，取模哈希约 75%</code></pre></div><p class="cnote">从 3 节点扩到 4 节点只迁移约 1/4 的键；虚拟节点越多分布越均匀。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">键分配算法对比</h3><div class="tw"><table><thead><tr><th>算法</th><th>节点变化时迁移量</th><th>特点</th></tr></thead><tbody><tr><td data-h="算法">取模哈希</td><td data-h="节点变化时迁移量">几乎全部</td><td data-h="特点">最简单，不适合动态扩缩</td></tr><tr><td data-h="算法">一致性哈希环</td><td data-h="节点变化时迁移量">约 1/N</td><td data-h="特点">需维护环，用虚拟节点均衡</td></tr><tr><td data-h="算法">Rendezvous 哈希</td><td data-h="节点变化时迁移量">约 1/N</td><td data-h="特点">无需环，查找需遍历所有节点</td></tr><tr><td data-h="算法">Jump 哈希</td><td data-h="节点变化时迁移量">约 1/N</td><td data-h="特点">无内存开销，只适合尾部增删</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>一致性哈希</h4><p><b class="k-p">优点</b>扩缩容迁移少，去中心化</p><p><b class="k-c">代价</b>需虚拟节点才能均衡</p><p><b class="k-w">适用</b>缓存集群、无中心的存储</p></div><div class="trd"><h4>固定槽位映射</h4><p><b class="k-p">优点</b>迁移以槽为单位，可控</p><p><b class="k-c">代价</b>需维护槽到节点的映射表</p><p><b class="k-w">适用</b>如 Redis Cluster 的 16384 槽</p></div><div class="trd"><h4>中心目录</h4><p><b class="k-p">优点</b>可任意迁移单个分片</p><p><b class="k-c">代价</b>目录服务成为依赖</p><p><b class="k-w">适用</b>需要精细控制数据放置</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>不用虚拟节点，几个节点在环上分布不均导致负载倾斜</p><p class="fix"><b>✓</b>每个节点设置足够多的虚拟节点，并按容量设权重</p></li><li><p class="bad"><b>✗</b>各客户端节点列表或哈希函数不一致，路由结果不同</p><p class="fix"><b>✓</b>统一哈希函数与节点配置，由配置中心下发</p></li><li><p class="bad"><b>✗</b>以为一致性哈希能解决热点键</p><p class="fix"><b>✓</b>热点键需要副本、本地缓存或拆分，不能靠哈希分布解决</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>使用虚拟节点并评估均匀度</span></label></li><li><label><input type="checkbox"><span>客户端哈希函数与配置一致</span></label></li><li><label><input type="checkbox"><span>节点变更时有数据迁移流程</span></label></li><li><label><input type="checkbox"><span>迁移期间读写有回源方案</span></label></li><li><label><input type="checkbox"><span>监控各节点负载分布</span></label></li><li><label><input type="checkbox"><span>热点键有单独方案</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么取模哈希扩容代价大？</summary><p>hash(key) % N 中 N 一变，绝大多数键的余数都会改变，从 3 台扩到 4 台约有 3/4 的键换节点，对缓存意味着大面积失效、穿透到数据库。一致性哈希只迁移约 1/N。</p></details><details class="iv"><summary>虚拟节点解决了什么问题？</summary><p>物理节点少时在环上的位置随机，各自负责的区间大小差异很大，负载不均；节点下线时其区间全部压给一个后继。虚拟节点把每台机器打散成许多小区间，负载更均匀，下线时压力分摊到多台机器。</p></details><details class="iv"><summary>Redis Cluster 用的是一致性哈希吗？</summary><p>不是环形一致性哈希，而是固定 16384 个哈希槽，用 CRC16(key) 对 16384 取模确定槽，再由集群维护槽到节点的映射。扩缩容时迁移槽而非重算全部键，效果类似但更可控。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://en.wikipedia.org/wiki/Consistent_hashing" target="_blank" rel="noopener"><b>Consistent hashing - Wikipedia</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://www.cs.princeton.edu/courses/archive/fall09/cos518/papers/chash.pdf" target="_blank" rel="noopener"><b>Karger et al.: Consistent Hashing and Random Trees</b><small>cs.princeton.edu ↗</small></a></li><li><a href="https://arxiv.org/abs/1406.2294" target="_blank" rel="noopener"><b>A Fast, Minimal Memory, Consistent Hash Algorithm (Jump Hash)</b><small>arxiv.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="distributed-locks.pro.html" rel="prev"><small>‹ 上一个</small><b>🔐 分布式锁</b></a><a class="pn next" href="bloom-filters.pro.html" rel="next"><small>下一个 ›</small><b>🧾 布隆过滤器</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="蓝绿部署 专业模式：蓝绿部署（Blue-Green Deployment）是同时维护两套完整的生产环境：蓝色运行当前版本，绿色部署新版本并完成验证，然后在路由层把全部流量一次性切到">
+<title>🎓 蓝绿部署 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="blue-green-deployments" data-answer="0" data-prev="infrastructure-as-code.pro.html" data-next="canary-releases.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#devops">🔮 高级 · 🔭 可观测与交付</a><span>›</span><a href="blue-green-deployments.html">蓝绿部署</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.325 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="infrastructure-as-code.pro.html" rel="prev"><small>‹ 上一个</small><b>📐 基础设施即代码 (IaC)</b></a><a class="pn next" href="canary-releases.pro.html" rel="next"><small>下一个 ›</small><b>🐤 金丝雀发布 / 灰度发布</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔵</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>蓝绿部署</h1><p class="en">Blue-Green Deployments</p>
+    <div class="hbtns"><a class="prosw back" href="blue-green-deployments.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">蓝绿部署（Blue-Green Deployment）是同时维护两套完整的生产环境：蓝色运行当前版本，绿色部署新版本并完成验证，然后在路由层把全部流量一次性切到绿色；出问题时再切回蓝色即可回滚。它属于发布策略层，以双倍资源换取近乎瞬时的切换和回滚，难点在于数据库变更和有状态组件的兼容。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>蓝色环境承载全部生产流量，绿色环境部署新版本，配置与规模和蓝色一致。</p></li><li><span class="sn">2</span><p>在绿色环境运行冒烟测试与关键路径验证，可通过内部入口或测试流量访问。</p></li><li><span class="sn">3</span><p>切换路由：修改负载均衡目标组、Kubernetes Service 选择器或 DNS 记录，指向绿色。</p></li><li><span class="sn">4</span><p>观察指标，异常时把路由切回蓝色完成回滚；稳定后蓝色保留一段时间再回收或作为下次发布的目标。</p></li><li><span class="sn">5</span><p>数据库通常两套环境共享，需要采用扩展-收缩（Expand-Contract）方式做向后兼容的迁移。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>扩展-收缩迁移 (Expand-Contract)</dt><dd>先加兼容新旧版本的结构，切换后再删除旧结构的数据库迁移方式。</dd></div><div class="term"><dt>流量切换 (Cutover)</dt><dd>把生产流量从旧环境转到新环境的动作。</dd></div><div class="term"><dt>冒烟测试 (Smoke Test)</dt><dd>上线前对关键功能的快速验证。</dd></div><div class="term"><dt>选择器 (Selector)</dt><dd>Kubernetes Service 用标签选择后端 Pod，改标签即可切换。</dd></div><div class="term"><dt>DNS TTL</dt><dd>DNS 记录缓存时间，影响基于 DNS 切换的生效速度。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>切换 Service 选择器</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 前提：已有 api-blue 和 api-green 两个 Deployment，
+# Pod 标签分别为 app=api,version=blue 与 app=api,version=green
+
+# 1. 确认绿色环境全部就绪
+kubectl rollout status deployment/api-green
+
+# 2. 一次性把流量切到绿色
+kubectl patch service api \
+  -p &#x27;{&quot;spec&quot;:{&quot;selector&quot;:{&quot;app&quot;:&quot;api&quot;,&quot;version&quot;:&quot;green&quot;}}}&#x27;
+
+# 3. 观察错误率与延迟；如有问题，立刻切回蓝色
+# kubectl patch service api \
+#   -p &#x27;{&quot;spec&quot;:{&quot;selector&quot;:{&quot;app&quot;:&quot;api&quot;,&quot;version&quot;:&quot;blue&quot;}}}&#x27;
+
+# 4. 稳定后缩容蓝色，保留以便快速回滚
+kubectl scale deployment/api-blue --replicas=0</code></pre></div><p class="cnote">修改 Service 选择器实现原子切换；回滚只是把选择器改回 blue。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">切换层级对比</h3><div class="tw"><table><thead><tr><th>切换方式</th><th>生效速度</th><th>注意点</th></tr></thead><tbody><tr><td data-h="切换方式">负载均衡目标组/权重</td><td data-h="生效速度">秒级</td><td data-h="注意点">需负载均衡支持多目标组</td></tr><tr><td data-h="切换方式">K8s Service 选择器</td><td data-h="生效速度">秒级</td><td data-h="注意点">已有长连接仍在旧 Pod 上</td></tr><tr><td data-h="切换方式">DNS 记录</td><td data-h="生效速度">受 TTL 和客户端缓存影响</td><td data-h="注意点">回滚同样受缓存影响</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>蓝绿部署</h4><p><b class="k-p">优点</b>切换与回滚几乎瞬时</p><p><b class="k-c">代价</b>需双倍资源，数据库兼容难</p><p><b class="k-w">适用</b>需要快速回滚、资源充足</p></div><div class="trd"><h4>滚动更新</h4><p><b class="k-p">优点</b>资源开销小，K8s 默认支持</p><p><b class="k-c">代价</b>新旧版本并存，回滚较慢</p><p><b class="k-w">适用</b>大多数无状态服务</p></div><div class="trd"><h4>金丝雀发布</h4><p><b class="k-p">优点</b>影响面小，可逐步验证</p><p><b class="k-c">代价</b>需要流量拆分与指标分析</p><p><b class="k-w">适用</b>高风险变更</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>新版本数据库迁移删除了旧版本依赖的字段，回滚后蓝色报错。</p><p class="fix"><b>✓</b>采用扩展-收缩迁移，确保新旧版本都能读写。</p></li><li><p class="bad"><b>✗</b>绿色环境没预热就切全量流量，冷缓存导致延迟飙升。</p><p class="fix"><b>✓</b>切换前预热缓存与连接池。</p></li><li><p class="bad"><b>✗</b>切换后立即销毁蓝色，出问题无法快速回滚。</p><p class="fix"><b>✓</b>保留蓝色一段观察期再回收。</p></li><li><p class="bad"><b>✗</b>后台任务在蓝绿两边同时运行，重复执行。</p><p class="fix"><b>✓</b>确保定时任务和消费者只在一侧激活。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>绿色环境与蓝色配置一致</span></label></li><li><label><input type="checkbox"><span>数据库迁移向后兼容</span></label></li><li><label><input type="checkbox"><span>切换前完成冒烟测试与预热</span></label></li><li><label><input type="checkbox"><span>回滚命令已验证可用</span></label></li><li><label><input type="checkbox"><span>后台任务只在一侧运行</span></label></li><li><label><input type="checkbox"><span>观察期后再回收旧环境</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>蓝绿部署中数据库如何处理？</summary><p>通常共享一个数据库，所以迁移必须对新旧版本都兼容。采用扩展-收缩：先新增字段或表并双写，切换并稳定后再删除旧结构。这样任何时刻回滚到蓝色都不会因结构变化报错。</p></details><details class="iv"><summary>蓝绿和金丝雀如何选择？</summary><p>蓝绿一次切全量，回滚快但新版本一上来就面对全部用户；金丝雀先给小比例流量，按指标逐步放大，影响面更小但耗时更长、需要流量拆分能力。高风险变更倾向金丝雀，也可组合使用。</p></details><details class="iv"><summary>蓝绿部署切换后长连接怎么办？</summary><p>修改路由只影响新连接，已有的 keep-alive、WebSocket 连接仍连在蓝色。需要在蓝色实施连接排空、关闭空闲连接或让客户端重连，确保流量真正迁移。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://martinfowler.com/bliki/BlueGreenDeployment.html" target="_blank" rel="noopener"><b>Martin Fowler：BlueGreenDeployment</b><small>martinfowler.com ↗</small></a></li><li><a href="https://docs.aws.amazon.com/whitepapers/latest/blue-green-deployments/welcome.html" target="_blank" rel="noopener"><b>AWS 白皮书：Blue/Green Deployments on AWS</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://argo-rollouts.readthedocs.io/en/stable/features/bluegreen/" target="_blank" rel="noopener"><b>Argo Rollouts：BlueGreen Deployment Strategy</b><small>argo-rollouts.readthedocs.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="infrastructure-as-code.pro.html" rel="prev"><small>‹ 上一个</small><b>📐 基础设施即代码 (IaC)</b></a><a class="pn next" href="canary-releases.pro.html" rel="next"><small>下一个 ›</small><b>🐤 金丝雀发布 / 灰度发布</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

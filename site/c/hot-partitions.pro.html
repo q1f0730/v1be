@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="热点分区 / 数据倾斜 专业模式：热点分区（Hot Partition）指分布式存储或消息系统中，少数分区承接了不成比例的读写流量或数据量（数据倾斜），导致这些分区被限流或过载，而其他分区空闲。">
+<title>🎓 热点分区 / 数据倾斜 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="hot-partitions" data-answer="0" data-prev="partitioning.pro.html" data-next="postgres-vacuum.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#db">🔥 进阶 · 🗄️ 数据库</a><span>›</span><a href="hot-partitions.html">热点分区 / 数据倾斜</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.417 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="partitioning.pro.html" rel="prev"><small>‹ 上一个</small><b>🗂️ 单实例表分区</b></a><a class="pn next" href="postgres-vacuum.pro.html" rel="next"><small>下一个 ›</small><b>🧹 PostgreSQL空间回收</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔥</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>热点分区 / 数据倾斜</h1><p class="en">Hot Partitions</p>
+    <div class="hbtns"><a class="prosw back" href="hot-partitions.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">热点分区（Hot Partition）指分布式存储或消息系统中，少数分区承接了不成比例的读写流量或数据量（数据倾斜），导致这些分区被限流或过载，而其他分区空闲。根源多是分区键选择不当，如低基数、单调递增或集中在少数大客户上，会让水平扩展失效。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>路由：每个请求按分区键做哈希或范围映射，最终落到某个具体分区上。</p></li><li><span class="sn">2</span><p>若键的分布不均（如某明星用户、当天日期），大量请求落到同一分区。</p></li><li><span class="sn">3</span><p>单分区有吞吐上限（如 DynamoDB 单分区有读写容量上限），超出后被限流。</p></li><li><span class="sn">4</span><p>表现：集群整体资源利用率并不高，但个别分区延迟飙升、错误率上升。</p></li><li><span class="sn">5</span><p>缓解：换更分散的键、对热键加随机后缀做写分片、加缓存、拆分热点租户。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>数据倾斜 (Data Skew)</dt><dd>数据或负载在分区间分布显著不均。</dd></div><div class="term"><dt>热键 (Hot Key)</dt><dd>访问频率远高于其他键的单个键。</dd></div><div class="term"><dt>写分片 (Write Sharding)</dt><dd>为热键追加后缀，把写入分散到多个分区。</dd></div><div class="term"><dt>自适应容量 (Adaptive Capacity)</dt><dd>DynamoDB 自动给热点分区借用更多吞吐的机制。</dd></div><div class="term"><dt>基数 (Cardinality)</dt><dd>某列不同取值的数量，低基数键易导致倾斜。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>热键写分片</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import random
+
+N_SUFFIX = 10   # 后缀数量，按热点流量估算
+
+def write_key(campaign_id: str) -&gt; str:
+    # 写入时随机加后缀：同一活动的数据分散到 10 个分区键
+    return f&quot;{campaign_id}#{random.randrange(N_SUFFIX)}&quot;
+
+def read_keys(campaign_id: str) -&gt; list[str]:
+    # 读取时需查询所有后缀再合并（读放大的代价）
+    return [f&quot;{campaign_id}#{i}&quot; for i in range(N_SUFFIX)]
+
+# 若需要按 ID 精确读取单条，可改用确定性后缀：
+def stable_key(campaign_id: str, item_id: int) -&gt; str:
+    return f&quot;{campaign_id}#{item_id % N_SUFFIX}&quot;
+</code></pre></div><p class="cnote">用读放大换写入均衡；确定性后缀可在不扇出的情况下按 ID 定位。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">热点成因与对策</h3><div class="tw"><table><thead><tr><th>成因</th><th>例子</th><th>对策</th></tr></thead><tbody><tr><td data-h="成因">单调递增键</td><td data-h="例子">以日期、自增 ID 做分区键</td><td data-h="对策">哈希化或加前缀打散</td></tr><tr><td data-h="成因">超级用户/大租户</td><td data-h="例子">头部客户占大量流量</td><td data-h="对策">单独分片或二级拆分</td></tr><tr><td data-h="成因">突发热点</td><td data-h="例子">秒杀商品、热门帖子</td><td data-h="对策">缓存、写分片、请求合并</td></tr><tr><td data-h="成因">低基数键</td><td data-h="例子">以状态、国家做分区键</td><td data-h="对策">组合更高基数的列</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>随机后缀写分片</h4><p><b class="k-p">优点</b>写入均匀分散</p><p><b class="k-c">代价</b>读取需扇出合并</p><p><b class="k-w">适用</b>写多读少的计数、日志</p></div><div class="trd"><h4>前置缓存</h4><p><b class="k-p">优点</b>直接削掉热点读</p><p><b class="k-c">代价</b>有一致性和缓存击穿问题</p><p><b class="k-w">适用</b>热点以读为主</p></div><div class="trd"><h4>更换分区键</h4><p><b class="k-p">优点</b>从根本上改善分布</p><p><b class="k-c">代价</b>需要数据迁移和代码改动</p><p><b class="k-w">适用</b>倾斜是结构性的</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>只看集群整体指标，没发现单个分区已被限流</p><p class="fix"><b>✓</b>监控按分区/按键的流量和限流次数，识别热键</p></li><li><p class="bad"><b>✗</b>以时间戳或日期作为分区键，当前时段全部写入一处</p><p class="fix"><b>✓</b>时间放到排序键，分区键用高基数实体 ID</p></li><li><p class="bad"><b>✗</b>Kafka 用固定或空值较多的 key，消息全进一个分区</p><p class="fix"><b>✓</b>检查 key 分布，避免大量相同或空 key 集中</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>分区键高基数且分布均匀</span></label></li><li><label><input type="checkbox"><span>有按分区的流量与限流监控</span></label></li><li><label><input type="checkbox"><span>识别出头部租户与热键</span></label></li><li><label><input type="checkbox"><span>热点读有缓存兜底</span></label></li><li><label><input type="checkbox"><span>压测覆盖热点场景</span></label></li><li><label><input type="checkbox"><span>有拆分热点的预案</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>如何发现热点分区？</summary><p>看按分区或按键的指标：请求数、限流次数、延迟、存储量；云数据库常提供热键诊断工具。典型信号是整体使用率不高但出现限流或个别分区延迟高。Kafka 中表现为某些分区消费滞后明显更大。</p></details><details class="iv"><summary>写分片后读取怎么办？</summary><p>随机后缀需并行查询所有后缀再合并，读放大与后缀数成正比；若读按某 ID，可用确定性后缀直接定位。也可用异步任务把分散数据定期聚合为汇总记录供读取。</p></details><details class="iv"><summary>为什么扩容解决不了热点？</summary><p>热点是单个键或分区的负载超过单分区上限，增加分区数并不会把同一个键拆开，热键仍落在一个分区。必须改变键的分布或在热键前加缓存、合并请求。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/bp-partition-key-design.html" target="_blank" rel="noopener"><b>DynamoDB: Designing partition keys</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/bp-partition-key-sharding.html" target="_blank" rel="noopener"><b>DynamoDB: Write sharding</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://cloud.google.com/bigtable/docs/schema-design" target="_blank" rel="noopener"><b>Google Cloud Bigtable: Schema design</b><small>cloud.google.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="partitioning.pro.html" rel="prev"><small>‹ 上一个</small><b>🗂️ 单实例表分区</b></a><a class="pn next" href="postgres-vacuum.pro.html" rel="next"><small>下一个 ›</small><b>🧹 PostgreSQL空间回收</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

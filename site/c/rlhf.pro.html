@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="人类反馈强化学习 (RLHF) 专业模式：人类反馈强化学习（RLHF）是大模型对齐（alignment）阶段的训练方法：先收集人类对多个回答的偏好排序，训练奖励模型（Reward Model）学会打分，">
+<title>🎓 人类反馈强化学习 (RLHF) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="rlhf" data-answer="0" data-prev="benchmarks-and-swe-bench.pro.html" data-next="distillation.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#ai">🔥 进阶 · 🤖 AI 与提示词</a><span>›</span><a href="rlhf.html">人类反馈强化学习 (RLHF)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.406 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="benchmarks-and-swe-bench.pro.html" rel="prev"><small>‹ 上一个</small><b>🏆 基准测试与 SWE-bench</b></a><a class="pn next" href="distillation.pro.html" rel="next"><small>下一个 ›</small><b>⚗️ 模型蒸馏</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">👍</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>人类反馈强化学习 (RLHF)</h1><p class="en">RLHF</p>
+    <div class="hbtns"><a class="prosw back" href="rlhf.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">人类反馈强化学习（RLHF）是大模型对齐（alignment）阶段的训练方法：先收集人类对多个回答的偏好排序，训练奖励模型（Reward Model）学会打分，再用强化学习（常用 PPO）优化语言模型以获得更高奖励，同时用 KL 约束防止偏离原模型太远。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>监督微调（SFT）：用人工撰写的示范回答微调预训练模型，得到初始策略。</p></li><li><span class="sn">2</span><p>收集偏好：对同一提示采样多个回答，标注员比较好坏，形成 (chosen, rejected) 对。</p></li><li><span class="sn">3</span><p>训练奖励模型：常用 Bradley-Terry 损失，使 chosen 的分数高于 rejected。</p></li><li><span class="sn">4</span><p>强化学习优化：用 PPO 最大化奖励，并加入与参考模型的 KL 惩罚，避免奖励投机。</p></li><li><span class="sn">5</span><p>迭代评估：用人工评测和基准检查有用性、无害性，必要时补充偏好数据再训练。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>奖励模型 (Reward Model)</dt><dd>输入提示和回答、输出标量分数，用于近似人类偏好。</dd></div><div class="term"><dt>PPO (Proximal Policy Optimization)</dt><dd>限制每步策略更新幅度的策略梯度算法，RLHF 经典选择。</dd></div><div class="term"><dt>KL 惩罚 (KL Penalty)</dt><dd>惩罚策略与参考模型分布差异，防止模型为刷分变得怪异。</dd></div><div class="term"><dt>奖励投机 (Reward Hacking)</dt><dd>模型利用奖励模型漏洞拿高分，实际质量并未提升。</dd></div><div class="term"><dt>DPO (Direct Preference Optimization)</dt><dd>直接用偏好对优化策略，无需显式奖励模型和 RL 循环。</dd></div><div class="term"><dt>RLAIF</dt><dd>用 AI 生成的偏好标签替代或补充人类标注。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>奖励模型与 DPO 损失</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import torch.nn.functional as F
+
+# 1) 奖励模型：Bradley-Terry 成对损失
+#    r_chosen / r_rejected：奖励模型对两个回答的标量打分，形状 [batch]
+def reward_loss(r_chosen, r_rejected):
+    return -F.logsigmoid(r_chosen - r_rejected).mean()
+
+# 2) DPO：直接用策略与参考模型的对数概率
+#    logp_*：整段回答的 log 概率之和，形状 [batch]
+def dpo_loss(pi_logp_c, pi_logp_r, ref_logp_c, ref_logp_r, beta=0.1):
+    # 隐式奖励 = beta * (策略 logp - 参考 logp)
+    chosen = beta * (pi_logp_c - ref_logp_c)
+    rejected = beta * (pi_logp_r - ref_logp_r)
+    return -F.logsigmoid(chosen - rejected).mean()</code></pre></div><p class="cnote">两者都在拉开 chosen 与 rejected 的差距；DPO 省去奖励模型和 PPO 采样循环。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">偏好对齐方法对比</h3><div class="tw"><table><thead><tr><th>方法</th><th>是否需奖励模型</th><th>特点</th></tr></thead><tbody><tr><td data-h="方法">RLHF (PPO)</td><td data-h="是否需奖励模型">需要</td><td data-h="特点">效果上限高，但训练不稳定、工程复杂</td></tr><tr><td data-h="方法">DPO</td><td data-h="是否需奖励模型">不需要</td><td data-h="特点">离线训练，简单稳定，依赖偏好数据质量</td></tr><tr><td data-h="方法">RLAIF</td><td data-h="是否需奖励模型">视实现而定</td><td data-h="特点">用 AI 标注降成本，需控制标注模型偏差</td></tr><tr><td data-h="方法">可验证奖励 RL</td><td data-h="是否需奖励模型">用规则/测试替代</td><td data-h="特点">适合数学、代码等可自动判对的任务</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>PPO 式 RLHF</h4><p><b class="k-p">优点</b>在线采样，可持续探索更优回答</p><p><b class="k-c">代价</b>需同时维护多个模型，调参难</p><p><b class="k-w">适用</b>有大规模算力和成熟训练团队</p></div><div class="trd"><h4>DPO 等离线方法</h4><p><b class="k-p">优点</b>实现简单，显存与算力需求低</p><p><b class="k-c">代价</b>无在线探索，易过拟合偏好集</p><p><b class="k-w">适用</b>中小团队做领域偏好微调</p></div><div class="trd"><h4>仅 SFT</h4><p><b class="k-p">优点</b>最简单，可控性强</p><p><b class="k-c">代价</b>难以学到细粒度偏好与拒答边界</p><p><b class="k-w">适用</b>格式化任务、示范数据充足</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>去掉 KL 约束追求更高奖励，输出变得冗长讨好</p><p class="fix"><b>✓</b>保留 KL 惩罚并监控长度、多样性，结合人工评测</p></li><li><p class="bad"><b>✗</b>偏好数据标注标准不一，奖励模型学到噪声</p><p class="fix"><b>✓</b>制定标注指南、计算标注者一致性，剔除争议样本</p></li><li><p class="bad"><b>✗</b>只看奖励模型分数判断训练效果</p><p class="fix"><b>✓</b>用独立人工评测或留出基准验证，警惕奖励投机</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>SFT 基线已评测留档</span></label></li><li><label><input type="checkbox"><span>偏好标注指南与一致性统计</span></label></li><li><label><input type="checkbox"><span>奖励模型在留出集上验证</span></label></li><li><label><input type="checkbox"><span>训练中监控 KL 与回答长度</span></label></li><li><label><input type="checkbox"><span>有独立人工评测集</span></label></li><li><label><input type="checkbox"><span>安全与拒答行为单独评估</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>RLHF 里为什么要加 KL 惩罚？</summary><p>奖励模型只是人类偏好的有限近似，策略若自由优化会找到其漏洞，生成高分但质量差的文本，同时丢失语言能力。KL 惩罚让策略保持在参考模型附近，在奖励和原有能力之间折中。</p></details><details class="iv"><summary>DPO 和 PPO 式 RLHF 的本质区别？</summary><p>DPO 推导出最优策略与奖励的闭式关系，把奖励隐式表示为策略与参考模型的对数概率比，从而直接用偏好对做分类式训练；省掉奖励模型和在线采样，但失去在线探索能力。</p></details><details class="iv"><summary>RLHF 可能带来哪些副作用？</summary><p>谄媚（迎合用户观点）、回答变长、过度拒答、多样性下降，以及校准性变差。根源多在偏好数据偏差和奖励投机，需要在数据、KL 系数和评测维度上共同控制。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://arxiv.org/abs/2203.02155" target="_blank" rel="noopener"><b>InstructGPT: Training language models to follow instructions with human feedback</b><small>arxiv.org ↗</small></a></li><li><a href="https://arxiv.org/abs/2305.18290" target="_blank" rel="noopener"><b>Direct Preference Optimization</b><small>arxiv.org ↗</small></a></li><li><a href="https://huggingface.co/blog/rlhf" target="_blank" rel="noopener"><b>Hugging Face: Illustrating RLHF</b><small>huggingface.co ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="benchmarks-and-swe-bench.pro.html" rel="prev"><small>‹ 上一个</small><b>🏆 基准测试与 SWE-bench</b></a><a class="pn next" href="distillation.pro.html" rel="next"><small>下一个 ›</small><b>⚗️ 模型蒸馏</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

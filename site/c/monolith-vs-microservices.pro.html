@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="单体 vs 微服务 专业模式：单体与微服务（Monolith vs Microservices）是两种系统架构风格。单体把全部功能构建、部署为一个进程；微服务按业务能力拆成多个独立部署、通过">
+<title>🎓 单体 vs 微服务 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="monolith-vs-microservices" data-answer="0" data-prev="webhook-retries.pro.html" data-next="race-conditions.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#dist">🔮 高级 · 🕸️ 分布式</a><span>›</span><a href="monolith-vs-microservices.html">单体 vs 微服务</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.283 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="webhook-retries.pro.html" rel="prev"><small>‹ 上一个</small><b>🔔 Webhook异步回调重试</b></a><a class="pn next" href="race-conditions.pro.html" rel="next"><small>下一个 ›</small><b>🏁 竞态条件</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🧱</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>单体 vs 微服务</h1><p class="en">Monolith vs Microservices</p>
+    <div class="hbtns"><a class="prosw back" href="monolith-vs-microservices.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">单体与微服务（Monolith vs Microservices）是两种系统架构风格。单体把全部功能构建、部署为一个进程；微服务按业务能力拆成多个独立部署、通过网络通信、各自拥有数据的小服务。这是架构层的取舍：微服务换来独立发布和按需扩展，代价是分布式系统的复杂度和运维成本。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>单体中模块之间是进程内函数调用，共享一个数据库和事务，一次构建一次部署。</p></li><li><span class="sn">2</span><p>模块化单体（Modular Monolith）在单体内按领域划清边界，限制跨模块直接访问数据。</p></li><li><span class="sn">3</span><p>微服务按限界上下文（Bounded Context）拆分，每个服务独立代码库或目录、独立部署、独占数据存储。</p></li><li><span class="sn">4</span><p>服务间通过 HTTP/gRPC 同步调用或消息异步通信，引入超时、重试、版本兼容等问题。</p></li><li><span class="sn">5</span><p>拆分常用绞杀者模式（Strangler Fig）：逐步把功能从单体迁到新服务，路由层分流。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>限界上下文 (Bounded Context)</dt><dd>领域驱动设计中模型含义一致的边界，常作为服务拆分单位。</dd></div><div class="term"><dt>模块化单体 (Modular Monolith)</dt><dd>单一部署单元，但内部按领域严格分模块、控制依赖。</dd></div><div class="term"><dt>绞杀者模式 (Strangler Fig)</dt><dd>在旧系统外围逐步用新服务替换功能，直至旧系统可下线。</dd></div><div class="term"><dt>分布式单体 (Distributed Monolith)</dt><dd>拆成多个服务却高度耦合、必须一起发布，兼具两者缺点。</dd></div><div class="term"><dt>康威定律 (Conway&#x27;s Law)</dt><dd>系统结构倾向于复制组织的沟通结构。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>微服务各自拥有数据</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code># docker-compose.yml：两个服务、两个独立数据库
+services:
+  orders:
+    build: ./orders
+    environment:
+      DATABASE_URL: postgres://app:pw@orders-db:5432/orders
+      INVENTORY_URL: http://inventory:8080   # 通过 API 访问，不直连对方库
+    depends_on: [orders-db]
+  inventory:
+    build: ./inventory
+    environment:
+      DATABASE_URL: postgres://app:pw@inventory-db:5432/inventory
+    depends_on: [inventory-db]
+  orders-db:
+    image: postgres:16
+    environment: { POSTGRES_USER: app, POSTGRES_PASSWORD: pw, POSTGRES_DB: orders }
+  inventory-db:
+    image: postgres:16
+    environment: { POSTGRES_USER: app, POSTGRES_PASSWORD: pw, POSTGRES_DB: inventory }</code></pre></div><p class="cnote">每个服务独占数据库，跨服务只能走接口，这是微服务与分布式单体的分界。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">架构选型对照</h3><div class="tw"><table><thead><tr><th>维度</th><th>单体</th><th>模块化单体</th><th>微服务</th></tr></thead><tbody><tr><td data-h="维度">部署</td><td data-h="单体">一个单元</td><td data-h="模块化单体">一个单元</td><td data-h="微服务">每服务独立</td></tr><tr><td data-h="维度">数据一致性</td><td data-h="单体">本地事务</td><td data-h="模块化单体">本地事务</td><td data-h="微服务">最终一致，需 Saga 等</td></tr><tr><td data-h="维度">团队规模适配</td><td data-h="单体">小团队</td><td data-h="模块化单体">小到中型</td><td data-h="微服务">多个自治团队</td></tr><tr><td data-h="维度">运维复杂度</td><td data-h="单体">低</td><td data-h="模块化单体">低</td><td data-h="微服务">高：服务发现、追踪、网关</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>单体优先</h4><p><b class="k-p">优点</b>开发调试快，事务简单</p><p><b class="k-c">代价</b>规模变大后耦合重、发布互相牵制</p><p><b class="k-w">适用</b>新产品、需求快速变化、团队小</p></div><div class="trd"><h4>模块化单体</h4><p><b class="k-p">优点</b>边界清晰，日后易拆</p><p><b class="k-c">代价</b>需持续约束依赖纪律</p><p><b class="k-w">适用</b>预期会增长但还没到多团队</p></div><div class="trd"><h4>微服务</h4><p><b class="k-p">优点</b>独立发布与扩展，故障隔离</p><p><b class="k-c">代价</b>网络、一致性、可观测性成本高</p><p><b class="k-w">适用</b>多团队并行、各部分负载差异大</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>多个服务共用一个数据库表，改字段要所有服务一起发布。</p><p class="fix"><b>✓</b>每个服务独占数据，跨域数据通过 API 或事件同步。</p></li><li><p class="bad"><b>✗</b>按技术层拆服务（前端服务、DB 服务），每个需求都改多个服务。</p><p class="fix"><b>✓</b>按业务能力或限界上下文拆分。</p></li><li><p class="bad"><b>✗</b>服务链路同步调用过深，一个慢全链路慢。</p><p class="fix"><b>✓</b>控制调用深度，非关键路径改为异步事件。</p></li><li><p class="bad"><b>✗</b>没有追踪和集中日志就拆了几十个服务。</p><p class="fix"><b>✓</b>先建好 CI/CD、分布式追踪、集中日志再拆。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>拆分理由是团队或扩展需求，而非流行</span></label></li><li><label><input type="checkbox"><span>每个服务独占数据存储</span></label></li><li><label><input type="checkbox"><span>服务间接口有版本与兼容策略</span></label></li><li><label><input type="checkbox"><span>具备分布式追踪和集中日志</span></label></li><li><label><input type="checkbox"><span>跨服务流程有一致性方案（Saga/补偿）</span></label></li><li><label><input type="checkbox"><span>每个服务可独立构建、测试和部署</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>什么时候不应该上微服务？</summary><p>团队小、领域边界还不稳定、缺乏自动化部署和可观测性时。此时拆分会把需求变更变成跨服务协调，并引入网络故障和一致性问题。Fowler 提出的单体优先就是先做好模块边界再拆。</p></details><details class="iv"><summary>微服务下如何处理跨服务事务？</summary><p>避免分布式两阶段提交，常用 Saga：把大事务拆为一系列本地事务，每步发布事件触发下一步，失败时执行补偿操作。配合 outbox 保证事件可靠发出，消费端幂等。</p></details><details class="iv"><summary>怎么识别分布式单体？</summary><p>信号包括：多个服务必须同时发布；共享数据库表；一个请求同步串联很多服务；改一个功能要改多个仓库。解决方向是重新划边界、拆数据、改异步。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://martinfowler.com/articles/microservices.html" target="_blank" rel="noopener"><b>Martin Fowler：Microservices</b><small>martinfowler.com ↗</small></a></li><li><a href="https://martinfowler.com/bliki/MonolithFirst.html" target="_blank" rel="noopener"><b>Martin Fowler：MonolithFirst</b><small>martinfowler.com ↗</small></a></li><li><a href="https://microservices.io/patterns/data/saga.html" target="_blank" rel="noopener"><b>microservices.io：Saga 模式</b><small>microservices.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="webhook-retries.pro.html" rel="prev"><small>‹ 上一个</small><b>🔔 Webhook异步回调重试</b></a><a class="pn next" href="race-conditions.pro.html" rel="next"><small>下一个 ›</small><b>🏁 竞态条件</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

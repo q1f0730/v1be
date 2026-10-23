@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="混合专家模型 (MoE) 专业模式：混合专家模型（Mixture of Experts，MoE）是一种稀疏激活的神经网络架构：把 Transformer 中的前馈层（FFN）替换为多个并列的「专家">
+<title>🎓 混合专家模型 (MoE) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="mixture-of-experts" data-answer="0" data-prev="kv-cache.pro.html" data-next="lora.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#llmops">🔮 高级 · 🧠 模型工程与推理部署</a><span>›</span><a href="mixture-of-experts.html">混合专家模型 (MoE)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.384 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="kv-cache.pro.html" rel="prev"><small>‹ 上一个</small><b>🗄️ KV 缓存 (KV Cache)</b></a><a class="pn next" href="lora.pro.html" rel="next"><small>下一个 ›</small><b>🩹 低秩适配微调 (LoRA / QLoRA)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">👥</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🧠 模型工程与推理部署</span><span>⏱ 约 10 分钟</span></div>
+    <h1>混合专家模型 (MoE)</h1><p class="en">Mixture of Experts</p>
+    <div class="hbtns"><a class="prosw back" href="mixture-of-experts.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">混合专家模型（Mixture of Experts，MoE）是一种稀疏激活的神经网络架构：把 Transformer 中的前馈层（FFN）替换为多个并列的「专家」子网络，由路由器为每个 token 选择少数几个专家参与计算。它属于模型架构层，使总参数量可以很大，而每个 token 的计算量只取决于激活参数，Mixtral、DeepSeek-V3 等开源模型均采用此架构。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>每个 MoE 层包含路由器（门控网络）和 N 个专家 FFN，注意力层通常仍是共享的稠密结构。</p></li><li><span class="sn">2</span><p>路由器为每个 token 计算对各专家的打分，选取 Top-k（常见 k=1 或 2，也有更细粒度设计）专家。</p></li><li><span class="sn">3</span><p>token 只送入被选中的专家，输出按门控权重加权求和；未选中的专家不参与该 token 的计算。</p></li><li><span class="sn">4</span><p>训练时加入负载均衡损失或其他均衡策略，防止路由集中在少数专家导致其他专家闲置。</p></li><li><span class="sn">5</span><p>推理时全部专家权重都需加载进显存（或分布到多卡），因此显存按总参数计、计算按激活参数计。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>专家 (Expert)</dt><dd>MoE 层中的一个独立前馈子网络。</dd></div><div class="term"><dt>路由器 / 门控 (Router / Gating)</dt><dd>为每个 token 选择专家并给出权重的小网络。</dd></div><div class="term"><dt>Top-k 路由</dt><dd>每个 token 只激活得分最高的 k 个专家。</dd></div><div class="term"><dt>激活参数 (Active Parameters)</dt><dd>处理单个 token 实际参与计算的参数量。</dd></div><div class="term"><dt>专家并行 (Expert Parallelism)</dt><dd>把不同专家放在不同 GPU 上的并行方式，需要 all-to-all 通信。</dd></div><div class="term"><dt>负载均衡损失 (Load Balancing Loss)</dt><dd>鼓励 token 均匀分布到各专家的辅助训练目标。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Top-2 路由的最小实现</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import torch, torch.nn as nn, torch.nn.functional as F
+
+class MoE(nn.Module):
+    def __init__(self, dim=512, n_experts=8, k=2):
+        super().__init__()
+        self.k = k
+        self.router = nn.Linear(dim, n_experts)
+        self.experts = nn.ModuleList(
+            nn.Sequential(nn.Linear(dim, 4 * dim), nn.GELU(), nn.Linear(4 * dim, dim))
+            for _ in range(n_experts))
+
+    def forward(self, x):                      # x: [tokens, dim]
+        logits = self.router(x)                # 每个 token 对每个专家打分
+        w, idx = logits.topk(self.k, dim=-1)   # 选 Top-k 专家
+        w = F.softmax(w, dim=-1)
+        out = torch.zeros_like(x)
+        for slot in range(self.k):
+            for e in idx[:, slot].unique():
+                mask = idx[:, slot] == e       # 只把相关 token 送进该专家
+                out[mask] += w[mask, slot, None] * self.experts[e](x[mask])
+        return out
+
+print(MoE()(torch.randn(10, 512)).shape)       # torch.Size([10, 512])</code></pre></div><p class="cnote">教学示例：8 个专家只算 2 个；生产实现还需负载均衡损失、容量限制与高效分发内核。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">公开 MoE 模型示例（据官方发布）</h3><div class="tw"><table><thead><tr><th>模型</th><th>总参数</th><th>激活参数</th><th>路由</th></tr></thead><tbody><tr><td data-h="模型">Mixtral 8x7B</td><td data-h="总参数">约 47B</td><td data-h="激活参数">约 13B</td><td data-h="路由">8 专家选 2</td></tr><tr><td data-h="模型">DeepSeek-V3</td><td data-h="总参数">671B</td><td data-h="激活参数">37B</td><td data-h="路由">细粒度专家 + 共享专家</td></tr><tr><td data-h="模型">Switch Transformer</td><td data-h="总参数">最高万亿级</td><td data-h="激活参数">随配置而定</td><td data-h="路由">Top-1 路由</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>MoE 模型</h4><p><b class="k-p">优点</b>同等计算量下容量更大，训练与推理 FLOPs 低</p><p><b class="k-c">代价</b>显存需装下全部专家，通信复杂</p><p><b class="k-w">适用</b>大规模服务、多卡部署</p></div><div class="trd"><h4>稠密模型</h4><p><b class="k-p">优点</b>结构简单、部署与微调生态成熟</p><p><b class="k-c">代价</b>参数增大则每 token 计算同步增大</p><p><b class="k-w">适用</b>单卡或边缘部署</p></div><div class="trd"><h4>MoE 量化部署</h4><p><b class="k-p">优点</b>降低全部专家的显存占用</p><p><b class="k-c">代价</b>质量与路由稳定性需验证</p><p><b class="k-w">适用</b>显存受限但想用大 MoE</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>按激活参数估算部署显存</p><p class="fix"><b>✓</b>显存按总参数估算，激活参数决定的是计算量与速度</p></li><li><p class="bad"><b>✗</b>小批量单卡推理期望达到宣传的高吞吐</p><p class="fix"><b>✓</b>MoE 优势在大批量、专家并行；小批量时访存不一定省</p></li><li><p class="bad"><b>✗</b>微调时不处理路由，导致专家塌缩</p><p class="fix"><b>✓</b>保留负载均衡机制，或冻结路由器只调专家/注意力</p></li><li><p class="bad"><b>✗</b>忽视专家并行的跨卡通信开销</p><p class="fix"><b>✓</b>评估 all-to-all 带宽，优先使用高速互联</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>显存预算按总参数（含量化）计算</span></label></li><li><label><input type="checkbox"><span>推理引擎支持该 MoE 架构</span></label></li><li><label><input type="checkbox"><span>评估批量大小对吞吐的影响</span></label></li><li><label><input type="checkbox"><span>多卡部署确认互联带宽</span></label></li><li><label><input type="checkbox"><span>微调方案考虑路由稳定性</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>MoE 为什么能「大参数、低成本」？</summary><p>每个 token 只经过少数专家，计算量由激活参数决定；总参数提供更大的知识容量。代价是显存要装下全部参数，以及路由与通信带来的工程复杂度。</p></details><details class="iv"><summary>负载不均衡会造成什么问题？</summary><p>少数专家过载、其他专家很少被训练，模型容量被浪费；分布式时热门专家所在 GPU 成为瓶颈或触发 token 丢弃。通过辅助损失、容量因子或无辅助损失的偏置调整来均衡。</p></details><details class="iv"><summary>MoE 中「专家」真的按领域分工吗？</summary><p>不一定。研究观察到路由更多与 token 层面的模式（语法、符号类型）相关，而非人类意义上的学科领域。「专家」是结构名称，不应理解为数学专家、代码专家。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://huggingface.co/blog/moe" target="_blank" rel="noopener"><b>Hugging Face Blog：Mixture of Experts Explained</b><small>huggingface.co ↗</small></a></li><li><a href="https://arxiv.org/abs/2401.04088" target="_blank" rel="noopener"><b>Mixtral of Experts (arXiv 2401.04088)</b><small>arxiv.org ↗</small></a></li><li><a href="https://arxiv.org/abs/2101.03961" target="_blank" rel="noopener"><b>Switch Transformers (arXiv 2101.03961)</b><small>arxiv.org ↗</small></a></li><li><a href="https://arxiv.org/abs/2412.19437" target="_blank" rel="noopener"><b>DeepSeek-V3 Technical Report (arXiv 2412.19437)</b><small>arxiv.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="kv-cache.pro.html" rel="prev"><small>‹ 上一个</small><b>🗄️ KV 缓存 (KV Cache)</b></a><a class="pn next" href="lora.pro.html" rel="next"><small>下一个 ›</small><b>🩹 低秩适配微调 (LoRA / QLoRA)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

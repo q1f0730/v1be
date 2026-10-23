@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="注意力机制 (Self-Attention) 专业模式：注意力机制（Attention）让模型在处理某个位置时，按相关性对序列中其他位置的信息加权求和。Transformer 使用缩放点积自注意力：每个 token ">
+<title>🎓 注意力机制 (Self-Attention) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="attention-mechanism" data-answer="0" data-prev="transformer.pro.html" data-next="ttft-and-tpot.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#llmops">🌊 中级 · 🧠 模型工程与推理部署</a><span>›</span><a href="attention-mechanism.html">注意力机制 (Self-Attention)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.185 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="transformer.pro.html" rel="prev"><small>‹ 上一个</small><b>🏗️ Transformer 架构</b></a><a class="pn next" href="ttft-and-tpot.pro.html" rel="next"><small>下一个 ›</small><b>⏱️ 首字延迟与出字速度 (TTFT / TPOT)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">👀</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🧠 模型工程与推理部署</span><span>⏱ 约 10 分钟</span></div>
+    <h1>注意力机制 (Self-Attention)</h1><p class="en">Attention Mechanism</p>
+    <div class="hbtns"><a class="prosw back" href="attention-mechanism.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">注意力机制（Attention）让模型在处理某个位置时，按相关性对序列中其他位置的信息加权求和。Transformer 使用缩放点积自注意力：每个 token 生成查询（Q）、键（K）、值（V）三个向量，用 Q·K 计算相关分数并 softmax 归一化后加权 V。它决定了长上下文的计算与显存成本，是理解 KV 缓存与上下文定价的基础。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>输入向量分别乘以三个可学习矩阵，得到每个 token 的 Q、K、V；Q 代表“我在找什么”，K 代表“我能提供什么”。</p></li><li><span class="sn">2</span><p>计算 Q 与所有 K 的点积并除以 √d_k 缩放，防止数值过大导致 softmax 饱和、梯度变小。</p></li><li><span class="sn">3</span><p>解码器施加因果掩码，把未来位置的分数设为负无穷；softmax 后得到每行和为 1 的注意力权重。</p></li><li><span class="sn">4</span><p>用权重对 V 加权求和，得到融合上下文的新表示；多头注意力并行做多组投影，再拼接后线性变换。</p></li><li><span class="sn">5</span><p>序列长度为 n 时，分数矩阵为 n×n，计算量随 n 平方增长；推理时缓存历史 K、V（KV 缓存）避免重复计算。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>查询/键/值 (Q/K/V)</dt><dd>由同一输入经不同线性投影得到，用于计算相关性与聚合信息。</dd></div><div class="term"><dt>缩放点积 (Scaled Dot-Product)</dt><dd>softmax(QKᵀ/√d_k)V，Transformer 的标准注意力公式。</dd></div><div class="term"><dt>多头注意力 (Multi-Head Attention)</dt><dd>多组 Q/K/V 并行计算，捕捉不同类型的关系。</dd></div><div class="term"><dt>KV 缓存 (KV Cache)</dt><dd>生成时保存已算过的 K、V，新 token 只需算自己的那一行。</dd></div><div class="term"><dt>GQA (Grouped-Query Attention)</dt><dd>多个查询头共享一组 K/V 头，显著减小 KV 缓存。</dd></div><div class="term"><dt>FlashAttention</dt><dd>按块计算、减少显存读写的精确注意力实现，速度更快、省显存。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>NumPy 实现因果自注意力</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import numpy as np
+
+def softmax(x):
+    x = x - x.max(-1, keepdims=True)   # 数值稳定
+    e = np.exp(x)
+    return e / e.sum(-1, keepdims=True)
+
+def causal_attention(Q, K, V):
+    n, d_k = Q.shape
+    scores = Q @ K.T / np.sqrt(d_k)    # n x n 相关分数
+    mask = np.triu(np.ones((n, n)), k=1).astype(bool)
+    scores[mask] = -np.inf             # 看不到未来 token
+    w = softmax(scores)                # 每行和为 1
+    return w @ V, w
+
+rng = np.random.default_rng(0)
+n, d = 4, 8
+Q, K, V = (rng.standard_normal((n, d)) for _ in range(3))
+out, w = causal_attention(Q, K, V)
+print(np.round(w, 2))                  # 下三角权重矩阵</code></pre></div><p class="cnote">演示 QKᵀ/√d、因果掩码和 softmax 加权；n×n 矩阵就是长上下文成本的来源。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">注意力变体对比</h3><div class="tw"><table><thead><tr><th>方案</th><th>KV 缓存大小</th><th>说明</th></tr></thead><tbody><tr><td data-h="方案">MHA 多头注意力</td><td data-h="KV 缓存大小">最大，每个头一组 K/V</td><td data-h="说明">原始方案</td></tr><tr><td data-h="方案">MQA 多查询注意力</td><td data-h="KV 缓存大小">最小，所有头共享一组</td><td data-h="说明">省显存，可能损失质量</td></tr><tr><td data-h="方案">GQA 分组查询注意力</td><td data-h="KV 缓存大小">介于两者之间</td><td data-h="说明">许多开源 LLM 采用的折中</td></tr><tr><td data-h="方案">滑动窗口注意力</td><td data-h="KV 缓存大小">只保留窗口内 K/V</td><td data-h="说明">每个 token 只看最近若干 token</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>全量注意力</h4><p><b class="k-p">优点</b>任意位置直接交互，效果最好</p><p><b class="k-c">代价</b>O(n²) 计算，长序列昂贵</p><p><b class="k-w">适用</b>上下文中等、追求质量</p></div><div class="trd"><h4>稀疏/滑动窗口注意力</h4><p><b class="k-p">优点</b>长序列成本接近线性</p><p><b class="k-c">代价</b>远距离信息需多层间接传递</p><p><b class="k-w">适用</b>超长文本、流式输入</p></div><div class="trd"><h4>检索后只放相关片段</h4><p><b class="k-p">优点</b>输入短，成本和延迟低</p><p><b class="k-c">代价</b>依赖检索质量</p><p><b class="k-w">适用</b>应用层控制长文档成本</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>认为上下文窗口越大越好，全量塞入资料</p><p class="fix"><b>✓</b>注意力成本随长度增长且中段易被忽略，先检索筛选相关内容</p></li><li><p class="bad"><b>✗</b>估算显存只看模型权重</p><p class="fix"><b>✓</b>长上下文和高并发下 KV 缓存可与权重同量级，需按层数、头数、长度估算</p></li><li><p class="bad"><b>✗</b>把注意力权重当作可靠的模型解释</p><p class="fix"><b>✓</b>注意力权重不等于因果贡献，解释性结论需谨慎</p></li><li><p class="bad"><b>✗</b>自己实现 softmax 不做数值稳定处理</p><p class="fix"><b>✓</b>减去每行最大值再求指数，避免溢出</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>评估输入长度对延迟与费用的影响</span></label></li><li><label><input type="checkbox"><span>长文档先检索、再送入模型</span></label></li><li><label><input type="checkbox"><span>部署时估算 KV 缓存显存占用</span></label></li><li><label><input type="checkbox"><span>确认推理引擎启用 FlashAttention 等优化</span></label></li><li><label><input type="checkbox"><span>关注模型是否使用 GQA 等节省缓存的结构</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么要除以 √d_k？</summary><p>假设 Q、K 分量独立且方差为 1，点积方差约为 d_k。维度大时分数绝对值很大，softmax 会接近 one-hot，梯度几乎为零。除以 √d_k 把方差拉回约 1，使训练稳定。</p></details><details class="iv"><summary>KV 缓存为什么能加速生成？</summary><p>自回归生成时，历史 token 的 K、V 不会改变。缓存后每步只为新 token 计算 Q、K、V，并与缓存做一行注意力，避免重算整段序列。代价是显存随序列长度和并发线性增长，这也是长对话推理昂贵的原因之一。</p></details><details class="iv"><summary>自注意力和交叉注意力有什么不同？</summary><p>自注意力的 Q、K、V 来自同一序列；交叉注意力的 Q 来自一个序列（如解码器），K、V 来自另一个序列（如编码器输出或图像特征）。翻译模型和许多多模态模型用交叉注意力把两种信息对齐。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener"><b>Attention Is All You Need (arXiv)</b><small>arxiv.org ↗</small></a></li><li><a href="https://arxiv.org/abs/2205.14135" target="_blank" rel="noopener"><b>FlashAttention (arXiv)</b><small>arxiv.org ↗</small></a></li><li><a href="https://arxiv.org/abs/2305.13245" target="_blank" rel="noopener"><b>GQA (arXiv)</b><small>arxiv.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="transformer.pro.html" rel="prev"><small>‹ 上一个</small><b>🏗️ Transformer 架构</b></a><a class="pn next" href="ttft-and-tpot.pro.html" rel="next"><small>下一个 ›</small><b>⏱️ 首字延迟与出字速度 (TTFT / TPOT)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

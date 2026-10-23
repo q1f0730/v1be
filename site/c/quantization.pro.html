@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="模型量化 专业模式：模型量化（Quantization）是把神经网络权重（有时也包括激活值和 KV 缓存）从 FP16/BF16 等高精度格式转换为 INT8、INT4 等低位宽表">
+<title>🎓 模型量化 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="quantization" data-answer="0" data-prev="local-models.pro.html" data-next="sandbox.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#ai">🔮 高级 · 🤖 AI 与提示词</a><span>›</span><a href="quantization.html">模型量化</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.214 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="local-models.pro.html" rel="prev"><small>‹ 上一个</small><b>🏠 本地模型 (Ollama / LM Studio)</b></a><a class="pn next" href="sandbox.pro.html" rel="next"><small>下一个 ›</small><b>📦 沙箱环境</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📉</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>模型量化</h1><p class="en">Quantization</p>
+    <div class="hbtns"><a class="prosw back" href="quantization.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">模型量化（Quantization）是把神经网络权重（有时也包括激活值和 KV 缓存）从 FP16/BF16 等高精度格式转换为 INT8、INT4 等低位宽表示的压缩技术。它属于模型推理优化层，用少量精度损失换取更小的显存占用、更低的内存带宽需求和更快的推理速度，是本地运行大模型的关键前提。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>把一组浮点权重映射到有限个整数级别，并为每组保存缩放因子（scale），必要时还有零点。</p></li><li><span class="sn">2</span><p>按块或按通道分组量化，组越小精度越高，但额外存储的缩放因子越多。</p></li><li><span class="sn">3</span><p>训练后量化（PTQ）直接对现成模型量化，可用少量校准数据减少误差，如 GPTQ、AWQ。</p></li><li><span class="sn">4</span><p>推理时把低位权重按需反量化参与计算，或直接用支持低精度的计算内核。</p></li><li><span class="sn">5</span><p>量化后在评测集上对比困惑度和下游任务指标，确认精度损失在可接受范围。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>训练后量化 (PTQ)</dt><dd>模型训练完成后再量化，无需重新训练。</dd></div><div class="term"><dt>量化感知训练 (QAT)</dt><dd>训练中模拟量化误差，精度通常更好但成本高。</dd></div><div class="term"><dt>GPTQ</dt><dd>基于近似二阶信息逐层量化权重的 PTQ 方法。</dd></div><div class="term"><dt>AWQ</dt><dd>根据激活重要性保护关键权重的仅权重量化方法。</dd></div><div class="term"><dt>NF4</dt><dd>QLoRA 提出的 4 位 NormalFloat 数据类型。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>4 位量化加载模型</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+
+model_id = &quot;Qwen/Qwen2.5-1.5B-Instruct&quot;
+
+bnb = BitsAndBytesConfig(
+    load_in_4bit=True,                     # 权重以 4 位存储
+    bnb_4bit_quant_type=&quot;nf4&quot;,             # NormalFloat4
+    bnb_4bit_compute_dtype=torch.bfloat16, # 计算时用 bf16
+    bnb_4bit_use_double_quant=True,        # 对缩放因子再量化
+)
+
+tok = AutoTokenizer.from_pretrained(model_id)
+model = AutoModelForCausalLM.from_pretrained(
+    model_id, quantization_config=bnb, device_map=&quot;auto&quot;  # 需要 CUDA GPU
+)
+print(f&quot;显存占用约 {model.get_memory_footprint() / 1e9:.2f} GB&quot;)
+
+inputs = tok(&quot;量化的代价是什么？&quot;, return_tensors=&quot;pt&quot;).to(model.device)
+out = model.generate(**inputs, max_new_tokens=60)
+print(tok.decode(out[0], skip_special_tokens=True))</code></pre></div><p class="cnote">bitsandbytes 在加载时即时量化；本地推理常用的 GGUF 量化则是预先转换好的文件。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">精度与显存（权重部分）</h3><div class="tw"><table><thead><tr><th>格式</th><th>每参数约占</th><th>7B 模型权重约</th><th>精度影响</th></tr></thead><tbody><tr><td data-h="格式">FP16/BF16</td><td data-h="每参数约占">2 字节</td><td data-h="7B 模型权重约">14 GB</td><td data-h="精度影响">基准</td></tr><tr><td data-h="格式">INT8</td><td data-h="每参数约占">1 字节</td><td data-h="7B 模型权重约">7 GB</td><td data-h="精度影响">通常很小</td></tr><tr><td data-h="格式">4 位</td><td data-h="每参数约占">约 0.5 字节</td><td data-h="7B 模型权重约">约 4 GB</td><td data-h="精度影响">小到中等，依方法而定</td></tr><tr><td data-h="格式">2–3 位</td><td data-h="每参数约占">更少</td><td data-h="7B 模型权重约">更少</td><td data-h="精度影响">明显下降</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>8 位量化</h4><p><b class="k-p">优点</b>精度几乎无损，显存减半</p><p><b class="k-c">代价</b>压缩比有限</p><p><b class="k-w">适用</b>精度敏感、显存够用</p></div><div class="trd"><h4>4 位量化</h4><p><b class="k-p">优点</b>显存约为 FP16 的四分之一</p><p><b class="k-c">代价</b>部分任务质量下降</p><p><b class="k-w">适用</b>本地运行、消费级 GPU</p></div><div class="trd"><h4>更大模型 + 低位量化</h4><p><b class="k-p">优点</b>常优于同显存的小模型全精度</p><p><b class="k-c">代价</b>极低位时质量崩溃</p><p><b class="k-w">适用</b>显存受限但想要更强能力</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>只看显存，不评测量化后的任务效果</p><p class="fix"><b>✓</b>用自己的评测集对比量化前后指标</p></li><li><p class="bad"><b>✗</b>以为量化后显存只取决于权重大小</p><p class="fix"><b>✓</b>预留 KV 缓存与运行开销，长上下文占用显著</p></li><li><p class="bad"><b>✗</b>混用不兼容的量化格式与推理引擎</p><p class="fix"><b>✓</b>按引擎选择格式：llama.cpp 用 GGUF，GPU 服务常用 AWQ/GPTQ</p></li><li><p class="bad"><b>✗</b>对代码、数学等敏感任务用过低位宽</p><p class="fix"><b>✓</b>这类任务优先 8 位或较高质量的 4 位方案</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>量化方法与推理引擎兼容</span></label></li><li><label><input type="checkbox"><span>量化前后在评测集上对比</span></label></li><li><label><input type="checkbox"><span>显存预算包含 KV 缓存</span></label></li><li><label><input type="checkbox"><span>记录量化格式与来源</span></label></li><li><label><input type="checkbox"><span>长上下文场景单独测试</span></label></li><li><label><input type="checkbox"><span>确认原模型许可允许再分发</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么量化能加速推理？</summary><p>LLM 解码阶段通常受内存带宽限制，每生成一个 token 都要读取全部权重。位宽降低使读取的数据量成比例减少；若硬件支持低精度计算，算力利用也会提升。</p></details><details class="iv"><summary>GPTQ 和 AWQ 的区别？</summary><p>两者都是仅权重的训练后量化。GPTQ 逐层利用近似二阶信息补偿量化误差；AWQ 根据激活分布找出少量关键权重通道并加以保护。实际效果因模型而异，需评测选择。</p></details><details class="iv"><summary>KV 缓存也能量化吗？</summary><p>可以。长上下文时 KV 缓存可能占用大量显存，将其量化到 8 位甚至更低能支持更长上下文或更多并发，但可能影响长距离信息的准确性，需要评测。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://huggingface.co/docs/transformers/main/en/quantization/overview" target="_blank" rel="noopener"><b>Hugging Face 文档：Quantization</b><small>huggingface.co ↗</small></a></li><li><a href="https://arxiv.org/abs/2210.17323" target="_blank" rel="noopener"><b>GPTQ 论文 (arXiv:2210.17323)</b><small>arxiv.org ↗</small></a></li><li><a href="https://arxiv.org/abs/2306.00978" target="_blank" rel="noopener"><b>AWQ 论文 (arXiv:2306.00978)</b><small>arxiv.org ↗</small></a></li><li><a href="https://arxiv.org/abs/2305.14314" target="_blank" rel="noopener"><b>QLoRA 论文 (arXiv:2305.14314)</b><small>arxiv.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="local-models.pro.html" rel="prev"><small>‹ 上一个</small><b>🏠 本地模型 (Ollama / LM Studio)</b></a><a class="pn next" href="sandbox.pro.html" rel="next"><small>下一个 ›</small><b>📦 沙箱环境</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

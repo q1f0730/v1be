@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="惊群效应 / 缓存击穿 专业模式：惊群效应（Thundering Herd）指大量等待者因同一事件被同时唤醒或同时行动，争抢有限资源，造成瞬时负载尖峰。在缓存场景中表现为热点键失效瞬间大量请求同">
+<title>🎓 惊群效应 / 缓存击穿 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="thundering-herd" data-answer="0" data-prev="cascading-failures.pro.html" data-next="liveness-vs-readiness-probes.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#dist">🔮 高级 · 🕸️ 分布式</a><span>›</span><a href="thundering-herd.html">惊群效应 / 缓存击穿</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.291 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="cascading-failures.pro.html" rel="prev"><small>‹ 上一个</small><b>🌊 级联故障 / 雪崩效应</b></a><a class="pn next" href="liveness-vs-readiness-probes.pro.html" rel="next"><small>下一个 ›</small><b>🩺 存活与就绪探针分野</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🐟</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>惊群效应 / 缓存击穿</h1><p class="en">Thundering Herd</p>
+    <div class="hbtns"><a class="prosw back" href="thundering-herd.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">惊群效应（Thundering Herd）指大量等待者因同一事件被同时唤醒或同时行动，争抢有限资源，造成瞬时负载尖峰。在缓存场景中表现为热点键失效瞬间大量请求同时回源数据库，常称缓存击穿（Cache Stampede）；在操作系统、连接重建和定时任务中也存在。解决思路是合并请求、错峰和提前刷新。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>大量请求依赖同一共享资源，例如一个热点缓存键或一个监听套接字。</p></li><li><span class="sn">2</span><p>触发事件发生，例如缓存键到期、服务批量重启、整点定时器触发或网络恢复。</p></li><li><span class="sn">3</span><p>所有等待者在同一时刻发现资源不可用并同时发起昂贵操作，如查询数据库。</p></li><li><span class="sn">4</span><p>下游被尖峰压垮，延迟上升导致更多请求未命中，可能演变为级联故障。</p></li><li><span class="sn">5</span><p>防护：单飞合并（single-flight）、分布式互斥锁、TTL 随机化、提前异步刷新、过期数据兜底。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>缓存击穿 (Cache Stampede)</dt><dd>热点键失效时大量并发请求同时回源。</dd></div><div class="term"><dt>请求合并 (Single-flight)</dt><dd>同一键的并发请求只放一个去加载，其余等待共享结果。</dd></div><div class="term"><dt>概率提前过期 (Probabilistic Early Expiration)</dt><dd>临近过期时按概率提前刷新，避免集中失效。</dd></div><div class="term"><dt>过期可用 (Stale-While-Revalidate)</dt><dd>先返回旧值，同时后台刷新缓存。</dd></div><div class="term"><dt>缓存雪崩 (Cache Avalanche)</dt><dd>大量键同时过期或缓存整体故障导致回源激增。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Redis 互斥锁防击穿</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import json, random, time
+import redis
+
+r = redis.Redis()
+
+def get_product(pid, load_from_db):
+    key, lock = f&quot;product:{pid}&quot;, f&quot;lock:product:{pid}&quot;
+    for _ in range(50):
+        cached = r.get(key)
+        if cached is not None:
+            return json.loads(cached)
+        # 只有抢到锁的请求去查库，锁 10 秒自动过期防死锁
+        if r.set(lock, &quot;1&quot;, nx=True, ex=10):
+            try:
+                data = load_from_db(pid)
+                ttl = 300 + random.randint(0, 60)   # TTL 加抖动，错开过期
+                r.set(key, json.dumps(data), ex=ttl)
+                return data
+            finally:
+                r.delete(lock)
+        time.sleep(0.05)                           # 没抢到锁：稍等再读缓存
+    return load_from_db(pid)                       # 兜底</code></pre></div><p class="cnote">未命中时只放一个请求回源，其余短暂等待读缓存；TTL 加随机量防集中过期。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">缓存三类问题区分</h3><div class="tw"><table><thead><tr><th>问题</th><th>原因</th><th>典型对策</th></tr></thead><tbody><tr><td data-h="问题">缓存击穿</td><td data-h="原因">单个热点键过期</td><td data-h="典型对策">互斥锁、single-flight、永不过期加异步刷新</td></tr><tr><td data-h="问题">缓存雪崩</td><td data-h="原因">大量键同时过期或缓存宕机</td><td data-h="典型对策">TTL 随机化、多级缓存、限流</td></tr><tr><td data-h="问题">缓存穿透</td><td data-h="原因">查询不存在的数据</td><td data-h="典型对策">缓存空值、布隆过滤器</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>互斥锁回源</h4><p><b class="k-p">优点</b>保证只有一次回源</p><p><b class="k-c">代价</b>等待者延迟增加，锁实现要小心</p><p><b class="k-w">适用</b>热点键回源代价高</p></div><div class="trd"><h4>返回旧值后台刷新</h4><p><b class="k-p">优点</b>用户无感知延迟</p><p><b class="k-c">代价</b>短时间读到旧数据</p><p><b class="k-w">适用</b>可容忍短暂不一致</p></div><div class="trd"><h4>TTL 随机化</h4><p><b class="k-p">优点</b>实现极简</p><p><b class="k-c">代价</b>无法处理单个超热键</p><p><b class="k-w">适用</b>大批键同时写入的场景</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>批量预热缓存时所有键 TTL 相同，到点一起失效。</p><p class="fix"><b>✓</b>TTL 叠加随机偏移。</p></li><li><p class="bad"><b>✗</b>分布式锁不设过期，持锁进程挂掉后键永远无法重建。</p><p class="fix"><b>✓</b>锁带过期时间，释放时校验持有者。</p></li><li><p class="bad"><b>✗</b>等待者忙等轮询缓存，把 Redis 打满。</p><p class="fix"><b>✓</b>限制轮询次数与间隔，或进程内 single-flight 合并。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>识别热点键并单独设计刷新策略</span></label></li><li><label><input type="checkbox"><span>缓存 TTL 带随机偏移</span></label></li><li><label><input type="checkbox"><span>回源路径有请求合并或互斥</span></label></li><li><label><input type="checkbox"><span>服务重启和缓存清空后有预热方案</span></label></li><li><label><input type="checkbox"><span>数据库前有限流保护</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>如何解决热点键过期导致的击穿？</summary><p>三种思路：同键请求合并，进程内用 single-flight、跨进程用分布式锁，只放一个回源；逻辑过期，键不真正过期，读到过期标记时异步刷新并先返回旧值；对超热键提前定时刷新。</p></details><details class="iv"><summary>惊群在操作系统层面指什么？</summary><p>多个进程或线程阻塞在同一事件上，如 accept 同一监听套接字，事件到来时全部被唤醒但只有一个能处理，其余白白切换上下文。Linux 通过 EPOLLEXCLUSIVE、SO_REUSEPORT 等机制缓解。</p></details><details class="iv"><summary>服务大规模重启后为什么会出现尖峰？</summary><p>所有实例同时冷启动：缓存为空、连接池重建、客户端同时重连，请求集中回源。应对方法是滚动重启、连接重试加抖动、启动预热以及就绪探针延后接流。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://en.wikipedia.org/wiki/Thundering_herd_problem" target="_blank" rel="noopener"><b>Wikipedia：Thundering herd problem</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Cache_stampede" target="_blank" rel="noopener"><b>Wikipedia：Cache stampede</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://pkg.go.dev/golang.org/x/sync/singleflight" target="_blank" rel="noopener"><b>Go 包文档：singleflight</b><small>pkg.go.dev ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="cascading-failures.pro.html" rel="prev"><small>‹ 上一个</small><b>🌊 级联故障 / 雪崩效应</b></a><a class="pn next" href="liveness-vs-readiness-probes.pro.html" rel="next"><small>下一个 ›</small><b>🩺 存活与就绪探针分野</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

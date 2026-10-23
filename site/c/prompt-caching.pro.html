@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="提示词缓存 专业模式：提示词缓存（Prompt Caching）是模型服务端对请求中重复出现的前缀（系统提示、工具定义、长文档、历史对话）缓存其中间计算结果（KV Cache），后续">
+<title>🎓 提示词缓存 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="prompt-caching" data-answer="0" data-prev="guardrails.pro.html" data-next="llm-rate-limits-and-cost.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#ai">🔮 高级 · 🤖 AI 与提示词</a><span>›</span><a href="prompt-caching.html">提示词缓存</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.211 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="guardrails.pro.html" rel="prev"><small>‹ 上一个</small><b>🚧 护栏 (Guardrails)</b></a><a class="pn next" href="llm-rate-limits-and-cost.pro.html" rel="next"><small>下一个 ›</small><b>💸 模型限速与成本控制</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">♻️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>提示词缓存</h1><p class="en">Prompt Caching</p>
+    <div class="hbtns"><a class="prosw back" href="prompt-caching.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">提示词缓存（Prompt Caching）是模型服务端对请求中重复出现的前缀（系统提示、工具定义、长文档、历史对话）缓存其中间计算结果（KV Cache），后续请求命中相同前缀时跳过重复计算的机制。它属于推理优化层，可显著降低长上下文请求的成本与首 token 延迟，对多轮 Agent 尤为关键。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>模型处理输入时为每个 token 计算注意力的键值（KV），这部分计算与前缀内容一一对应。</p></li><li><span class="sn">2</span><p>服务端以前缀内容为键保存 KV 结果；只有从开头起完全一致的部分才能命中。</p></li><li><span class="sn">3</span><p>Anthropic API 需用 cache_control 显式标记缓存断点；OpenAI 对足够长的提示自动缓存。</p></li><li><span class="sn">4</span><p>命中时缓存部分按较低单价计费，并减少首 token 延迟；未命中则正常计算并写入缓存。</p></li><li><span class="sn">5</span><p>缓存有存活时间，一段时间无访问即失效，命中后通常会刷新存活时间。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>KV 缓存 (KV Cache)</dt><dd>注意力层中已计算 token 的键值张量。</dd></div><div class="term"><dt>前缀匹配 (Prefix Match)</dt><dd>只有与已缓存内容从头完全一致的部分可复用。</dd></div><div class="term"><dt>缓存断点 (Cache Breakpoint)</dt><dd>Anthropic 中用 cache_control 标记的缓存边界。</dd></div><div class="term"><dt>缓存写入/读取 token</dt><dd>响应 usage 中分别统计的写入与命中 token 数。</dd></div><div class="term"><dt>首 token 延迟 (TTFT)</dt><dd>从发出请求到收到第一个输出 token 的时间。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Anthropic 显式缓存长前缀</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import anthropic
+
+client = anthropic.Anthropic()
+LONG_DOC = open(&quot;handbook.md&quot;).read()      # 长且不变的内容放前面
+
+def ask(question: str):
+    resp = client.messages.create(
+        model=&quot;claude-sonnet-4-5&quot;,          # 以实际可用模型为准
+        max_tokens=1024,
+        system=[
+            {&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: &quot;你是员工手册问答助手。&quot;},
+            {&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: LONG_DOC,
+             &quot;cache_control&quot;: {&quot;type&quot;: &quot;ephemeral&quot;}},   # 断点：此前内容被缓存
+        ],
+        messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: question}],  # 变化部分放最后
+    )
+    u = resp.usage
+    print(&quot;写入缓存:&quot;, u.cache_creation_input_tokens,
+          &quot;命中缓存:&quot;, u.cache_read_input_tokens,
+          &quot;未缓存输入:&quot;, u.input_tokens)
+    return resp.content[0].text
+
+ask(&quot;年假有几天？&quot;)     # 首次：写入缓存
+ask(&quot;报销流程是？&quot;)     # 存活期内再次调用：命中缓存</code></pre></div><p class="cnote">稳定内容在前、变化内容在后；通过 usage 字段确认是否真的命中。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">主流 API 的缓存方式</h3><div class="tw"><table><thead><tr><th>平台</th><th>开启方式</th><th>如何确认命中</th></tr></thead><tbody><tr><td data-h="平台">Anthropic</td><td data-h="开启方式">cache_control 显式标记断点</td><td data-h="如何确认命中">usage.cache_read_input_tokens</td></tr><tr><td data-h="平台">OpenAI</td><td data-h="开启方式">达到最小长度自动缓存</td><td data-h="如何确认命中">usage 中 cached_tokens 字段</td></tr><tr><td data-h="平台">Gemini</td><td data-h="开启方式">隐式缓存与显式缓存 API</td><td data-h="如何确认命中">usage 中缓存 token 统计</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>显式标记缓存</h4><p><b class="k-p">优点</b>可精确控制缓存内容与时机</p><p><b class="k-c">代价</b>需要设计断点，写入可能有溢价</p><p><b class="k-w">适用</b>前缀稳定且重复调用频繁</p></div><div class="trd"><h4>依赖自动缓存</h4><p><b class="k-p">优点</b>零改动</p><p><b class="k-c">代价</b>命中依赖提示结构，难以保证</p><p><b class="k-w">适用</b>OpenAI 等自动缓存平台</p></div><div class="trd"><h4>不使用缓存</h4><p><b class="k-p">优点</b>无需关心结构</p><p><b class="k-c">代价</b>长上下文重复付费</p><p><b class="k-w">适用</b>短提示或前缀每次都不同</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>在系统提示开头插入当前时间或请求 ID</p><p class="fix"><b>✓</b>动态内容移到最后，保持前缀逐字节稳定</p></li><li><p class="bad"><b>✗</b>工具定义顺序或 JSON 序列化每次不同</p><p class="fix"><b>✓</b>固定工具列表顺序与序列化方式</p></li><li><p class="bad"><b>✗</b>前缀低于最小可缓存长度，以为已缓存</p><p class="fix"><b>✓</b>查阅官方最小长度要求，并以 usage 字段验证</p></li><li><p class="bad"><b>✗</b>请求间隔超过缓存存活时间，始终未命中</p><p class="fix"><b>✓</b>根据调用频率选择存活时间，或合并请求</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>提示结构为稳定在前、变化在后</span></label></li><li><label><input type="checkbox"><span>前缀中无时间戳等动态内容</span></label></li><li><label><input type="checkbox"><span>工具定义顺序固定</span></label></li><li><label><input type="checkbox"><span>监控缓存命中率与成本</span></label></li><li><label><input type="checkbox"><span>确认满足最小缓存长度</span></label></li><li><label><input type="checkbox"><span>Agent 多轮对话复用历史前缀</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么提示词缓存只能匹配前缀？</summary><p>Transformer 中每个 token 的 KV 依赖它之前的全部 token；前面任何一个 token 变化，其后所有 KV 都会不同，因此只有从开头起完全一致的部分才能复用。</p></details><details class="iv"><summary>Agent 场景下如何最大化缓存命中？</summary><p>保持系统提示与工具定义固定，对话历史只追加不修改，在最新消息处设置断点使每轮都复用之前的前缀；避免在中途改写早期消息或频繁切换工具集。</p></details><details class="iv"><summary>提示词缓存和应用层响应缓存有何不同？</summary><p>提示词缓存复用的是模型对输入前缀的中间计算，输出仍由模型实时生成，问题不同也能受益；响应缓存直接返回之前的完整答案，只适用于完全相同或语义等价的请求。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.claude.com/en/docs/build-with-claude/prompt-caching" target="_blank" rel="noopener"><b>Anthropic 文档：Prompt caching</b><small>docs.claude.com ↗</small></a></li><li><a href="https://platform.openai.com/docs/guides/prompt-caching" target="_blank" rel="noopener"><b>OpenAI 文档：Prompt caching</b><small>platform.openai.com ↗</small></a></li><li><a href="https://ai.google.dev/gemini-api/docs/caching" target="_blank" rel="noopener"><b>Gemini API：Context caching</b><small>ai.google.dev ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="guardrails.pro.html" rel="prev"><small>‹ 上一个</small><b>🚧 护栏 (Guardrails)</b></a><a class="pn next" href="llm-rate-limits-and-cost.pro.html" rel="next"><small>下一个 ›</small><b>💸 模型限速与成本控制</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

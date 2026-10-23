@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="耦合与内聚 专业模式：耦合（Coupling）衡量模块之间相互依赖的程度，内聚（Cohesion）衡量一个模块内部元素服务于同一目的的程度。这对概念源自 20 世纪 70 年代的结构">
+<title>🎓 耦合与内聚 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="coupling-and-cohesion" data-answer="0" data-prev="layered-architecture.pro.html" data-next="async-await-and-promises.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#arch">🌊 中级 · 🏛️ 架构设计</a><span>›</span><a href="coupling-and-cohesion.html">耦合与内聚</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.161 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="layered-architecture.pro.html" rel="prev"><small>‹ 上一个</small><b>🍰 分层架构</b></a><a class="pn next" href="async-await-and-promises.pro.html" rel="next"><small>下一个 ›</small><b>⏳ 异步编程 (Promise / async-await)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🧲</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🏛️ 架构设计</span><span>⏱ 约 10 分钟</span></div>
+    <h1>耦合与内聚</h1><p class="en">Coupling &amp; Cohesion</p>
+    <div class="hbtns"><a class="prosw back" href="coupling-and-cohesion.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">耦合（Coupling）衡量模块之间相互依赖的程度，内聚（Cohesion）衡量一个模块内部元素服务于同一目的的程度。这对概念源自 20 世纪 70 年代的结构化设计，是评价模块划分质量的核心标准：追求低耦合、高内聚，使变更局部化、模块可独立理解、测试与替换。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>耦合有强弱之分：从共享全局状态、依赖内部实现，到仅通过稳定接口与数据传递，依赖越隐式越强。</p></li><li><span class="sn">2</span><p>内聚也有高低：按功能单一目的组织最高，按时间、偶然拼凑组织最低。</p></li><li><span class="sn">3</span><p>变更影响面是直观度量：改一个需求需要触及的模块越多，说明耦合越高或内聚越低。</p></li><li><span class="sn">4</span><p>可用传入/传出依赖数量等指标量化包的耦合与稳定性，辅助发现「被所有人依赖又频繁变化」的热点。</p></li><li><span class="sn">5</span><p>降低耦合的常用手段：依赖接口而非实现、依赖注入、事件解耦、明确的模块边界与公开 API。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>传入耦合 (Afferent Coupling, Ca)</dt><dd>依赖该模块的外部模块数量。</dd></div><div class="term"><dt>传出耦合 (Efferent Coupling, Ce)</dt><dd>该模块依赖的外部模块数量。</dd></div><div class="term"><dt>不稳定度 (Instability)</dt><dd>I = Ce/(Ca+Ce)，越接近 1 越容易受外部变化影响。</dd></div><div class="term"><dt>共生性 (Connascence)</dt><dd>描述两段代码需一起修改的耦合类型与强度的框架。</dd></div><div class="term"><dt>单一职责原则 (SRP)</dt><dd>一个模块只应有一个引起它变化的原因，与高内聚相通。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>从紧耦合到依赖接口</span><em>python</em><button class="ccopy">复制</button></div><pre><code>from typing import Protocol
+
+# 紧耦合：订单服务直接 new 具体的邮件实现，还读全局配置
+class SmtpMailer:
+    def send(self, to: str, body: str) -&gt; None: ...
+
+class OrderServiceBad:
+    def place(self, user_email: str) -&gt; None:
+        SmtpMailer().send(user_email, &quot;下单成功&quot;)  # 换短信/测试都得改这里
+
+# 低耦合：依赖抽象接口，由外部注入实现
+class Notifier(Protocol):
+    def send(self, to: str, body: str) -&gt; None: ...
+
+class OrderService:
+    def __init__(self, notifier: Notifier):
+        self.notifier = notifier
+    def place(self, user_email: str) -&gt; None:
+        # 高内聚：只做下单相关的事
+        self.notifier.send(user_email, &quot;下单成功&quot;)
+
+class FakeNotifier:            # 测试替身
+    def __init__(self): self.sent = []
+    def send(self, to, body): self.sent.append((to, body))
+
+svc = OrderService(FakeNotifier())
+svc.place(&quot;a@example.com&quot;)</code></pre></div><p class="cnote">依赖接口 + 注入实现后，换通知渠道或写单元测试都无需改动 OrderService。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">耦合类型由强到弱</h3><div class="tw"><table><thead><tr><th>类型</th><th>表现</th><th>改进方向</th></tr></thead><tbody><tr><td data-h="类型">内容耦合</td><td data-h="表现">直接改另一模块的内部数据</td><td data-h="改进方向">通过公开方法访问</td></tr><tr><td data-h="类型">公共耦合</td><td data-h="表现">共享全局变量</td><td data-h="改进方向">显式传参或封装状态</td></tr><tr><td data-h="类型">控制耦合</td><td data-h="表现">传标志位控制对方逻辑分支</td><td data-h="改进方向">拆分为多个专门方法</td></tr><tr><td data-h="类型">数据耦合</td><td data-h="表现">只传递必要的数据</td><td data-h="改进方向">理想状态之一</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>抽象接口解耦</h4><p><b class="k-p">优点</b>可替换、易测试</p><p><b class="k-c">代价</b>间接层增多，阅读跳转多</p><p><b class="k-w">适用</b>实现可能变化或需测试替身</p></div><div class="trd"><h4>直接调用具体实现</h4><p><b class="k-p">优点</b>简单直白</p><p><b class="k-c">代价</b>变更与测试成本高</p><p><b class="k-w">适用</b>稳定且只有一种实现</p></div><div class="trd"><h4>事件/消息解耦</h4><p><b class="k-p">优点</b>发布方不知道订阅方，扩展容易</p><p><b class="k-c">代价</b>调用链不直观，调试与一致性更难</p><p><b class="k-w">适用</b>跨模块副作用多</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>为解耦给每个类都加接口</p><p class="fix"><b>✓</b>只在有多种实现、需测试替身或边界处抽象</p></li><li><p class="bad"><b>✗</b>utils/common 模块无限膨胀</p><p class="fix"><b>✓</b>按领域拆分，杜绝「什么都放」的低内聚模块</p></li><li><p class="bad"><b>✗</b>表面拆成多个微服务，却共享同一数据库表</p><p class="fix"><b>✓</b>按数据所有权划分边界，通过 API 或事件交互</p></li><li><p class="bad"><b>✗</b>让 AI 跨十几个文件做小改动而不审视结构</p><p class="fix"><b>✓</b>把改动面过大视为耦合信号，先重构边界</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>模块职责能用一句话说明</span></label></li><li><label><input type="checkbox"><span>无共享可变全局状态</span></label></li><li><label><input type="checkbox"><span>跨模块通过公开接口访问</span></label></li><li><label><input type="checkbox"><span>无循环依赖</span></label></li><li><label><input type="checkbox"><span>典型需求的改动面较小</span></label></li><li><label><input type="checkbox"><span>核心业务可用测试替身单测</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>如何在代码评审中识别高耦合？</summary><p>看一个需求是否改动大量文件；是否有循环依赖、共享全局状态；是否访问其他模块的内部字段；是否频繁传布尔标志控制对方行为；测试是否必须启动大量真实依赖。</p></details><details class="iv"><summary>微服务一定比单体耦合低吗？</summary><p>不一定。服务若同步链式调用、共享数据库或必须同时发布，就是「分布式单体」，耦合不降反增还多了网络故障。耦合取决于边界划分，而非部署单元数量；模块化单体同样能做到低耦合。</p></details><details class="iv"><summary>高内聚和单一职责原则是什么关系？</summary><p>二者相通：单一职责强调一个模块只有一个变化原因，高内聚强调模块内元素服务于同一目的。职责混杂的模块会因多个原因频繁变化，也意味着内聚低。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://en.wikipedia.org/wiki/Coupling_(computer_programming)" target="_blank" rel="noopener"><b>Wikipedia：Coupling (computer programming)</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Cohesion_(computer_science)" target="_blank" rel="noopener"><b>Wikipedia：Cohesion (computer science)</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://connascence.io/" target="_blank" rel="noopener"><b>Connascence.io</b><small>connascence.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="layered-architecture.pro.html" rel="prev"><small>‹ 上一个</small><b>🍰 分层架构</b></a><a class="pn next" href="async-await-and-promises.pro.html" rel="next"><small>下一个 ›</small><b>⏳ 异步编程 (Promise / async-await)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="内网穿透 (Cloudflare Tunnel / ngrok) 专业模式：内网穿透（Tunneling）指让处于 NAT、防火墙后、没有公网 IP 的本地服务被公网访问的技术。主流方案由本地代理程序主动向公网中继或边缘节点建立出站长连">
+<title>🎓 内网穿透 (Cloudflare Tunnel / ngrok) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="tunneling" data-answer="0" data-prev="dns-record-types.pro.html" data-next="passkeys.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#net">🌊 中级 · 🌐 网络与 API</a><span>›</span><a href="tunneling.html">内网穿透 (Cloudflare Tunnel / ngrok)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.193 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="dns-record-types.pro.html" rel="prev"><small>‹ 上一个</small><b>📇 DNS 记录类型 (A / CNAME / MX / TXT)</b></a><a class="pn next" href="passkeys.pro.html" rel="next"><small>下一个 ›</small><b>🗝️ 通行密钥 (Passkey)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🚇</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>内网穿透 (Cloudflare Tunnel / ngrok)</h1><p class="en">Tunneling</p>
+    <div class="hbtns"><a class="prosw back" href="tunneling.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">内网穿透（Tunneling）指让处于 NAT、防火墙后、没有公网 IP 的本地服务被公网访问的技术。主流方案由本地代理程序主动向公网中继或边缘节点建立出站长连接，外部请求先到达中继，再经该连接回传到本地端口。典型工具有 Cloudflare Tunnel（cloudflared）、ngrok、frp，以及 SSH 远程端口转发。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>本地运行代理客户端（如 cloudflared、ngrok agent），它向服务商边缘或自建中继发起出站 TLS 连接，无需在路由器上开放入站端口。</p></li><li><span class="sn">2</span><p>服务商为该隧道分配公网主机名（随机子域或绑定的自有域名），并在边缘终止 TLS。</p></li><li><span class="sn">3</span><p>外部用户访问该主机名，边缘根据主机名找到对应隧道，把 HTTP 请求经已建立的长连接转发给本地代理。</p></li><li><span class="sn">4</span><p>本地代理把请求转给配置的源地址（如 http://localhost:3000），再把响应原路返回。</p></li><li><span class="sn">5</span><p>可在边缘叠加访问控制（如 Cloudflare Access 身份验证、IP 限制），避免隧道成为未授权入口。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>NAT 穿越 (NAT Traversal)</dt><dd>让位于地址转换设备后的主机可被外部访问的技术总称。</dd></div><div class="term"><dt>出站连接 (Outbound-only)</dt><dd>隧道由内向外建立，因此不需要开放入站防火墙端口。</dd></div><div class="term"><dt>Quick Tunnel</dt><dd>cloudflared 无需账号即可生成 trycloudflare.com 临时地址的模式。</dd></div><div class="term"><dt>反向隧道 (Reverse Tunnel)</dt><dd>由内网主动连到外部，再由外部把流量反向送回内网。</dd></div><div class="term"><dt>frp</dt><dd>开源的自建内网穿透工具，需要一台有公网 IP 的服务器。</dd></div><div class="term"><dt>零信任访问 (Zero Trust Access)</dt><dd>在隧道入口按用户身份而非网络位置授权访问。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>三种方式暴露本地 3000 端口</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 方式一：Cloudflare 临时隧道（无需账号，地址随机且不保证可用性）
+cloudflared tunnel --url http://localhost:3000
+# 输出类似 https://&lt;random&gt;.trycloudflare.com
+
+# 方式二：ngrok（需注册并配置 authtoken）
+ngrok config add-authtoken &lt;YOUR_TOKEN&gt;
+ngrok http 3000
+
+# 方式三：SSH 远程端口转发（需要一台公网 VPS）
+# 把 VPS 的 8080 转到本机 3000；VPS 的 sshd 需允许 GatewayPorts
+ssh -N -R 0.0.0.0:8080:localhost:3000 user@203.0.113.10
+
+# 长期使用：cloudflared 命名隧道 + 自有域名
+cloudflared tunnel login
+cloudflared tunnel create myapp
+cloudflared tunnel route dns myapp dev.example.com
+cloudflared tunnel run --url http://localhost:3000 myapp</code></pre></div><p class="cnote">临时演示用 Quick Tunnel 或 ngrok；长期用命名隧道绑定自有域名并加访问控制。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">穿透方案对比</h3><div class="tw"><table><thead><tr><th>方案</th><th>是否需公网服务器</th><th>优点</th><th>注意事项</th></tr></thead><tbody><tr><td data-h="方案">Cloudflare Tunnel</td><td data-h="是否需公网服务器">否</td><td data-h="优点">免费额度、可接入 Access 鉴权</td><td data-h="注意事项">需域名托管在 Cloudflare（命名隧道）</td></tr><tr><td data-h="方案">ngrok</td><td data-h="是否需公网服务器">否</td><td data-h="优点">上手快，带请求检查面板</td><td data-h="注意事项">免费版有限制，以官方为准</td></tr><tr><td data-h="方案">frp 自建</td><td data-h="是否需公网服务器">是</td><td data-h="优点">完全可控、协议灵活</td><td data-h="注意事项">需自行维护与加固服务器</td></tr><tr><td data-h="方案">SSH -R</td><td data-h="是否需公网服务器">是</td><td data-h="优点">无需额外软件</td><td data-h="注意事项">稳定性需配合 autossh 等</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>托管隧道（Cloudflare/ngrok）</h4><p><b class="k-p">优点</b>零运维，自动 HTTPS</p><p><b class="k-c">代价</b>流量经第三方，受其策略约束</p><p><b class="k-w">适用</b>演示、Webhook 调试、小项目</p></div><div class="trd"><h4>自建 frp / SSH 中继</h4><p><b class="k-p">优点</b>数据路径可控，可支持 TCP/UDP</p><p><b class="k-c">代价</b>需要 VPS 与安全维护</p><p><b class="k-w">适用</b>有服务器、需非 HTTP 协议</p></div><div class="trd"><h4>直接公网 IP + 端口映射</h4><p><b class="k-p">优点</b>无中间层</p><p><b class="k-c">代价</b>暴露家庭网络，安全风险高</p><p><b class="k-w">适用</b>一般不推荐</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>把开发服务器（含调试模式）直接暴露公网</p><p class="fix"><b>✓</b>只暴露需要的服务，关闭调试模式，加身份验证</p></li><li><p class="bad"><b>✗</b>临时隧道长期挂着当生产入口</p><p class="fix"><b>✓</b>生产使用正式部署；长期隧道用命名隧道加访问策略</p></li><li><p class="bad"><b>✗</b>本地服务只信任 localhost 来源，经隧道后被绕过</p><p class="fix"><b>✓</b>经代理后所有请求都像来自本机，不要以来源地址作为鉴权依据</p></li><li><p class="bad"><b>✗</b>调试 Webhook 时把签名校验关掉</p><p class="fix"><b>✓</b>保留签名校验，用服务商提供的测试密钥</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>只暴露必要的端口与路径</span></label></li><li><label><input type="checkbox"><span>隧道入口启用身份验证或 IP 限制</span></label></li><li><label><input type="checkbox"><span>用完立即关闭临时隧道</span></label></li><li><label><input type="checkbox"><span>关闭框架调试模式</span></label></li><li><label><input type="checkbox"><span>检查应用不以 localhost 来源做信任判断</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>隧道为什么不需要开放入站端口？</summary><p>因为连接方向是由内向外：本地代理主动连接服务商边缘并保持长连接，防火墙和 NAT 只看到普通的出站流量。外部请求到达边缘后，复用这条已建立的连接下发到本地，因此路由器无需端口映射。</p></details><details class="iv"><summary>暴露本地服务到公网有哪些安全风险？</summary><p>开发服务器常开启调试接口、热更新端点和详细报错，可能泄露源码与密钥；本地应用若把来自 127.0.0.1 的请求视为可信，经隧道后外部请求同样显示为本机来源。应加认证、关调试、限时使用。</p></details><details class="iv"><summary>Webhook 开发为什么常用隧道？</summary><p>支付、GitHub 等平台需要把事件推送到公网 HTTPS 地址，本地开发机无法直接接收。隧道提供临时公网地址，开发者可在本地断点调试回调逻辑；部分工具还能查看和重放请求。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/" target="_blank" rel="noopener"><b>Cloudflare Tunnel 文档</b><small>developers.cloudflare.com ↗</small></a></li><li><a href="https://ngrok.com/docs" target="_blank" rel="noopener"><b>ngrok 文档</b><small>ngrok.com ↗</small></a></li><li><a href="https://github.com/fatedier/frp" target="_blank" rel="noopener"><b>frp (GitHub)</b><small>github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="dns-record-types.pro.html" rel="prev"><small>‹ 上一个</small><b>📇 DNS 记录类型 (A / CNAME / MX / TXT)</b></a><a class="pn next" href="passkeys.pro.html" rel="next"><small>下一个 ›</small><b>🗝️ 通行密钥 (Passkey)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

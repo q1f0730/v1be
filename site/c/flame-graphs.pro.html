@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="火焰图 专业模式：火焰图（Flame Graph）是 Brendan Gregg 提出的剖析数据可视化方法，把大量采样到的调用栈合并后绘制成层叠矩形：纵轴是调用栈深度，横轴宽度表">
+<title>🎓 火焰图 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="flame-graphs" data-answer="0" data-prev="profiling.pro.html" data-next="infrastructure-as-code.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#devops">🔮 高级 · 🔭 可观测与交付</a><span>›</span><a href="flame-graphs.html">火焰图</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.323 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="profiling.pro.html" rel="prev"><small>‹ 上一个</small><b>🩺 运行时性能剖析</b></a><a class="pn next" href="infrastructure-as-code.pro.html" rel="next"><small>下一个 ›</small><b>📐 基础设施即代码 (IaC)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔥</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>火焰图</h1><p class="en">Flame Graphs</p>
+    <div class="hbtns"><a class="prosw back" href="flame-graphs.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">火焰图（Flame Graph）是 Brendan Gregg 提出的剖析数据可视化方法，把大量采样到的调用栈合并后绘制成层叠矩形：纵轴是调用栈深度，横轴宽度表示该函数在样本中出现的比例，即消耗资源的多少。横轴按字母排序而非时间顺序。它让人一眼看出最宽的热点路径，是 CPU、内存和阻塞剖析的通用展示形式。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>剖析器采集大量调用栈样本，每个样本是从入口函数到当前执行函数的一条路径。</p></li><li><span class="sn">2</span><p>把相同调用栈合并计数，形成折叠格式：一行一个栈，函数用分号连接，末尾是计数。</p></li><li><span class="sn">3</span><p>绘图时每个函数画成矩形，宽度与包含它的样本数成正比，子调用叠在上方。</p></li><li><span class="sn">4</span><p>顶层边缘代表正在 CPU 上执行的函数，又宽又平的顶部就是自身耗时热点。</p></li><li><span class="sn">5</span><p>通过点击放大、搜索函数名，或对比两次剖析的差分火焰图找回归。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>折叠栈 (Folded Stacks)</dt><dd>每行一个以分号分隔的调用栈及其样本计数的中间格式。</dd></div><div class="term"><dt>冰柱图 (Icicle Graph)</dt><dd>上下倒置的火焰图，根在顶部。</dd></div><div class="term"><dt>差分火焰图 (Differential Flame Graph)</dt><dd>对比两次剖析，用颜色标出变多或变少的部分。</dd></div><div class="term"><dt>Off-CPU 火焰图</dt><dd>展示线程阻塞等待而非执行时的调用栈。</dd></div><div class="term"><dt>平顶 (Plateau)</dt><dd>顶部又宽又平的矩形，表示函数自身消耗大量资源。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>perf 生成 CPU 火焰图</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 依赖 Brendan Gregg 的 FlameGraph 脚本
+git clone https://github.com/brendangregg/FlameGraph.git
+
+# 1. 以 99Hz 对全系统采样 30 秒，记录调用栈
+sudo perf record -F 99 -a -g -- sleep 30
+
+# 2. 导出样本并折叠成一行一个栈
+sudo perf script &gt; out.perf
+./FlameGraph/stackcollapse-perf.pl out.perf &gt; out.folded
+
+# 3. 生成可交互的 SVG，用浏览器打开可点击放大与搜索
+./FlameGraph/flamegraph.pl out.folded &gt; cpu-flame.svg
+
+# 折叠格式示例：main;handle_request;json_encode 1234</code></pre></div><p class="cnote">perf 采样、折叠、绘图三步生成火焰图；py-spy、pprof 等工具也能直接输出。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">火焰图读法</h3><div class="tw"><table><thead><tr><th>视觉特征</th><th>含义</th><th>通常的动作</th></tr></thead><tbody><tr><td data-h="视觉特征">矩形很宽</td><td data-h="含义">该函数及子调用占用多</td><td data-h="通常的动作">优先关注</td></tr><tr><td data-h="视觉特征">顶部平而宽</td><td data-h="含义">自身代码耗时高</td><td data-h="通常的动作">优化该函数逻辑</td></tr><tr><td data-h="视觉特征">栈很深很窄</td><td data-h="含义">调用层次多但耗时少</td><td data-h="通常的动作">通常可忽略</td></tr><tr><td data-h="视觉特征">颜色</td><td data-h="含义">多为随机或按类型区分</td><td data-h="通常的动作">一般不代表耗时</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>On-CPU 火焰图</h4><p><b class="k-p">优点</b>直接显示计算热点</p><p><b class="k-c">代价</b>看不到等待时间</p><p><b class="k-w">适用</b>CPU 使用率高</p></div><div class="trd"><h4>Off-CPU 火焰图</h4><p><b class="k-p">优点</b>揭示阻塞与等待来源</p><p><b class="k-c">代价</b>采集更复杂，开销更高</p><p><b class="k-w">适用</b>CPU 低但延迟高</p></div><div class="trd"><h4>差分火焰图</h4><p><b class="k-p">优点</b>快速发现版本回归</p><p><b class="k-c">代价</b>需要两次可比的剖析</p><p><b class="k-w">适用</b>版本对比、优化验证</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>把横轴当时间轴，以为左边先执行。</p><p class="fix"><b>✓</b>横轴按函数名排序合并，只有宽度有意义。</p></li><li><p class="bad"><b>✗</b>缺少符号或帧指针，火焰图满是 unknown 或栈被截断。</p><p class="fix"><b>✓</b>安装调试符号，开启帧指针或使用 DWARF 栈展开。</p></li><li><p class="bad"><b>✗</b>采样时间太短，热点结论不稳定。</p><p class="fix"><b>✓</b>在代表性负载下采足样本。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>火焰图来自代表性负载</span></label></li><li><label><input type="checkbox"><span>符号完整，栈没有截断</span></label></li><li><label><input type="checkbox"><span>先区分 On-CPU 还是 Off-CPU 问题</span></label></li><li><label><input type="checkbox"><span>优化后用差分火焰图验证</span></label></li><li><label><input type="checkbox"><span>关注最宽的平顶而非最高的栈</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>火焰图的横轴和纵轴分别代表什么？</summary><p>纵轴是调用栈深度，下层调用上层；横轴宽度代表该函数出现在样本中的比例，即资源消耗占比。横轴按字母顺序排列以便合并相同栈，不代表时间先后，这一点最容易误读。</p></details><details class="iv"><summary>火焰图中怎么找优化点？</summary><p>先找顶部又宽又平的矩形，它们是自身耗时最多的函数；再沿着宽的塔往下看是哪个业务调用路径引起的；可以搜索特定函数名查看其总占比，并用差分火焰图对比优化前后。</p></details><details class="iv"><summary>为什么有时火焰图满是 unknown？</summary><p>剖析器无法解析函数名或展开调用栈，常见原因是缺少调试符号、编译时省略了帧指针、JIT 语言未输出符号映射，或容器中找不到对应二进制。需要补充符号、开启帧指针或使用语言专用剖析器。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.brendangregg.com/flamegraphs.html" target="_blank" rel="noopener"><b>Brendan Gregg：Flame Graphs</b><small>brendangregg.com ↗</small></a></li><li><a href="https://github.com/brendangregg/FlameGraph" target="_blank" rel="noopener"><b>FlameGraph 工具（GitHub）</b><small>github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="profiling.pro.html" rel="prev"><small>‹ 上一个</small><b>🩺 运行时性能剖析</b></a><a class="pn next" href="infrastructure-as-code.pro.html" rel="next"><small>下一个 ›</small><b>📐 基础设施即代码 (IaC)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

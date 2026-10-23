@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="缓存命中率 专业模式：缓存命中率是命中次数占总访问次数的比例：命中数 ÷（命中数 + 未命中数）。它是衡量缓存有效性的核心指标，直接决定后端负载与平均延迟。适用于应用缓存（Redis">
+<title>🎓 缓存命中率 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="cache-hit-ratio" data-answer="0" data-prev="cache-invalidation.pro.html" data-next="cache-warming.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#cache">🔮 高级 · ⚡ 缓存与队列</a><span>›</span><a href="cache-hit-ratio.html">缓存命中率</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.273 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="cache-invalidation.pro.html" rel="prev"><small>‹ 上一个</small><b>🧽 缓存失效与更新策略</b></a><a class="pn next" href="cache-warming.pro.html" rel="next"><small>下一个 ›</small><b>🥟 缓存预热</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🎯</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>⚡ 缓存与队列</span><span>⏱ 约 10 分钟</span></div>
+    <h1>缓存命中率</h1><p class="en">Cache Hit Ratio</p>
+    <div class="hbtns"><a class="prosw back" href="cache-hit-ratio.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">缓存命中率是命中次数占总访问次数的比例：命中数 ÷（命中数 + 未命中数）。它是衡量缓存有效性的核心指标，直接决定后端负载与平均延迟。适用于应用缓存（Redis、Memcached）、CDN 和数据库缓冲池。要结合未命中原因、按键空间拆分和字节命中率一起看。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>每次访问缓存记一次命中或未命中，按时间窗口（如每分钟）计算比例并上报。</p></li><li><span class="sn">2</span><p>平均延迟 ≈ 命中率 × 缓存延迟 +（1 − 命中率）× 回源延迟，未命中代价通常高出几个数量级。</p></li><li><span class="sn">3</span><p>回源量 = 总请求 ×（1 − 命中率），命中率从 99% 降到 98%，回源量翻倍。</p></li><li><span class="sn">4</span><p>未命中原因可分为冷启动、容量不足被淘汰、主动失效、键本身不可缓存。</p></li><li><span class="sn">5</span><p>访问分布多呈长尾，少量热点键贡献大部分命中，容量增加的边际收益递减。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>命中 / 未命中 (Hit / Miss)</dt><dd>请求的数据在缓存中找到或找不到。</dd></div><div class="term"><dt>字节命中率 (Byte Hit Ratio)</dt><dd>按传输字节计算的命中率，CDN 常用。</dd></div><div class="term"><dt>冷未命中 (Cold Miss)</dt><dd>数据首次被访问、缓存中尚未存在。</dd></div><div class="term"><dt>容量未命中 (Capacity Miss)</dt><dd>缓存空间不足、数据被淘汰后造成的未命中。</dd></div><div class="term"><dt>keyspace_hits / misses</dt><dd>Redis INFO 中的命中与未命中计数。</dd></div><div class="term"><dt>工作集 (Working Set)</dt><dd>一段时间内被频繁访问的数据集合。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Redis 命中率与淘汰情况</span><em>bash</em><button class="ccopy">复制</button></div><pre><code>#!/usr/bin/env bash
+# 1. 计算自上次重置以来的整体命中率
+redis-cli INFO stats | tr -d &#x27;\r&#x27; | awk -F: &#x27;
+  /^keyspace_hits/   {h=$2}
+  /^keyspace_misses/ {m=$2}
+  /^evicted_keys/    {e=$2}
+  END { printf &quot;hits=%d misses=%d hit_ratio=%.2f%% evicted=%d\n&quot;, h, m, h*100/(h+m), e }&#x27;
+
+# 2. 内存使用与上限，判断是否因容量不足而淘汰
+redis-cli INFO memory | grep -E &#x27;^(used_memory_human|maxmemory_human):&#x27;
+
+# 3. 重置统计计数，便于观察某次调整后的效果
+# redis-cli CONFIG RESETSTAT
+
+# 4. 抽样找出访问频率最高的键（需 LFU 淘汰策略）
+redis-cli --hotkeys
+
+# 注意：INFO 只给全局命中率；按业务前缀统计需在应用侧埋点
+# 如 cache_requests_total{prefix=&quot;user&quot;, result=&quot;hit&quot;}</code></pre></div><p class="cnote">evicted_keys 增长说明有容量未命中；按业务前缀拆分命中率需应用侧埋点。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">命中率变化对回源的影响</h3><div class="tw"><table><thead><tr><th>命中率</th><th>每 100 万请求回源</th><th>相对 99% 的回源量</th></tr></thead><tbody><tr><td data-h="命中率">90%</td><td data-h="每 100 万请求回源">100,000</td><td data-h="相对 99% 的回源量">10 倍</td></tr><tr><td data-h="命中率">95%</td><td data-h="每 100 万请求回源">50,000</td><td data-h="相对 99% 的回源量">5 倍</td></tr><tr><td data-h="命中率">99%</td><td data-h="每 100 万请求回源">10,000</td><td data-h="相对 99% 的回源量">1 倍</td></tr><tr><td data-h="命中率">99.9%</td><td data-h="每 100 万请求回源">1,000</td><td data-h="相对 99% 的回源量">0.1 倍</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>加大缓存容量</h4><p><b class="k-p">优点</b>直接减少容量未命中</p><p><b class="k-c">代价</b>长尾下边际收益递减，成本上升</p><p><b class="k-w">适用</b>evicted_keys 持续增长</p></div><div class="trd"><h4>延长 TTL</h4><p><b class="k-p">优点</b>命中率提升明显</p><p><b class="k-c">代价</b>数据更旧，需配合主动失效</p><p><b class="k-w">适用</b>数据变化慢</p></div><div class="trd"><h4>改进缓存键设计</h4><p><b class="k-p">优点</b>合并重复，提高复用</p><p><b class="k-c">代价</b>需要改代码</p><p><b class="k-w">适用</b>键含时间戳、随机参数等</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>只看全局命中率，掩盖某类关键数据命中极低</p><p class="fix"><b>✓</b>按键前缀或业务类型拆分统计</p></li><li><p class="bad"><b>✗</b>缓存不存在的数据，空查询永远未命中</p><p class="fix"><b>✓</b>缓存空值（短 TTL）或使用布隆过滤器</p></li><li><p class="bad"><b>✗</b>缓存键包含时间戳、追踪 ID 等易变参数</p><p class="fix"><b>✓</b>规范化键，只保留影响结果的参数</p></li><li><p class="bad"><b>✗</b>只追求命中率，忽略数据新鲜度</p><p class="fix"><b>✓</b>命中率与过期数据比例一起设定目标</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>命中率按业务前缀拆分监控</span></label></li><li><label><input type="checkbox"><span>淘汰数与内存使用有告警</span></label></li><li><label><input type="checkbox"><span>缓存键已规范化</span></label></li><li><label><input type="checkbox"><span>空结果有缓存策略</span></label></li><li><label><input type="checkbox"><span>CDN 同时看请求与字节命中率</span></label></li><li><label><input type="checkbox"><span>命中率下降会触发排查</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>命中率 95% 和 99% 差别大吗？</summary><p>非常大。看未命中率：5% 对 1%，回源量相差 5 倍。若后端只能承受 1% 的回源，命中率跌到 95% 就可能压垮数据库。所以要盯住未命中率与回源 QPS，而不仅是看起来都很高的命中率。</p></details><details class="iv"><summary>命中率突然下降，如何排查？</summary><p>看是否有发布改了缓存键或序列化格式；evicted_keys 是否上升（容量不足）；是否有批量失效或缓存节点重启（冷启动）；流量构成是否变化（爬虫访问长尾数据）；TTL 是否被改短。</p></details><details class="iv"><summary>CDN 的请求命中率和字节命中率有何不同？</summary><p>请求命中率按请求数计算，小文件多时容易很高；字节命中率按流量计算，更直接对应回源带宽与费用。大文件未命中会显著拉低字节命中率，因此优化成本时更应关注后者。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://redis.io/docs/latest/commands/info/" target="_blank" rel="noopener"><b>Redis: INFO 命令</b><small>redis.io ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Cache_replacement_policies" target="_blank" rel="noopener"><b>Wikipedia: Cache replacement policies</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Cache_(computing)" target="_blank" rel="noopener"><b>Wikipedia: Cache (computing)</b><small>en.wikipedia.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="cache-invalidation.pro.html" rel="prev"><small>‹ 上一个</small><b>🧽 缓存失效与更新策略</b></a><a class="pn next" href="cache-warming.pro.html" rel="next"><small>下一个 ›</small><b>🥟 缓存预热</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

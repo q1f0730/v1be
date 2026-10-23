@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="打包工具 (Vite / webpack) 专业模式：打包工具（Bundler）从入口文件出发解析模块依赖图，对 TypeScript、JSX、CSS 等进行转换，再经摇树、代码分割、压缩与文件名哈希，输出浏览器可">
+<title>🎓 打包工具 (Vite / webpack) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="bundler" data-answer="0" data-prev="server-side-rendering.pro.html" data-next="accessibility.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#fe">🌊 中级 · 🎨 前端工程</a><span>›</span><a href="bundler.html">打包工具 (Vite / webpack)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.177 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="server-side-rendering.pro.html" rel="prev"><small>‹ 上一个</small><b>🍱 服务端渲染 (SSR)</b></a><a class="pn next" href="accessibility.pro.html" rel="next"><small>下一个 ›</small><b>♿ 无障碍 (a11y)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📦</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🎨 前端工程</span><span>⏱ 约 10 分钟</span></div>
+    <h1>打包工具 (Vite / webpack)</h1><p class="en">Bundler</p>
+    <div class="hbtns"><a class="prosw back" href="bundler.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">打包工具（Bundler）从入口文件出发解析模块依赖图，对 TypeScript、JSX、CSS 等进行转换，再经摇树、代码分割、压缩与文件名哈希，输出浏览器可高效加载的静态资源。Vite、webpack、esbuild、Rollup、Rspack 是代表。它属于前端构建层，同时提供带热更新的开发服务器。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>从入口开始解析 import，按解析规则定位模块（node_modules、路径别名），构建依赖图。</p></li><li><span class="sn">2</span><p>对每个模块应用转换：TS/JSX 编译、CSS 处理、资源导入、环境变量替换。</p></li><li><span class="sn">3</span><p>生产构建做摇树移除未使用导出、按动态 import 分割代码块、压缩并生成带内容哈希的文件名。</p></li><li><span class="sn">4</span><p>开发模式下，Vite 利用浏览器原生 ES 模块按需编译，并用 esbuild 预构建依赖；webpack 打包后提供服务。</p></li><li><span class="sn">5</span><p>热模块替换（HMR）在文件变化时只替换受影响模块，保留页面状态。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>依赖图 (Module Graph)</dt><dd>模块间导入关系构成的图，是打包与分割的基础。</dd></div><div class="term"><dt>摇树 (Tree Shaking)</dt><dd>基于 ES 模块静态分析移除未被使用的代码。</dd></div><div class="term"><dt>代码分割 (Code Splitting)</dt><dd>把代码拆成多个块，按需或并行加载。</dd></div><div class="term"><dt>HMR (Hot Module Replacement)</dt><dd>开发时不刷新整页即替换已修改的模块。</dd></div><div class="term"><dt>Source Map</dt><dd>把压缩后代码映射回源码，便于调试与错误定位。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Vite 配置与体积分析</span><em>typescript</em><button class="ccopy">复制</button></div><pre><code>// vite.config.ts
+// npm i -D vite @vitejs/plugin-react rollup-plugin-visualizer
+import { defineConfig } from &quot;vite&quot;;
+import react from &quot;@vitejs/plugin-react&quot;;
+import { visualizer } from &quot;rollup-plugin-visualizer&quot;;
+
+export default defineConfig({
+  plugins: [
+    react(),
+    visualizer({ filename: &quot;stats.html&quot; }), // build 后生成体积分析图
+  ],
+  resolve: {
+    alias: { &quot;@&quot;: &quot;/src&quot; },               // 路径别名，需与 tsconfig 一致
+  },
+  build: {
+    sourcemap: true,                        // 便于线上错误定位（注意是否公开）
+    rollupOptions: {
+      output: {
+        manualChunks: { react: [&quot;react&quot;, &quot;react-dom&quot;] }, // 第三方库单独成块
+      },
+    },
+  },
+});
+// 注意：只有 VITE_ 前缀的环境变量会暴露给前端代码（import.meta.env）</code></pre></div><p class="cnote">先用可视化找出最大依赖再优化；前端可见的环境变量都会进入产物，不能放密钥。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">主流打包工具对比</h3><div class="tw"><table><thead><tr><th>工具</th><th>特点</th><th>适合</th></tr></thead><tbody><tr><td data-h="工具">Vite</td><td data-h="特点">开发基于原生 ESM，启动快</td><td data-h="适合">新项目首选之一</td></tr><tr><td data-h="工具">webpack</td><td data-h="特点">生态与配置能力最全</td><td data-h="适合">存量大型项目</td></tr><tr><td data-h="工具">esbuild</td><td data-h="特点">Go 实现，极快，功能精简</td><td data-h="适合">库构建、工具链底层</td></tr><tr><td data-h="工具">Rspack</td><td data-h="特点">Rust 实现，兼容 webpack 生态</td><td data-h="适合">想提速的 webpack 项目</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>框架内置构建（Next.js 等）</h4><p><b class="k-p">优点</b>零配置、与框架深度集成</p><p><b class="k-c">代价</b>定制受限</p><p><b class="k-w">适用</b>使用全栈框架时</p></div><div class="trd"><h4>Vite</h4><p><b class="k-p">优点</b>开发体验好、配置简洁</p><p><b class="k-c">代价</b>极复杂的定制可能需插件开发</p><p><b class="k-w">适用</b>SPA、组件库、大多数新项目</p></div><div class="trd"><h4>webpack</h4><p><b class="k-p">优点</b>高度可配置、插件生态大</p><p><b class="k-c">代价</b>配置复杂、较慢</p><p><b class="k-w">适用</b>历史项目或特殊构建需求</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>把 API 密钥放在 VITE_ 变量中</p><p class="fix"><b>✓</b>前端变量全部公开可见，密钥只留在服务端</p></li><li><p class="bad"><b>✗</b>开发环境正常、build 失败（大小写、循环依赖）</p><p class="fix"><b>✓</b>CI 中执行 build，保持导入路径大小写一致</p></li><li><p class="bad"><b>✗</b>整库导入导致体积膨胀</p><p class="fix"><b>✓</b>按需导入或换用支持摇树的 ES 模块版本</p></li><li><p class="bad"><b>✗</b>生产公开完整 source map 暴露源码</p><p class="fix"><b>✓</b>上传到错误监控平台后不随站点公开，或用 hidden source map</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>CI 中执行生产构建</span></label></li><li><label><input type="checkbox"><span>已分析并控制包体积</span></label></li><li><label><input type="checkbox"><span>前端环境变量不含密钥</span></label></li><li><label><input type="checkbox"><span>静态资源带内容哈希</span></label></li><li><label><input type="checkbox"><span>source map 处理策略明确</span></label></li><li><label><input type="checkbox"><span>路径别名与 tsconfig 一致</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Vite 开发服务器为什么启动快？</summary><p>它不在启动时打包整个应用，而是利用浏览器原生 ES 模块，按需在请求时编译源码；对依赖用 esbuild 预构建并缓存。因此启动时间与项目规模基本无关，HMR 也只需处理变更模块。</p></details><details class="iv"><summary>摇树为什么需要 ES 模块？</summary><p>ES 模块的 import/export 是静态的，打包工具可在构建时确定哪些导出被使用；CommonJS 的 require 是运行时动态求值，难以静态分析。另外有副作用的模块需在 package.json 的 sideEffects 中声明，否则不能安全删除。</p></details><details class="iv"><summary>如何系统地减小前端包体积？</summary><p>可视化分析找出大依赖；路由级与组件级代码分割；替换臃肿库、按需导入；开启压缩与现代语法输出；图片字体单独优化；设置体积预算并在 CI 中检查。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://vite.dev/guide/" target="_blank" rel="noopener"><b>Vite 官方指南</b><small>vite.dev ↗</small></a></li><li><a href="https://webpack.js.org/concepts/" target="_blank" rel="noopener"><b>webpack 文档：Concepts</b><small>webpack.js.org ↗</small></a></li><li><a href="https://esbuild.github.io/" target="_blank" rel="noopener"><b>esbuild 官网</b><small>esbuild.github.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="server-side-rendering.pro.html" rel="prev"><small>‹ 上一个</small><b>🍱 服务端渲染 (SSR)</b></a><a class="pn next" href="accessibility.pro.html" rel="next"><small>下一个 ›</small><b>♿ 无障碍 (a11y)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

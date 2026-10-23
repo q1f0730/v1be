@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="JS 事件循环 (Event Loop) 专业模式：事件循环（Event Loop）是 JavaScript 运行时调度代码执行的机制。JS 在单个主线程上运行，事件循环不断从任务队列取出任务执行，每个任务结束后">
+<title>🎓 JS 事件循环 (Event Loop) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="event-loop" data-answer="0" data-prev="browser-rendering-pipeline.pro.html" data-next="optimistic-ui.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#fe">🔮 高级 · 🎨 前端工程</a><span>›</span><a href="event-loop.html">JS 事件循环 (Event Loop)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.378 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="browser-rendering-pipeline.pro.html" rel="prev"><small>‹ 上一个</small><b>🖌️ 浏览器渲染流程 (重排 / 重绘)</b></a><a class="pn next" href="optimistic-ui.pro.html" rel="next"><small>下一个 ›</small><b>😊 乐观更新 (Optimistic UI)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔄</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🎨 前端工程</span><span>⏱ 约 10 分钟</span></div>
+    <h1>JS 事件循环 (Event Loop)</h1><p class="en">Event Loop</p>
+    <div class="hbtns"><a class="prosw back" href="event-loop.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">事件循环（Event Loop）是 JavaScript 运行时调度代码执行的机制。JS 在单个主线程上运行，事件循环不断从任务队列取出任务执行，每个任务结束后清空微任务队列，在浏览器中还会择机进行渲染。它属于语言运行时层（浏览器由 HTML 规范定义，Node.js 由 libuv 实现），决定异步代码的执行顺序与页面响应性。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>同步代码在调用栈上执行，直到栈清空，期间无法被其他 JS 打断。</p></li><li><span class="sn">2</span><p>定时器、网络、I/O、用户事件完成后，其回调作为任务（宏任务）进入对应任务队列。</p></li><li><span class="sn">3</span><p>每执行完一个任务，运行时清空微任务队列：Promise 回调、queueMicrotask、MutationObserver 等，新加入的微任务也在本轮执行。</p></li><li><span class="sn">4</span><p>浏览器在任务之间判断是否需要渲染，需要时执行 requestAnimationFrame 回调、样式、布局与绘制。</p></li><li><span class="sn">5</span><p>Node.js 的事件循环分为 timers、poll、check 等阶段；process.nextTick 队列优先于 Promise 微任务执行。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>调用栈 (Call Stack)</dt><dd>记录当前正在执行的函数调用，栈空时才处理下一个任务。</dd></div><div class="term"><dt>任务 / 宏任务 (Task)</dt><dd>由 setTimeout、事件、消息等产生的回调，每轮循环取一个执行。</dd></div><div class="term"><dt>微任务 (Microtask)</dt><dd>Promise.then 等回调，在当前任务结束后、渲染前全部执行。</dd></div><div class="term"><dt>requestAnimationFrame</dt><dd>在下一次渲染前调用的回调，适合视觉更新。</dd></div><div class="term"><dt>长任务 (Long Task)</dt><dd>超过 50ms 的任务，阻塞输入响应与渲染。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>判断执行顺序</span><em>javascript</em><button class="ccopy">复制</button></div><pre><code>console.log(&quot;1 同步&quot;);
+
+setTimeout(() =&gt; console.log(&quot;5 宏任务 setTimeout&quot;), 0);
+
+Promise.resolve()
+  .then(() =&gt; console.log(&quot;3 微任务 then&quot;))
+  .then(() =&gt; console.log(&quot;4 微任务链中的下一个 then&quot;));
+
+queueMicrotask(() =&gt; console.log(&quot;3.5 微任务 queueMicrotask&quot;));
+
+(async () =&gt; {
+  console.log(&quot;2 async 函数中 await 之前是同步&quot;);
+  await null;
+  console.log(&quot;3.6 await 之后进入微任务&quot;);
+})();
+
+// 实际输出顺序：1 → 2 → 3 → 3.5 → 3.6 → 4 → 5
+// 规则：同步代码 → 清空微任务（按入队顺序）→ 下一个宏任务</code></pre></div><p class="cnote">微任务按入队顺序执行，链式 then 在前一个执行后才入队；setTimeout 最后。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见异步 API 归类</h3><div class="tw"><table><thead><tr><th>API</th><th>队列类型</th><th>执行时机</th></tr></thead><tbody><tr><td data-h="API">Promise.then / await 之后</td><td data-h="队列类型">微任务</td><td data-h="执行时机">当前任务结束后立即</td></tr><tr><td data-h="API">queueMicrotask</td><td data-h="队列类型">微任务</td><td data-h="执行时机">同上</td></tr><tr><td data-h="API">setTimeout / setInterval</td><td data-h="队列类型">任务（宏任务）</td><td data-h="执行时机">延时到期后排队</td></tr><tr><td data-h="API">requestAnimationFrame</td><td data-h="队列类型">渲染步骤</td><td data-h="执行时机">下一帧绘制前</td></tr><tr><td data-h="API">process.nextTick（Node）</td><td data-h="队列类型">nextTick 队列</td><td data-h="执行时机">先于 Promise 微任务</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>拆分长任务（分块 + 让出）</h4><p><b class="k-p">优点</b>保持页面响应</p><p><b class="k-c">代价</b>总耗时略增，代码变复杂</p><p><b class="k-w">适用</b>主线程必须处理的大量计算</p></div><div class="trd"><h4>Web Worker</h4><p><b class="k-p">优点</b>真正并行，不阻塞主线程</p><p><b class="k-c">代价</b>不能直接操作 DOM，需消息通信</p><p><b class="k-w">适用</b>CPU 密集计算</p></div><div class="trd"><h4>scheduler.postTask / yield</h4><p><b class="k-p">优点</b>按优先级调度</p><p><b class="k-c">代价</b>浏览器支持需确认</p><p><b class="k-w">适用</b>需要精细调度的应用</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>以为 setTimeout(fn, 0) 会立即执行</p><p class="fix"><b>✓</b>它至少要等当前同步代码和所有微任务完成</p></li><li><p class="bad"><b>✗</b>在微任务里无限递归添加微任务</p><p class="fix"><b>✓</b>会饿死渲染和其他任务，循环处理应放进宏任务分批</p></li><li><p class="bad"><b>✗</b>事件处理中做大量同步计算导致卡顿</p><p class="fix"><b>✓</b>拆分任务、让出主线程或移到 Worker</p></li><li><p class="bad"><b>✗</b>Node 中用 nextTick 递归，阻塞 I/O</p><p class="fix"><b>✓</b>优先使用 setImmediate 或 Promise，避免饿死事件循环</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>事件处理函数无长任务</span></label></li><li><label><input type="checkbox"><span>CPU 密集逻辑放 Worker</span></label></li><li><label><input type="checkbox"><span>视觉更新放在 requestAnimationFrame</span></label></li><li><label><input type="checkbox"><span>监控 Long Tasks 与 INP</span></label></li><li><label><input type="checkbox"><span>异步错误都有 catch 处理</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>微任务和宏任务的核心区别？</summary><p>每个宏任务执行完后，引擎会清空整个微任务队列，包括执行过程中新加入的微任务，然后才可能渲染并取下一个宏任务。因此微任务优先级更高，但滥用会阻塞渲染。</p></details><details class="iv"><summary>await 之后的代码在哪执行？</summary><p>await 会暂停 async 函数，后续代码作为 Promise 的回调进入微任务队列；await 之前的部分是同步执行的。即使 await 一个非 Promise 值，后续代码也至少要等到当前同步代码结束后才执行。</p></details><details class="iv"><summary>JS 是单线程，如何处理大量并发请求？</summary><p>I/O 由宿主环境（浏览器网络线程、libuv 线程池/系统异步接口）在后台完成，JS 线程只处理完成后的回调。单线程限制的是 JS 代码执行，而不是 I/O 并发。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Execution_model" target="_blank" rel="noopener"><b>MDN：JavaScript execution model</b><small>developer.mozilla.org ↗</small></a></li><li><a href="https://html.spec.whatwg.org/multipage/webappapis.html#event-loops" target="_blank" rel="noopener"><b>HTML 规范：Event loops</b><small>html.spec.whatwg.org ↗</small></a></li><li><a href="https://nodejs.org/learn/asynchronous-work/event-loop-timers-and-nexttick" target="_blank" rel="noopener"><b>Node.js 文档：The Node.js Event Loop</b><small>nodejs.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="browser-rendering-pipeline.pro.html" rel="prev"><small>‹ 上一个</small><b>🖌️ 浏览器渲染流程 (重排 / 重绘)</b></a><a class="pn next" href="optimistic-ui.pro.html" rel="next"><small>下一个 ›</small><b>😊 乐观更新 (Optimistic UI)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

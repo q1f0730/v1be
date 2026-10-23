@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="标准化运维操作手册 专业模式：运维手册（Runbook）是针对特定告警、故障或例行操作编写的标准化步骤文档，说明触发条件、影响判断、诊断命令、处置动作、验证方法和升级路径。它是事件响应与值班">
+<title>🎓 标准化运维操作手册 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="runbooks" data-answer="0" data-prev="on-call.pro.html" data-next="postmortems.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sre">🔮 高级 · 🩺 高可用 SRE</a><span>›</span><a href="runbooks.html">标准化运维操作手册</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.305 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="on-call.pro.html" rel="prev"><small>‹ 上一个</small><b>📟 工程师轮值待命</b></a><a class="pn next" href="postmortems.pro.html" rel="next"><small>下一个 ›</small><b>🔍 无指责事后复盘</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📒</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>标准化运维操作手册</h1><p class="en">Runbooks</p>
+    <div class="hbtns"><a class="prosw back" href="runbooks.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">运维手册（Runbook）是针对特定告警、故障或例行操作编写的标准化步骤文档，说明触发条件、影响判断、诊断命令、处置动作、验证方法和升级路径。它是事件响应与值班体系的执行层，把专家经验固化为任何值班者都能照做的流程，降低恢复时间对个人的依赖，也是逐步自动化的起点。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>每条呼叫级告警关联一份手册，常通过告警注解中的 runbook_url 直接跳转。</p></li><li><span class="sn">2</span><p>手册开头说明这条告警的含义、可能造成的用户影响，以及判断严重度的方法。</p></li><li><span class="sn">3</span><p>列出按顺序执行的诊断命令和预期输出，帮助值班者快速缩小范围。</p></li><li><span class="sn">4</span><p>给出具体的处置步骤与回滚方式，醒目标注危险操作和需要审批或双人确认的步骤。</p></li><li><span class="sn">5</span><p>写明恢复验证标准和升级联系人，并在每次使用后更新，逐步把稳定步骤脚本化。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>Playbook</dt><dd>常与 Runbook 混用，有时指更高层的应对策略集合。</dd></div><div class="term"><dt>runbook_url 注解</dt><dd>Prometheus 告警规则中约定俗成的注解字段，用于链接手册。</dd></div><div class="term"><dt>可执行手册 (Executable Runbook)</dt><dd>把步骤做成可一键运行的脚本或自动化工作流。</dd></div><div class="term"><dt>升级路径 (Escalation Path)</dt><dd>手册无法解决时应联系的人和团队顺序。</dd></div><div class="term"><dt>琐事 (Toil)</dt><dd>手动、重复、可自动化且无持久价值的运维工作。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Pod 频繁重启处置手册</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># Runbook: KubePodCrashLooping（api 命名空间）
+# 影响：重启期间该 Pod 不接流量；若全部副本异常则服务不可用
+
+# 1. 看范围：多少副本在重启？
+kubectl -n api get pods -l app=api
+
+# 2. 看上一次崩溃的日志和退出原因（OOMKilled / Error）
+kubectl -n api logs deploy/api --previous --tail=100
+POD=$(kubectl -n api get pods -l app=api -o name | head -n1)
+kubectl -n api describe &quot;$POD&quot; | grep -A5 &#x27;Last State&#x27;
+
+# 3. 是否与最近发布相关？
+kubectl -n api rollout history deploy/api
+
+# 4. 处置：若与发布相关，回滚到上一版本
+kubectl -n api rollout undo deploy/api
+
+# 5. 验证：所有 Pod Ready 且错误率回落
+kubectl -n api rollout status deploy/api
+# 未解决：升级到 #team-api 负责人</code></pre></div><p class="cnote">手册按范围、原因、关联变更、处置、验证、升级排列，命令均可直接执行。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">手册质量分级</h3><div class="tw"><table><thead><tr><th>等级</th><th>形态</th><th>特点</th></tr></thead><tbody><tr><td data-h="等级">无</td><td data-h="形态">只在专家脑中</td><td data-h="特点">恢复依赖特定人员</td></tr><tr><td data-h="等级">文档化</td><td data-h="形态">步骤与命令清单</td><td data-h="特点">可照做，需人工执行</td></tr><tr><td data-h="等级">半自动</td><td data-h="形态">脚本执行诊断与常规处置</td><td data-h="特点">人判断、机器执行</td></tr><tr><td data-h="等级">全自动</td><td data-h="形态">告警触发自动修复</td><td data-h="特点">需完善的安全护栏</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>详细的手动手册</h4><p><b class="k-p">优点</b>灵活，人可判断</p><p><b class="k-c">代价</b>执行慢，易遗漏步骤</p><p><b class="k-w">适用</b>罕见或高风险故障</p></div><div class="trd"><h4>脚本化手册</h4><p><b class="k-p">优点</b>快速、可重复</p><p><b class="k-c">代价</b>需维护脚本，异常场景覆盖有限</p><p><b class="k-w">适用</b>频繁发生且步骤固定</p></div><div class="trd"><h4>自动修复</h4><p><b class="k-p">优点</b>无需人工介入</p><p><b class="k-c">代价</b>可能掩盖根因或误操作</p><p><b class="k-w">适用</b>处置低风险且已充分验证</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>手册写成背景介绍，值班时找不到该执行哪条命令。</p><p class="fix"><b>✓</b>开门见山给诊断与处置步骤，背景放附录。</p></li><li><p class="bad"><b>✗</b>手册多年未更新，命令和资源名早已变化。</p><p class="fix"><b>✓</b>每次使用后更新，并在演练中定期验证。</p></li><li><p class="bad"><b>✗</b>危险命令没有标注，值班者误删生产数据。</p><p class="fix"><b>✓</b>高危操作醒目标注，要求二人确认或审批。</p></li><li><p class="bad"><b>✗</b>同一问题反复手动执行同样步骤。</p><p class="fix"><b>✓</b>高频步骤脚本化，最终考虑自动修复。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每条呼叫级告警都链接手册</span></label></li><li><label><input type="checkbox"><span>手册含影响判断、诊断、处置、验证、升级</span></label></li><li><label><input type="checkbox"><span>命令可复制执行且已验证</span></label></li><li><label><input type="checkbox"><span>高危操作有明确标注</span></label></li><li><label><input type="checkbox"><span>有负责人和最近更新日期</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>一份好的 Runbook 应包含什么？</summary><p>告警含义与影响，判断严重度的方法，按顺序的诊断命令及预期结果，处置与回滚步骤，验证恢复的标准，升级联系人，以及负责人和更新时间。目标是让不熟悉该服务的值班者也能处理。</p></details><details class="iv"><summary>Runbook 和自动化是什么关系？</summary><p>手册是自动化的前身。先把经验写成明确步骤，在实践中验证；高频且确定的步骤脚本化；最后对低风险场景实现自动修复。始终保留手动路径以应对自动化失败。</p></details><details class="iv"><summary>AI Agent 适合执行 Runbook 吗？</summary><p>适合执行只读的诊断步骤和整理信息，能节省值班者时间；写操作应要求人确认，权限最小化并全程留痕。手册写得越结构化，Agent 执行越可靠。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://en.wikipedia.org/wiki/Runbook" target="_blank" rel="noopener"><b>Wikipedia：Runbook</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://runbooks.prometheus-operator.dev/" target="_blank" rel="noopener"><b>Prometheus Operator Runbooks</b><small>runbooks.prometheus-operator.dev ↗</small></a></li><li><a href="https://www.pagerduty.com/resources/automation/learn/what-is-a-runbook/" target="_blank" rel="noopener"><b>PagerDuty：What is a Runbook?</b><small>pagerduty.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="on-call.pro.html" rel="prev"><small>‹ 上一个</small><b>📟 工程师轮值待命</b></a><a class="pn next" href="postmortems.pro.html" rel="next"><small>下一个 ›</small><b>🔍 无指责事后复盘</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

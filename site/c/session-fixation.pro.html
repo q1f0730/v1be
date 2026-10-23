@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="会话固定攻击 专业模式：会话固定（Session Fixation）是一类会话管理漏洞：攻击者先让受害者使用一个攻击者已知的会话 ID，待受害者登录后，该 ID 被提升为已认证状态，攻">
+<title>🎓 会话固定攻击 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="session-fixation" data-answer="0" data-prev="openid-connect.pro.html" data-next="account-enumeration.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sec">🔮 高级 · 🛡️ 安全防线</a><span>›</span><a href="session-fixation.html">会话固定攻击</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.229 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="openid-connect.pro.html" rel="prev"><small>‹ 上一个</small><b>🪪 OIDC身份认证层</b></a><a class="pn next" href="account-enumeration.pro.html" rel="next"><small>下一个 ›</small><b>🕵️ 账户枚举漏洞</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🎟️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>会话固定攻击</h1><p class="en">Session Fixation</p>
+    <div class="hbtns"><a class="prosw back" href="session-fixation.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">会话固定（Session Fixation）是一类会话管理漏洞：攻击者先让受害者使用一个攻击者已知的会话 ID，待受害者登录后，该 ID 被提升为已认证状态，攻击者即可冒用。根因是应用在认证前后沿用同一个会话标识。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>攻击者从目标站获得一个合法但未认证的会话 ID，或利用宽松策略自造一个。</p></li><li><span class="sn">2</span><p>通过 URL 参数、子域写 Cookie、XSS 等方式把该 ID 植入受害者浏览器。</p></li><li><span class="sn">3</span><p>受害者正常登录，服务端只在原会话上写入用户身份，没有更换会话 ID。</p></li><li><span class="sn">4</span><p>攻击者携带同一会话 ID 访问，被服务端识别为已登录的受害者。</p></li><li><span class="sn">5</span><p>防御核心：认证或权限变化时作废旧会话并签发新 ID，并拒绝服务端未签发过的 ID。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>会话标识 (Session ID)</dt><dd>服务端会话的随机索引，通常放在 Cookie 中。</dd></div><div class="term"><dt>会话再生 (Session Regeneration)</dt><dd>登录或提权时销毁旧会话、生成新 ID 并迁移必要数据。</dd></div><div class="term"><dt>严格模式 (Strict Mode)</dt><dd>只接受服务端自己创建的会话 ID，拒绝客户端自造 ID。</dd></div><div class="term"><dt>__Host- 前缀 Cookie</dt><dd>要求 Secure、Path=/ 且无 Domain，防止子域覆盖写入。</dd></div><div class="term"><dt>权限提升点 (Privilege Change)</dt><dd>登录、切换角色、二次验证完成等需要换会话的时刻。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Express 登录时再生会话</span><em>javascript</em><button class="ccopy">复制</button></div><pre><code>// npm i express express-session
+const session = require(&#x27;express-session&#x27;);
+app.use(session({
+  name: &#x27;__Host-sid&#x27;,            // 防子域覆盖
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,     // 未登录不发会话
+  cookie: { httpOnly: true, secure: true, sameSite: &#x27;lax&#x27;, path: &#x27;/&#x27; }
+}));
+
+app.post(&#x27;/login&#x27;, async (req, res, next) =&gt; {
+  const user = await verifyPassword(req.body.username, req.body.password);
+  if (!user) return res.status(401).send(&#x27;用户名或密码错误&#x27;);
+  // 关键：认证成功后换新的会话 ID
+  req.session.regenerate((err) =&gt; {
+    if (err) return next(err);
+    req.session.userId = user.id;
+    req.session.save((err) =&gt; (err ? next(err) : res.redirect(&#x27;/&#x27;)));
+  });
+});</code></pre></div><p class="cnote">regenerate 会销毁旧会话并签发新 ID；verifyPassword 为业务自定义函数。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">植入途径与对应防线</h3><div class="tw"><table><thead><tr><th>植入途径</th><th>前提条件</th><th>防线</th></tr></thead><tbody><tr><td data-h="植入途径">URL 携带会话 ID</td><td data-h="前提条件">框架允许 URL 传 sid</td><td data-h="防线">禁用 URL 会话，仅用 Cookie</td></tr><tr><td data-h="植入途径">子域写 Cookie</td><td data-h="前提条件">可控任一子域</td><td data-h="防线">__Host- 前缀，不设 Domain</td></tr><tr><td data-h="植入途径">接受任意 ID</td><td data-h="前提条件">服务端自动采纳未知 ID</td><td data-h="防线">开启严格模式</td></tr><tr><td data-h="植入途径">XSS 写 Cookie</td><td data-h="前提条件">存在 XSS 且非 HttpOnly</td><td data-h="防线">修 XSS + HttpOnly + 再生</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>登录时再生会话</h4><p><b class="k-p">优点</b>直接切断攻击链，成本极低</p><p><b class="k-c">代价</b>需迁移购物车等匿名数据</p><p><b class="k-w">适用</b>所有有登录态的应用都应做</p></div><div class="trd"><h4>无状态 JWT 会话</h4><p><b class="k-p">优点</b>无服务端会话可固定</p><p><b class="k-c">代价</b>吊销困难，需另做黑名单</p><p><b class="k-w">适用</b>已有成熟 token 体系的 API</p></div><div class="trd"><h4>绑定客户端特征（IP/UA）</h4><p><b class="k-p">优点</b>增加冒用难度</p><p><b class="k-c">代价</b>移动网络 IP 常变，误伤多</p><p><b class="k-w">适用</b>仅作辅助风控信号</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>只在注册时换会话，登录、二次验证后不换</p><p class="fix"><b>✓</b>每个权限提升点都调用会话再生</p></li><li><p class="bad"><b>✗</b>再生后旧会话未销毁仍可使用</p><p class="fix"><b>✓</b>确认存储层删除旧会话记录</p></li><li><p class="bad"><b>✗</b>Cookie 设置 Domain=.example.com，子域可覆盖</p><p class="fix"><b>✓</b>认证 Cookie 用 __Host- 前缀且不设 Domain</p></li><li><p class="bad"><b>✗</b>PHP 未开启 session.use_strict_mode</p><p class="fix"><b>✓</b>开启严格模式并在登录后 session_regenerate_id(true)</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>登录、提权、MFA 完成后均再生会话 ID</span></label></li><li><label><input type="checkbox"><span>旧会话在存储层被删除</span></label></li><li><label><input type="checkbox"><span>会话 ID 不出现在 URL 与日志中</span></label></li><li><label><input type="checkbox"><span>Cookie 具备 HttpOnly、Secure、SameSite</span></label></li><li><label><input type="checkbox"><span>服务端拒绝未签发过的会话 ID</span></label></li><li><label><input type="checkbox"><span>登出时服务端销毁会话</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>会话固定和会话劫持有什么区别？</summary><p>劫持是登录后窃取受害者的会话 ID（如 XSS 读 Cookie、网络嗅探）；固定是登录前把已知 ID 塞给受害者，等它被提升权限。前者靠保护 ID 不泄露，后者靠认证时更换 ID。</p></details><details class="iv"><summary>为什么 HttpOnly 不能完全防会话固定？</summary><p>HttpOnly 阻止脚本读取 Cookie，但固定攻击不需要读取，只需写入或让服务端接受攻击者提供的 ID。子域写 Cookie、URL 传 sid 都绕得过 HttpOnly，必须靠再生会话与严格模式。</p></details><details class="iv"><summary>再生会话时要注意哪些数据迁移？</summary><p>保留合理的匿名态数据（购物车、语言偏好），丢弃与认证相关的临时状态（CSRF token 应重新生成）。确保原子性：先建新会话再删旧会话，避免并发请求落到半迁移状态。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html" target="_blank" rel="noopener"><b>OWASP Session Management Cheat Sheet</b><small>cheatsheetseries.owasp.org ↗</small></a></li><li><a href="https://owasp.org/www-community/attacks/Session_fixation" target="_blank" rel="noopener"><b>OWASP: Session fixation</b><small>owasp.org ↗</small></a></li><li><a href="https://github.com/expressjs/session" target="_blank" rel="noopener"><b>express-session README</b><small>github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="openid-connect.pro.html" rel="prev"><small>‹ 上一个</small><b>🪪 OIDC身份认证层</b></a><a class="pn next" href="account-enumeration.pro.html" rel="next"><small>下一个 ›</small><b>🕵️ 账户枚举漏洞</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

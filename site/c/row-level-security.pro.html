@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="行级安全策略 (RLS) 专业模式：行级安全（Row-Level Security, RLS）是数据库根据当前用户或会话上下文，自动为查询附加过滤条件、只允许访问或修改特定行的访问控制机制。Pos">
+<title>🎓 行级安全策略 (RLS) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="row-level-security" data-answer="0" data-prev="security-headers.pro.html" data-next="rbac.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sec">🔮 高级 · 🛡️ 安全防线</a><span>›</span><a href="row-level-security.html">行级安全策略 (RLS)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.224 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="security-headers.pro.html" rel="prev"><small>‹ 上一个</small><b>🏷️ 安全响应头</b></a><a class="pn next" href="rbac.pro.html" rel="next"><small>下一个 ›</small><b>🎫 基于角色的访问控制</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🗂️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>行级安全策略 (RLS)</h1><p class="en">Row-Level Security</p>
+    <div class="hbtns"><a class="prosw back" href="row-level-security.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">行级安全（Row-Level Security, RLS）是数据库根据当前用户或会话上下文，自动为查询附加过滤条件、只允许访问或修改特定行的访问控制机制。PostgreSQL 用 CREATE POLICY 实现，Supabase 以它保护前端直连。它把多租户隔离下沉到数据层，避免漏写 WHERE 导致越权。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>对表执行 ENABLE ROW LEVEL SECURITY；启用后若没有任何策略，普通角色默认看不到任何行。</p></li><li><span class="sn">2</span><p>用 CREATE POLICY 定义规则：USING 过滤可见与可操作的行，WITH CHECK 校验写入的新行。</p></li><li><span class="sn">3</span><p>策略可按命令（SELECT、INSERT、UPDATE、DELETE）和角色分别定义，多条宽松策略按 OR 组合。</p></li><li><span class="sn">4</span><p>查询执行时数据库把策略条件自动加入查询，应用代码无需显式写过滤。</p></li><li><span class="sn">5</span><p>当前用户身份来自数据库角色或会话变量（如 current_setting），由应用在连接上设置。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>USING 子句</dt><dd>决定哪些现有行对查询可见或可更新、删除。</dd></div><div class="term"><dt>WITH CHECK 子句</dt><dd>决定插入或更新后的新行是否允许写入。</dd></div><div class="term"><dt>BYPASSRLS</dt><dd>可绕过行级安全的角色属性，超级用户默认具备。</dd></div><div class="term"><dt>FORCE ROW LEVEL SECURITY</dt><dd>让表所有者也受策略约束。</dd></div><div class="term"><dt>会话变量 (current_setting)</dt><dd>在连接上设置的自定义参数，常存租户 ID。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>PostgreSQL 多租户 RLS</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>CREATE TABLE documents (
+  id        bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  tenant_id uuid NOT NULL,
+  title     text NOT NULL
+);
+CREATE INDEX ON documents (tenant_id);          -- 策略条件需要索引
+
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE documents FORCE ROW LEVEL SECURITY; -- 表所有者也受约束
+
+-- 只能看到、修改本租户的行；写入的行也必须属于本租户
+CREATE POLICY tenant_isolation ON documents
+  USING (tenant_id = current_setting(&#x27;app.tenant_id&#x27;)::uuid)
+  WITH CHECK (tenant_id = current_setting(&#x27;app.tenant_id&#x27;)::uuid);
+
+-- 应用在每个事务开始时设置租户（SET LOCAL 只在当前事务有效）
+BEGIN;
+SET LOCAL app.tenant_id = &#x27;6f1c2a3e-0000-4000-8000-000000000001&#x27;;
+SELECT * FROM documents;          -- 自动只返回该租户数据
+COMMIT;
+
+-- 应用连接使用的角色不能是超级用户，也不能有 BYPASSRLS</code></pre></div><p class="cnote">策略同时约束读和写；租户上下文用 SET LOCAL 绑定事务，配合连接池更安全。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">多租户隔离方式</h3><div class="tw"><table><thead><tr><th>方式</th><th>隔离强度</th><th>运维成本</th><th>风险点</th></tr></thead><tbody><tr><td data-h="方式">应用层 WHERE tenant_id</td><td data-h="隔离强度">依赖每条查询</td><td data-h="运维成本">低</td><td data-h="风险点">漏写即越权</td></tr><tr><td data-h="方式">RLS 策略</td><td data-h="隔离强度">数据库强制</td><td data-h="运维成本">中</td><td data-h="风险点">策略写错或角色可绕过</td></tr><tr><td data-h="方式">每租户独立 schema</td><td data-h="隔离强度">较高</td><td data-h="运维成本">高（迁移数量多）</td><td data-h="风险点">连接与迁移管理复杂</td></tr><tr><td data-h="方式">每租户独立数据库</td><td data-h="隔离强度">最高</td><td data-h="运维成本">最高</td><td data-h="风险点">成本与运维压力大</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>仅应用层过滤</h4><p><b class="k-p">优点</b>简单，无数据库依赖</p><p><b class="k-c">代价</b>任何遗漏都会越权</p><p><b class="k-w">适用</b>单租户或内部工具</p></div><div class="trd"><h4>应用过滤 + RLS 兜底</h4><p><b class="k-p">优点</b>纵深防御，遗漏也不泄露</p><p><b class="k-c">代价</b>策略需维护与测试</p><p><b class="k-w">适用</b>多租户 SaaS 推荐</p></div><div class="trd"><h4>前端直连 + RLS（如 Supabase）</h4><p><b class="k-p">优点</b>开发快，无需后端 API</p><p><b class="k-c">代价</b>策略即全部防线，必须严谨</p><p><b class="k-w">适用</b>小团队快速开发</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>建表后忘记启用 RLS，前端可读全表</p><p class="fix"><b>✓</b>所有暴露给客户端的表强制启用，并在 CI 中检查</p></li><li><p class="bad"><b>✗</b>应用用超级用户或表所有者连接，RLS 被绕过</p><p class="fix"><b>✓</b>使用专用低权限角色，并对表 FORCE ROW LEVEL SECURITY</p></li><li><p class="bad"><b>✗</b>只写 USING 不写 WITH CHECK，可插入他人租户数据</p><p class="fix"><b>✓</b>写操作策略同时定义 WITH CHECK</p></li><li><p class="bad"><b>✗</b>连接池中会话变量残留到下一个请求</p><p class="fix"><b>✓</b>用 SET LOCAL 绑定在事务内，或每次请求重置</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有敏感表已启用 RLS</span></label></li><li><label><input type="checkbox"><span>应用角色无 BYPASSRLS</span></label></li><li><label><input type="checkbox"><span>读写策略都已定义</span></label></li><li><label><input type="checkbox"><span>策略列有索引</span></label></li><li><label><input type="checkbox"><span>有跨租户访问的自动化测试</span></label></li><li><label><input type="checkbox"><span>服务端密钥不暴露到前端</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>RLS 对性能有什么影响？</summary><p>策略条件会加入每个查询，相当于额外的 WHERE。条件列有索引时开销很小；若策略调用复杂函数或子查询，可能阻碍索引使用并逐行计算，需要用 EXPLAIN 检查，并把函数标记为合适的稳定性级别。</p></details><details class="iv"><summary>Supabase 为什么特别强调 RLS？</summary><p>Supabase 允许前端用公开的 anon key 直接通过 API 访问数据库，此时 RLS 策略就是数据访问的主要边界。表未启用 RLS 或策略过宽，任何人都可能读写数据；service_role 密钥会绕过 RLS，只能在服务端使用。</p></details><details class="iv"><summary>如何测试 RLS 策略？</summary><p>以不同用户或租户身份建立会话，分别执行增删改查，断言只能访问自己的行、无法写入他人数据；覆盖未设置上下文的情况，确认默认拒绝。把这些测试纳入 CI。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.postgresql.org/docs/current/ddl-rowsecurity.html" target="_blank" rel="noopener"><b>PostgreSQL 文档：Row Security Policies</b><small>postgresql.org ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/sql-createpolicy.html" target="_blank" rel="noopener"><b>PostgreSQL 文档：CREATE POLICY</b><small>postgresql.org ↗</small></a></li><li><a href="https://supabase.com/docs/guides/database/postgres/row-level-security" target="_blank" rel="noopener"><b>Supabase 文档：Row Level Security</b><small>supabase.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="security-headers.pro.html" rel="prev"><small>‹ 上一个</small><b>🏷️ 安全响应头</b></a><a class="pn next" href="rbac.pro.html" rel="next"><small>下一个 ›</small><b>🎫 基于角色的访问控制</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

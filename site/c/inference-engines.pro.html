@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="推理引擎 (vLLM / SGLang / llama.cpp) 专业模式：推理引擎（Inference Engine）是专门执行大模型推理的服务软件，负责加载权重、调度请求、管理 KV 缓存并调用优化内核，对外暴露 HTTP/Open">
+<title>🎓 推理引擎 (vLLM / SGLang / llama.cpp) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="inference-engines" data-answer="0" data-prev="lora.pro.html" data-next="numeric-precision.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#llmops">🔮 高级 · 🧠 模型工程与推理部署</a><span>›</span><a href="inference-engines.html">推理引擎 (vLLM / SGLang / llama.cpp)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.386 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="lora.pro.html" rel="prev"><small>‹ 上一个</small><b>🩹 低秩适配微调 (LoRA / QLoRA)</b></a><a class="pn next" href="numeric-precision.pro.html" rel="next"><small>下一个 ›</small><b>🔢 数值精度 (FP32 / BF16 / FP8)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🏎️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🧠 模型工程与推理部署</span><span>⏱ 约 10 分钟</span></div>
+    <h1>推理引擎 (vLLM / SGLang / llama.cpp)</h1><p class="en">Inference Engines</p>
+    <div class="hbtns"><a class="prosw back" href="inference-engines.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">推理引擎（Inference Engine）是专门执行大模型推理的服务软件，负责加载权重、调度请求、管理 KV 缓存并调用优化内核，对外暴露 HTTP/OpenAI 兼容接口。它属于模型服务层，决定自部署模型的吞吐、延迟与成本。vLLM、SGLang 面向 GPU 服务器的高并发服务，llama.cpp 面向 CPU/消费级硬件与 GGUF 量化模型。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>加载模型权重（可选量化格式）到 GPU/CPU 内存，并预留显存给 KV 缓存。</p></li><li><span class="sn">2</span><p>请求进入调度器，连续批处理（continuous batching）在每个解码步动态加入新请求、移出已完成请求。</p></li><li><span class="sn">3</span><p>KV 缓存按块管理（如 PagedAttention），支持前缀共享，减少碎片，提高可容纳的并发数。</p></li><li><span class="sn">4</span><p>调用融合注意力、量化矩阵乘等优化内核，并可启用张量并行、投机解码、结构化输出等特性。</p></li><li><span class="sn">5</span><p>通过 OpenAI 兼容 API 流式返回 token，同时暴露吞吐、排队、缓存使用率等监控指标。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>连续批处理 (Continuous Batching)</dt><dd>以解码步为粒度动态组批，避免等待整批完成。</dd></div><div class="term"><dt>PagedAttention</dt><dd>vLLM 的分页 KV 缓存管理机制。</dd></div><div class="term"><dt>RadixAttention</dt><dd>SGLang 用基数树管理并复用 KV 缓存前缀的机制。</dd></div><div class="term"><dt>GGUF</dt><dd>llama.cpp 使用的模型文件格式，支持多种量化等级。</dd></div><div class="term"><dt>张量并行 (Tensor Parallelism)</dt><dd>把单层权重切分到多张 GPU 上并行计算。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>三种引擎的启动方式</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># vLLM：启动 OpenAI 兼容服务（默认端口 8000）
+vllm serve Qwen/Qwen2.5-7B-Instruct \
+  --max-model-len 8192 \
+  --gpu-memory-utilization 0.90
+
+# SGLang：启动服务（默认端口 30000）
+python -m sglang.launch_server \
+  --model-path Qwen/Qwen2.5-7B-Instruct --port 30000
+
+# llama.cpp：用 GGUF 量化模型在 CPU/消费级 GPU 上运行
+llama-server -m ./qwen2.5-7b-instruct-q4_k_m.gguf -c 4096 --port 8080
+
+# 三者都可用 OpenAI 风格接口调用
+curl http://localhost:8000/v1/chat/completions \
+  -H &#x27;Content-Type: application/json&#x27; \
+  -d &#x27;{&quot;model&quot;:&quot;Qwen/Qwen2.5-7B-Instruct&quot;,&quot;messages&quot;:[{&quot;role&quot;:&quot;user&quot;,&quot;content&quot;:&quot;你好&quot;}]}&#x27;</code></pre></div><p class="cnote">按需替换模型名与路径；--gpu-memory-utilization 决定留给权重和 KV 缓存的显存比例。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">主流推理引擎对比</h3><div class="tw"><table><thead><tr><th>引擎</th><th>主要硬件</th><th>特点</th><th>典型场景</th></tr></thead><tbody><tr><td data-h="引擎">vLLM</td><td data-h="主要硬件">NVIDIA/AMD GPU 等</td><td data-h="特点">PagedAttention、生态广</td><td data-h="典型场景">生产 API 服务</td></tr><tr><td data-h="引擎">SGLang</td><td data-h="主要硬件">GPU</td><td data-h="特点">RadixAttention、结构化生成快</td><td data-h="典型场景">Agent、多轮复杂调用</td></tr><tr><td data-h="引擎">llama.cpp</td><td data-h="主要硬件">CPU、Apple Silicon、消费级 GPU</td><td data-h="特点">GGUF 量化、依赖少</td><td data-h="典型场景">本地与边缘部署</td></tr><tr><td data-h="引擎">TensorRT-LLM</td><td data-h="主要硬件">NVIDIA GPU</td><td data-h="特点">深度内核优化，需构建引擎</td><td data-h="典型场景">追求极致性能</td></tr><tr><td data-h="引擎">Ollama</td><td data-h="主要硬件">同 llama.cpp 体系</td><td data-h="特点">一键拉取运行，体验简单</td><td data-h="典型场景">个人开发与试用</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>自部署推理引擎</h4><p><b class="k-p">优点</b>数据不出域、可定制、量大时单价低</p><p><b class="k-c">代价</b>需运维 GPU 与容量规划</p><p><b class="k-w">适用</b>隐私要求高或调用量大</p></div><div class="trd"><h4>托管模型 API</h4><p><b class="k-p">优点</b>零运维、模型能力强</p><p><b class="k-c">代价</b>按 Token 付费，数据出域</p><p><b class="k-w">适用</b>通用任务、起步阶段</p></div><div class="trd"><h4>本地 llama.cpp/Ollama</h4><p><b class="k-p">优点</b>离线、免费、隐私</p><p><b class="k-c">代价</b>并发和速度有限</p><p><b class="k-w">适用</b>个人工具与原型</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>用 transformers 的 generate 循环直接对外服务</p><p class="fix"><b>✓</b>生产服务使用支持连续批处理的推理引擎</p></li><li><p class="bad"><b>✗</b>把 gpu-memory-utilization 设满且同卡运行其他程序</p><p class="fix"><b>✓</b>为其他进程预留显存，避免 OOM</p></li><li><p class="bad"><b>✗</b>只测单请求延迟就评估容量</p><p class="fix"><b>✓</b>按目标并发压测吞吐、TTFT 与 TPOT 分位数</p></li><li><p class="bad"><b>✗</b>对外暴露推理端口而无鉴权</p><p class="fix"><b>✓</b>放在网关之后，加 API Key 与限流</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>引擎版本支持目标模型架构</span></label></li><li><label><input type="checkbox"><span>最大上下文与显存比例按需求设置</span></label></li><li><label><input type="checkbox"><span>压测过目标并发下的 TTFT/TPOT</span></label></li><li><label><input type="checkbox"><span>接口有鉴权与限流</span></label></li><li><label><input type="checkbox"><span>监控排队长度与 KV 缓存使用率</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么推理引擎比朴素 generate 快很多？</summary><p>朴素实现静态组批、显存预分配浪费；引擎用连续批处理提高 GPU 利用率，分页 KV 缓存提升并发，配合融合内核、前缀缓存与 CUDA Graph 等优化，在并发场景下吞吐显著更高。</p></details><details class="iv"><summary>vLLM 和 llama.cpp 如何选择？</summary><p>多用户、GPU 服务器、追求吞吐选 vLLM/SGLang；单用户、CPU/Mac/消费级显卡、需要低比特量化与离线运行选 llama.cpp（或基于它的 Ollama）。</p></details><details class="iv"><summary>TTFT 和 TPOT 分别受什么影响？</summary><p>TTFT 主要受排队与预填充（输入长度、前缀缓存命中）影响；TPOT 受解码阶段的显存带宽、批大小与模型大小影响。批越大吞吐越高，但单请求 TPOT 可能变差。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.vllm.ai/en/latest/" target="_blank" rel="noopener"><b>vLLM 文档</b><small>docs.vllm.ai ↗</small></a></li><li><a href="https://docs.sglang.io/" target="_blank" rel="noopener"><b>SGLang 文档</b><small>docs.sglang.io ↗</small></a></li><li><a href="https://github.com/ggml-org/llama.cpp" target="_blank" rel="noopener"><b>llama.cpp (GitHub)</b><small>github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="lora.pro.html" rel="prev"><small>‹ 上一个</small><b>🩹 低秩适配微调 (LoRA / QLoRA)</b></a><a class="pn next" href="numeric-precision.pro.html" rel="next"><small>下一个 ›</small><b>🔢 数值精度 (FP32 / BF16 / FP8)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

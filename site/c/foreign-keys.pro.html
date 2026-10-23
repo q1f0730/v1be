@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="外键约束 专业模式：外键约束（Foreign Key Constraint）声明子表某列的值必须在父表的主键或唯一键中存在，由数据库在写入时强制检查。它属于数据完整性层的引用完整性">
+<title>🎓 外键约束 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="foreign-keys" data-answer="0" data-prev="transactions.pro.html" data-next="unique-constraints.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#db">🌊 中级 · 🗄️ 数据库</a><span>›</span><a href="foreign-keys.html">外键约束</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.128 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="transactions.pro.html" rel="prev"><small>‹ 上一个</small><b>🤝 数据库事务</b></a><a class="pn next" href="unique-constraints.pro.html" rel="next"><small>下一个 ›</small><b>🆔 唯一性约束</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔗</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>外键约束</h1><p class="en">Foreign Keys</p>
+    <div class="hbtns"><a class="prosw back" href="foreign-keys.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">外键约束（Foreign Key Constraint）声明子表某列的值必须在父表的主键或唯一键中存在，由数据库在写入时强制检查。它属于数据完整性层的引用完整性（Referential Integrity）机制，防止出现孤儿记录，并可定义父行删除或更新时的级联行为。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>建表或 ALTER TABLE 时声明 FOREIGN KEY (col) REFERENCES parent(key)，被引用列必须有唯一约束。</p></li><li><span class="sn">2</span><p>向子表插入或更新时，数据库查找父表对应键，不存在则拒绝写入。</p></li><li><span class="sn">3</span><p>删除或更新父行时，按 ON DELETE / ON UPDATE 规则处理：拒绝、级联、置空或置默认值。</p></li><li><span class="sn">4</span><p>检查默认在每条语句结束时进行；声明 DEFERRABLE 后可推迟到事务提交时检查。</p></li><li><span class="sn">5</span><p>检查需要查找子表引用列，若子表外键列无索引，删除父行时可能触发子表全表扫描。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>引用完整性 (Referential Integrity)</dt><dd>所有引用都指向真实存在的记录。</dd></div><div class="term"><dt>ON DELETE CASCADE</dt><dd>父行删除时自动删除引用它的子行。</dd></div><div class="term"><dt>ON DELETE SET NULL</dt><dd>父行删除时把子行外键列置为 NULL。</dd></div><div class="term"><dt>可延迟约束 (DEFERRABLE)</dt><dd>约束检查推迟到事务提交，便于循环引用或批量导入。</dd></div><div class="term"><dt>孤儿记录 (Orphan Row)</dt><dd>引用的父记录已不存在的子行。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>外键与删除行为</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>CREATE TABLE orgs (
+  id bigint PRIMARY KEY
+);
+
+CREATE TABLE projects (
+  id     bigint PRIMARY KEY,
+  org_id bigint NOT NULL
+    REFERENCES orgs(id) ON DELETE CASCADE   -- 删组织连带删项目
+);
+
+CREATE TABLE tasks (
+  id          bigint PRIMARY KEY,
+  project_id  bigint NOT NULL REFERENCES projects(id) ON DELETE RESTRICT,
+  assignee_id bigint REFERENCES users(id) ON DELETE SET NULL  -- 人走了任务保留
+);
+
+-- PostgreSQL 不会自动给外键列建索引，需手动补上
+CREATE INDEX ON projects (org_id);
+CREATE INDEX ON tasks (project_id);
+
+-- 大表加外键：先 NOT VALID 再校验，减少锁时间
+ALTER TABLE tasks ADD CONSTRAINT tasks_creator_fk
+  FOREIGN KEY (creator_id) REFERENCES users(id) NOT VALID;
+ALTER TABLE tasks VALIDATE CONSTRAINT tasks_creator_fk;</code></pre></div><p class="cnote">不同关系选择不同删除行为；外键列要自建索引，大表加约束分两步。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">ON DELETE 行为对比</h3><div class="tw"><table><thead><tr><th>行为</th><th>父行删除时</th><th>适用关系</th></tr></thead><tbody><tr><td data-h="行为">NO ACTION / RESTRICT</td><td data-h="父行删除时">有子行则拒绝</td><td data-h="适用关系">子数据重要，需显式处理</td></tr><tr><td data-h="行为">CASCADE</td><td data-h="父行删除时">子行一并删除</td><td data-h="适用关系">强从属，如订单与明细</td></tr><tr><td data-h="行为">SET NULL</td><td data-h="父行删除时">子行外键置空</td><td data-h="适用关系">可选关联，如负责人</td></tr><tr><td data-h="行为">SET DEFAULT</td><td data-h="父行删除时">子行外键置默认值</td><td data-h="适用关系">有兜底归属的场景</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>数据库外键</h4><p><b class="k-p">优点</b>强一致，任何写入路径都受保护</p><p><b class="k-c">代价</b>写入多一次检查，分库分表难用</p><p><b class="k-w">适用</b>单库关系型业务，默认首选</p></div><div class="trd"><h4>应用层校验</h4><p><b class="k-p">优点</b>灵活，可跨库跨服务</p><p><b class="k-c">代价</b>并发与多入口下容易漏，出现孤儿</p><p><b class="k-w">适用</b>跨服务、分片或特殊性能约束</p></div><div class="trd"><h4>外键 + 软删除</h4><p><b class="k-p">优点</b>保留引用关系与历史</p><p><b class="k-c">代价</b>需处理已删父行仍被引用的语义</p><p><b class="k-w">适用</b>需审计、可恢复的数据</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>外键列不建索引，删父行时锁等待严重</p><p class="fix"><b>✓</b>为子表外键列建索引（PostgreSQL 不会自动创建）</p></li><li><p class="bad"><b>✗</b>随手用 CASCADE，一次删除连带清空大量数据</p><p class="fix"><b>✓</b>仅对强从属关系用 CASCADE，其余用 RESTRICT 并显式处理</p></li><li><p class="bad"><b>✗</b>迁移顺序错误，先建子表引用尚不存在的父表</p><p class="fix"><b>✓</b>按依赖顺序建表，或先建表后统一加约束</p></li><li><p class="bad"><b>✗</b>批量导入时临时删外键忘记加回</p><p class="fix"><b>✓</b>用可延迟约束或 NOT VALID + VALIDATE，并在检查清单中核对</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有引用关系都声明了外键</span></label></li><li><label><input type="checkbox"><span>每个外键列都有索引</span></label></li><li><label><input type="checkbox"><span>ON DELETE 行为逐条评审过</span></label></li><li><label><input type="checkbox"><span>大表加约束采用 NOT VALID 两步法</span></label></li><li><label><input type="checkbox"><span>ORM 模型关系与数据库约束一致</span></label></li><li><label><input type="checkbox"><span>AI 生成的 schema 未遗漏外键</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么有些大厂规范禁止使用外键？</summary><p>主要出于分库分表后无法跨库约束、高并发下级联与检查带来的锁争用、以及运维变更成本。代价是需在应用层保证一致性并定期巡检孤儿数据。对单库中小规模业务，外键的收益通常大于成本。</p></details><details class="iv"><summary>外键会带来哪些锁问题？</summary><p>子表插入需对父行加共享级别锁以防并发删除，父行更新或删除需检查子表。外键列无索引时检查要扫子表，持锁更久，易引发阻塞甚至死锁。</p></details><details class="iv"><summary>什么时候用 DEFERRABLE INITIALLY DEFERRED？</summary><p>存在循环引用（如两表互相引用）或批量导入顺序不可控时，把检查推迟到 COMMIT，事务内允许暂时不一致，提交时仍保证完整性。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.postgresql.org/docs/current/ddl-constraints.html" target="_blank" rel="noopener"><b>PostgreSQL 文档：Constraints</b><small>postgresql.org ↗</small></a></li><li><a href="https://dev.mysql.com/doc/refman/8.0/en/create-table-foreign-keys.html" target="_blank" rel="noopener"><b>MySQL 文档：FOREIGN KEY Constraints</b><small>dev.mysql.com ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Referential_integrity" target="_blank" rel="noopener"><b>Wikipedia: Referential integrity</b><small>en.wikipedia.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="transactions.pro.html" rel="prev"><small>‹ 上一个</small><b>🤝 数据库事务</b></a><a class="pn next" href="unique-constraints.pro.html" rel="next"><small>下一个 ›</small><b>🆔 唯一性约束</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

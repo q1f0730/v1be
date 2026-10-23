@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="云安全组 专业模式：安全组（Security Group）是云平台提供的虚拟防火墙，作用于实例或网卡级别，以“允许规则”控制入站和出站流量。它是有状态的：放行的请求其回包自动允许。">
+<title>🎓 云安全组 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="security-groups" data-answer="0" data-prev="firewalls.pro.html" data-next="message-queue.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#net">🔮 高级 · 🌐 网络与 API</a><span>›</span><a href="security-groups.html">云安全组</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.270 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="firewalls.pro.html" rel="prev"><small>‹ 上一个</small><b>🧱 网络防火墙与WAF</b></a><a class="pn next" href="message-queue.pro.html" rel="next"><small>下一个 ›</small><b>📬 消息队列</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🚪</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>云安全组</h1><p class="en">Security Groups</p>
+    <div class="hbtns"><a class="prosw back" href="security-groups.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">安全组（Security Group）是云平台提供的虚拟防火墙，作用于实例或网卡级别，以“允许规则”控制入站和出站流量。它是有状态的：放行的请求其回包自动允许。安全组可以引用其他安全组作为来源，从而按角色而非 IP 描述访问关系，是云上最常用的访问控制手段。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>安全组绑定到实例、网卡、负载均衡或数据库等资源，一个资源可绑定多个安全组。</p></li><li><span class="sn">2</span><p>规则只有允许没有拒绝，未匹配的入站流量一律丢弃；AWS 新建安全组默认允许全部出站。</p></li><li><span class="sn">3</span><p>规则来源可以是 CIDR 网段、前缀列表，或另一个安全组（表示绑定了它的所有资源）。</p></li><li><span class="sn">4</span><p>有状态跟踪：入站被允许的连接，其响应流量无需出站规则即可返回。</p></li><li><span class="sn">5</span><p>子网级的网络 ACL 是另一层无状态控制，按编号顺序评估，可写拒绝规则。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>入站/出站规则 (Ingress/Egress Rule)</dt><dd>分别控制进入和离开资源的流量。</dd></div><div class="term"><dt>安全组引用 (SG Reference)</dt><dd>以另一安全组为来源，按角色授权。</dd></div><div class="term"><dt>网络 ACL (NACL)</dt><dd>子网级无状态访问控制，支持拒绝规则。</dd></div><div class="term"><dt>前缀列表 (Prefix List)</dt><dd>可复用的 CIDR 集合，便于统一维护。</dd></div><div class="term"><dt>最小权限 (Least Privilege)</dt><dd>只开放完成功能所需的最小端口与来源。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>按角色串联三层安全组</span><em>bash</em><button class="ccopy">复制</button></div><pre><code>#!/usr/bin/env bash
+set -euo pipefail
+VPC_ID=vpc-0123456789abcdef0
+mk() { aws ec2 create-security-group --vpc-id &quot;$VPC_ID&quot; \
+         --group-name &quot;$1&quot; --description &quot;$1&quot; --query GroupId --output text; }
+
+ALB_SG=$(mk alb-sg); APP_SG=$(mk app-sg); DB_SG=$(mk db-sg)
+
+# 公网只能访问负载均衡的 443
+aws ec2 authorize-security-group-ingress --group-id &quot;$ALB_SG&quot; \
+  --protocol tcp --port 443 --cidr 0.0.0.0/0
+# 应用只接受来自负载均衡安全组的流量
+aws ec2 authorize-security-group-ingress --group-id &quot;$APP_SG&quot; \
+  --protocol tcp --port 8080 --source-group &quot;$ALB_SG&quot;
+# 数据库只接受来自应用安全组的流量
+aws ec2 authorize-security-group-ingress --group-id &quot;$DB_SG&quot; \
+  --protocol tcp --port 5432 --source-group &quot;$APP_SG&quot;
+
+# 审计：找出对全网开放 22 端口的安全组
+aws ec2 describe-security-groups \
+  --filters Name=ip-permission.from-port,Values=22 \
+            Name=ip-permission.cidr,Values=0.0.0.0/0 \
+  --query &#x27;SecurityGroups[].[GroupId,GroupName]&#x27; --output table</code></pre></div><p class="cnote">用安全组引用代替 IP，扩缩容无需改规则；定期审计对 0.0.0.0/0 开放的端口。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">安全组 vs 网络 ACL</h3><div class="tw"><table><thead><tr><th>维度</th><th>安全组</th><th>网络 ACL</th></tr></thead><tbody><tr><td data-h="维度">作用范围</td><td data-h="安全组">实例/网卡</td><td data-h="网络 ACL">子网</td></tr><tr><td data-h="维度">状态</td><td data-h="安全组">有状态</td><td data-h="网络 ACL">无状态（需放行回包端口）</td></tr><tr><td data-h="维度">规则类型</td><td data-h="安全组">仅允许</td><td data-h="网络 ACL">允许和拒绝</td></tr><tr><td data-h="维度">评估方式</td><td data-h="安全组">所有规则合并评估</td><td data-h="网络 ACL">按规则编号顺序，命中即止</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>按角色引用安全组</h4><p><b class="k-p">优点</b>自动适配扩缩容，意图清晰</p><p><b class="k-c">代价</b>跨 VPC 引用受限制</p><p><b class="k-w">适用</b>同 VPC 内服务间访问</p></div><div class="trd"><h4>按 CIDR 授权</h4><p><b class="k-p">优点</b>可表达外部网段</p><p><b class="k-c">代价</b>IP 变动需改规则，易过宽</p><p><b class="k-w">适用</b>办公网、合作方固定 IP</p></div><div class="trd"><h4>叠加 NACL 拒绝规则</h4><p><b class="k-p">优点</b>可快速封禁恶意网段</p><p><b class="k-c">代价</b>无状态，配置易出错</p><p><b class="k-w">适用</b>需要显式拒绝时</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>为排障临时开放 0.0.0.0/0:22 后忘记关闭</p><p class="fix"><b>✓</b>用 Session Manager 等免开端口方式，并定期审计</p></li><li><p class="bad"><b>✗</b>数据库安全组按应用子网 CIDR 放行</p><p class="fix"><b>✓</b>改为引用应用安全组，缩小到具体角色</p></li><li><p class="bad"><b>✗</b>所有服务共用一个“万能”安全组</p><p class="fix"><b>✓</b>按角色拆分，每个安全组职责单一</p></li><li><p class="bad"><b>✗</b>改了 NACL 却忘了放行回包的临时端口</p><p class="fix"><b>✓</b>无状态规则需同时放行出站临时端口范围</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>没有对 0.0.0.0/0 开放的管理端口</span></label></li><li><label><input type="checkbox"><span>内部访问使用安全组引用</span></label></li><li><label><input type="checkbox"><span>每个安全组职责单一、命名清晰</span></label></li><li><label><input type="checkbox"><span>出站规则按需收紧</span></label></li><li><label><input type="checkbox"><span>安全组变更由 IaC 管理并评审</span></label></li><li><label><input type="checkbox"><span>定期自动审计过宽规则</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>安全组为什么只需要写入站规则就能通信？</summary><p>安全组有状态，会跟踪连接。入站请求被允许后，响应流量属于同一连接，自动放行，不需要额外出站规则。反过来，实例主动发起的出站连接被允许后，其回包入站也自动放行。</p></details><details class="iv"><summary>引用安全组作为来源有什么好处？</summary><p>规则表达的是“哪个角色可以访问”，与具体 IP 无关。自动扩容新增实例只要绑定该安全组就自动获得访问权限，下线实例自动失去权限，避免维护 IP 列表，也不会因网段过宽误放其他服务。</p></details><details class="iv"><summary>不开 22 端口如何登录云服务器？</summary><p>使用云厂商的会话管理服务（如 AWS Systems Manager Session Manager），通过实例上的代理反向连接，权限由 IAM 控制并有审计日志；或使用零信任访问网关。这样安全组无需任何入站管理端口。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.aws.amazon.com/vpc/latest/userguide/vpc-security-groups.html" target="_blank" rel="noopener"><b>AWS: Security groups for your VPC</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html" target="_blank" rel="noopener"><b>AWS: Network ACLs</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://learn.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview" target="_blank" rel="noopener"><b>Azure: Network security groups</b><small>learn.microsoft.com ↗</small></a></li><li><a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager.html" target="_blank" rel="noopener"><b>AWS Systems Manager Session Manager</b><small>docs.aws.amazon.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="firewalls.pro.html" rel="prev"><small>‹ 上一个</small><b>🧱 网络防火墙与WAF</b></a><a class="pn next" href="message-queue.pro.html" rel="next"><small>下一个 ›</small><b>📬 消息队列</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

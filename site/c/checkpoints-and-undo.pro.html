@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="检查点与撤回 专业模式：检查点与撤回（Checkpoints &amp; Undo）指 AI 编码工具在 Agent 修改代码前后自动保存文件状态，允许用户把代码和对话回退到之前某一时刻的机制">
+<title>🎓 检查点与撤回 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="checkpoints-and-undo" data-answer="0" data-prev="plan-before-code.pro.html" data-next="prompt-injection.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#ai">🌊 中级 · 🤖 AI 与提示词</a><span>›</span><a href="checkpoints-and-undo.html">检查点与撤回</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.87 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="plan-before-code.pro.html" rel="prev"><small>‹ 上一个</small><b>🗺️ 先规划后写码 (Plan 模式)</b></a><a class="pn next" href="prompt-injection.pro.html" rel="next"><small>下一个 ›</small><b>🕳️ 提示词注入</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">⏪</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>检查点与撤回</h1><p class="en">Checkpoints &amp; Undo</p>
+    <div class="hbtns"><a class="prosw back" href="checkpoints-and-undo.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">检查点与撤回（Checkpoints &amp; Undo）指 AI 编码工具在 Agent 修改代码前后自动保存文件状态，允许用户把代码和对话回退到之前某一时刻的机制。它是 Agent 时代的“安全网”层，与 Git 互补：检查点粒度细、随会话自动生成，Git 则负责持久、可共享的版本历史。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>Agent 每次通过编辑工具修改文件前，工具记录受影响文件的原始内容，形成与对话轮次关联的检查点。</p></li><li><span class="sn">2</span><p>用户可选择回到某个检查点，仅恢复代码、仅恢复对话，或两者同时恢复。</p></li><li><span class="sn">3</span><p>Claude Code 通过 /rewind 或连按两次 Esc 打开回退菜单；Cursor 在对话中提供恢复检查点按钮。</p></li><li><span class="sn">4</span><p>通过 shell 命令产生的改动（如 rm、数据库迁移）通常不在检查点跟踪范围内，无法自动撤回。</p></li><li><span class="sn">5</span><p>检查点是本地、会话级的，不替代 Git 提交；长期保存和协作仍依赖版本控制。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>检查点 (Checkpoint)</dt><dd>某一时刻文件状态的快照，可用于恢复。</dd></div><div class="term"><dt>/rewind</dt><dd>Claude Code 中回退代码和/或对话到先前状态的命令。</dd></div><div class="term"><dt>git stash</dt><dd>临时保存未提交改动并恢复干净工作区的 Git 命令。</dd></div><div class="term"><dt>git worktree</dt><dd>同一仓库检出多个工作目录，便于隔离并行任务。</dd></div><div class="term"><dt>副作用 (Side Effect)</dt><dd>文件之外的改动，如数据库写入、外部请求，检查点无法撤回。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>用 Git 为 Agent 兜底</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 让 Agent 动手前先打一个可回退的点
+git add -A &amp;&amp; git commit -m &quot;wip: before agent&quot;
+
+# 或在独立 worktree 中让 Agent 工作，主目录不受影响
+git worktree add ../feat-paging -b feat/paging
+cd ../feat-paging &amp;&amp; claude
+
+# 查看 Agent 改了什么
+git diff --stat
+
+# 不满意：丢弃全部未提交改动（不可恢复，谨慎）
+git restore --staged --worktree .
+git clean -fd          # 同时删除新建的未跟踪文件
+
+# 满意：合并回主分支后清理 worktree
+git worktree remove ../feat-paging</code></pre></div><p class="cnote">检查点之外的持久保护：先提交、隔离目录、看 diff、再决定保留或丢弃。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">回退手段对比</h3><div class="tw"><table><thead><tr><th>手段</th><th>粒度</th><th>局限</th></tr></thead><tbody><tr><td data-h="手段">工具检查点</td><td data-h="粒度">每轮编辑</td><td data-h="局限">不覆盖 shell 改动，会话级</td></tr><tr><td data-h="手段">Git 提交</td><td data-h="粒度">人为选择的节点</td><td data-h="局限">需要主动提交</td></tr><tr><td data-h="手段">git worktree</td><td data-h="粒度">整个任务隔离</td><td data-h="局限">需额外目录与合并</td></tr><tr><td data-h="手段">数据库备份/快照</td><td data-h="粒度">数据层</td><td data-h="局限">恢复慢，需提前配置</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>依赖工具检查点</h4><p><b class="k-p">优点</b>零操作，随时回退</p><p><b class="k-c">代价</b>不覆盖命令副作用</p><p><b class="k-w">适用</b>日常小步迭代</p></div><div class="trd"><h4>频繁小提交</h4><p><b class="k-p">优点</b>持久、可共享、可二分</p><p><b class="k-c">代价</b>历史噪声多，需整理</p><p><b class="k-w">适用</b>任何正式开发</p></div><div class="trd"><h4>沙箱/容器运行 Agent</h4><p><b class="k-p">优点</b>副作用也被隔离</p><p><b class="k-c">代价</b>环境搭建成本</p><p><b class="k-w">适用</b>允许 Agent 自主执行命令时</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>以为检查点能撤回 Agent 执行的删除命令</p><p class="fix"><b>✓</b>危险命令要求确认，并在沙箱或有备份的环境执行</p></li><li><p class="bad"><b>✗</b>长时间不提交，只靠检查点</p><p class="fix"><b>✓</b>每完成一个可验证的小步就 Git 提交</p></li><li><p class="bad"><b>✗</b>回退代码却忘了回退对话</p><p class="fix"><b>✓</b>同时回退对话，避免模型基于已撤销的改动继续</p></li><li><p class="bad"><b>✗</b>Agent 直接连接生产数据库</p><p class="fix"><b>✓</b>只给开发库权限，迁移脚本人工审阅后执行</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>Agent 开始前工作区已提交</span></label></li><li><label><input type="checkbox"><span>了解工具检查点覆盖范围</span></label></li><li><label><input type="checkbox"><span>危险命令需确认</span></label></li><li><label><input type="checkbox"><span>数据库操作只在可恢复环境进行</span></label></li><li><label><input type="checkbox"><span>并行任务使用独立分支或 worktree</span></label></li><li><label><input type="checkbox"><span>合并前审阅完整 diff</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>检查点和 Git 有什么区别？</summary><p>检查点由工具自动生成，粒度到每次编辑，绑定会话，便于快速试错回退；Git 由人主动提交，持久、可共享、可审查，是团队协作和发布的基础。检查点解决“刚才那步改坏了”，Git 解决“版本历史”。</p></details><details class="iv"><summary>为什么检查点无法撤回所有改动？</summary><p>检查点通常只追踪工具自身编辑接口修改的文件。Agent 通过 shell 执行的命令可能删除文件、安装依赖、写数据库或调用外部服务，这些副作用不经过编辑接口，也可能根本不在文件系统内，因此无法自动恢复。</p></details><details class="iv"><summary>如何让 Agent 自主运行同时控制风险？</summary><p>在容器或虚拟机等隔离环境中运行，限制网络和凭证；使用独立分支或 worktree；只开放开发环境资源；对不可逆命令设置确认或拦截；结束后由人审阅 diff 和执行记录再合并。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.anthropic.com/en/docs/claude-code/checkpointing" target="_blank" rel="noopener"><b>Claude Code Docs: Checkpointing</b><small>docs.anthropic.com ↗</small></a></li><li><a href="https://git-scm.com/docs/git-worktree" target="_blank" rel="noopener"><b>Git Docs: git-worktree</b><small>git-scm.com ↗</small></a></li><li><a href="https://git-scm.com/docs/git-restore" target="_blank" rel="noopener"><b>Git Docs: git-restore</b><small>git-scm.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="plan-before-code.pro.html" rel="prev"><small>‹ 上一个</small><b>🗺️ 先规划后写码 (Plan 模式)</b></a><a class="pn next" href="prompt-injection.pro.html" rel="next"><small>下一个 ›</small><b>🕳️ 提示词注入</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

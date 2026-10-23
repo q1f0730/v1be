@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="可复现构建 专业模式：可复现构建（Reproducible Builds）指在相同源码、相同构建环境与指令下，任何人都能独立产出逐位（bit-for-bit）相同的制品。它属于软件供">
+<title>🎓 可复现构建 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="reproducible-builds" data-answer="0" data-prev="image-scanning.pro.html" data-next="reranker.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#devops">🔮 高级 · 🔭 可观测与交付</a><span>›</span><a href="reproducible-builds.html">可复现构建</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.332 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="image-scanning.pro.html" rel="prev"><small>‹ 上一个</small><b>🔍 容器镜像漏洞扫描</b></a><a class="pn next" href="reranker.pro.html" rel="next"><small>下一个 ›</small><b>🥇 重排序模型 (Reranker)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🍟</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>可复现构建</h1><p class="en">Reproducible Builds</p>
+    <div class="hbtns"><a class="prosw back" href="reproducible-builds.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">可复现构建（Reproducible Builds）指在相同源码、相同构建环境与指令下，任何人都能独立产出逐位（bit-for-bit）相同的制品。它属于软件供应链完整性手段，用于证明二进制确实由公开源码构建、未被构建机植入后门，也让缓存和差异审计更可靠。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>固定输入：锁定源码提交、依赖版本（lockfile、哈希校验）和工具链版本，避免浮动版本。</p></li><li><span class="sn">2</span><p>消除时间戳：用 SOURCE_DATE_EPOCH 统一写入文件的时间，归档时设置固定 mtime。</p></li><li><span class="sn">3</span><p>消除环境差异：固定文件排序、时区、语言区域（locale）、用户/组 ID、构建路径等元数据。</p></li><li><span class="sn">4</span><p>隔离构建：在容器或 Nix/Bazel 等密封（hermetic）环境中构建，禁止构建期联网取浮动资源。</p></li><li><span class="sn">5</span><p>独立复验：两台或多台机器分别构建，比较产物哈希；不一致时用 diffoscope 定位差异来源。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>SOURCE_DATE_EPOCH</dt><dd>约定的环境变量，给构建工具提供统一的 Unix 时间戳。</dd></div><div class="term"><dt>密封构建 (Hermetic Build)</dt><dd>构建只依赖声明过的输入，不读取宿主机或网络上的隐式状态。</dd></div><div class="term"><dt>diffoscope</dt><dd>递归比较两个制品内部差异的工具，可深入压缩包和二进制。</dd></div><div class="term"><dt>SLSA</dt><dd>供应链制品完整性框架，按级别规定构建来源与防篡改要求。</dd></div><div class="term"><dt>构建来源证明 (Provenance)</dt><dd>描述制品由谁、用什么源码和流程构建的签名元数据。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>产出确定性 tar 包</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 用最后一次提交时间作为统一时间戳
+export SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)
+export TZ=UTC LC_ALL=C
+
+# 固定排序、mtime、属主，去掉不确定元数据
+tar --sort=name \
+    --mtime=&quot;@${SOURCE_DATE_EPOCH}&quot; \
+    --owner=0 --group=0 --numeric-owner \
+    -cf dist.tar src/
+
+# gzip -n：不写入原文件名和时间戳
+gzip -n -9 -f dist.tar
+sha256sum dist.tar.gz   # 在另一台机器重复，哈希应一致</code></pre></div><p class="cnote">打包环节最常见的不确定来源是时间、顺序和属主，逐一固定即可复现。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">不可复现的常见来源</h3><div class="tw"><table><thead><tr><th>来源</th><th>表现</th><th>处理方式</th></tr></thead><tbody><tr><td data-h="来源">时间戳</td><td data-h="表现">归档/二进制内嵌构建时间</td><td data-h="处理方式">SOURCE_DATE_EPOCH、固定 mtime</td></tr><tr><td data-h="来源">文件顺序</td><td data-h="表现">目录遍历顺序随文件系统变化</td><td data-h="处理方式">排序后再打包</td></tr><tr><td data-h="来源">构建路径</td><td data-h="表现">绝对路径写入调试信息</td><td data-h="处理方式">路径映射或固定构建目录</td></tr><tr><td data-h="来源">浮动依赖</td><td data-h="表现">版本范围解析到新版本</td><td data-h="处理方式">lockfile + 哈希校验</td></tr><tr><td data-h="来源">随机性</td><td data-h="表现">哈希表顺序、随机 ID</td><td data-h="处理方式">固定种子或稳定排序输出</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>容器内构建+锁定依赖</h4><p><b class="k-p">优点</b>改造成本低，多数项目可落地</p><p><b class="k-c">代价</b>基础镜像和系统包仍可能漂移</p><p><b class="k-w">适用</b>普通业务服务</p></div><div class="trd"><h4>Nix / Bazel 密封构建</h4><p><b class="k-p">优点</b>输入完全声明，复现性强</p><p><b class="k-c">代价</b>学习曲线陡，生态迁移成本高</p><p><b class="k-w">适用</b>大型单仓、对供应链要求高</p></div><div class="trd"><h4>只做来源证明不追求逐位一致</h4><p><b class="k-p">优点</b>实现快，满足 SLSA 部分级别</p><p><b class="k-c">代价</b>无法独立验证产物与源码对应</p><p><b class="k-w">适用</b>短期合规、先补可追溯性</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>Dockerfile 里 apt-get install 不锁版本，每次构建结果不同</p><p class="fix"><b>✓</b>锁定基础镜像 digest，或使用快照源固定包版本</p></li><li><p class="bad"><b>✗</b>认为同一台机器构建两次一致就算可复现</p><p class="fix"><b>✓</b>在不同机器、不同路径和用户下构建再比对哈希</p></li><li><p class="bad"><b>✗</b>构建脚本里写入 date 或 git describe --dirty 等易变信息</p><p class="fix"><b>✓</b>版本信息只取自提交元数据，时间统一取 SOURCE_DATE_EPOCH</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有依赖有 lockfile 且校验哈希</span></label></li><li><label><input type="checkbox"><span>基础镜像按 digest 固定</span></label></li><li><label><input type="checkbox"><span>构建设置了 SOURCE_DATE_EPOCH</span></label></li><li><label><input type="checkbox"><span>CI 有双构建比对哈希的任务</span></label></li><li><label><input type="checkbox"><span>制品附带签名的来源证明</span></label></li><li><label><input type="checkbox"><span>不一致时有 diffoscope 排查流程</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>可复现构建防的是什么威胁？</summary><p>主要防构建环节被篡改：构建机或 CI 被入侵后植入代码，源码审计也发现不了。多方独立构建出相同哈希，就能证明二进制与公开源码一致。它不能防源码本身或依赖源头被投毒。</p></details><details class="iv"><summary>Docker 镜像为什么难以逐位复现？</summary><p>层的 tar 包含文件时间戳，镜像配置含创建时间，RUN 安装的系统包随软件源变化，构建工具也可能写入元数据。需要固定基础镜像、包版本，并利用 BuildKit 对 SOURCE_DATE_EPOCH 的支持。</p></details><details class="iv"><summary>和 SLSA 来源证明是什么关系？</summary><p>来源证明是构建方签名的声明，说明产物如何生成，信任依赖构建平台；可复现构建允许第三方自行重建验证，不必信任构建方。两者互补，前者易落地，后者证明力更强。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://reproducible-builds.org/" target="_blank" rel="noopener"><b>Reproducible Builds</b><small>reproducible-builds.org ↗</small></a></li><li><a href="https://reproducible-builds.org/docs/source-date-epoch/" target="_blank" rel="noopener"><b>SOURCE_DATE_EPOCH 规范</b><small>reproducible-builds.org ↗</small></a></li><li><a href="https://slsa.dev/" target="_blank" rel="noopener"><b>SLSA</b><small>slsa.dev ↗</small></a></li><li><a href="https://diffoscope.org/" target="_blank" rel="noopener"><b>diffoscope</b><small>diffoscope.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="image-scanning.pro.html" rel="prev"><small>‹ 上一个</small><b>🔍 容器镜像漏洞扫描</b></a><a class="pn next" href="reranker.pro.html" rel="next"><small>下一个 ›</small><b>🥇 重排序模型 (Reranker)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

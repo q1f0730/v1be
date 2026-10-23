@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="最小权限原则 专业模式：最小权限原则（Principle of Least Privilege，PoLP）要求每个用户、服务、进程和 AI Agent 只拥有完成其任务所必需的最小权限">
+<title>🎓 最小权限原则 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="least-privilege" data-answer="0" data-prev="server-side-authorization.pro.html" data-next="api-key-rotation.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#sec">🌊 中级 · 🛡️ 安全防线</a><span>›</span><a href="least-privilege.html">最小权限原则</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.110 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="server-side-authorization.pro.html" rel="prev"><small>‹ 上一个</small><b>🏦 服务端授权</b></a><a class="pn next" href="api-key-rotation.pro.html" rel="next"><small>下一个 ›</small><b>🔄 API密钥定期轮换</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🗝️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>最小权限原则</h1><p class="en">Least Privilege</p>
+    <div class="hbtns"><a class="prosw back" href="least-privilege.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">最小权限原则（Principle of Least Privilege，PoLP）要求每个用户、服务、进程和 AI Agent 只拥有完成其任务所必需的最小权限，且只在需要的时间内拥有。它是贯穿身份、云资源、数据库、API 密钥和 Agent 工具设计的安全原则，目的是在凭证泄露或组件被攻破时把损失限制在最小范围。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>梳理主体需要执行的具体操作和访问的资源，而不是按“可能会用到”授予。</p></li><li><span class="sn">2</span><p>按操作和资源粒度授权，如只读某个存储桶、只能写某张表，避免使用通配符。</p></li><li><span class="sn">3</span><p>按职责拆分身份：不同服务、环境、Agent 使用不同凭证，互不共享。</p></li><li><span class="sn">4</span><p>临时提升：需要高权限时短时授予并自动过期，而不是长期持有管理员权限。</p></li><li><span class="sn">5</span><p>定期审查实际使用情况，回收未使用的权限，并对权限变更做审计。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>爆炸半径 (Blast Radius)</dt><dd>某个凭证或组件被攻破时可能造成的影响范围。</dd></div><div class="term"><dt>职责分离 (Separation of Duties)</dt><dd>关键操作需不同主体共同完成，防止单点滥权。</dd></div><div class="term"><dt>即时访问 (Just-in-Time Access)</dt><dd>按需临时授予权限，到期自动撤销。</dd></div><div class="term"><dt>服务账号 (Service Account)</dt><dd>供程序使用的非人身份，应按服务单独创建。</dd></div><div class="term"><dt>权限蔓延 (Privilege Creep)</dt><dd>权限随时间累积而不回收的现象。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>PostgreSQL 最小权限账号</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- 应用运行账号：只能读写业务表，不能改表结构
+CREATE ROLE app_rw LOGIN PASSWORD &#x27;from-secret-manager&#x27;;
+GRANT CONNECT ON DATABASE shop TO app_rw;
+GRANT USAGE ON SCHEMA public TO app_rw;
+GRANT SELECT, INSERT, UPDATE ON orders, order_items TO app_rw;
+GRANT SELECT ON products TO app_rw;          -- 商品表只读
+
+-- 报表账号：只读
+CREATE ROLE report_ro LOGIN PASSWORD &#x27;from-secret-manager&#x27;;
+GRANT CONNECT ON DATABASE shop TO report_ro;
+GRANT USAGE ON SCHEMA public TO report_ro;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO report_ro;
+
+-- 迁移由单独的高权限账号在 CI 中执行，应用账号无 DDL 权限
+REVOKE CREATE ON SCHEMA public FROM PUBLIC;</code></pre></div><p class="cnote">应用、报表、迁移各用独立账号；即使应用存在 SQL 注入，也无法删表。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">最小权限落地场景</h3><div class="tw"><table><thead><tr><th>场景</th><th>反例</th><th>正例</th></tr></thead><tbody><tr><td data-h="场景">数据库</td><td data-h="反例">应用使用超级用户</td><td data-h="正例">按表授予 CRUD 子集</td></tr><tr><td data-h="场景">云 IAM</td><td data-h="反例">Action: &quot;*&quot;</td><td data-h="正例">限定具体操作与资源 ARN</td></tr><tr><td data-h="场景">API 密钥</td><td data-h="反例">全权限主密钥</td><td data-h="正例">限定作用域与只读密钥</td></tr><tr><td data-h="场景">AI Agent</td><td data-h="反例">允许执行任意命令</td><td data-h="正例">工具白名单，危险操作需确认</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>细粒度权限</h4><p><b class="k-p">优点</b>风险最小</p><p><b class="k-c">代价</b>配置和维护成本高</p><p><b class="k-w">适用</b>生产环境与敏感数据</p></div><div class="trd"><h4>粗粒度角色</h4><p><b class="k-p">优点</b>管理简单</p><p><b class="k-c">代价</b>权限过度授予</p><p><b class="k-w">适用</b>早期原型、非敏感环境</p></div><div class="trd"><h4>即时临时授权</h4><p><b class="k-p">优点</b>无长期高权限</p><p><b class="k-c">代价</b>需要审批流程</p><p><b class="k-w">适用</b>运维、生产故障处理</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>图省事给服务分配管理员角色</p><p class="fix"><b>✓</b>从零权限开始，按报错逐项补充所需权限</p></li><li><p class="bad"><b>✗</b>多个服务共用同一个凭证</p><p class="fix"><b>✓</b>每个服务、每个环境使用独立凭证</p></li><li><p class="bad"><b>✗</b>给 AI 编码 Agent 跳过所有权限确认</p><p class="fix"><b>✓</b>仅在隔离沙箱中放开，常规环境保留确认</p></li><li><p class="bad"><b>✗</b>离职或下线后权限未回收</p><p class="fix"><b>✓</b>定期审计并自动回收闲置权限</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个服务有独立身份与凭证</span></label></li><li><label><input type="checkbox"><span>IAM 策略避免通配符</span></label></li><li><label><input type="checkbox"><span>应用数据库账号无 DDL 权限</span></label></li><li><label><input type="checkbox"><span>高权限操作采用临时授权</span></label></li><li><label><input type="checkbox"><span>定期审查并回收未用权限</span></label></li><li><label><input type="checkbox"><span>Agent 工具与命令权限有白名单</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>最小权限为什么重要？</summary><p>安全事件无法完全避免，凭证会泄露、代码会有漏洞。最小权限不阻止入侵，但决定了入侵后的损失上限：只读账号泄露不会导致数据被删，受限的 Agent 被注入也无法执行危险命令。它是纵深防御的基础。</p></details><details class="iv"><summary>如何为一个新服务确定最小权限？</summary><p>列出服务实际要做的操作和资源；从零权限开始在测试环境运行，根据拒绝记录逐项添加；利用云平台的访问分析工具根据实际调用生成策略；上线后定期对比已授予与实际使用的权限，删除多余部分。</p></details><details class="iv"><summary>最小权限如何应用到 AI Agent？</summary><p>只提供任务需要的工具；文件系统限制在项目目录；命令执行用白名单，删除、推送、部署等需人工确认；使用只读或开发环境凭证；在容器中运行并限制网络。这样即使 Agent 被提示注入，损害也受限。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://csrc.nist.gov/glossary/term/least_privilege" target="_blank" rel="noopener"><b>NIST Glossary: least privilege</b><small>csrc.nist.gov ↗</small></a></li><li><a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html" target="_blank" rel="noopener"><b>AWS IAM: Security best practices</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/ddl-priv.html" target="_blank" rel="noopener"><b>PostgreSQL Docs: Privileges</b><small>postgresql.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="server-side-authorization.pro.html" rel="prev"><small>‹ 上一个</small><b>🏦 服务端授权</b></a><a class="pn next" href="api-key-rotation.pro.html" rel="next"><small>下一个 ›</small><b>🔄 API密钥定期轮换</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

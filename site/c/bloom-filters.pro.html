@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="布隆过滤器 专业模式：布隆过滤器（Bloom Filter）是一种空间效率极高的概率型数据结构，用一个位数组和 k 个哈希函数判断元素是否在集合中：回答「不在」一定正确，回答「可能在">
+<title>🎓 布隆过滤器 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="bloom-filters" data-answer="0" data-prev="consistent-hashing.pro.html" data-next="two-phase-commit.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#dist">🔥 进阶 · 🕸️ 分布式</a><span>›</span><a href="bloom-filters.html">布隆过滤器</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.438 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="consistent-hashing.pro.html" rel="prev"><small>‹ 上一个</small><b>🍎 一致性哈希</b></a><a class="pn next" href="two-phase-commit.pro.html" rel="next"><small>下一个 ›</small><b>💍 两阶段提交 (2PC)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🧾</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>布隆过滤器</h1><p class="en">Bloom Filters</p>
+    <div class="hbtns"><a class="prosw back" href="bloom-filters.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">布隆过滤器（Bloom Filter）是一种空间效率极高的概率型数据结构，用一个位数组和 k 个哈希函数判断元素是否在集合中：回答「不在」一定正确，回答「可能在」有一定误判率，且标准版本不支持删除。常用于减少无效磁盘读取、防缓存穿透和大规模去重预筛。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>初始化：分配 m 位全为 0 的位数组，并选定 k 个相互独立的哈希函数。</p></li><li><span class="sn">2</span><p>插入：对元素计算 k 个哈希值，把位数组中对应的 k 个位置都置为 1。</p></li><li><span class="sn">3</span><p>查询：检查 k 个位置，只要有任一位为 0 就说明该元素一定不在集合中。</p></li><li><span class="sn">4</span><p>误判：k 个位置全为 1 时也可能是被其他元素置位的，结论只能是可能存在。</p></li><li><span class="sn">5</span><p>参数：误判率约为 (1 − e^(−kn/m))^k，最优 k = (m/n)·ln2，n 为元素数量。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>误判率 (False Positive Rate)</dt><dd>不在集合中的元素被判为可能存在的概率。</dd></div><div class="term"><dt>假阴性 (False Negative)</dt><dd>标准布隆过滤器不会出现：已插入的元素一定被判为存在。</dd></div><div class="term"><dt>计数布隆过滤器 (Counting Bloom)</dt><dd>位换成计数器以支持删除，空间开销更大。</dd></div><div class="term"><dt>布谷鸟过滤器 (Cuckoo Filter)</dt><dd>支持删除、在低误判率下空间效率更好的替代结构。</dd></div><div class="term"><dt>缓存穿透 (Cache Penetration)</dt><dd>大量查询不存在的键，绕过缓存直接压垮数据库。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>按目标误判率建过滤器</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import hashlib, math
+
+class Bloom:
+    def __init__(self, n: int, p: float):
+        self.m = math.ceil(-n * math.log(p) / (math.log(2) ** 2))  # 位数
+        self.k = max(1, round(self.m / n * math.log(2)))           # 哈希个数
+        self.bits = bytearray((self.m + 7) // 8)
+
+    def _idx(self, item: str):
+        d = hashlib.sha256(item.encode()).digest()
+        a, b = int.from_bytes(d[:8], &quot;big&quot;), int.from_bytes(d[8:16], &quot;big&quot;)
+        return [(a + i * b) % self.m for i in range(self.k)]       # 双重哈希
+
+    def add(self, item: str):
+        for i in self._idx(item):
+            self.bits[i // 8] |= 1 &lt;&lt; (i % 8)
+
+    def __contains__(self, item: str) -&gt; bool:
+        return all(self.bits[i // 8] &gt;&gt; (i % 8) &amp; 1 for i in self._idx(item))
+
+bf = Bloom(n=1_000_000, p=0.01)     # 百万元素、1% 误判率 → 约 1.2MB、k=7
+bf.add(&quot;user:42&quot;)
+print(&quot;user:42&quot; in bf, &quot;user:43&quot; in bf, bf.m, bf.k)</code></pre></div><p class="cnote">按公式由元素数 n 和目标误判率 p 推出 m 与 k；1% 误判率约需每元素 9.6 位。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">典型应用场景</h3><div class="tw"><table><thead><tr><th>场景</th><th>过滤器作用</th><th>误判的后果</th></tr></thead><tbody><tr><td data-h="场景">LSM 存储（RocksDB 等）</td><td data-h="过滤器作用">跳过不含该键的数据文件</td><td data-h="误判的后果">多读一次文件</td></tr><tr><td data-h="场景">防缓存穿透</td><td data-h="过滤器作用">拦截一定不存在的键</td><td data-h="误判的后果">少量请求仍查数据库</td></tr><tr><td data-h="场景">爬虫 URL 去重</td><td data-h="过滤器作用">判断是否抓过</td><td data-h="误判的后果">个别新 URL 被跳过</td></tr><tr><td data-h="场景">推荐去重</td><td data-h="过滤器作用">过滤已展示内容</td><td data-h="误判的后果">少量新内容未展示</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>标准布隆过滤器</h4><p><b class="k-p">优点</b>空间极省、查询 O(k)</p><p><b class="k-c">代价</b>不能删除，有误判</p><p><b class="k-w">适用</b>集合只增不删</p></div><div class="trd"><h4>计数布隆/布谷鸟过滤器</h4><p><b class="k-p">优点</b>支持删除</p><p><b class="k-c">代价</b>实现更复杂，空间更大或有插入失败</p><p><b class="k-w">适用</b>集合需删除元素</p></div><div class="trd"><h4>精确集合（哈希表）</h4><p><b class="k-p">优点</b>无误判</p><p><b class="k-c">代价</b>内存占用高</p><p><b class="k-w">适用</b>元素量可承受且不能误判</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>实际元素数远超设计容量，误判率急剧上升</p><p class="fix"><b>✓</b>按预期规模留余量，监控填充率，超限时重建或使用可扩展版本</p></li><li><p class="bad"><b>✗</b>用它判断「一定存在」做业务决策</p><p class="fix"><b>✓</b>只用其「一定不存在」的结论，存在时仍需查真实数据</p></li><li><p class="bad"><b>✗</b>数据删除后过滤器仍判为存在，长期失真</p><p class="fix"><b>✓</b>定期全量重建，或改用支持删除的结构</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>按 n 和 p 计算 m 与 k</span></label></li><li><label><input type="checkbox"><span>预留容量增长余量</span></label></li><li><label><input type="checkbox"><span>只信任「不存在」的结论</span></label></li><li><label><input type="checkbox"><span>有定期重建机制</span></label></li><li><label><input type="checkbox"><span>监控实际误判率</span></label></li><li><label><input type="checkbox"><span>多实例共享时保证构建一致</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>布隆过滤器为什么不会假阴性？</summary><p>插入时元素对应的 k 个位都被置 1，标准版本从不把位清零，因此查询同一元素时这 k 位必然仍为 1，结果总是可能存在。误判只来自其他元素恰好把这 k 位都置成了 1。</p></details><details class="iv"><summary>如何确定位数组大小和哈希个数？</summary><p>给定元素数 n 和目标误判率 p，m = −n·ln p / (ln2)²，k = (m/n)·ln2。例如 p=1% 时每元素约 9.6 位、k 约为 7；误判率每降低 10 倍，每元素约增加 4.8 位。</p></details><details class="iv"><summary>怎么用布隆过滤器防缓存穿透？</summary><p>把数据库中所有有效键预先加入过滤器，请求先查过滤器：判为一定不存在则直接返回，不查缓存和数据库；判为可能存在才走正常流程。新增数据要同步加入，删除较多时需定期重建。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://en.wikipedia.org/wiki/Bloom_filter" target="_blank" rel="noopener"><b>Bloom filter - Wikipedia</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://github.com/facebook/rocksdb/wiki/RocksDB-Bloom-Filter" target="_blank" rel="noopener"><b>RocksDB Bloom Filter</b><small>github.com ↗</small></a></li><li><a href="https://redis.io/docs/latest/develop/data-types/probabilistic/bloom-filter/" target="_blank" rel="noopener"><b>Redis: Bloom filter</b><small>redis.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="consistent-hashing.pro.html" rel="prev"><small>‹ 上一个</small><b>🍎 一致性哈希</b></a><a class="pn next" href="two-phase-commit.pro.html" rel="next"><small>下一个 ›</small><b>💍 两阶段提交 (2PC)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

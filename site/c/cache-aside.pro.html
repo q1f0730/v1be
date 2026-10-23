@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="旁路缓存 (Cache-Aside) 专业模式：旁路缓存（Cache-Aside，又称 Lazy Loading）是最常用的缓存读写模式：应用读取时先查缓存，命中直接返回；未命中则查询数据库，把结果写入缓存并">
+<title>🎓 旁路缓存 (Cache-Aside) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="cache-aside" data-answer="0" data-prev="concurrency-vs-parallelism.pro.html" data-next="cache-penetration.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#cache">🔮 高级 · ⚡ 缓存与队列</a><span>›</span><a href="cache-aside.html">旁路缓存 (Cache-Aside)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.352 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="concurrency-vs-parallelism.pro.html" rel="prev"><small>‹ 上一个</small><b>🤹 并发与并行</b></a><a class="pn next" href="cache-penetration.pro.html" rel="next"><small>下一个 ›</small><b>🕳️ 缓存穿透</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🗄️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>⚡ 缓存与队列</span><span>⏱ 约 10 分钟</span></div>
+    <h1>旁路缓存 (Cache-Aside)</h1><p class="en">Cache-Aside</p>
+    <div class="hbtns"><a class="prosw back" href="cache-aside.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">旁路缓存（Cache-Aside，又称 Lazy Loading）是最常用的缓存读写模式：应用读取时先查缓存，命中直接返回；未命中则查询数据库，把结果写入缓存并设置过期时间。写入时先更新数据库，再删除（而非更新）对应缓存。缓存只是数据库的可丢弃副本，由应用代码而非缓存系统负责维护一致性。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>读请求先按键查询缓存（如 Redis GET），命中则直接返回，避免访问数据库。</p></li><li><span class="sn">2</span><p>未命中时查询数据库，将结果序列化写入缓存并设置 TTL，再返回给调用方。</p></li><li><span class="sn">3</span><p>写请求先更新数据库，成功后删除对应缓存键，使下一次读取重新加载最新数据。</p></li><li><span class="sn">4</span><p>选择删除而非更新缓存，可避免并发写入时缓存与数据库出现不同的写入顺序。</p></li><li><span class="sn">5</span><p>TTL 作为最终兜底：即使删除失败或出现竞态，脏数据也会在过期后被自动纠正。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>缓存命中 (Cache Hit)</dt><dd>请求的数据在缓存中存在，直接返回。</dd></div><div class="term"><dt>懒加载 (Lazy Loading)</dt><dd>只在首次被请求时才把数据加载到缓存。</dd></div><div class="term"><dt>缓存失效 (Invalidation)</dt><dd>数据变更后让旧缓存不再被使用，常用删除键。</dd></div><div class="term"><dt>TTL</dt><dd>缓存键的存活时间，到期自动删除。</dd></div><div class="term"><dt>延迟双删 (Delayed Double Delete)</dt><dd>写库前后各删一次缓存，第二次延迟执行以缓解竞态。</dd></div><div class="term"><dt>负缓存 (Negative Caching)</dt><dd>缓存“不存在”的结果，防止重复查询数据库。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>redis-py 实现旁路缓存</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import json, random
+import redis
+
+r = redis.Redis(decode_responses=True)
+TTL = 600  # 10 分钟
+
+def get_product(pid: int, db) -&gt; dict | None:
+    key = f&quot;product:{pid}&quot;
+    if (cached := r.get(key)) is not None:      # 1. 先查缓存
+        return json.loads(cached)
+    row = db.fetch_product(pid)                  # 2. 未命中查数据库
+    if row is not None:
+        # 3. 写回缓存；TTL 加随机抖动，避免大量键同时过期
+        r.set(key, json.dumps(row), ex=TTL + random.randint(0, 60))
+    return row
+
+def update_price(pid: int, price: float, db) -&gt; None:
+    db.update_price(pid, price)                  # 1. 先更新数据库
+    r.delete(f&quot;product:{pid}&quot;)                   # 2. 再删除缓存（不是更新）</code></pre></div><p class="cnote">读路径懒加载并带随机 TTL，写路径先写库后删缓存；db 为示意的数据访问对象。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见缓存模式对比</h3><div class="tw"><table><thead><tr><th>模式</th><th>读路径</th><th>写路径</th><th>一致性特点</th></tr></thead><tbody><tr><td data-h="模式">Cache-Aside</td><td data-h="读路径">应用查缓存，未命中查库回填</td><td data-h="写路径">写库后删缓存</td><td data-h="一致性特点">应用负责，最常用</td></tr><tr><td data-h="模式">Read-Through</td><td data-h="读路径">缓存层自动从库加载</td><td data-h="写路径">通常配合其他模式</td><td data-h="一致性特点">对应用透明</td></tr><tr><td data-h="模式">Write-Through</td><td data-h="读路径">同上</td><td data-h="写路径">同步写缓存与数据库</td><td data-h="一致性特点">一致性较好，写延迟高</td></tr><tr><td data-h="模式">Write-Back</td><td data-h="读路径">同上</td><td data-h="写路径">先写缓存，异步刷库</td><td data-h="一致性特点">写快，宕机可能丢数据</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>写后删除缓存</h4><p><b class="k-p">优点</b>实现简单，避免并发更新顺序问题</p><p><b class="k-c">代价</b>下次读取有一次未命中</p><p><b class="k-w">适用</b>绝大多数读多写少场景</p></div><div class="trd"><h4>写后更新缓存</h4><p><b class="k-p">优点</b>读取始终命中</p><p><b class="k-c">代价</b>并发写可能导致缓存与库不一致</p><p><b class="k-w">适用</b>计算成本高、写少且串行</p></div><div class="trd"><h4>订阅变更（CDC）删除缓存</h4><p><b class="k-p">优点</b>与业务代码解耦，可靠重试</p><p><b class="k-c">代价</b>引入额外组件与延迟</p><p><b class="k-w">适用</b>多服务共享数据、高一致性要求</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>先删缓存再写数据库，并发读把旧值写回缓存</p><p class="fix"><b>✓</b>先写数据库再删缓存，并设置 TTL 兜底</p></li><li><p class="bad"><b>✗</b>缓存不设 TTL，脏数据永久存在</p><p class="fix"><b>✓</b>所有缓存键设置 TTL，并加随机抖动</p></li><li><p class="bad"><b>✗</b>热点键过期瞬间大量请求击穿数据库</p><p class="fix"><b>✓</b>对热点键加互斥锁重建或提前异步刷新</p></li><li><p class="bad"><b>✗</b>查询不存在的数据每次都打到数据库</p><p class="fix"><b>✓</b>对空结果做短 TTL 负缓存或使用布隆过滤器</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有缓存键都有 TTL</span></label></li><li><label><input type="checkbox"><span>写路径先写库后删缓存</span></label></li><li><label><input type="checkbox"><span>删除缓存失败有重试或兜底</span></label></li><li><label><input type="checkbox"><span>热点键有防击穿措施</span></label></li><li><label><input type="checkbox"><span>监控命中率与数据库负载</span></label></li><li><label><input type="checkbox"><span>缓存故障时可降级直连数据库</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么是先写数据库再删缓存，而不是反过来？</summary><p>若先删缓存，在写库完成前有并发读请求未命中，会把旧值读出并写回缓存，导致长期脏数据。先写库再删缓存时，出现不一致需要更苛刻的时序（读在写前查库、在删除后才回填），概率低得多，且 TTL 可兜底。</p></details><details class="iv"><summary>为什么删除缓存而不是直接更新缓存？</summary><p>两个并发写请求可能以不同顺序完成数据库更新和缓存更新，使缓存保留较旧的值。删除让下一次读取从数据库加载最新值，避免顺序问题；同时也避免为可能不会被读取的数据做无谓的序列化计算。</p></details><details class="iv"><summary>Cache-Aside 能保证强一致吗？</summary><p>不能，它提供的是最终一致：在写库与删缓存之间、删除失败或极端竞态下，短时间内可能读到旧数据。需要强一致的场景应直接读数据库，或使用带版本号的缓存、分布式锁等更复杂方案，并权衡性能。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://learn.microsoft.com/en-us/azure/architecture/patterns/cache-aside" target="_blank" rel="noopener"><b>Azure Architecture Center：Cache-Aside pattern</b><small>learn.microsoft.com ↗</small></a></li><li><a href="https://aws.amazon.com/caching/best-practices/" target="_blank" rel="noopener"><b>AWS：Caching Best Practices</b><small>aws.amazon.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="concurrency-vs-parallelism.pro.html" rel="prev"><small>‹ 上一个</small><b>🤹 并发与并行</b></a><a class="pn next" href="cache-penetration.pro.html" rel="next"><small>下一个 ›</small><b>🕳️ 缓存穿透</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

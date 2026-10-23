@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="刷新令牌 专业模式：刷新令牌（Refresh Token）是授权服务器签发的长期凭证，仅用于向令牌端点换取新的短期访问令牌（Access Token），而不直接访问资源。它由 OA">
+<title>🎓 刷新令牌 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="refresh-tokens" data-answer="0" data-prev="jwt-expiry.pro.html" data-next="oauth-2-0.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#sec">🌊 中级 · 🛡️ 安全防线</a><span>›</span><a href="refresh-tokens.html">刷新令牌</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.115 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="jwt-expiry.pro.html" rel="prev"><small>‹ 上一个</small><b>⏰ JWT过期时间机制</b></a><a class="pn next" href="oauth-2-0.pro.html" rel="next"><small>下一个 ›</small><b>🚗 开放授权框架</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔁</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>刷新令牌</h1><p class="en">Refresh Tokens</p>
+    <div class="hbtns"><a class="prosw back" href="refresh-tokens.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">刷新令牌（Refresh Token）是授权服务器签发的长期凭证，仅用于向令牌端点换取新的短期访问令牌（Access Token），而不直接访问资源。它由 OAuth 2.0（RFC 6749）定义，用来兼顾安全与体验：访问令牌短命以缩小泄露窗口，刷新令牌让用户免于频繁重新登录，因此需要更严格的存储与保护。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>用户登录或授权成功后，授权服务器同时返回短期访问令牌和长期刷新令牌。</p></li><li><span class="sn">2</span><p>客户端用访问令牌调用 API；访问令牌过期后，向令牌端点提交刷新令牌。</p></li><li><span class="sn">3</span><p>服务器校验刷新令牌（是否存在、未过期、未吊销、属于该客户端），签发新的访问令牌。</p></li><li><span class="sn">4</span><p>启用轮换（Rotation）时同时签发新刷新令牌并作废旧的；旧令牌被再次使用即视为泄露。</p></li><li><span class="sn">5</span><p>检测到重用时吊销该令牌族下的全部刷新令牌，强制合法用户与攻击者都重新登录。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>刷新令牌轮换 (Rotation)</dt><dd>每次刷新都签发新刷新令牌并使旧令牌失效。</dd></div><div class="term"><dt>重用检测 (Reuse Detection)</dt><dd>已作废的刷新令牌再次出现时判定泄露并吊销整个令牌族。</dd></div><div class="term"><dt>令牌族 (Token Family)</dt><dd>由同一次登录衍生出的一串刷新令牌。</dd></div><div class="term"><dt>发送者约束 (Sender-Constrained)</dt><dd>令牌绑定客户端密钥，如 DPoP、mTLS，被盗也难使用。</dd></div><div class="term"><dt>滑动过期 (Sliding Expiration)</dt><dd>每次使用延长有效期，但通常仍设绝对上限。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>刷新令牌轮换与重用检测</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import secrets, hashlib, datetime as dt
+
+def _h(t): return hashlib.sha256(t.encode()).hexdigest()   # 只存哈希
+
+def issue_refresh(db, user_id, family_id=None):
+    token = secrets.token_urlsafe(32)
+    db.insert(&quot;refresh_tokens&quot;, token_hash=_h(token), user_id=user_id,
+              family_id=family_id or secrets.token_hex(8), used=False,
+              expires_at=dt.datetime.utcnow() + dt.timedelta(days=30))
+    return token
+
+def refresh(db, token):
+    row = db.find_one(&quot;refresh_tokens&quot;, token_hash=_h(token))
+    if row is None or row.expires_at &lt; dt.datetime.utcnow():
+        raise PermissionError(&quot;invalid&quot;)
+    if row.used:                                  # 旧令牌被重放：判定泄露
+        db.revoke_family(row.family_id)
+        raise PermissionError(&quot;reuse detected&quot;)
+    db.mark_used(row.id)                          # 作废旧令牌
+    new_rt = issue_refresh(db, row.user_id, row.family_id)
+    access = make_access_token(row.user_id)       # 签发短期访问令牌
+    return access, new_rt</code></pre></div><p class="cnote">db 与 make_access_token 为示意接口；要点是哈希存储、一次性使用与令牌族吊销。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">访问令牌 vs 刷新令牌</h3><div class="tw"><table><thead><tr><th>维度</th><th>访问令牌</th><th>刷新令牌</th></tr></thead><tbody><tr><td data-h="维度">用途</td><td data-h="访问令牌">调用资源 API</td><td data-h="刷新令牌">换取新访问令牌</td></tr><tr><td data-h="维度">有效期</td><td data-h="访问令牌">短（分钟到小时）</td><td data-h="刷新令牌">长（天到周，需上限）</td></tr><tr><td data-h="维度">发送对象</td><td data-h="访问令牌">资源服务器</td><td data-h="刷新令牌">仅授权服务器令牌端点</td></tr><tr><td data-h="维度">撤销方式</td><td data-h="访问令牌">通常等待过期</td><td data-h="刷新令牌">服务端可随时吊销</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>刷新令牌轮换 + 重用检测</h4><p><b class="k-p">优点</b>能发现令牌被盗</p><p><b class="k-c">代价</b>并发刷新需处理竞态</p><p><b class="k-w">适用</b>浏览器与移动端公共客户端</p></div><div class="trd"><h4>不轮换的长期刷新令牌</h4><p><b class="k-p">优点</b>实现简单</p><p><b class="k-c">代价</b>被盗后长期可用</p><p><b class="k-w">适用</b>安全存储的机密客户端</p></div><div class="trd"><h4>发送者约束令牌</h4><p><b class="k-p">优点</b>令牌被盗也难以使用</p><p><b class="k-c">代价</b>实现复杂，支持有限</p><p><b class="k-w">适用</b>金融等高安全场景</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>刷新令牌明文存于数据库</p><p class="fix"><b>✓</b>只存哈希值，比对时哈希后查询</p></li><li><p class="bad"><b>✗</b>浏览器中把刷新令牌放 localStorage</p><p class="fix"><b>✓</b>用 HttpOnly、Secure Cookie 或 BFF 模式在服务端保管</p></li><li><p class="bad"><b>✗</b>多个标签页并发刷新触发误判重用</p><p class="fix"><b>✓</b>客户端串行刷新，或服务端设置短暂宽限期</p></li><li><p class="bad"><b>✗</b>用户改密、登出后刷新令牌仍有效</p><p class="fix"><b>✓</b>这些事件触发时吊销该用户全部刷新令牌</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>刷新令牌只发往令牌端点</span></label></li><li><label><input type="checkbox"><span>服务端只存哈希</span></label></li><li><label><input type="checkbox"><span>公共客户端启用轮换与重用检测</span></label></li><li><label><input type="checkbox"><span>设置绝对过期上限</span></label></li><li><label><input type="checkbox"><span>登出、改密时批量吊销</span></label></li><li><label><input type="checkbox"><span>浏览器端不暴露给 JavaScript</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么需要刷新令牌，而不是直接用长期访问令牌？</summary><p>访问令牌频繁发送给各资源服务器，暴露面大，且通常无状态难以撤销，所以应短命。刷新令牌只发往授权服务器、可在服务端吊销，保护更集中。两者组合既缩小了泄露窗口，又避免用户频繁重新登录。</p></details><details class="iv"><summary>刷新令牌轮换如何发现令牌被盗？</summary><p>每个刷新令牌只能使用一次。若攻击者和合法用户先后使用同一个令牌，第二次使用的必定是已作废的令牌，服务器据此判定泄露，吊销整个令牌族，双方都需重新登录，攻击者因此失去访问权。</p></details><details class="iv"><summary>SPA 应该如何保存刷新令牌？</summary><p>浏览器环境中任何 JS 可读的存储都可能被 XSS 窃取。推荐 BFF（Backend for Frontend）模式，由同域后端保管令牌，前端只持有 HttpOnly 会话 Cookie；若必须在前端处理，则启用轮换并设置较短的绝对有效期。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.rfc-editor.org/rfc/rfc6749#section-1.5" target="_blank" rel="noopener"><b>RFC 6749 Section 1.5: Refresh Token</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://www.rfc-editor.org/rfc/rfc9700" target="_blank" rel="noopener"><b>RFC 9700: OAuth 2.0 Security Best Current Practice</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://auth0.com/docs/secure/tokens/refresh-tokens/refresh-token-rotation" target="_blank" rel="noopener"><b>Auth0 Docs: Refresh Token Rotation</b><small>auth0.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="jwt-expiry.pro.html" rel="prev"><small>‹ 上一个</small><b>⏰ JWT过期时间机制</b></a><a class="pn next" href="oauth-2-0.pro.html" rel="next"><small>下一个 ›</small><b>🚗 开放授权框架</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

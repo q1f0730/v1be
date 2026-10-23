@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="内存溢出强制终结 专业模式：OOM Killer 是 Linux 内核在系统或 cgroup 内存耗尽且无法回收时，选择并强杀进程以释放内存的机制。容器超出 cgroup 内存上限即被终止">
+<title>🎓 内存溢出强制终结 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="oom-killer" data-answer="0" data-prev="memory-leaks.pro.html" data-next="ci-cd.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sre">🔮 高级 · 🩺 高可用 SRE</a><span>›</span><a href="oom-killer.html">内存溢出强制终结</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.313 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="memory-leaks.pro.html" rel="prev"><small>‹ 上一个</small><b>🍽️ 内存泄漏</b></a><a class="pn next" href="ci-cd.pro.html" rel="next"><small>下一个 ›</small><b>🏭 持续集成 / 持续交付 (CI/CD)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔪</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>内存溢出强制终结</h1><p class="en">OOM Killer</p>
+    <div class="hbtns"><a class="prosw back" href="oom-killer.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">OOM Killer 是 Linux 内核在系统或 cgroup 内存耗尽且无法回收时，选择并强杀进程以释放内存的机制。容器超出 cgroup 内存上限即被终止，Kubernetes 显示为 OOMKilled、退出码 137。它属于操作系统资源管理层，是设置内存限制、排查神秘重启的关键。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>进程申请内存，内核尝试回收页缓存、换出等方式满足；容器受 cgroup 上限约束。</p></li><li><span class="sn">2</span><p>回收失败且达到系统或 cgroup 内存上限时，触发 OOM 处理。</p></li><li><span class="sn">3</span><p>内核按 oom_score 选择进程，分值主要取决于内存占用，并受 oom_score_adj 调整。</p></li><li><span class="sn">4</span><p>被选中的进程收到 SIGKILL 立即终止，无法捕获，也没有机会做清理。</p></li><li><span class="sn">5</span><p>内核日志记录 Killed process 信息；Kubernetes 按重启策略重启容器并记录原因。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>oom_score_adj</dt><dd>取值 -1000 到 1000 的调整值，-1000 表示不会被 OOM 杀死。</dd></div><div class="term"><dt>cgroup 内存上限 (memory.max)</dt><dd>cgroup v2 中限制一组进程可用内存的接口文件。</dd></div><div class="term"><dt>退出码 137</dt><dd>128 加 9，表示进程被 SIGKILL 终止，常见于 OOM。</dd></div><div class="term"><dt>QoS 类 (QoS Class)</dt><dd>按 requests 与 limits 划分的服务质量等级，共三类。</dd></div><div class="term"><dt>节点压力驱逐 (Node-pressure Eviction)</dt><dd>kubelet 在节点内存紧张时主动驱逐 Pod，先于内核 OOM。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>排查 OOM 的常用命令</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 1. 内核日志里找被杀进程
+dmesg -T | grep -iE &quot;out of memory|killed process&quot;
+
+# 2. Kubernetes：确认容器上次终止原因
+kubectl get pod api-7d9f -o jsonpath=&#x27;{.status.containerStatuses[0].lastState.terminated.reason}&#x27;
+# 输出 OOMKilled 即为超出内存 limit
+
+# 3. cgroup v2：查看上限与 OOM 次数（在容器内或对应 cgroup 目录）
+cat /sys/fs/cgroup/memory.max
+grep oom_kill /sys/fs/cgroup/memory.events
+
+# 4. 查看某进程的 OOM 评分与调整值
+cat /proc/$(pgrep -o myapp)/oom_score
+cat /proc/$(pgrep -o myapp)/oom_score_adj</code></pre></div><p class="cnote">从内核日志、Pod 状态、cgroup 计数和进程评分四个角度确认是否发生 OOM。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">K8s 内存相关终止</h3><div class="tw"><table><thead><tr><th>现象</th><th>触发者</th><th>原因</th></tr></thead><tbody><tr><td data-h="现象">OOMKilled，退出码 137</td><td data-h="触发者">内核 OOM Killer</td><td data-h="原因">容器超出 memory limit</td></tr><tr><td data-h="现象">Evicted</td><td data-h="触发者">kubelet</td><td data-h="原因">节点内存低于驱逐阈值</td></tr><tr><td data-h="现象">节点级 OOM</td><td data-h="触发者">内核</td><td data-h="原因">节点整体内存耗尽，按 oom_score 选进程</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>requests 等于 limits</h4><p><b class="k-p">优点</b>Guaranteed QoS，最不易被驱逐</p><p><b class="k-c">代价</b>无法借用空闲内存，成本高</p><p><b class="k-w">适用</b>关键有状态服务</p></div><div class="trd"><h4>limits 高于 requests</h4><p><b class="k-p">优点</b>可突发使用内存</p><p><b class="k-c">代价</b>节点超卖时更易被驱逐或 OOM</p><p><b class="k-w">适用</b>负载波动的无状态服务</p></div><div class="trd"><h4>不设内存 limit</h4><p><b class="k-p">优点</b>不会因 limit 被杀</p><p><b class="k-c">代价</b>可能拖垮整个节点</p><p><b class="k-w">适用</b>一般不推荐</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>JVM 堆上限接近容器 limit，堆外内存一加就 OOM。</p><p class="fix"><b>✓</b>按容器内存比例设堆，例如用 MaxRAMPercentage 留出堆外空间。</p></li><li><p class="bad"><b>✗</b>只看应用日志，找不到崩溃原因。</p><p class="fix"><b>✓</b>SIGKILL 无法记录日志，应查 Pod 终止原因和内核日志。</p></li><li><p class="bad"><b>✗</b>把关键进程 oom_score_adj 设为 -1000，结果其他重要进程被杀。</p><p class="fix"><b>✓</b>谨慎使用，优先通过合理 limit 和容量规划解决。</p></li><li><p class="bad"><b>✗</b>limit 设得刚好等于平均用量。</p><p class="fix"><b>✓</b>按峰值用量加余量设置，并监控接近上限的告警。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个容器设置了内存 requests 与 limits</span></label></li><li><label><input type="checkbox"><span>运行时堆上限与容器 limit 匹配</span></label></li><li><label><input type="checkbox"><span>对 OOMKilled 与重启次数设告警</span></label></li><li><label><input type="checkbox"><span>内存使用接近 limit 时提前告警</span></label></li><li><label><input type="checkbox"><span>关键服务使用合适的 QoS 类</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>OOMKilled 和 Evicted 有什么区别？</summary><p>OOMKilled 是容器内存超过自己的 limit，被内核 OOM Killer 用 SIGKILL 杀掉，容器原地重启；Evicted 是节点内存压力达到 kubelet 驱逐阈值，kubelet 主动驱逐 Pod，Pod 需要重新调度到其他节点。</p></details><details class="iv"><summary>内核如何选择要杀的进程？</summary><p>为每个进程计算 oom_score，主要依据其内存占用占可用内存的比例，再加上 oom_score_adj 调整，选分数最高的杀掉。Kubernetes 根据 QoS 类为容器设置不同的 oom_score_adj，BestEffort 最先被杀。</p></details><details class="iv"><summary>Java 应用在容器里频繁 OOM 怎么办？</summary><p>确认 JVM 识别容器限制，用 MaxRAMPercentage 等参数让堆只占容器内存一部分，给元空间、线程栈、直接内存留余量；用 NMT 等工具查看堆外占用；同时排查真实泄漏。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/" target="_blank" rel="noopener"><b>Kubernetes：为容器管理资源</b><small>kubernetes.io ↗</small></a></li><li><a href="https://kubernetes.io/docs/concepts/scheduling-eviction/node-pressure-eviction/" target="_blank" rel="noopener"><b>Kubernetes：节点压力驱逐</b><small>kubernetes.io ↗</small></a></li><li><a href="https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html" target="_blank" rel="noopener"><b>Linux 内核文档：Control Group v2</b><small>kernel.org ↗</small></a></li><li><a href="https://man7.org/linux/man-pages/man5/proc.5.html" target="_blank" rel="noopener"><b>proc(5) 手册页（oom_score_adj）</b><small>man7.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="memory-leaks.pro.html" rel="prev"><small>‹ 上一个</small><b>🍽️ 内存泄漏</b></a><a class="pn next" href="ci-cd.pro.html" rel="next"><small>下一个 ›</small><b>🏭 持续集成 / 持续交付 (CI/CD)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

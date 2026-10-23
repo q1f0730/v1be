@@ -1,0 +1,3774 @@
+[
+ {
+  "slug": "full-table-scans",
+  "def": "全表扫描（Full Table Scan / Seq Scan）是查询执行器的一种访问路径：按物理顺序读取表的全部数据页，逐行判断过滤条件。它属于数据库执行计划层，本身不是错误——小表或需读大部分行时反而最快；问题在于大表上只取少量行却走了它，导致 I/O 与延迟随数据量线性增长。",
+  "how": [
+   "SQL 经解析、改写后交给优化器（Optimizer），枚举可用访问路径：顺序扫描、索引扫描、位图扫描等。",
+   "优化器依据统计信息（行数、值分布、相关性）估算每条路径的代价，选代价最低者。",
+   "若过滤列无可用索引、谓词无法使用索引，或预估命中行比例高，就选择顺序扫描。",
+   "执行时按页读取整张表，对每行求值 WHERE 条件，不满足的行被丢弃，读取量与表大小成正比。",
+   "EXPLAIN 中出现 Seq Scan（PostgreSQL）或 type=ALL（MySQL）即为全表扫描，据此判断是否优化。"
+  ],
+  "terms": [
+   {
+    "t": "执行计划 (Query Plan)",
+    "d": "优化器为一条 SQL 选定的访问路径与算子树，用 EXPLAIN 查看。"
+   },
+   {
+    "t": "选择性 (Selectivity)",
+    "d": "谓词命中行占总行数的比例；越低越适合走索引。"
+   },
+   {
+    "t": "可索引谓词 (Sargable)",
+    "d": "能直接利用索引的条件写法，如 col = ?、col > ?。"
+   },
+   {
+    "t": "统计信息 (Statistics)",
+    "d": "表行数、列值分布等元数据，由 ANALYZE 收集，影响代价估算。"
+   },
+   {
+    "t": "覆盖索引 (Covering Index)",
+    "d": "索引包含查询所需全部列，无需回表读取数据行。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "定位并消除全表扫描",
+   "src": "-- PostgreSQL：查看实际执行计划与耗时\nEXPLAIN ANALYZE\nSELECT id, email FROM users WHERE lower(email) = 'a@b.com';\n-- 输出若含 \"Seq Scan on users\"，说明逐行扫描\n\n-- 原因：普通索引建在 email 上，但条件对列套了函数\n-- 方案一：建表达式索引，与查询写法保持一致\nCREATE INDEX idx_users_lower_email ON users (lower(email));\n\n-- 方案二：前缀匹配可用 B-tree（需 text_pattern_ops 或 C 排序规则）\nCREATE INDEX idx_users_email_prefix ON users (email text_pattern_ops);\nEXPLAIN SELECT id FROM users WHERE email LIKE 'abc%';\n\n-- 更新统计信息，避免优化器误判\nANALYZE users;",
+   "note": "对列套函数会让普通索引失效；建与查询一致的表达式索引后应变为 Index Scan。"
+  },
+  "table": {
+   "title": "常见访问路径对比",
+   "head": [
+    "访问路径",
+    "典型场景",
+    "代价特征"
+   ],
+   "rows": [
+    [
+     "Seq Scan / ALL",
+     "小表、读取大部分行",
+     "与表大小线性相关"
+    ],
+    [
+     "Index Scan",
+     "高选择性等值/范围",
+     "随机 I/O，命中少时快"
+    ],
+    [
+     "Index Only Scan",
+     "覆盖索引",
+     "不回表，最省 I/O"
+    ],
+    [
+     "Bitmap Heap Scan",
+     "中等选择性、多条件",
+     "先建位图再批量读页"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "新增索引",
+    "pros": "读查询从线性降到对数级",
+    "cons": "写入变慢、占存储、需维护",
+    "when": "高频查询且选择性高的列"
+   },
+   {
+    "opt": "改写 SQL 使谓词可索引",
+    "pros": "零存储成本，立竿见影",
+    "cons": "需改业务代码，易被后人改回",
+    "when": "函数包列、隐式类型转换导致失效"
+   },
+   {
+    "opt": "接受全表扫描",
+    "pros": "无额外维护成本",
+    "cons": "数据增长后延迟线性上升",
+    "when": "小表、离线报表、读大比例行"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "WHERE 中对索引列做函数或运算，如 DATE(created_at)=…",
+    "fix": "改为范围条件 created_at >= … AND < …，或建表达式索引"
+   },
+   {
+    "bad": "参数类型与列类型不一致触发隐式转换",
+    "fix": "保持绑定参数类型与列定义一致，如字符串列不要传数字"
+   },
+   {
+    "bad": "以为 LIKE '%词%' 能走普通 B-tree 索引",
+    "fix": "前导通配无法用 B-tree；改用全文索引或 pg_trgm 等专用方案"
+   },
+   {
+    "bad": "只在开发库测执行计划，数据量与生产差几个量级",
+    "fix": "用接近生产规模的数据或在只读副本上 EXPLAIN ANALYZE"
+   }
+  ],
+  "checklist": [
+   "核心查询都跑过 EXPLAIN，无大表 Seq Scan",
+   "开启慢查询日志并设置合理阈值",
+   "WHERE/JOIN/ORDER BY 列有匹配索引",
+   "无函数包列、隐式类型转换",
+   "统计信息定期更新（autovacuum/ANALYZE）",
+   "AI 生成的查询已人工核对执行计划"
+  ],
+  "interview": [
+   {
+    "q": "有索引为什么优化器仍选择全表扫描？",
+    "a": "代价估算认为更便宜：命中比例高时随机回表比顺序读贵；统计信息过期致误判；谓词不可索引（函数、隐式转换、前导通配）；复合索引列序不匹配。用 EXPLAIN ANALYZE 对比估算与实际行数定位。"
+   },
+   {
+    "q": "如何在生产上系统地发现全表扫描？",
+    "a": "开慢查询日志；PostgreSQL 用 pg_stat_statements 按总耗时排序，并看 pg_stat_user_tables 里 seq_scan 偏高的大表；MySQL 看 slow log。再对 Top SQL 逐条 EXPLAIN。"
+   },
+   {
+    "q": "复合索引 (a,b) 能否支持 WHERE b=?",
+    "a": "B-tree 复合索引遵循最左前缀，单独按 b 过滤通常无法高效使用（个别数据库有 skip scan 优化但不可依赖）。应根据查询模式调整列顺序或为 b 单独建索引。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL 文档：Using EXPLAIN",
+    "url": "https://www.postgresql.org/docs/current/using-explain.html"
+   },
+   {
+    "title": "MySQL 文档：EXPLAIN Output Format",
+    "url": "https://dev.mysql.com/doc/refman/8.0/en/explain-output.html"
+   },
+   {
+    "title": "Use The Index, Luke",
+    "url": "https://use-the-index-luke.com/"
+   }
+  ]
+ },
+ {
+  "slug": "database-migrations",
+  "def": "数据库模式迁移（Schema Migration）是把表结构、索引、约束等变更写成有序、可版本控制的脚本，由迁移工具按顺序执行并记录已应用版本。它位于应用与数据库之间的发布流程层，解决多环境结构一致、变更可追溯、可重复部署的问题。",
+  "how": [
+   "每次结构变更生成一个带序号或时间戳的迁移文件，包含 up（应用）与可选的 down（回退）逻辑。",
+   "迁移工具在数据库中维护一张版本表（如 schema_migrations），记录已执行的迁移 ID。",
+   "部署时工具比对代码中的迁移与版本表，按顺序执行尚未应用的迁移，并写入记录。",
+   "多数工具会加锁（如 advisory lock）防止多个实例并发执行同一批迁移。",
+   "大表变更需拆为扩展—迁移数据—收缩多步，配合应用发布实现零停机。"
+  ],
+  "terms": [
+   {
+    "t": "扩展-收缩 (Expand/Contract)",
+    "d": "先加新结构兼容新旧代码，切流后再删旧结构的零停机模式。"
+   },
+   {
+    "t": "版本表 (Migration Table)",
+    "d": "数据库内记录已执行迁移 ID 与时间的元数据表。"
+   },
+   {
+    "t": "DDL 事务性 (Transactional DDL)",
+    "d": "DDL 能否在事务内回滚；PostgreSQL 支持，MySQL 大多不支持。"
+   },
+   {
+    "t": "在线 DDL (Online DDL)",
+    "d": "不长时间锁表的结构变更方式，如 CREATE INDEX CONCURRENTLY。"
+   },
+   {
+    "t": "数据回填 (Backfill)",
+    "d": "为新列或新表批量补齐历史数据的过程，通常分批执行。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "零停机重命名列（分步）",
+   "src": "-- 迁移 0012：扩展——新增列，允许为空，不阻塞旧代码\nALTER TABLE users ADD COLUMN display_name text;\n\n-- 迁移 0013：回填——分批更新，避免长事务与锁\nUPDATE users SET display_name = nickname\nWHERE id IN (\n  SELECT id FROM users\n  WHERE display_name IS NULL\n  LIMIT 5000\n);  -- 由脚本循环执行直到影响行数为 0\n\n-- 此时发布应用：双写 nickname 与 display_name，读新列\n\n-- 迁移 0014：收缩——确认无代码读旧列后再删除\nALTER TABLE users DROP COLUMN nickname;\n\n-- PostgreSQL 建索引不锁写（不能放在事务块内）\nCREATE INDEX CONCURRENTLY idx_users_display_name\n  ON users (display_name);",
+   "note": "直接 RENAME COLUMN 会让正在运行的旧版本报错；拆成三步可与滚动发布兼容。"
+  },
+  "table": {
+   "title": "常见迁移工具",
+   "head": [
+    "工具",
+    "生态",
+    "迁移形式"
+   ],
+   "rows": [
+    [
+     "Flyway",
+     "JVM / 通用",
+     "版本化 SQL 文件"
+    ],
+    [
+     "Alembic",
+     "Python / SQLAlchemy",
+     "Python 脚本，可自动生成"
+    ],
+    [
+     "Prisma Migrate",
+     "Node.js / TS",
+     "由 schema 生成 SQL"
+    ],
+    [
+     "Rails / Django migrations",
+     "Ruby / Python 框架",
+     "框架 DSL 描述变更"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "手写 SQL 迁移",
+    "pros": "完全可控，能用数据库专有特性",
+    "cons": "工作量大，易漏写回退",
+    "when": "复杂变更、大表、性能敏感"
+   },
+   {
+    "opt": "ORM 自动生成迁移",
+    "pros": "快，与模型定义保持同步",
+    "cons": "可能生成锁表或删列的危险语句",
+    "when": "早期项目，生成后人工审查"
+   },
+   {
+    "opt": "声明式 schema diff",
+    "pros": "只描述目标状态，工具算差异",
+    "cons": "重命名等意图难识别，可能误删",
+    "when": "团队熟悉工具且有审查流程"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "修改已在生产执行过的迁移文件",
+    "fix": "已发布迁移视为不可变，修正应新增一个迁移"
+   },
+   {
+    "bad": "在同一迁移里加 NOT NULL 列并大表回填",
+    "fix": "先加可空列，分批回填，最后再加约束"
+   },
+   {
+    "bad": "依赖 down 迁移做生产回滚，删列后数据已丢",
+    "fix": "以前向修复为主，破坏性变更延后并先备份"
+   },
+   {
+    "bad": "让 AI 直接改 schema 并在生产 push，跳过迁移文件",
+    "fix": "要求生成迁移文件并走审查，生产只通过 CI 执行迁移"
+   }
+  ],
+  "checklist": [
+   "迁移文件纳入版本控制并经代码审查",
+   "大表 DDL 评估锁级别与执行时长",
+   "新旧版本应用都能兼容迁移后的结构",
+   "回填分批执行并可中断续跑",
+   "执行前有可恢复的备份或快照",
+   "CI 中在空库与生产副本上各跑一遍"
+  ],
+  "interview": [
+   {
+    "q": "如何做到加 NOT NULL 列零停机？",
+    "a": "分步：先加可空列（或带默认值，新版本 PostgreSQL 加常量默认值不重写表）；应用开始写新列；分批回填历史数据；最后加 NOT NULL 约束，PostgreSQL 可先加 CHECK … NOT VALID 再 VALIDATE 降低锁影响。"
+   },
+   {
+    "q": "迁移应在应用启动时执行还是单独步骤？",
+    "a": "多实例环境建议作为部署流水线中的独立步骤，避免多个实例竞争、启动超时和失败时应用不可用。若在启动时执行，必须有分布式锁且迁移足够快。"
+   },
+   {
+    "q": "down 迁移有必要写吗？",
+    "a": "开发环境有用，便于来回切换。生产中删除列或表的回退无法恢复数据，实践上多采用前向修复（roll forward），并让每一步迁移本身向后兼容。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Flyway 文档",
+    "url": "https://documentation.red-gate.com/flyway"
+   },
+   {
+    "title": "Alembic 教程",
+    "url": "https://alembic.sqlalchemy.org/en/latest/tutorial.html"
+   },
+   {
+    "title": "PostgreSQL 文档：CREATE INDEX（CONCURRENTLY）",
+    "url": "https://www.postgresql.org/docs/current/sql-createindex.html"
+   }
+  ]
+ },
+ {
+  "slug": "transactions",
+  "def": "数据库事务（Transaction）是一组作为不可分割单元执行的读写操作，满足 ACID：原子性、一致性、隔离性、持久性。它由存储引擎通过日志与锁或多版本并发控制实现，解决并发访问与故障中途中断时的数据正确性问题，是业务一致性的最底层保障。",
+  "how": [
+   "客户端执行 BEGIN 开启事务，后续语句共享同一事务上下文与快照。",
+   "修改先写入预写日志（WAL / redo log），保证崩溃后可重放或撤销。",
+   "隔离通过锁或 MVCC 实现：读者看到某个一致快照，写者对行加锁防止冲突。",
+   "COMMIT 时日志刷盘即视为持久化；ROLLBACK 时利用旧版本或 undo 撤销修改。",
+   "并发冲突时，较高隔离级别可能抛出序列化失败，需要应用捕获后重试整个事务。"
+  ],
+  "terms": [
+   {
+    "t": "ACID",
+    "d": "原子性、一致性、隔离性、持久性四项事务保证。"
+   },
+   {
+    "t": "隔离级别 (Isolation Level)",
+    "d": "读未提交、读已提交、可重复读、可串行化，越高异常越少。"
+   },
+   {
+    "t": "MVCC",
+    "d": "多版本并发控制，读不阻塞写，每个事务看到自己的快照。"
+   },
+   {
+    "t": "写偏斜 (Write Skew)",
+    "d": "两事务基于同一快照各自更新不同行，合起来破坏约束。"
+   },
+   {
+    "t": "保存点 (Savepoint)",
+    "d": "事务内的回滚标记，可部分回滚而不放弃整个事务。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "转账事务与重试",
+   "src": "import psycopg  # psycopg 3\nfrom psycopg import errors\n\ndef transfer(conn, src, dst, amount, retries=3):\n    for _ in range(retries):\n        try:\n            # with conn.transaction(): 正常退出 COMMIT，异常 ROLLBACK\n            with conn.transaction():\n                conn.execute(\"SET TRANSACTION ISOLATION LEVEL SERIALIZABLE\")\n                cur = conn.execute(\n                    \"SELECT balance FROM accounts WHERE id=%s FOR UPDATE\", (src,))\n                (balance,) = cur.fetchone()\n                if balance < amount:\n                    raise ValueError(\"余额不足\")\n                conn.execute(\"UPDATE accounts SET balance=balance-%s WHERE id=%s\", (amount, src))\n                conn.execute(\"UPDATE accounts SET balance=balance+%s WHERE id=%s\", (amount, dst))\n            return True\n        except errors.SerializationFailure:\n            continue  # 序列化冲突：整个事务重来\n    raise RuntimeError(\"重试次数用尽\")\n\nwith psycopg.connect(\"dbname=app\") as conn:\n    transfer(conn, 1, 2, 100)",
+   "note": "扣款和入账必须同成同败；SERIALIZABLE 冲突时要重试整个事务而非单条语句。"
+  },
+  "table": {
+   "title": "隔离级别与异常",
+   "head": [
+    "隔离级别",
+    "脏读",
+    "不可重复读",
+    "幻读"
+   ],
+   "rows": [
+    [
+     "读未提交",
+     "可能",
+     "可能",
+     "可能"
+    ],
+    [
+     "读已提交",
+     "不会",
+     "可能",
+     "可能"
+    ],
+    [
+     "可重复读",
+     "不会",
+     "不会",
+     "标准允许，实现各异"
+    ],
+    [
+     "可串行化",
+     "不会",
+     "不会",
+     "不会"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "悲观锁 SELECT … FOR UPDATE",
+    "pros": "语义直观，冲突时排队等待",
+    "cons": "持锁时间长会阻塞、可能死锁",
+    "when": "热点行、冲突概率高"
+   },
+   {
+    "opt": "乐观锁（版本号字段）",
+    "pros": "无锁等待，读多写少时吞吐高",
+    "cons": "冲突时需重试，业务要处理失败",
+    "when": "冲突少、可接受重试"
+   },
+   {
+    "opt": "SERIALIZABLE 隔离",
+    "pros": "数据库兜底所有并发异常",
+    "cons": "冲突中止率高，必须有重试逻辑",
+    "when": "复杂不变量难以手工加锁"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在事务中调用外部 HTTP 或等用户输入",
+    "fix": "事务只包数据库操作，外部调用放在事务外或用 outbox 模式"
+   },
+   {
+    "bad": "以为默认隔离级别能防止所有并发问题",
+    "fix": "确认数据库默认级别（PostgreSQL 为读已提交），按需加锁或提级"
+   },
+   {
+    "bad": "捕获异常后继续在已失败的事务里执行语句",
+    "fix": "出错后先 ROLLBACK（或回到保存点）再继续"
+   },
+   {
+    "bad": "跨多个服务的数据库期待单个本地事务保证一致",
+    "fix": "改用 Saga、outbox 等最终一致方案并设计补偿"
+   }
+  ],
+  "checklist": [
+   "多步写操作都在同一事务中",
+   "事务内没有网络调用与长耗时计算",
+   "明确使用的隔离级别及其异常",
+   "序列化失败与死锁有重试逻辑",
+   "加锁顺序一致以避免死锁",
+   "ORM 的自动提交行为已确认"
+  ],
+  "interview": [
+   {
+    "q": "什么是写偏斜？如何防止？",
+    "a": "两个事务读取同一快照，各自更新不同行，单独都合法，合起来违反约束（如值班至少一人）。可重复读/快照隔离防不住。可用 SERIALIZABLE、对相关行 SELECT FOR UPDATE，或把约束物化为可加锁的行。"
+   },
+   {
+    "q": "PostgreSQL 与 MySQL InnoDB 默认隔离级别有何不同？",
+    "a": "PostgreSQL 默认读已提交，每条语句取新快照；InnoDB 默认可重复读，事务内一致快照，并通过间隙锁在锁定读时减少幻读。迁移代码时要注意行为差异。"
+   },
+   {
+    "q": "事务提交了，数据一定不丢吗？",
+    "a": "取决于持久化配置：日志是否同步刷盘（如 synchronous_commit、innodb_flush_log_at_trx_commit）、存储是否可靠、主从复制是同步还是异步。异步复制下主库故障切换可能丢失最近已提交事务。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL 文档：Transaction Isolation",
+    "url": "https://www.postgresql.org/docs/current/transaction-iso.html"
+   },
+   {
+    "title": "Wikipedia: ACID",
+    "url": "https://en.wikipedia.org/wiki/ACID"
+   },
+   {
+    "title": "psycopg 3：Transactions management",
+    "url": "https://www.psycopg.org/psycopg3/docs/basic/transactions.html"
+   }
+  ]
+ },
+ {
+  "slug": "foreign-keys",
+  "def": "外键约束（Foreign Key Constraint）声明子表某列的值必须在父表的主键或唯一键中存在，由数据库在写入时强制检查。它属于数据完整性层的引用完整性（Referential Integrity）机制，防止出现孤儿记录，并可定义父行删除或更新时的级联行为。",
+  "how": [
+   "建表或 ALTER TABLE 时声明 FOREIGN KEY (col) REFERENCES parent(key)，被引用列必须有唯一约束。",
+   "向子表插入或更新时，数据库查找父表对应键，不存在则拒绝写入。",
+   "删除或更新父行时，按 ON DELETE / ON UPDATE 规则处理：拒绝、级联、置空或置默认值。",
+   "检查默认在每条语句结束时进行；声明 DEFERRABLE 后可推迟到事务提交时检查。",
+   "检查需要查找子表引用列，若子表外键列无索引，删除父行时可能触发子表全表扫描。"
+  ],
+  "terms": [
+   {
+    "t": "引用完整性 (Referential Integrity)",
+    "d": "所有引用都指向真实存在的记录。"
+   },
+   {
+    "t": "ON DELETE CASCADE",
+    "d": "父行删除时自动删除引用它的子行。"
+   },
+   {
+    "t": "ON DELETE SET NULL",
+    "d": "父行删除时把子行外键列置为 NULL。"
+   },
+   {
+    "t": "可延迟约束 (DEFERRABLE)",
+    "d": "约束检查推迟到事务提交，便于循环引用或批量导入。"
+   },
+   {
+    "t": "孤儿记录 (Orphan Row)",
+    "d": "引用的父记录已不存在的子行。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "外键与删除行为",
+   "src": "CREATE TABLE orgs (\n  id bigint PRIMARY KEY\n);\n\nCREATE TABLE projects (\n  id     bigint PRIMARY KEY,\n  org_id bigint NOT NULL\n    REFERENCES orgs(id) ON DELETE CASCADE   -- 删组织连带删项目\n);\n\nCREATE TABLE tasks (\n  id          bigint PRIMARY KEY,\n  project_id  bigint NOT NULL REFERENCES projects(id) ON DELETE RESTRICT,\n  assignee_id bigint REFERENCES users(id) ON DELETE SET NULL  -- 人走了任务保留\n);\n\n-- PostgreSQL 不会自动给外键列建索引，需手动补上\nCREATE INDEX ON projects (org_id);\nCREATE INDEX ON tasks (project_id);\n\n-- 大表加外键：先 NOT VALID 再校验，减少锁时间\nALTER TABLE tasks ADD CONSTRAINT tasks_creator_fk\n  FOREIGN KEY (creator_id) REFERENCES users(id) NOT VALID;\nALTER TABLE tasks VALIDATE CONSTRAINT tasks_creator_fk;",
+   "note": "不同关系选择不同删除行为；外键列要自建索引，大表加约束分两步。"
+  },
+  "table": {
+   "title": "ON DELETE 行为对比",
+   "head": [
+    "行为",
+    "父行删除时",
+    "适用关系"
+   ],
+   "rows": [
+    [
+     "NO ACTION / RESTRICT",
+     "有子行则拒绝",
+     "子数据重要，需显式处理"
+    ],
+    [
+     "CASCADE",
+     "子行一并删除",
+     "强从属，如订单与明细"
+    ],
+    [
+     "SET NULL",
+     "子行外键置空",
+     "可选关联，如负责人"
+    ],
+    [
+     "SET DEFAULT",
+     "子行外键置默认值",
+     "有兜底归属的场景"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "数据库外键",
+    "pros": "强一致，任何写入路径都受保护",
+    "cons": "写入多一次检查，分库分表难用",
+    "when": "单库关系型业务，默认首选"
+   },
+   {
+    "opt": "应用层校验",
+    "pros": "灵活，可跨库跨服务",
+    "cons": "并发与多入口下容易漏，出现孤儿",
+    "when": "跨服务、分片或特殊性能约束"
+   },
+   {
+    "opt": "外键 + 软删除",
+    "pros": "保留引用关系与历史",
+    "cons": "需处理已删父行仍被引用的语义",
+    "when": "需审计、可恢复的数据"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "外键列不建索引，删父行时锁等待严重",
+    "fix": "为子表外键列建索引（PostgreSQL 不会自动创建）"
+   },
+   {
+    "bad": "随手用 CASCADE，一次删除连带清空大量数据",
+    "fix": "仅对强从属关系用 CASCADE，其余用 RESTRICT 并显式处理"
+   },
+   {
+    "bad": "迁移顺序错误，先建子表引用尚不存在的父表",
+    "fix": "按依赖顺序建表，或先建表后统一加约束"
+   },
+   {
+    "bad": "批量导入时临时删外键忘记加回",
+    "fix": "用可延迟约束或 NOT VALID + VALIDATE，并在检查清单中核对"
+   }
+  ],
+  "checklist": [
+   "所有引用关系都声明了外键",
+   "每个外键列都有索引",
+   "ON DELETE 行为逐条评审过",
+   "大表加约束采用 NOT VALID 两步法",
+   "ORM 模型关系与数据库约束一致",
+   "AI 生成的 schema 未遗漏外键"
+  ],
+  "interview": [
+   {
+    "q": "为什么有些大厂规范禁止使用外键？",
+    "a": "主要出于分库分表后无法跨库约束、高并发下级联与检查带来的锁争用、以及运维变更成本。代价是需在应用层保证一致性并定期巡检孤儿数据。对单库中小规模业务，外键的收益通常大于成本。"
+   },
+   {
+    "q": "外键会带来哪些锁问题？",
+    "a": "子表插入需对父行加共享级别锁以防并发删除，父行更新或删除需检查子表。外键列无索引时检查要扫子表，持锁更久，易引发阻塞甚至死锁。"
+   },
+   {
+    "q": "什么时候用 DEFERRABLE INITIALLY DEFERRED？",
+    "a": "存在循环引用（如两表互相引用）或批量导入顺序不可控时，把检查推迟到 COMMIT，事务内允许暂时不一致，提交时仍保证完整性。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL 文档：Constraints",
+    "url": "https://www.postgresql.org/docs/current/ddl-constraints.html"
+   },
+   {
+    "title": "MySQL 文档：FOREIGN KEY Constraints",
+    "url": "https://dev.mysql.com/doc/refman/8.0/en/create-table-foreign-keys.html"
+   },
+   {
+    "title": "Wikipedia: Referential integrity",
+    "url": "https://en.wikipedia.org/wiki/Referential_integrity"
+   }
+  ]
+ },
+ {
+  "slug": "unique-constraints",
+  "def": "唯一性约束（Unique Constraint）要求表中某列或列组合的值不重复，数据库通常通过建立唯一索引来实现并在写入时检查。它是数据完整性层的最后防线：应用层「先查后插」在并发下必然有竞态，只有数据库约束能原子地保证唯一，同时为幂等写入和 upsert 提供基础。",
+  "how": [
+   "声明 UNIQUE 或 CREATE UNIQUE INDEX 后，数据库为对应列建立唯一 B-tree 索引。",
+   "插入或更新时，在索引中查找相同键；若已存在已提交或进行中的冲突行，则等待或报错。",
+   "并发事务插入同一键时，后者会等待前者结束，前者提交则后者报唯一冲突错误。",
+   "SQL 标准中 NULL 互不相等，因此多数数据库允许唯一列存在多行 NULL。",
+   "冲突可由 INSERT … ON CONFLICT（PostgreSQL）或 ON DUPLICATE KEY UPDATE（MySQL）转为更新。"
+  ],
+  "terms": [
+   {
+    "t": "唯一索引 (Unique Index)",
+    "d": "实现唯一约束的索引结构，也可加速等值查询。"
+   },
+   {
+    "t": "复合唯一 (Composite Unique)",
+    "d": "多列组合唯一，如 (tenant_id, email)。"
+   },
+   {
+    "t": "部分唯一索引 (Partial Unique Index)",
+    "d": "只对满足条件的行生效，如未删除行。"
+   },
+   {
+    "t": "Upsert",
+    "d": "插入若冲突则更新，依赖唯一约束判定冲突。"
+   },
+   {
+    "t": "NULLS NOT DISTINCT",
+    "d": "PostgreSQL 15+ 选项，让多个 NULL 也视为重复。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "多租户唯一与 upsert",
+   "src": "-- 同一租户内邮箱唯一（不同租户可重复）\nALTER TABLE users\n  ADD CONSTRAINT users_tenant_email_uniq UNIQUE (tenant_id, email);\n\n-- 软删除场景：只约束未删除的行\nCREATE UNIQUE INDEX users_active_email_uniq\n  ON users (tenant_id, lower(email))\n  WHERE deleted_at IS NULL;\n\n-- 幂等写入：同一请求键重复提交只生效一次\nINSERT INTO payments (idempotency_key, amount)\nVALUES ('req-123', 100)\nON CONFLICT (idempotency_key) DO NOTHING;\n\n-- upsert：存在则更新计数\nINSERT INTO daily_stats (day, page, views)\nVALUES (CURRENT_DATE, '/home', 1)\nON CONFLICT (day, page)\nDO UPDATE SET views = daily_stats.views + EXCLUDED.views;",
+   "note": "复合唯一、部分唯一索引和 ON CONFLICT 组合，覆盖多租户、软删除和幂等场景。"
+  },
+  "table": {
+   "title": "保证唯一的几种做法",
+   "head": [
+    "做法",
+    "并发安全",
+    "备注"
+   ],
+   "rows": [
+    [
+     "应用先查再插",
+     "否",
+     "两个请求可同时查到不存在"
+    ],
+    [
+     "数据库唯一约束",
+     "是",
+     "冲突时报错，需捕获处理"
+    ],
+    [
+     "唯一约束 + upsert",
+     "是",
+     "冲突转为更新或忽略"
+    ],
+    [
+     "分布式锁 + 查询",
+     "依赖锁实现",
+     "复杂且仍建议加约束兜底"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "UNIQUE 约束",
+    "pros": "语义清晰，可被外键引用",
+    "cons": "无法带条件或表达式",
+    "when": "普通单列或多列唯一"
+   },
+   {
+    "opt": "部分/表达式唯一索引",
+    "pros": "支持条件、大小写不敏感等",
+    "cons": "不能被外键引用，ORM 支持不一",
+    "when": "软删除、忽略大小写邮箱"
+   },
+   {
+    "opt": "仅应用层校验",
+    "pros": "能给友好提示",
+    "cons": "并发下必然漏",
+    "when": "只作体验优化，必须配数据库约束"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只在接口里查重，没有数据库约束",
+    "fix": "加唯一约束兜底，捕获冲突错误转为业务提示"
+   },
+   {
+    "bad": "软删除后同邮箱无法重新注册",
+    "fix": "改用 WHERE deleted_at IS NULL 的部分唯一索引"
+   },
+   {
+    "bad": "邮箱大小写不同被当成两个用户",
+    "fix": "统一规范化存储，或对 lower(email) 建唯一索引"
+   },
+   {
+    "bad": "在已有重复数据的大表上直接加约束失败",
+    "fix": "先查出并清理重复，再用 CREATE UNIQUE INDEX CONCURRENTLY"
+   }
+  ],
+  "checklist": [
+   "业务唯一键都有数据库层约束",
+   "唯一冲突错误被捕获并映射为 409 等",
+   "大小写、空格等规范化策略明确",
+   "软删除表使用部分唯一索引",
+   "幂等键字段带唯一约束",
+   "NULL 的唯一语义符合预期"
+  ],
+  "interview": [
+   {
+    "q": "为什么「先查后插」不能保证唯一？",
+    "a": "两个并发请求可能在对方插入前同时查询到「不存在」，随后都执行插入，形成竞态（TOCTOU）。只有数据库在索引层原子检查才能保证；应用层查询仅用于提前给出友好提示。"
+   },
+   {
+    "q": "唯一列允许多个 NULL 吗？",
+    "a": "按 SQL 标准 NULL 不等于 NULL，PostgreSQL、MySQL 默认允许多个 NULL。PostgreSQL 15 起可用 NULLS NOT DISTINCT 改变此行为；SQL Server 的唯一约束默认只允许一个 NULL，跨库时要注意。"
+   },
+   {
+    "q": "ON CONFLICT DO NOTHING 有什么坑？",
+    "a": "冲突时不返回行，RETURNING 拿不到已有记录，需要再查一次；且它要求冲突目标与某个唯一索引精确匹配，部分索引需写出相同 WHERE 条件。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL 文档：Constraints（Unique）",
+    "url": "https://www.postgresql.org/docs/current/ddl-constraints.html"
+   },
+   {
+    "title": "PostgreSQL 文档：INSERT（ON CONFLICT）",
+    "url": "https://www.postgresql.org/docs/current/sql-insert.html"
+   },
+   {
+    "title": "PostgreSQL 文档：Partial Indexes",
+    "url": "https://www.postgresql.org/docs/current/indexes-partial.html"
+   }
+  ]
+ },
+ {
+  "slug": "soft-deletes",
+  "def": "软删除（Soft Delete）是用标记列（如 deleted_at 时间戳或 is_deleted 布尔）代替物理 DELETE 的数据建模模式，查询时默认过滤已删除行。它属于应用数据模型层，用于误删恢复、审计留痕和保持引用关系，但会把「过滤已删除」的责任扩散到每一条查询。",
+  "how": [
+   "表中增加 deleted_at 列，默认 NULL 表示有效，删除操作改为 UPDATE 写入当前时间。",
+   "所有读取查询追加 WHERE deleted_at IS NULL，通常由 ORM 全局作用域或视图统一处理。",
+   "唯一约束与索引改为只覆盖有效行（部分索引），避免已删除数据占用唯一键。",
+   "恢复操作把 deleted_at 置回 NULL；关联数据需要按业务规则同步删除或恢复。",
+   "定期任务把超过保留期的软删除数据物理清理或归档，满足存储与合规要求。"
+  ],
+  "terms": [
+   {
+    "t": "硬删除 (Hard Delete)",
+    "d": "执行 DELETE 物理移除行，无法通过应用恢复。"
+   },
+   {
+    "t": "墓碑标记 (Tombstone)",
+    "d": "标识数据已删除但仍保留记录的标志。"
+   },
+   {
+    "t": "全局作用域 (Global Scope)",
+    "d": "ORM 自动给查询附加过滤条件的机制。"
+   },
+   {
+    "t": "归档表 (Archive Table)",
+    "d": "把删除数据移入的独立表，主表保持干净。"
+   },
+   {
+    "t": "被遗忘权 (Right to Erasure)",
+    "d": "GDPR 第 17 条，用户可要求删除个人数据。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "软删除的完整配套",
+   "src": "ALTER TABLE posts ADD COLUMN deleted_at timestamptz;\n\n-- 删除 = 打标记\nUPDATE posts SET deleted_at = now() WHERE id = 42;\n\n-- 视图统一过滤，业务代码查视图而不是原表\nCREATE VIEW active_posts AS\n  SELECT * FROM posts WHERE deleted_at IS NULL;\n\n-- 唯一约束只针对有效行\nCREATE UNIQUE INDEX posts_slug_active_uniq\n  ON posts (slug) WHERE deleted_at IS NULL;\n\n-- 常用查询的索引也加同样条件，体积更小\nCREATE INDEX posts_author_active_idx\n  ON posts (author_id, created_at) WHERE deleted_at IS NULL;\n\n-- 定期清理：保留 30 天后物理删除（分批执行）\nDELETE FROM posts\nWHERE id IN (SELECT id FROM posts\n             WHERE deleted_at < now() - interval '30 days' LIMIT 1000);",
+   "note": "软删除要配套视图/作用域、部分索引和定期清理，否则会慢慢污染查询与约束。"
+  },
+  "table": {
+   "title": "删除策略对比",
+   "head": [
+    "策略",
+    "可恢复",
+    "查询复杂度",
+    "合规删除"
+   ],
+   "rows": [
+    [
+     "硬删除",
+     "仅靠备份",
+     "低",
+     "容易"
+    ],
+    [
+     "deleted_at 标记",
+     "是",
+     "每条查询要过滤",
+     "需额外清理"
+    ],
+    [
+     "移入归档表",
+     "是",
+     "主表无需过滤",
+     "归档表需清理"
+    ],
+    [
+     "事件溯源/审计日志",
+     "可重建",
+     "高",
+     "需专门处理"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "deleted_at 列",
+    "pros": "实现简单，可记录删除时间",
+    "cons": "漏写过滤即泄露已删数据",
+    "when": "需快速撤销删除的业务数据"
+   },
+   {
+    "opt": "归档表",
+    "pros": "主表查询与约束保持简单",
+    "cons": "删除需跨表事务，恢复较麻烦",
+    "when": "删除频繁、主表查询量大"
+   },
+   {
+    "opt": "硬删除 + 审计日志",
+    "pros": "数据干净，合规处理直接",
+    "cons": "恢复需从日志或备份重建",
+    "when": "个人敏感数据、合规优先"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "原生 SQL、报表、JOIN 中忘记过滤已删除行",
+    "fix": "统一通过视图或 ORM 作用域访问，并在审查中检查原生 SQL"
+   },
+   {
+    "bad": "普通唯一索引导致删除后无法复用同名",
+    "fix": "使用 WHERE deleted_at IS NULL 的部分唯一索引"
+   },
+   {
+    "bad": "把软删除当成满足用户删除请求",
+    "fix": "个人数据按隐私法规要求做硬删除或匿名化"
+   },
+   {
+    "bad": "父记录软删除，子记录仍在列表中显示",
+    "fix": "明确级联规则，查询时同时检查父记录状态"
+   }
+  ],
+  "checklist": [
+   "所有读取路径都过滤已删除行",
+   "唯一索引改为部分索引",
+   "有恢复入口与权限控制",
+   "有超期物理清理任务",
+   "个人数据删除流程符合隐私法规",
+   "AI 新增查询已核对删除过滤条件"
+  ],
+  "interview": [
+   {
+    "q": "软删除对索引和性能有什么影响？",
+    "a": "已删除行仍占表与索引空间，过滤条件让普通索引效率下降。应把常用索引和唯一索引改为 WHERE deleted_at IS NULL 的部分索引，并定期物理清理，控制表膨胀。"
+   },
+   {
+    "q": "软删除和 GDPR 删除权冲突吗？",
+    "a": "可能冲突。软删除数据仍是可识别的个人数据，收到删除请求通常需要硬删除或不可逆匿名化，并覆盖备份、日志和下游副本的处理策略。"
+   },
+   {
+    "q": "deleted_at 和 is_deleted 布尔选哪个？",
+    "a": "deleted_at 能同时表达状态与时间，便于按保留期清理和审计，部分索引条件同样简单；布尔字段信息量少。一般推荐时间戳，必要时另加 deleted_by 记录操作人。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL 文档：Partial Indexes",
+    "url": "https://www.postgresql.org/docs/current/indexes-partial.html"
+   },
+   {
+    "title": "Laravel 文档：Soft Deleting",
+    "url": "https://laravel.com/docs/eloquent#soft-deleting"
+   },
+   {
+    "title": "GDPR 第 17 条：Right to erasure",
+    "url": "https://gdpr-info.eu/art-17-gdpr/"
+   }
+  ]
+ },
+ {
+  "slug": "uuids-vs-auto-increment",
+  "def": "主键生成策略决定每行记录的唯一标识如何产生：自增整数（Auto-Increment / IDENTITY / SEQUENCE）由数据库按序分配；UUID（RFC 9562）是 128 位标识，可在任意节点独立生成。选择影响索引局部性、存储大小、分布式写入、URL 暴露与数据合并，属于数据建模层的基础决策。",
+  "how": [
+   "自增主键由数据库序列维护计数器，插入时取下一个值，新行总落在 B-tree 索引最右侧。",
+   "序列为性能不参与事务回滚，失败插入会留下空洞，因此自增 ID 不保证连续。",
+   "UUIDv4 为 122 位随机数，可在客户端生成，但随机插入导致索引页分裂与缓存命中下降。",
+   "UUIDv7 高位是 Unix 毫秒时间戳、低位随机，按时间大致有序，兼顾分布式生成与索引局部性。",
+   "存储上 bigint 占 8 字节，UUID 用原生类型占 16 字节，存成字符串则约 36 字节且比较更慢。"
+  ],
+  "terms": [
+   {
+    "t": "RFC 9562",
+    "d": "2024 年发布的 UUID 规范，取代 RFC 4122，定义了 v6、v7、v8。"
+   },
+   {
+    "t": "UUIDv7",
+    "d": "以 Unix 毫秒时间戳开头的 UUID，生成顺序与时间大致一致。"
+   },
+   {
+    "t": "序列 (Sequence)",
+    "d": "数据库中生成递增数值的对象，支撑 SERIAL/IDENTITY。"
+   },
+   {
+    "t": "页分裂 (Page Split)",
+    "d": "B-tree 页满时拆分为两页，随机键插入会频繁触发。"
+   },
+   {
+    "t": "枚举攻击 (Enumeration)",
+    "d": "通过遍历连续 ID 探测或抓取他人资源。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "两种主键的建表写法",
+   "src": "-- 自增：PostgreSQL 推荐 IDENTITY（SQL 标准），比 SERIAL 更规范\nCREATE TABLE orders (\n  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,\n  created_at timestamptz NOT NULL DEFAULT now()\n);\n\n-- UUID：用原生 uuid 类型（16 字节），不要存成 varchar\n-- gen_random_uuid() 生成 v4，PostgreSQL 13 起内置\nCREATE TABLE files (\n  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),\n  name text NOT NULL\n);\n\n-- 混合方案：内部 bigint 主键做关联，对外暴露 UUID\nCREATE TABLE users (\n  id        bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,\n  public_id uuid NOT NULL UNIQUE DEFAULT gen_random_uuid(),\n  email     text NOT NULL\n);\n-- 需要 UUIDv7 时，可在应用层生成（各语言有成熟库），\n-- 或确认所用数据库版本是否已内置 v7 函数",
+   "note": "对内用紧凑有序的整数，对外暴露不可猜的 UUID，是常见折中。"
+  },
+  "table": {
+   "title": "主键方案对比",
+   "head": [
+    "方案",
+    "大小",
+    "索引局部性",
+    "分布式生成"
+   ],
+   "rows": [
+    [
+     "bigint 自增",
+     "8 字节",
+     "好（顺序追加）",
+     "需中心化分配"
+    ],
+    [
+     "UUIDv4",
+     "16 字节",
+     "差（随机）",
+     "可任意节点生成"
+    ],
+    [
+     "UUIDv7",
+     "16 字节",
+     "较好（时间有序）",
+     "可任意节点生成"
+    ],
+    [
+     "Snowflake 类 ID",
+     "8 字节",
+     "好（时间有序）",
+     "需分配机器号"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "bigint 自增",
+    "pros": "最小最快，易读易调试",
+    "cons": "可被枚举，泄露业务量，合库冲突",
+    "when": "单库、内部表、无需对外暴露"
+   },
+   {
+    "opt": "UUIDv4",
+    "pros": "不可猜，客户端可离线生成",
+    "cons": "随机写入，索引膨胀、缓存不友好",
+    "when": "数据量不大或需离线生成"
+   },
+   {
+    "opt": "UUIDv7",
+    "pros": "可分布式生成且大致有序",
+    "cons": "16 字节，泄露创建时间",
+    "when": "分布式系统、新项目主键"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把 UUID 存成 varchar(36)",
+    "fix": "使用原生 uuid 或 binary(16) 类型，节省空间并加快比较"
+   },
+   {
+    "bad": "以为自增 ID 连续，用 MAX(id) 统计数量",
+    "fix": "回滚和缓存都会产生空洞，计数请用 COUNT 或业务字段"
+   },
+   {
+    "bad": "对外 URL 直接暴露自增 ID 且无权限校验",
+    "fix": "先做对象级权限检查；需要时对外换用 UUID"
+   },
+   {
+    "bad": "以为 UUID 不可猜就能替代鉴权",
+    "fix": "ID 只是标识，访问控制必须独立校验"
+   }
+  ],
+  "checklist": [
+   "主键类型与数据规模、分布式需求匹配",
+   "UUID 使用原生类型存储",
+   "对外暴露的 ID 不可枚举或已鉴权",
+   "外键列类型与主键完全一致",
+   "批量导入/合库时主键不冲突",
+   "AI 生成的模型未混用多种 ID 类型"
+  ],
+  "interview": [
+   {
+    "q": "为什么随机 UUID 做主键会影响写入性能？",
+    "a": "B-tree 主键按键序存储，随机键使插入分散到所有页，导致频繁页分裂、写放大和缓冲池命中率下降；InnoDB 聚簇索引下影响更明显。时间有序的 UUIDv7 或自增键能让插入集中在索引尾部。"
+   },
+   {
+    "q": "UUIDv7 有什么需要注意的？",
+    "a": "前 48 位是毫秒时间戳，会暴露记录创建时间；依赖生成端时钟，时钟回拨可能破坏有序；同一毫秒内的单调性取决于实现。对外暴露时需评估时间信息是否敏感。"
+   },
+   {
+    "q": "分库分表时自增主键有什么问题？",
+    "a": "各分片独立自增会产生重复 ID。可用步长错开、号段服务、Snowflake 类方案或 UUID。迁移、合并数据时也要考虑冲突，因此分布式系统通常优先选去中心化生成。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 9562: Universally Unique IDentifiers (UUIDs)",
+    "url": "https://www.rfc-editor.org/rfc/rfc9562"
+   },
+   {
+    "title": "PostgreSQL 文档：UUID Type",
+    "url": "https://www.postgresql.org/docs/current/datatype-uuid.html"
+   },
+   {
+    "title": "PostgreSQL 文档：CREATE TABLE（IDENTITY）",
+    "url": "https://www.postgresql.org/docs/current/sql-createtable.html"
+   }
+  ]
+ },
+ {
+  "slug": "cursor-based-pagination",
+  "def": "基于游标的分页（Cursor / Keyset Pagination）用上一页最后一条记录的排序键作为下一页的起点，以 WHERE 键 > 游标 代替 OFFSET 跳过行。它位于 API 与查询设计层，解决深分页越翻越慢、数据插入删除导致的重复或漏项问题，是信息流与大列表接口的主流方案。",
+  "how": [
+   "确定稳定且唯一的排序键，常用 (created_at, id) 组合，id 用于打破时间相同的并列。",
+   "首页按排序键取 limit+1 条，多取的一条用于判断是否还有下一页。",
+   "把最后一条的排序键编码（常见 base64 JSON）为不透明游标，随响应返回给客户端。",
+   "下一页请求携带游标，服务端解码后执行 WHERE (created_at, id) < (?, ?) ORDER BY … LIMIT。",
+   "配合与排序键一致的复合索引，每页只扫描所需行，耗时与页码深度无关。"
+  ],
+  "terms": [
+   {
+    "t": "键集分页 (Keyset Pagination)",
+    "d": "用排序键比较而非偏移量定位下一页。"
+   },
+   {
+    "t": "不透明游标 (Opaque Cursor)",
+    "d": "客户端不解析、只原样回传的分页令牌。"
+   },
+   {
+    "t": "行值比较 (Row Value Comparison)",
+    "d": "(a,b) < (x,y) 形式的多列字典序比较。"
+   },
+   {
+    "t": "并列打破 (Tie-breaker)",
+    "d": "在非唯一排序键后追加唯一列保证顺序确定。"
+   },
+   {
+    "t": "深分页 (Deep Pagination)",
+    "d": "OFFSET 很大时需扫描并丢弃大量行的性能问题。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "游标编码与查询",
+   "src": "import base64, json\n\ndef encode_cursor(row):\n    data = {\"t\": row[\"created_at\"].isoformat(), \"id\": row[\"id\"]}\n    return base64.urlsafe_b64encode(json.dumps(data).encode()).decode()\n\ndef decode_cursor(cursor):\n    return json.loads(base64.urlsafe_b64decode(cursor.encode()))\n\nSQL_FIRST = \"\"\"SELECT id, created_at, title FROM posts\n  ORDER BY created_at DESC, id DESC LIMIT %(n)s\"\"\"\nSQL_NEXT = \"\"\"SELECT id, created_at, title FROM posts\n  WHERE (created_at, id) < (%(t)s, %(id)s)   -- 行值比较\n  ORDER BY created_at DESC, id DESC LIMIT %(n)s\"\"\"\n\ndef list_posts(cur, limit=20, cursor=None):\n    params = {\"n\": limit + 1}               # 多取一条判断 has_more\n    if cursor:\n        params.update(decode_cursor(cursor))\n    cur.execute(SQL_NEXT if cursor else SQL_FIRST, params)\n    rows = cur.fetchall()                   # 假设使用 dict_row 行工厂\n    has_more = len(rows) > limit\n    rows = rows[:limit]\n    nxt = encode_cursor(rows[-1]) if has_more else None\n    return {\"data\": rows, \"next_cursor\": nxt}\n# 需要索引：CREATE INDEX ON posts (created_at DESC, id DESC);",
+   "note": "排序键加 id 保证唯一；limit+1 判断是否有下一页；索引顺序须与 ORDER BY 一致。"
+  },
+  "table": {
+   "title": "分页方式对比",
+   "head": [
+    "方式",
+    "深页性能",
+    "跳页",
+    "数据变动时"
+   ],
+   "rows": [
+    [
+     "OFFSET/LIMIT",
+     "随页码线性变慢",
+     "支持",
+     "易重复或漏项"
+    ],
+    [
+     "游标/键集",
+     "稳定",
+     "不支持",
+     "结果稳定"
+    ],
+    [
+     "页码 + 游标混合",
+     "较好",
+     "有限支持",
+     "较稳定"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "OFFSET 分页",
+    "pros": "实现简单，可直接跳到第 N 页",
+    "cons": "深页慢，并发写入导致错位",
+    "when": "后台管理、数据量小"
+   },
+   {
+    "opt": "游标分页",
+    "pros": "性能稳定，无重复漏项",
+    "cons": "不能跳页，排序字段受限",
+    "when": "信息流、无限滚动、公开 API"
+   },
+   {
+    "opt": "游标 + 近似总数",
+    "pros": "兼顾体验与性能",
+    "cons": "总数不精确，需额外说明",
+    "when": "需显示大致结果量的列表"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只按 created_at 排序，时间相同的行被跳过或重复",
+    "fix": "追加唯一列 id 作并列打破，游标同时包含两者"
+   },
+   {
+    "bad": "游标直接暴露原始 SQL 字段且未校验",
+    "fix": "游标编码为不透明令牌，解码后校验类型，必要时签名"
+   },
+   {
+    "bad": "ORDER BY 方向与索引不一致，退化为排序",
+    "fix": "按 ORDER BY 列与方向建复合索引并用 EXPLAIN 验证"
+   },
+   {
+    "bad": "排序字段可被更新，导致记录在页间移动",
+    "fix": "选择不可变或很少变化的字段做排序键"
+   }
+  ],
+  "checklist": [
+   "排序键唯一且确定",
+   "有与排序一致的复合索引",
+   "游标对客户端不透明",
+   "非法或过期游标返回 400",
+   "响应包含 next_cursor/has_more",
+   "limit 有上限防止一次拉取过多"
+  ],
+  "interview": [
+   {
+    "q": "为什么 OFFSET 深分页很慢？",
+    "a": "数据库必须按序生成并丢弃前 OFFSET 行才能返回结果，扫描量与偏移成正比。即便有索引也要遍历这些索引项。键集分页直接从索引中游标位置开始读取，代价只与页大小有关。"
+   },
+   {
+    "q": "游标分页如何支持多种排序？",
+    "a": "每种排序都需要唯一排序键组合和对应索引，游标中记录排序方式与键值，服务端校验游标与当前排序一致。排序维度过多时应限制可选项。"
+   },
+   {
+    "q": "如何实现「上一页」？",
+    "a": "反转比较方向与 ORDER BY 查询（如 > 游标 ORDER BY ASC），取到后再在应用层反转结果顺序；也可同时返回 prev_cursor 与 next_cursor。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Use The Index, Luke：Paging Through Results",
+    "url": "https://use-the-index-luke.com/no-offset"
+   },
+   {
+    "title": "PostgreSQL 文档：Row Constructor Comparison",
+    "url": "https://www.postgresql.org/docs/current/functions-comparisons.html"
+   },
+   {
+    "title": "Stripe API：Pagination",
+    "url": "https://docs.stripe.com/api/pagination"
+   }
+  ]
+ },
+ {
+  "slug": "rest-api",
+  "def": "REST（Representational State Transfer）是 Roy Fielding 在 2000 年博士论文中提出的架构风格，核心约束有无状态、可缓存、统一接口等。REST API 通常指基于 HTTP、以资源为中心、用标准方法和状态码操作资源表示的 Web 接口，是前后端与服务间通信最常见的约定。",
+  "how": [
+   "把业务对象建模为资源，用名词 URI 标识，如 /users/42/orders。",
+   "用 HTTP 方法表达操作：GET 读取、POST 创建、PUT 替换、PATCH 部分修改、DELETE 删除。",
+   "请求与响应携带资源表示（多为 JSON），通过 Content-Type 与 Accept 协商格式。",
+   "每个请求自带全部上下文（如 Authorization 头），服务端不保存会话状态，便于水平扩展。",
+   "用状态码表达结果，用 Cache-Control、ETag 等头支持缓存与条件请求。"
+  ],
+  "terms": [
+   {
+    "t": "资源 (Resource)",
+    "d": "可被 URI 标识的业务实体或集合。"
+   },
+   {
+    "t": "无状态 (Stateless)",
+    "d": "服务端不依赖前序请求保存的会话上下文。"
+   },
+   {
+    "t": "HATEOAS",
+    "d": "响应中携带可执行操作的链接，驱动客户端状态转换。"
+   },
+   {
+    "t": "条件请求 (Conditional Request)",
+    "d": "用 If-None-Match / If-Match 配合 ETag 实现缓存与并发控制。"
+   },
+   {
+    "t": "Problem Details",
+    "d": "RFC 9457 定义的 JSON 错误响应格式。"
+   }
+  ],
+  "code": {
+   "lang": "http",
+   "title": "资源创建与条件更新",
+   "src": "POST /v1/orders HTTP/1.1\nHost: api.example.com\nAuthorization: Bearer <token>\nContent-Type: application/json\nIdempotency-Key: 7f3c2a10\n\n{\"sku\": \"A-100\", \"qty\": 2}\n\nHTTP/1.1 201 Created\nLocation: /v1/orders/981\nETag: \"v1\"\nContent-Type: application/json\n\n{\"id\": 981, \"status\": \"pending\", \"qty\": 2}\n\nPATCH /v1/orders/981 HTTP/1.1\nIf-Match: \"v1\"\nContent-Type: application/merge-patch+json\n\n{\"qty\": 3}\n\nHTTP/1.1 412 Precondition Failed\nContent-Type: application/problem+json\n\n{\"type\": \"about:blank\", \"title\": \"Precondition Failed\", \"status\": 412}",
+   "note": "201 + Location 表示创建成功；If-Match 携带 ETag 实现乐观并发，版本不符返回 412。"
+  },
+  "table": {
+   "title": "常用状态码语义",
+   "head": [
+    "状态码",
+    "含义",
+    "典型场景"
+   ],
+   "rows": [
+    [
+     "200 / 201 / 204",
+     "成功 / 已创建 / 无内容",
+     "查询、创建、删除"
+    ],
+    [
+     "400 / 422",
+     "请求格式错 / 语义校验失败",
+     "参数缺失、字段非法"
+    ],
+    [
+     "401 / 403",
+     "未认证 / 无权限",
+     "缺 token、越权访问"
+    ],
+    [
+     "404 / 409",
+     "不存在 / 状态冲突",
+     "资源缺失、重复创建"
+    ],
+    [
+     "429 / 503",
+     "限流 / 暂不可用",
+     "请求过多、维护中"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "REST",
+    "pros": "通用、可缓存、工具链成熟",
+    "cons": "多资源聚合需多次请求",
+    "when": "公开 API、CRUD 为主的业务"
+   },
+   {
+    "opt": "GraphQL",
+    "pros": "客户端按需取字段，一次聚合",
+    "cons": "缓存与限流更复杂，易出慢查询",
+    "when": "多端、数据关系复杂的前端"
+   },
+   {
+    "opt": "gRPC",
+    "pros": "强类型、二进制、高性能流式",
+    "cons": "浏览器直连需代理，可读性差",
+    "when": "内部微服务间调用"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "所有错误都返回 200，在 body 里放 code",
+    "fix": "使用正确的 HTTP 状态码，错误体采用 Problem Details 格式"
+   },
+   {
+    "bad": "URI 里用动词，如 /getUser、/deleteOrder",
+    "fix": "URI 用名词表示资源，动作交给 HTTP 方法"
+   },
+   {
+    "bad": "列表接口不分页，一次返回全部数据",
+    "fix": "强制分页并限制最大页大小"
+   },
+   {
+    "bad": "混淆 401 与 403",
+    "fix": "未认证返回 401，已认证但无权限返回 403"
+   }
+  ],
+  "checklist": [
+   "资源命名统一用复数名词",
+   "方法与状态码语义正确",
+   "错误响应格式统一",
+   "列表接口支持分页、过滤、排序",
+   "写操作支持幂等或幂等键",
+   "有 OpenAPI 文档并与实现一致"
+  ],
+  "interview": [
+   {
+    "q": "PUT 和 PATCH 的区别？",
+    "a": "PUT 用完整表示替换目标资源，语义上幂等；PATCH 发送部分修改指令，是否幂等取决于补丁格式。常见补丁格式有 JSON Merge Patch（RFC 7396）和 JSON Patch（RFC 6902）。"
+   },
+   {
+    "q": "REST 为什么强调无状态？",
+    "a": "每个请求自包含，任意实例都能处理，便于负载均衡、水平扩展与故障转移；也让缓存和重试更简单。会话信息改由 token 携带或存在共享存储中。"
+   },
+   {
+    "q": "多数「REST API」真的符合 REST 吗？",
+    "a": "大多只做到资源 URI + HTTP 方法 + JSON，缺少 HATEOAS 等约束，按 Richardson 成熟度模型约在第 2 级。工程上这通常够用，关键是语义一致和文档清晰。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Fielding 论文第 5 章：REST",
+    "url": "https://ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm"
+   },
+   {
+    "title": "RFC 9110: HTTP Semantics",
+    "url": "https://www.rfc-editor.org/rfc/rfc9110"
+   },
+   {
+    "title": "RFC 9457: Problem Details for HTTP APIs",
+    "url": "https://www.rfc-editor.org/rfc/rfc9457"
+   }
+  ]
+ },
+ {
+  "slug": "webhook",
+  "def": "Webhook 是一种由服务提供方在事件发生时主动向订阅方预先登记的 URL 发送 HTTP 请求（通常是 POST + JSON）的回调机制。它属于系统集成层的事件推送模式，替代客户端轮询，常见于支付结果、代码仓库事件、表单提交等场景，核心难点在验签、幂等和重试。",
+  "how": [
+   "订阅方在提供方后台或 API 注册回调 URL，并选择关注的事件类型，获得签名密钥。",
+   "事件发生后，提供方构造事件载荷，用密钥对原始请求体计算 HMAC 签名并放入请求头。",
+   "订阅方收到请求，先用原始 body 重新计算签名并恒定时间比较，校验时间戳防重放。",
+   "校验通过后快速返回 2xx，把实际处理放进后台队列，避免超时引发重投。",
+   "提供方在非 2xx 或超时时按退避策略重试，因此订阅方需按事件 ID 去重。"
+  ],
+  "terms": [
+   {
+    "t": "HMAC 签名",
+    "d": "用共享密钥对消息计算的摘要，证明来源与完整性。"
+   },
+   {
+    "t": "至少一次投递 (At-least-once)",
+    "d": "保证送达但可能重复，接收方需幂等。"
+   },
+   {
+    "t": "重放攻击 (Replay Attack)",
+    "d": "截获合法请求后重复发送；用时间戳加去重防御。"
+   },
+   {
+    "t": "恒定时间比较 (Constant-time Compare)",
+    "d": "比较耗时与内容无关，防止计时侧信道。"
+   },
+   {
+    "t": "死信 (Dead Letter)",
+    "d": "多次重试仍失败、被单独保存待人工处理的消息。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Flask 接收并验签",
+   "src": "import hmac, hashlib, time, os\nfrom flask import Flask, request, abort\n\napp = Flask(__name__)\nSECRET = os.environ[\"WEBHOOK_SECRET\"].encode()\nseen = set()  # 生产中改用数据库唯一约束或 Redis\n\n@app.post(\"/webhooks/orders\")\ndef orders_hook():\n    body = request.get_data()                    # 必须用原始字节\n    ts = request.headers.get(\"X-Timestamp\", \"0\")\n    sig = request.headers.get(\"X-Signature\", \"\")\n    if abs(time.time() - int(ts)) > 300:         # 5 分钟窗口防重放\n        abort(400)\n    mac = hmac.new(SECRET, ts.encode() + b\".\" + body, hashlib.sha256)\n    if not hmac.compare_digest(mac.hexdigest(), sig):\n        abort(401)\n    event = request.get_json()\n    if event[\"id\"] in seen:                     # 按事件 ID 去重\n        return \"\", 200\n    seen.add(event[\"id\"])\n    # enqueue(event)  放入队列异步处理，尽快返回\n    return \"\", 200",
+   "note": "头名与签名拼接方式是示例，实际以提供方文档为准；核心是原始 body、恒定时间比较与去重。"
+  },
+  "table": {
+   "title": "事件获取方式对比",
+   "head": [
+    "方式",
+    "实时性",
+    "接收方要求",
+    "可靠性"
+   ],
+   "rows": [
+    [
+     "轮询 (Polling)",
+     "取决于间隔",
+     "无需公网入口",
+     "简单但浪费请求"
+    ],
+    [
+     "Webhook",
+     "近实时",
+     "公网 HTTPS 端点",
+     "需重试与去重"
+    ],
+    [
+     "WebSocket/SSE",
+     "实时",
+     "保持长连接",
+     "断线需重连补数据"
+    ],
+    [
+     "消息队列订阅",
+     "近实时",
+     "接入 MQ",
+     "高，支持确认机制"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "同步处理后返回",
+    "pros": "实现简单",
+    "cons": "慢操作易超时触发重复投递",
+    "when": "处理极轻量"
+   },
+   {
+    "opt": "先入队再返回 2xx",
+    "pros": "响应快，可削峰与重试",
+    "cons": "需队列与幂等处理",
+    "when": "大多数生产场景"
+   },
+   {
+    "opt": "Webhook + 定期对账",
+    "pros": "可补回丢失事件",
+    "cons": "额外调用与实现成本",
+    "when": "支付等不能漏的事件"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "对解析后再序列化的 JSON 验签，签名总对不上",
+    "fix": "用框架提供的原始请求体字节计算签名"
+   },
+   {
+    "bad": "用 == 比较签名",
+    "fix": "使用 hmac.compare_digest 等恒定时间比较"
+   },
+   {
+    "bad": "不去重，重试导致重复发货或重复入账",
+    "fix": "以事件 ID 建唯一约束，重复事件直接返回 2xx"
+   },
+   {
+    "bad": "假设事件按顺序到达",
+    "fix": "以事件内时间或版本判断新旧，必要时回查最新状态"
+   }
+  ],
+  "checklist": [
+   "仅接受 HTTPS 回调",
+   "签名与时间戳校验已实现",
+   "事件 ID 去重持久化",
+   "2xx 在超时前返回，重活入队",
+   "失败事件有告警与重放手段",
+   "密钥可轮换且不入代码库"
+  ],
+  "interview": [
+   {
+    "q": "Webhook 接收端如何保证幂等？",
+    "a": "以提供方事件 ID 为键写入带唯一约束的处理表，与业务更新放在同一事务；重复到达时检测到冲突直接返回 2xx。业务操作本身也尽量设计成按状态判断的幂等更新。"
+   },
+   {
+    "q": "为什么签名里要包含时间戳？",
+    "a": "仅对 body 签名，攻击者截获后可无限重放。把时间戳纳入签名并限制有效窗口，配合事件 ID 去重，可防重放；同时要求双方时钟大致同步。"
+   },
+   {
+    "q": "Webhook 丢了怎么办？",
+    "a": "除依赖提供方重试外，应定期调用对方查询 API 对账补齐遗漏；关键业务在用户操作后也可主动查询最新状态，不把推送当作唯一来源。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "GitHub Docs：Validating webhook deliveries",
+    "url": "https://docs.github.com/en/webhooks/using-webhooks/validating-webhook-deliveries"
+   },
+   {
+    "title": "Stripe Docs：Webhooks",
+    "url": "https://docs.stripe.com/webhooks"
+   },
+   {
+    "title": "Python 文档：hmac",
+    "url": "https://docs.python.org/3/library/hmac.html"
+   }
+  ]
+ },
+ {
+  "slug": "rate-limiting",
+  "def": "限流（Rate Limiting）是在单位时间内限制某个主体（用户、IP、API Key、租户）可发起请求数的流量控制机制，超限请求被拒绝、排队或降级。它位于网关或应用中间件层，用于保护后端容量、防滥用与暴力破解、保证多租户公平，并支撑按套餐计量的商业模式。",
+  "how": [
+   "请求到达时提取限流键，如 user_id、API Key 或客户端 IP，还可与接口路径组合成更细的维度。",
+   "在共享存储（常用 Redis）中按算法更新计数或令牌，多实例共享同一状态。",
+   "令牌桶按固定速率补充令牌，请求消耗令牌，允许一定突发；滑动窗口统计近期请求数。",
+   "未超限则放行；超限返回 429 Too Many Requests，并附 Retry-After 提示等待时间。",
+   "响应中可附带剩余额度等头部，客户端据此主动退避，减少无效请求。"
+  ],
+  "terms": [
+   {
+    "t": "令牌桶 (Token Bucket)",
+    "d": "按速率补令牌、按请求扣令牌，允许受控突发。"
+   },
+   {
+    "t": "漏桶 (Leaky Bucket)",
+    "d": "以恒定速率处理请求，平滑输出流量。"
+   },
+   {
+    "t": "滑动窗口 (Sliding Window)",
+    "d": "统计最近 N 秒请求数，避免固定窗口边界突刺。"
+   },
+   {
+    "t": "429 Too Many Requests",
+    "d": "RFC 6585 定义的限流状态码。"
+   },
+   {
+    "t": "Retry-After",
+    "d": "告诉客户端多久后可重试的响应头。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Redis 固定窗口限流",
+   "src": "import time\nimport redis\n\nr = redis.Redis()\n\ndef allow(key: str, limit: int = 100, window: int = 60) -> tuple[bool, int]:\n    \"\"\"每 window 秒最多 limit 次；返回 (是否放行, 剩余次数)\"\"\"\n    bucket = int(time.time()) // window\n    rkey = f\"rl:{key}:{bucket}\"\n    pipe = r.pipeline()\n    pipe.incr(rkey)               # 原子自增\n    pipe.expire(rkey, window)     # 窗口过期自动清理\n    count, _ = pipe.execute()\n    return count <= limit, max(0, limit - count)\n\n# 在中间件中使用\nok, remaining = allow(f\"user:{42}:POST:/v1/messages\")\nif not ok:\n    # 返回 429，并告诉客户端何时重试\n    status, headers = 429, {\"Retry-After\": \"60\"}",
+   "note": "固定窗口实现最简单但边界处可能放过约两倍流量；要求更平滑时改用令牌桶或滑动窗口。"
+  },
+  "table": {
+   "title": "限流算法对比",
+   "head": [
+    "算法",
+    "突发处理",
+    "实现复杂度",
+    "精度"
+   ],
+   "rows": [
+    [
+     "固定窗口",
+     "窗口边界可能翻倍",
+     "低",
+     "粗"
+    ],
+    [
+     "滑动窗口日志",
+     "精确",
+     "高（存每次时间）",
+     "高"
+    ],
+    [
+     "滑动窗口计数",
+     "较平滑",
+     "中",
+     "近似"
+    ],
+    [
+     "令牌桶",
+     "允许受控突发",
+     "中",
+     "高"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "网关层限流",
+    "pros": "统一入口，保护所有服务",
+    "cons": "难以感知业务维度",
+    "when": "按 IP、Key 的粗粒度防护"
+   },
+   {
+    "opt": "应用层限流",
+    "pros": "可按用户、套餐、接口精细控制",
+    "cons": "需每个服务实现，状态需共享",
+    "when": "按业务规则计量与配额"
+   },
+   {
+    "opt": "本地内存限流",
+    "pros": "无网络开销，极快",
+    "cons": "多实例下总量不准",
+    "when": "单实例或作为第一层粗过滤"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在代理之后直接取 remote_addr，所有人共用一个 IP",
+    "fix": "仅信任已知代理设置的 X-Forwarded-For 并正确解析"
+   },
+   {
+    "bad": "INCR 与 EXPIRE 分开执行，进程崩溃留下永不过期的键",
+    "fix": "用 pipeline/MULTI 或 Lua 脚本保证原子性"
+   },
+   {
+    "bad": "客户端收到 429 立即重试，形成重试风暴",
+    "fix": "客户端遵循 Retry-After，使用指数退避加随机抖动"
+   },
+   {
+    "bad": "登录、验证码等敏感接口与普通接口共用宽松额度",
+    "fix": "对敏感接口单独设置更严格的限流键与阈值"
+   }
+  ],
+  "checklist": [
+   "限流键选择合理且不可伪造",
+   "超限返回 429 + Retry-After",
+   "多实例共享限流状态",
+   "敏感接口有独立严格限流",
+   "限流命中有监控与告警",
+   "客户端 SDK 实现退避重试"
+  ],
+  "interview": [
+   {
+    "q": "令牌桶和漏桶的区别？",
+    "a": "令牌桶以固定速率积累令牌，桶满前可攒下额度，允许短时突发；漏桶以恒定速率流出请求，输出平滑但不允许突发。API 限流多用令牌桶，流量整形多用漏桶。"
+   },
+   {
+    "q": "分布式限流如何保证准确？",
+    "a": "把计数放在 Redis 等共享存储，用 Lua 脚本把读-判断-写合成原子操作；对精度要求不高时可本地预分配额度定期同步，以降低延迟与存储压力。"
+   },
+   {
+    "q": "限流和熔断有什么区别？",
+    "a": "限流是服务端控制进入系统的请求速率，保护自身容量；熔断是调用方在下游持续失败时暂停调用并快速失败，防止故障级联扩散。二者常配合使用。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 6585（429 Too Many Requests）",
+    "url": "https://www.rfc-editor.org/rfc/rfc6585"
+   },
+   {
+    "title": "MDN：429 Too Many Requests",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429"
+   },
+   {
+    "title": "Wikipedia: Token bucket",
+    "url": "https://en.wikipedia.org/wiki/Token_bucket"
+   }
+  ]
+ },
+ {
+  "slug": "http-method-semantics",
+  "def": "HTTP 方法语义由 RFC 9110 定义，核心是两个属性：安全（Safe，不改变服务器状态，如 GET、HEAD）和幂等（Idempotent，执行一次与多次的预期效果相同，如 PUT、DELETE）。它属于协议语义层，决定缓存、预取、代理与客户端是否可以自动重试，是设计可靠 API 的基础契约。",
+  "how": [
+   "安全方法只读：GET、HEAD、OPTIONS、TRACE；浏览器、爬虫、预取可随意发起。",
+   "幂等方法包含全部安全方法，再加 PUT 和 DELETE，网络失败时可安全重试。",
+   "POST 和 PATCH 不保证幂等，重复发送可能创建多条记录或重复应用修改。",
+   "缓存层通常只缓存 GET/HEAD 响应；非安全方法成功后会使相关缓存失效。",
+   "非幂等操作可借助 Idempotency-Key 请求头，由服务端记录结果实现重复请求去重。"
+  ],
+  "terms": [
+   {
+    "t": "安全方法 (Safe Method)",
+    "d": "语义上只读，客户端不请求状态变更。"
+   },
+   {
+    "t": "幂等 (Idempotent)",
+    "d": "多次相同请求对服务器的预期效果与一次相同。"
+   },
+   {
+    "t": "可缓存 (Cacheable)",
+    "d": "响应允许被存储并复用，GET、HEAD 默认可缓存。"
+   },
+   {
+    "t": "幂等键 (Idempotency-Key)",
+    "d": "客户端生成的唯一键，让服务端对重复 POST 去重。"
+   },
+   {
+    "t": "预检请求 (Preflight)",
+    "d": "跨域非简单请求前浏览器自动发出的 OPTIONS 请求。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "用幂等键让 POST 可重试",
+   "src": "import json\nimport redis\nfrom flask import Flask, request\n\napp = Flask(__name__)\nr = redis.Redis()\n\n@app.post(\"/v1/payments\")\ndef create_payment():\n    key = request.headers.get(\"Idempotency-Key\")\n    if not key:\n        return {\"error\": \"Idempotency-Key required\"}, 400\n    cache_key = f\"idem:{key}\"\n    # 占位：只有第一个请求能 SET 成功，24 小时过期\n    if not r.set(cache_key, \"processing\", nx=True, ex=86400):\n        saved = r.get(cache_key)\n        if saved == b\"processing\":\n            return {\"error\": \"in progress\"}, 409\n        return json.loads(saved), 200        # 重放首次结果\n    result = {\"id\": \"pay_1\", \"amount\": request.json[\"amount\"]}\n    # charge(...)  真实扣款逻辑\n    r.set(cache_key, json.dumps(result), ex=86400)\n    return result, 201",
+   "note": "同一幂等键重复提交返回首次结果；生产中还应校验请求体与首次一致。"
+  },
+  "table": {
+   "title": "方法属性一览",
+   "head": [
+    "方法",
+    "安全",
+    "幂等",
+    "常见用途"
+   ],
+   "rows": [
+    [
+     "GET / HEAD",
+     "是",
+     "是",
+     "读取资源 / 只取头"
+    ],
+    [
+     "PUT",
+     "否",
+     "是",
+     "整体替换或按 ID 创建"
+    ],
+    [
+     "DELETE",
+     "否",
+     "是",
+     "删除资源"
+    ],
+    [
+     "POST",
+     "否",
+     "否",
+     "创建、触发动作"
+    ],
+    [
+     "PATCH",
+     "否",
+     "不保证",
+     "部分更新"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "PUT 按客户端 ID 创建",
+    "pros": "天然幂等，重试安全",
+    "cons": "客户端需生成 ID",
+    "when": "离线优先、客户端可生成 UUID"
+   },
+   {
+    "opt": "POST + 幂等键",
+    "pros": "保留 POST 语义，可安全重试",
+    "cons": "服务端需存储键与结果",
+    "when": "支付、下单等关键写操作"
+   },
+   {
+    "opt": "POST 不做处理",
+    "pros": "实现最简单",
+    "cons": "超时重试导致重复数据",
+    "when": "重复无害的操作，如日志上报"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用 GET 执行删除或状态变更，如 /delete?id=1",
+    "fix": "改为 DELETE/POST，并加 CSRF 防护"
+   },
+   {
+    "bad": "以为幂等等于每次响应相同",
+    "fix": "幂等指服务器状态效果相同，响应码可以不同（如第二次 DELETE 返回 404）"
+   },
+   {
+    "bad": "PATCH 用增量语义 {\"count\": \"+1\"} 却允许自动重试",
+    "fix": "非幂等 PATCH 不自动重试，或改为设定绝对值"
+   },
+   {
+    "bad": "GET 请求带 body 传参",
+    "fix": "GET body 无定义语义，参数放 query；复杂查询用 POST"
+   }
+  ],
+  "checklist": [
+   "GET 接口无任何副作用",
+   "PUT/DELETE 实现真正幂等",
+   "关键 POST 支持 Idempotency-Key",
+   "客户端只对幂等请求自动重试",
+   "状态变更接口有 CSRF 防护",
+   "AI 生成的路由方法语义已复核"
+  ],
+  "interview": [
+   {
+    "q": "DELETE 第二次返回 404，还算幂等吗？",
+    "a": "算。幂等关注的是对服务器状态的效果：第一次删除后资源已不存在，第二次请求不会产生新的副作用。响应状态码不同不影响幂等性。"
+   },
+   {
+    "q": "为什么客户端和代理只自动重试幂等请求？",
+    "a": "网络超时时无法判断请求是否已在服务端执行。幂等请求重发不会造成额外效果，可安全重试；非幂等请求重发可能导致重复创建或扣款，因此需要幂等键等机制。"
+   },
+   {
+    "q": "幂等键服务端怎么实现才可靠？",
+    "a": "用原子操作（唯一约束或 SET NX）占位，处理中再次请求返回冲突；完成后存储响应并设置过期；校验同一键的请求参数一致，不一致返回错误。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 9110 §9.2: Common Method Properties",
+    "url": "https://www.rfc-editor.org/rfc/rfc9110#section-9.2"
+   },
+   {
+    "title": "MDN：Idempotent",
+    "url": "https://developer.mozilla.org/en-US/docs/Glossary/Idempotent"
+   },
+   {
+    "title": "Stripe API：Idempotent requests",
+    "url": "https://docs.stripe.com/api/idempotent_requests"
+   }
+  ]
+ },
+ {
+  "slug": "api-versioning",
+  "def": "API 版本控制（API Versioning）是在接口发生不兼容变更时，让新旧契约并存、客户端按自己的节奏迁移的策略。它属于 API 生命周期治理层，常见载体有 URL 路径、请求头、查询参数或日期版本，配合弃用（Deprecation）与下线（Sunset）流程，避免一次改动打断所有调用方。",
+  "how": [
+   "先区分兼容变更（新增可选字段、新接口）与破坏性变更（删字段、改类型、改语义）。",
+   "兼容变更直接发布；只有破坏性变更才引入新版本，如 /v2 路径或新的版本头取值。",
+   "网关或路由层根据路径或头部把请求分发到对应版本的处理逻辑或适配层。",
+   "旧版本标记弃用，通过文档、响应头（Deprecation、Sunset）和邮件通知调用方。",
+   "持续监控旧版本调用量，降到可接受水平且过了公告期后再正式下线。"
+  ],
+  "terms": [
+   {
+    "t": "破坏性变更 (Breaking Change)",
+    "d": "让现有客户端代码出错或语义改变的修改。"
+   },
+   {
+    "t": "Sunset 响应头",
+    "d": "RFC 8594 定义，声明资源预计停止服务的时间。"
+   },
+   {
+    "t": "Deprecation 响应头",
+    "d": "RFC 9745 定义，标记资源已被弃用。"
+   },
+   {
+    "t": "日期版本 (Date-based Versioning)",
+    "d": "以发布日期作版本号，按账号固定默认版本。"
+   },
+   {
+    "t": "容错读取 (Tolerant Reader)",
+    "d": "客户端忽略未知字段，提升向前兼容。"
+   }
+  ],
+  "code": {
+   "lang": "typescript",
+   "title": "Express 路径版本与弃用头",
+   "src": "import express from \"express\";\n\nconst app = express();\nconst v1 = express.Router();\nconst v2 = express.Router();\n\n// v1：返回 name 单字段（已弃用）\nv1.get(\"/users/:id\", (req, res) => {\n  res.set(\"Deprecation\", \"@1767225600\"); // RFC 9745：弃用起始时间戳\n  res.set(\"Sunset\", \"Thu, 01 Jul 2027 00:00:00 GMT\");\n  res.set(\"Link\", '</v2/users>; rel=\"successor-version\"');\n  res.json({ id: req.params.id, name: \"Ada Lovelace\" });\n});\n\n// v2：破坏性变更，拆为两个字段\nv2.get(\"/users/:id\", (req, res) => {\n  res.json({ id: req.params.id, firstName: \"Ada\", lastName: \"Lovelace\" });\n});\n\napp.use(\"/v1\", v1);\napp.use(\"/v2\", v2);\napp.listen(3000);",
+   "note": "新旧版本并存，旧版本通过响应头告知弃用与下线时间及替代版本；日期为示例。"
+  },
+  "table": {
+   "title": "版本载体对比",
+   "head": [
+    "载体",
+    "示例",
+    "优点",
+    "缺点"
+   ],
+   "rows": [
+    [
+     "URL 路径",
+     "/v2/users",
+     "直观，易路由与缓存",
+     "URI 不再纯粹表示资源"
+    ],
+    [
+     "请求头",
+     "API-Version: 2",
+     "URI 稳定",
+     "调试与浏览器访问不便"
+    ],
+    [
+     "查询参数",
+     "?version=2",
+     "实现简单",
+     "易被缓存层忽略或混淆"
+    ],
+    [
+     "日期版本",
+     "2025-01-15",
+     "粒度细，可按账号固定",
+     "服务端需维护大量转换"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "大版本整体切换 (/v1→/v2)",
+    "pros": "边界清晰，易沟通",
+    "cons": "迁移成本集中，旧代码长期并存",
+    "when": "公开 API、变更幅度大"
+   },
+   {
+    "opt": "日期版本 + 转换层",
+    "pros": "小步演进，客户端按需升级",
+    "cons": "服务端需维护版本转换链",
+    "when": "大型平台型 API"
+   },
+   {
+    "opt": "不版本化，只做兼容演进",
+    "pros": "无多版本维护负担",
+    "cons": "设计受限，错误难以修正",
+    "when": "内部 API 且调用方可同步升级"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "删除或重命名字段却不升版本",
+    "fix": "破坏性变更必须新版本；兼容期内新旧字段并存"
+   },
+   {
+    "bad": "每次小改都开新版本，版本爆炸",
+    "fix": "兼容变更直接发布，只为破坏性变更升版本"
+   },
+   {
+    "bad": "旧版本无限期保留，没人敢下线",
+    "fix": "制定弃用政策与时间表，按调用量监控推进下线"
+   },
+   {
+    "bad": "把枚举新增值当作兼容变更",
+    "fix": "客户端可能穷举匹配，新增枚举值需提前公告或视为破坏性"
+   }
+  ],
+  "checklist": [
+   "有书面的兼容/破坏性变更定义",
+   "版本载体全站统一",
+   "弃用版本返回 Deprecation/Sunset 头",
+   "各版本调用量可监控",
+   "OpenAPI 文档按版本发布",
+   "契约测试覆盖旧版本行为"
+  ],
+  "interview": [
+   {
+    "q": "哪些变更算破坏性？",
+    "a": "删除或重命名字段、改变字段类型或含义、新增必填参数、收紧校验、改变错误码或默认行为、改变分页或排序语义。新增可选字段、新增接口一般兼容，但前提是客户端容忍未知字段。"
+   },
+   {
+    "q": "日期版本是怎么运作的？",
+    "a": "每个账号固定一个默认 API 版本，请求可用头部覆盖。服务端内部只实现最新逻辑，再通过一系列版本转换把响应降级到客户端请求的版本，从而支持细粒度演进。"
+   },
+   {
+    "q": "如何安全下线旧版本？",
+    "a": "提前公告弃用与日期，响应头提示，按调用方统计流量并逐一通知；临近下线可做短时「熔断演练」暴露未迁移者，最终返回 410 Gone 并提供迁移文档。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 8594: The Sunset HTTP Header Field",
+    "url": "https://www.rfc-editor.org/rfc/rfc8594"
+   },
+   {
+    "title": "RFC 9745: The Deprecation HTTP Response Header Field",
+    "url": "https://www.rfc-editor.org/rfc/rfc9745"
+   },
+   {
+    "title": "Stripe 博客：APIs as infrastructure – versioning",
+    "url": "https://stripe.com/blog/api-versioning"
+   }
+  ]
+ },
+ {
+  "slug": "openapi-specs",
+  "def": "OpenAPI 规范（OpenAPI Specification，前身 Swagger）是由 OpenAPI Initiative 维护、用 YAML/JSON 描述 HTTP API 的机器可读标准，覆盖路径、参数、响应、认证与数据模型。它是 API 契约层的事实标准，可驱动文档、SDK 生成、Mock、校验与测试。",
+  "how": [
+   "文档顶层声明 openapi 版本、info 元数据与 servers，再在 paths 下按路径和方法描述操作。",
+   "每个操作定义 parameters、requestBody 与按状态码区分的 responses，并给出媒体类型。",
+   "复用的数据模型放在 components/schemas，通过 $ref 引用，3.1 起与 JSON Schema 完全对齐。",
+   "securitySchemes 声明 Bearer、API Key、OAuth2 等认证方式，并在全局或操作级引用。",
+   "工具链读取该文件生成交互文档、客户端 SDK、服务端桩代码，或在运行时校验请求响应。"
+  ],
+  "terms": [
+   {
+    "t": "OpenAPI Initiative (OAI)",
+    "d": "Linux 基金会下维护 OpenAPI 规范的组织。"
+   },
+   {
+    "t": "$ref",
+    "d": "JSON 引用，指向复用的组件定义。"
+   },
+   {
+    "t": "operationId",
+    "d": "操作的唯一标识，常用作生成 SDK 的方法名。"
+   },
+   {
+    "t": "契约优先 (Design-first)",
+    "d": "先写规范评审，再实现代码的开发方式。"
+   },
+   {
+    "t": "代码优先 (Code-first)",
+    "d": "从代码注解或类型自动生成规范。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "最小 OpenAPI 3.1 文档",
+   "src": "openapi: 3.1.0\ninfo: { title: Orders API, version: 1.0.0 }\nservers:\n  - url: https://api.example.com/v1\nsecurity: [{ bearerAuth: [] }]   # 全局认证\npaths:\n  /orders/{id}:\n    get:\n      operationId: getOrder\n      parameters:\n        - { name: id, in: path, required: true, schema: { type: integer } }\n      responses:\n        \"200\":\n          description: 订单详情\n          content:\n            application/json:\n              schema: { $ref: \"#/components/schemas/Order\" }\n        \"404\": { description: 订单不存在 }\ncomponents:\n  securitySchemes:\n    bearerAuth: { type: http, scheme: bearer }\n  schemas:\n    Order:\n      type: object\n      required: [id, status]\n      properties:\n        id: { type: integer }\n        status: { type: string, enum: [pending, paid, shipped] }",
+   "note": "一个操作的路径参数、响应模型与认证方式；可直接喂给 Swagger UI 或 SDK 生成器。"
+  },
+  "table": {
+   "title": "OpenAPI 周边工具",
+   "head": [
+    "用途",
+    "代表工具",
+    "说明"
+   ],
+   "rows": [
+    [
+     "交互文档",
+     "Swagger UI、Redoc",
+     "渲染可试调的接口文档"
+    ],
+    [
+     "SDK/桩代码生成",
+     "OpenAPI Generator",
+     "多语言客户端与服务端代码"
+    ],
+    [
+     "规范检查",
+     "Spectral",
+     "按规则集校验风格与错误"
+    ],
+    [
+     "代码优先生成",
+     "FastAPI",
+     "从类型注解自动导出规范"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "契约优先",
+    "pros": "先评审接口，前后端可并行",
+    "cons": "需维护规范与实现一致",
+    "when": "公开 API、多团队协作"
+   },
+   {
+    "opt": "代码优先",
+    "pros": "规范随代码自动更新",
+    "cons": "接口设计易被实现细节牵着走",
+    "when": "内部服务、快速迭代"
+   },
+   {
+    "opt": "规范 + 运行时校验",
+    "pros": "保证实现不偏离契约",
+    "cons": "增加少量请求开销",
+    "when": "对契约一致性要求高"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "规范写完就不更新，与实现越来越远",
+    "fix": "CI 中做契约测试或从代码生成，保证单一事实来源"
+   },
+   {
+    "bad": "所有响应都只写 200，错误格式不描述",
+    "fix": "为 4xx/5xx 定义统一错误 schema"
+   },
+   {
+    "bad": "混用 3.0 与 3.1 语法，如 nullable 与 type 数组",
+    "fix": "确定版本；3.1 用 type: [string, \"null\"]"
+   },
+   {
+    "bad": "让 AI 凭空写规范，字段与实际接口不符",
+    "fix": "以真实代码或抓包为输入生成，再用工具校验"
+   }
+  ],
+  "checklist": [
+   "每个操作有 operationId 与描述",
+   "请求/响应模型完整且有示例",
+   "错误响应有统一 schema",
+   "认证方式已声明",
+   "CI 中用 linter 校验规范",
+   "规范与实现有契约测试"
+  ],
+  "interview": [
+   {
+    "q": "OpenAPI 3.1 相比 3.0 的关键变化？",
+    "a": "3.1 的 Schema Object 与 JSON Schema 2020-12 完全对齐，用 type 数组表达可空而非 nullable；新增顶层 webhooks 描述回调；paths 变为可选，便于只描述组件或 webhook。"
+   },
+   {
+    "q": "OpenAPI 对 AI Agent 有什么用？",
+    "a": "机器可读的接口描述可被转换为 LLM 工具/函数定义，Agent 据此知道有哪些操作、参数和返回结构；描述越准确，模型调用出错越少。"
+   },
+   {
+    "q": "如何防止规范与实现漂移？",
+    "a": "选一个事实来源：从代码生成规范，或从规范生成桩代码；在 CI 中跑契约测试或运行时校验，比较实际响应与 schema；变更走 PR 审查并检测破坏性差异。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OpenAPI Specification（最新版）",
+    "url": "https://spec.openapis.org/oas/latest.html"
+   },
+   {
+    "title": "OpenAPI Initiative 官网",
+    "url": "https://www.openapis.org/"
+   },
+   {
+    "title": "Swagger 文档",
+    "url": "https://swagger.io/docs/"
+   }
+  ]
+ },
+ {
+  "slug": "request-size-limits",
+  "def": "请求体大小限制（Request Size Limits）是在反向代理、网关和应用框架中对单个 HTTP 请求的 body、头部或上传文件设置上限的防护措施。它属于入口防护层，防止超大请求耗尽内存、带宽和磁盘，抵御资源耗尽型拒绝服务，同时约束业务合理的上传规模。",
+  "how": [
+   "请求先经过 CDN 或负载均衡，这一层可能有自己的上限，超出直接拒绝。",
+   "反向代理检查 Content-Length 或累计已读字节，超过配置值返回 413 Content Too Large。",
+   "应用框架的 body 解析中间件再设一层上限，在解析 JSON 或表单前截断。",
+   "大文件不经应用服务器，改由客户端用预签名 URL 直传对象存储，并在签名中限制大小。",
+   "头部、URL 长度、字段个数和 JSON 嵌套深度也需要单独限制，防止解析层被拖垮。"
+  ],
+  "terms": [
+   {
+    "t": "413 Content Too Large",
+    "d": "RFC 9110 定义，请求体超出服务器愿意处理的大小。"
+   },
+   {
+    "t": "client_max_body_size",
+    "d": "Nginx 限制请求体大小的指令，默认 1m。"
+   },
+   {
+    "t": "分块传输 (Chunked Encoding)",
+    "d": "无 Content-Length 的流式传输，需边读边计数。"
+   },
+   {
+    "t": "预签名 URL (Presigned URL)",
+    "d": "带签名与过期时间的临时上传/下载地址。"
+   },
+   {
+    "t": "资源耗尽攻击",
+    "d": "通过超大或大量请求耗尽内存、CPU 或连接。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "Nginx 与 Express 分层限制",
+   "src": "# ---- Nginx：全局较小，上传接口单独放宽 ----\nhttp {\n    client_max_body_size 1m;            # 默认值即 1m\n    large_client_header_buffers 4 8k;   # 限制请求头\n    server {\n        location /api/upload {\n            client_max_body_size 20m;   # 仅上传接口放宽\n        }\n    }\n}\n\n// ---- Express：应用层再限制一次 ----\nconst express = require(\"express\");\nconst app = express();\napp.use(express.json({ limit: \"100kb\" }));    // 默认即 100kb\napp.use(express.urlencoded({ limit: \"100kb\", extended: false }));\napp.use((err, req, res, next) => {\n  if (err.type === \"entity.too.large\") return res.status(413).end();\n  next(err);\n});",
+   "note": "代理层和应用层各设上限，全局收紧、按接口放宽；超限统一返回 413。"
+  },
+  "table": {
+   "title": "常见组件的默认上限",
+   "head": [
+    "组件",
+    "配置项",
+    "默认值"
+   ],
+   "rows": [
+    [
+     "Nginx",
+     "client_max_body_size",
+     "1m"
+    ],
+    [
+     "Express (body-parser)",
+     "limit",
+     "100kb"
+    ],
+    [
+     "FastAPI/Starlette",
+     "无内置 body 上限",
+     "需代理或自行限制"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "代理层统一限制",
+    "pros": "在进入应用前拒绝，最省资源",
+    "cons": "粒度粗，错误信息不友好",
+    "when": "所有服务的第一道防线"
+   },
+   {
+    "opt": "应用层按接口限制",
+    "pros": "可按业务精细控制并返回明确错误",
+    "cons": "请求已占用连接和部分资源",
+    "when": "不同接口上限差异大"
+   },
+   {
+    "opt": "直传对象存储",
+    "pros": "大文件不经应用，扩展性好",
+    "cons": "需签名、回调与校验流程",
+    "when": "图片、视频等大文件上传"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只在前端校验文件大小",
+    "fix": "服务端和代理层必须强制限制，前端只做体验提示"
+   },
+   {
+    "bad": "整体放大全局上限以支持一个上传接口",
+    "fix": "全局保持小值，仅对上传路由单独放宽"
+   },
+   {
+    "bad": "只看 Content-Length，忽略分块传输",
+    "fix": "边读边计数，超限立即中断读取"
+   },
+   {
+    "bad": "忽略解压后的大小，被压缩炸弹打爆内存",
+    "fix": "对解压后数据也设上限，流式处理"
+   }
+  ],
+  "checklist": [
+   "CDN/代理/应用各层上限一致可解释",
+   "上传接口单独配置上限",
+   "超限返回 413 且有清晰提示",
+   "JSON 深度与字段数有限制",
+   "大文件走预签名直传",
+   "解压后大小有上限"
+  ],
+  "interview": [
+   {
+    "q": "为什么要多层都设大小限制？",
+    "a": "纵深防御：CDN 和代理在最外层低成本拒绝超大请求；应用层根据接口语义精细控制并返回业务错误；任何一层配置遗漏都不会让请求直接打到内存。各层值需协调，避免外层过小导致内层配置无效。"
+   },
+   {
+    "q": "上传 1GB 文件怎么设计？",
+    "a": "服务端签发限定大小、类型和有效期的预签名 URL，客户端直传对象存储，大文件用分片上传；完成后通过回调或事件通知应用校验并入库，应用服务器不承载文件流量。"
+   },
+   {
+    "q": "什么是压缩炸弹？",
+    "a": "很小的压缩数据解压后膨胀成极大内容，耗尽内存或磁盘。若服务端接受压缩请求体或解压上传文件，必须限制解压后大小和压缩比，并以流式方式处理。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Nginx 文档：client_max_body_size",
+    "url": "https://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size"
+   },
+   {
+    "title": "Express 文档：express.json()",
+    "url": "https://expressjs.com/en/api.html#express.json"
+   },
+   {
+    "title": "MDN：413 Content Too Large",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413"
+   }
+  ]
+ },
+ {
+  "slug": "compression",
+  "def": "数据压缩（Compression）在 HTTP 中主要指内容编码（Content Encoding）：服务端用 gzip、Brotli、Zstandard 等算法压缩响应体，经 Accept-Encoding 与 Content-Encoding 协商。它以 CPU 换带宽与存储，直接影响页面加载速度和流量成本。",
+  "how": [
+   "客户端在请求头 Accept-Encoding 中列出自己支持的编码，如 gzip、br、zstd。",
+   "服务端或 CDN 选择双方都支持的算法压缩响应，并设置 Content-Encoding 与 Vary: Accept-Encoding。",
+   "静态资源适合构建时预压缩（如生成 .br/.gz 文件），用高压缩级别且不占请求时 CPU。",
+   "动态响应只能在线压缩，通常选中等压缩级别，以平衡请求延迟与压缩率。",
+   "图片、视频、zip 等已压缩格式再压缩收益很小，应跳过；过小的响应也不值得压缩。"
+  ],
+  "terms": [
+   {
+    "t": "Content-Encoding",
+    "d": "说明响应体使用的压缩编码的响应头。"
+   },
+   {
+    "t": "Brotli (br)",
+    "d": "RFC 7932 定义的压缩算法，文本压缩率通常优于 gzip。"
+   },
+   {
+    "t": "Zstandard (zstd)",
+    "d": "RFC 8878 定义，压缩与解压速度快，可调级别范围大。"
+   },
+   {
+    "t": "Vary: Accept-Encoding",
+    "d": "告诉缓存按编码区分存储，避免发错版本。"
+   },
+   {
+    "t": "BREACH 攻击",
+    "d": "利用压缩后长度变化推测 HTTPS 响应中的秘密。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "Nginx 压缩配置",
+   "src": "http {\n    gzip on;\n    gzip_comp_level 5;            # 1-9，在线压缩取中间值\n    gzip_min_length 1024;         # 太小的响应不压缩\n    gzip_vary on;                 # 自动加 Vary: Accept-Encoding\n    gzip_proxied any;\n    gzip_types text/css application/javascript\n               application/json image/svg+xml;  # text/html 默认已包含\n\n    # 构建时生成的 .gz 文件直接发送，不再实时压缩\n    gzip_static on;\n\n    # Brotli 需第三方模块 ngx_brotli，可用时再启用：\n    # brotli on;\n    # brotli_static on;\n}\n\n# 验证：\n# curl -sI -H 'Accept-Encoding: gzip' https://example.com/app.js | grep -i content-encoding",
+   "note": "按类型和大小有选择地压缩，静态资源用预压缩文件；Brotli 需额外模块。"
+  },
+  "table": {
+   "title": "常见压缩算法对比",
+   "head": [
+    "算法",
+    "压缩率（文本）",
+    "速度特点",
+    "浏览器支持"
+   ],
+   "rows": [
+    [
+     "gzip",
+     "基准",
+     "快，普及最广",
+     "全部"
+    ],
+    [
+     "Brotli",
+     "通常优于 gzip",
+     "高级别压缩慢，解压快",
+     "现代浏览器（HTTPS）"
+    ],
+    [
+     "Zstandard",
+     "接近 Brotli",
+     "压缩解压都快",
+     "较新浏览器逐步支持"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "构建时预压缩",
+    "pros": "可用最高级别，零运行时 CPU",
+    "cons": "只适用于静态资源",
+    "when": "JS/CSS/字体等静态文件"
+   },
+   {
+    "opt": "在线动态压缩",
+    "pros": "适用于任意响应",
+    "cons": "占 CPU，增加少量延迟",
+    "when": "API JSON、SSR 页面"
+   },
+   {
+    "opt": "交给 CDN 压缩",
+    "pros": "源站省 CPU，边缘自动协商",
+    "cons": "依赖 CDN 能力与配置",
+    "when": "已使用 CDN 的站点"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "对 JPEG、MP4、zip 再做 gzip",
+    "fix": "只对文本类 MIME 类型启用压缩"
+   },
+   {
+    "bad": "缺少 Vary: Accept-Encoding，缓存把压缩版发给不支持的客户端",
+    "fix": "开启 gzip_vary 或手动加 Vary 头"
+   },
+   {
+    "bad": "在线压缩用最高级别，CPU 飙升延迟变长",
+    "fix": "动态内容用中等级别，最高级别留给预压缩"
+   },
+   {
+    "bad": "压缩响应中同时包含用户输入与 CSRF 令牌等秘密",
+    "fix": "评估 BREACH 风险：秘密按请求随机掩码，或对敏感响应禁用压缩"
+   }
+  ],
+  "checklist": [
+   "文本资源已启用压缩",
+   "已压缩格式被排除",
+   "响应带 Vary: Accept-Encoding",
+   "静态资源有预压缩版本",
+   "压缩级别经压测确认",
+   "敏感页面评估过 BREACH 风险"
+  ],
+  "interview": [
+   {
+    "q": "为什么 Brotli 只在 HTTPS 下使用？",
+    "a": "浏览器只在安全连接上声明支持 br，主要是避免老旧中间代理错误处理不认识的编码。通过 HTTPS 传输可绕过这些中间设备。"
+   },
+   {
+    "q": "压缩为什么可能带来安全问题？",
+    "a": "压缩后的长度取决于内容重复度。攻击者若能注入可控内容并观测响应长度，就能逐字节猜测同一响应中的秘密，即 CRIME/BREACH 类攻击。缓解是分离秘密与用户输入、掩码令牌或禁用压缩。"
+   },
+   {
+    "q": "HTTP/2 下还需要关心头部压缩吗？",
+    "a": "HTTP/2 用 HPACK、HTTP/3 用 QPACK 自动压缩头部，无需应用配置；但它们只处理头部，响应体仍需 Content-Encoding 压缩。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "MDN：Compression in HTTP",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Compression"
+   },
+   {
+    "title": "RFC 7932: Brotli Compressed Data Format",
+    "url": "https://www.rfc-editor.org/rfc/rfc7932"
+   },
+   {
+    "title": "Nginx 文档：ngx_http_gzip_module",
+    "url": "https://nginx.org/en/docs/http/ngx_http_gzip_module.html"
+   }
+  ]
+ },
+ {
+  "slug": "ttls",
+  "def": "TTL（Time To Live，生存时间）是给缓存项或数据设置的有效期，到期后被视为过期并重新获取或删除。它出现在 HTTP 缓存（Cache-Control max-age）、DNS 记录、Redis 键、CDN 边缘等多个层次，是在数据新鲜度与源站负载之间做权衡的核心参数。",
+  "how": [
+   "写入缓存时附带 TTL，存储层记录过期时间点，如 Redis 的 EXPIRE 或 SET … EX。",
+   "读取时若未过期直接返回；过期则视为未命中，回源获取并重新写入。",
+   "HTTP 中由 Cache-Control: max-age / s-maxage 指定浏览器和共享缓存的 TTL。",
+   "stale-while-revalidate 允许过期后短时间内先返回旧值，同时后台刷新。",
+   "大量键同时过期会导致回源洪峰，通常给 TTL 加随机抖动来分散过期时间。"
+  ],
+  "terms": [
+   {
+    "t": "max-age",
+    "d": "响应可被视为新鲜的秒数，作用于所有缓存。"
+   },
+   {
+    "t": "s-maxage",
+    "d": "仅对共享缓存（CDN、代理）生效的 TTL。"
+   },
+   {
+    "t": "stale-while-revalidate",
+    "d": "RFC 5861 扩展，过期后可先用旧值并后台刷新。"
+   },
+   {
+    "t": "缓存雪崩 (Cache Avalanche)",
+    "d": "大量缓存同时失效，请求集中打到源站。"
+   },
+   {
+    "t": "缓存击穿 (Cache Stampede)",
+    "d": "热点键过期瞬间大量并发同时回源。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "带抖动与互斥的 Redis 缓存",
+   "src": "import json, random\nimport redis\n\nr = redis.Redis()\nBASE_TTL = 300  # 5 分钟\n\ndef get_product(pid, load_from_db):\n    key = f\"product:{pid}\"\n    cached = r.get(key)\n    if cached:\n        return json.loads(cached)\n    # 互斥锁：只让一个请求回源，防止热点击穿\n    if r.set(f\"lock:{key}\", 1, nx=True, ex=10):\n        try:\n            data = load_from_db(pid)\n            ttl = BASE_TTL + random.randint(0, 60)   # 抖动，避免同时过期\n            r.set(key, json.dumps(data), ex=ttl)\n            return data\n        finally:\n            r.delete(f\"lock:{key}\")\n    return load_from_db(pid)  # 简化：未抢到锁直接查库，也可短暂等待重试\n\n# 查看剩余寿命：r.ttl(\"product:1\")  -> 秒数，-1 无过期，-2 不存在",
+   "note": "TTL 加随机抖动分散过期，互斥锁让热点键只回源一次。"
+  },
+  "table": {
+   "title": "不同层的 TTL 设置",
+   "head": [
+    "层级",
+    "配置方式",
+    "典型考虑"
+   ],
+   "rows": [
+    [
+     "浏览器",
+     "Cache-Control: max-age",
+     "用户无法主动清除，宜保守"
+    ],
+    [
+     "CDN",
+     "s-maxage 或控制台规则",
+     "可主动清除，可设较长"
+    ],
+    [
+     "应用缓存 (Redis)",
+     "EXPIRE / SET EX",
+     "按数据变化频率设定"
+    ],
+    [
+     "DNS",
+     "记录 TTL",
+     "迁移前提前调低"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "短 TTL",
+    "pros": "数据更新快，不一致窗口小",
+    "cons": "命中率低，回源压力大",
+    "when": "价格、库存等易变数据"
+   },
+   {
+    "opt": "长 TTL + 主动失效",
+    "pros": "命中率高且能及时更新",
+    "cons": "需在写路径维护失效逻辑",
+    "when": "读多写少、写入点可控"
+   },
+   {
+    "opt": "永不过期 + 后台刷新",
+    "pros": "无击穿，延迟稳定",
+    "cons": "数据可能长期陈旧，占内存",
+    "when": "配置、榜单等少量热点"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "所有键使用同一固定 TTL",
+    "fix": "加随机抖动，分散过期时间"
+   },
+   {
+    "bad": "HTML 设置很长的 max-age，发布后用户拿不到新版本",
+    "fix": "HTML 用短 TTL 或 no-cache，静态资源用带哈希文件名加长 TTL"
+   },
+   {
+    "bad": "迁移服务器当天才调低 DNS TTL",
+    "fix": "提前至少一个旧 TTL 周期调低，切换后再恢复"
+   },
+   {
+    "bad": "Redis 中忘记设置过期，内存持续增长",
+    "fix": "写入缓存统一走带 TTL 的封装，并配置淘汰策略"
+   }
+  ],
+  "checklist": [
+   "每类缓存数据都有明确 TTL",
+   "TTL 带随机抖动",
+   "热点键有防击穿措施",
+   "HTML 与静态资源 TTL 区分",
+   "写操作后有失效或更新策略",
+   "Redis 配置了 maxmemory-policy"
+  ],
+  "interview": [
+   {
+    "q": "缓存雪崩、击穿、穿透的区别？",
+    "a": "雪崩：大量键同时过期或缓存宕机，请求集中回源，靠 TTL 抖动和高可用缓解。击穿：单个热点键过期瞬间并发回源，用互斥锁或提前刷新。穿透：查询不存在的数据始终未命中，用空值缓存或布隆过滤器。"
+   },
+   {
+    "q": "max-age 和 s-maxage 怎么配合？",
+    "a": "s-maxage 只对共享缓存生效并覆盖 max-age。常见做法是浏览器短 TTL、CDN 长 TTL，发布时主动清 CDN，兼顾新鲜度和源站负载。"
+   },
+   {
+    "q": "TTL 是精确到期删除吗？",
+    "a": "不一定。Redis 结合访问时惰性删除和周期性抽样删除，过期键不会都在到期瞬间释放内存，但读取时不会返回过期值。CDN 也可能在 TTL 内因容量提前淘汰。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "MDN：Cache-Control",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control"
+   },
+   {
+    "title": "Redis 文档：EXPIRE",
+    "url": "https://redis.io/docs/latest/commands/expire/"
+   },
+   {
+    "title": "RFC 5861: HTTP Cache-Control Extensions for Stale Content",
+    "url": "https://www.rfc-editor.org/rfc/rfc5861"
+   }
+  ]
+ },
+ {
+  "slug": "cdns",
+  "def": "内容分发网络（Content Delivery Network, CDN）是分布在全球各地的边缘节点（PoP）网络，把静态资源乃至动态响应缓存在离用户近的位置，并代为终止 TLS、抵御 DDoS。它位于用户与源站之间的边缘层，用于降低延迟、减轻源站负载与带宽成本，现代 CDN 还提供边缘计算能力。",
+  "how": [
+   "域名通过 CNAME 或 NS 托管指向 CDN，DNS 或 Anycast 路由把用户导向就近节点。",
+   "边缘节点按缓存键（通常是 URL 加部分头）查找本地缓存，命中则直接返回。",
+   "未命中时回源（可能先经中间层缓存）获取内容，并按 Cache-Control 或规则缓存。",
+   "内容更新时通过带哈希的文件名自然失效，或调用清除（Purge）接口主动删除。",
+   "边缘还可执行 WAF、限流、重定向和边缘函数，在靠近用户处处理请求。"
+  ],
+  "terms": [
+   {
+    "t": "PoP (Point of Presence)",
+    "d": "CDN 在某地部署的边缘节点机房。"
+   },
+   {
+    "t": "回源 (Origin Fetch)",
+    "d": "边缘未命中时向源站请求内容。"
+   },
+   {
+    "t": "缓存键 (Cache Key)",
+    "d": "决定两个请求是否共享同一缓存对象的标识。"
+   },
+   {
+    "t": "Anycast",
+    "d": "多个节点共享同一 IP，路由自动选最近节点。"
+   },
+   {
+    "t": "源站保护 (Origin Shield)",
+    "d": "在边缘与源站间加一层集中缓存，减少回源。"
+   }
+  ],
+  "code": {
+   "lang": "http",
+   "title": "指纹资源与 HTML 的缓存头",
+   "src": "# 带内容哈希的静态资源：一年缓存，内容变则文件名变\nGET /assets/app.3f9c2b.js HTTP/1.1\nHost: www.example.com\n\nHTTP/1.1 200 OK\nCache-Control: public, max-age=31536000, immutable\nContent-Type: application/javascript\n\n# HTML 入口：浏览器每次校验，CDN 缓存 60 秒\nGET /index.html HTTP/1.1\nHost: www.example.com\n\nHTTP/1.1 200 OK\nCache-Control: public, max-age=0, s-maxage=60, stale-while-revalidate=30\nETag: \"a1b2c3\"\n\n# 登录后的个性化接口：禁止共享缓存\nGET /api/me HTTP/1.1\n\nHTTP/1.1 200 OK\nCache-Control: private, no-store",
+   "note": "资源用文件指纹加长缓存，HTML 短缓存，个性化内容禁止 CDN 缓存。"
+  },
+  "table": {
+   "title": "CDN 内容缓存策略",
+   "head": [
+    "内容类型",
+    "缓存策略",
+    "更新方式"
+   ],
+   "rows": [
+    [
+     "带哈希的 JS/CSS/图片",
+     "长 TTL + immutable",
+     "发布新文件名"
+    ],
+    [
+     "HTML 页面",
+     "短 s-maxage 或不缓存",
+     "TTL 到期或 Purge"
+    ],
+    [
+     "公共 API 响应",
+     "短 TTL，按参数分键",
+     "TTL 到期"
+    ],
+    [
+     "个性化/鉴权内容",
+     "private, no-store",
+     "不经 CDN 缓存"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "只缓存静态资源",
+    "pros": "简单安全，无数据泄露风险",
+    "cons": "动态请求仍全部回源",
+    "when": "大多数 Web 应用起步"
+   },
+   {
+    "opt": "缓存公共动态页面",
+    "pros": "大幅降低源站负载",
+    "cons": "需精确控制缓存键与失效",
+    "when": "内容站、商品列表等公共页面"
+   },
+   {
+    "opt": "边缘计算",
+    "pros": "在边缘做鉴权、个性化",
+    "cons": "运行时受限，调试复杂",
+    "when": "全球用户且需低延迟逻辑"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "个性化响应被 CDN 缓存，A 用户看到 B 的数据",
+    "fix": "鉴权内容设 private/no-store，并核对 CDN 是否忽略 Cookie"
+   },
+   {
+    "bad": "文件名不带哈希却设长缓存，发布后旧资源迟迟不更新",
+    "fix": "构建产物加内容哈希，入口 HTML 用短缓存"
+   },
+   {
+    "bad": "缓存键包含无关查询参数，命中率极低",
+    "fix": "规范化缓存键，忽略 utm 等追踪参数"
+   },
+   {
+    "bad": "源站 IP 暴露，攻击者绕过 CDN 直连",
+    "fix": "源站只允许 CDN 回源 IP 或使用认证回源"
+   }
+  ],
+  "checklist": [
+   "静态资源带内容哈希",
+   "各类响应 Cache-Control 明确",
+   "个性化内容不被共享缓存",
+   "缓存命中率有监控",
+   "有 Purge 流程与权限",
+   "源站限制仅 CDN 访问"
+  ],
+  "interview": [
+   {
+    "q": "如何判断一个响应是否命中了 CDN？",
+    "a": "查看 CDN 返回的诊断头，如 Age、X-Cache 或厂商特有头（如 CF-Cache-Status）。Age 大于 0 通常表示来自缓存；具体头名以所用 CDN 文档为准。"
+   },
+   {
+    "q": "发布后如何让用户立刻拿到新版本？",
+    "a": "构建产物用内容哈希命名并长缓存；入口 HTML 短缓存或 no-cache，新 HTML 引用新文件名即可生效；必要时对 HTML 路径调用 Purge，而不是全站清缓存。"
+   },
+   {
+    "q": "CDN 为什么能降低 TLS 握手延迟？",
+    "a": "TLS 在离用户最近的边缘节点终止，握手往返距离短；边缘与源站之间可复用长连接。HTTP/3 与 0-RTT 进一步减少握手开销。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "MDN：HTTP caching",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching"
+   },
+   {
+    "title": "Wikipedia: Content delivery network",
+    "url": "https://en.wikipedia.org/wiki/Content_delivery_network"
+   },
+   {
+    "title": "RFC 9111: HTTP Caching",
+    "url": "https://www.rfc-editor.org/rfc/rfc9111"
+   }
+  ]
+ },
+ {
+  "slug": "background-jobs",
+  "def": "后台任务（Background Jobs）是把耗时或可延后的工作（发邮件、生成报表、调用外部 API、处理图片）从请求路径中拆出，写入任务队列，由独立的 worker 进程异步消费执行。它位于应用架构的异步处理层，缩短接口响应时间、削峰填谷，并通过重试提升可靠性。",
+  "how": [
+   "Web 进程把任务名与参数序列化后推入 broker（如 Redis、RabbitMQ、SQS），立即返回。",
+   "一个或多个 worker 进程从队列拉取任务并执行，可按队列划分优先级与资源。",
+   "执行失败时按退避策略重试，超过最大次数后进入死信队列或标记失败。",
+   "确认机制决定消息何时删除：执行后确认可防丢，但 worker 崩溃时任务可能被重复执行。",
+   "调度器（如 Celery beat、cron）按时间周期投递定时任务，结果可写回数据库或结果后端。"
+  ],
+  "terms": [
+   {
+    "t": "Broker",
+    "d": "存储与分发任务消息的中间件，如 Redis、RabbitMQ。"
+   },
+   {
+    "t": "Worker",
+    "d": "消费队列并执行任务的独立进程。"
+   },
+   {
+    "t": "确认 (Ack)",
+    "d": "worker 告知 broker 任务已处理，可删除消息。"
+   },
+   {
+    "t": "指数退避 (Exponential Backoff)",
+    "d": "每次重试间隔成倍增长，避免压垮下游。"
+   },
+   {
+    "t": "Outbox 模式",
+    "d": "业务数据与待发消息同库同事务写入，再异步投递。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Celery 任务与重试",
+   "src": "from celery import Celery\nimport requests\n\napp = Celery(\"tasks\", broker=\"redis://localhost:6379/0\")\napp.conf.task_acks_late = True              # 执行完再确认，崩溃可重投\napp.conf.worker_prefetch_multiplier = 1     # 长任务避免预取堆积\n\n@app.task(\n    autoretry_for=(requests.RequestException,),\n    retry_backoff=True,      # 指数退避\n    retry_jitter=True,       # 随机抖动\n    max_retries=5,\n)\ndef send_receipt(order_id: int):\n    # 幂等：已发送则跳过（acks_late 下可能重复执行）\n    # if already_sent(order_id): return\n    resp = requests.post(\"https://mail.example.com/send\",\n                         json={\"order_id\": order_id}, timeout=10)\n    resp.raise_for_status()\n\n# Web 端：只入队，不等待结果\n# send_receipt.delay(981)\n# 启动 worker：celery -A tasks worker --loglevel=INFO",
+   "note": "入队后立即返回；失败自动退避重试；acks_late 换来不丢任务，代价是任务必须幂等。"
+  },
+  "table": {
+   "title": "常见任务队列框架",
+   "head": [
+    "框架",
+    "语言",
+    "常用 Broker"
+   ],
+   "rows": [
+    [
+     "Celery",
+     "Python",
+     "Redis、RabbitMQ"
+    ],
+    [
+     "BullMQ",
+     "Node.js",
+     "Redis"
+    ],
+    [
+     "Sidekiq",
+     "Ruby",
+     "Redis"
+    ],
+    [
+     "云队列 + 函数",
+     "多语言",
+     "SQS、Cloud Tasks 等托管服务"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "同步在请求内处理",
+    "pros": "简单，结果立即可见",
+    "cons": "接口慢，失败影响用户请求",
+    "when": "耗时很短且必须立即完成"
+   },
+   {
+    "opt": "Redis 队列",
+    "pros": "部署简单、延迟低",
+    "cons": "持久化与投递保证弱于专业 MQ",
+    "when": "中小规模、已有 Redis"
+   },
+   {
+    "opt": "专业 MQ / 托管队列",
+    "pros": "持久化、确认、死信完善",
+    "cons": "运维或费用成本更高",
+    "when": "关键业务、高吞吐"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在数据库事务提交前就入队，worker 读不到新数据",
+    "fix": "事务提交后再入队（如 on_commit 钩子），或使用 outbox"
+   },
+   {
+    "bad": "任务参数传整个 ORM 对象",
+    "fix": "只传 ID 等小参数，worker 执行时重新读取最新数据"
+   },
+   {
+    "bad": "任务不幂等，重试导致重复扣款或重复邮件",
+    "fix": "以业务键去重，或检查状态后再执行"
+   },
+   {
+    "bad": "没有监控，队列积压数小时无人察觉",
+    "fix": "监控队列长度、任务耗时与失败率并设置告警"
+   }
+  ],
+  "checklist": [
+   "任务幂等且参数可序列化",
+   "外部调用设置超时",
+   "重试带退避与上限",
+   "失败任务进入死信并告警",
+   "队列积压与 worker 健康可监控",
+   "入队发生在事务提交之后"
+  ],
+  "interview": [
+   {
+    "q": "如何保证任务不丢也不重复？",
+    "a": "严格「恰好一次」很难。常规做法是至少一次投递：持久化 broker、执行后确认、失败重试，再在任务层实现幂等（业务唯一键、状态机检查），把重复执行的影响消除。"
+   },
+   {
+    "q": "数据库写入和发消息怎么保证一致？",
+    "a": "用 outbox 模式：业务数据和待发送事件在同一本地事务写入，独立进程轮询或基于 CDC 把 outbox 记录投递到队列，投递成功后标记，避免「写库成功但消息丢失」。"
+   },
+   {
+    "q": "长任务如何避免被重复执行？",
+    "a": "让可见性超时或确认超时大于任务最长耗时；降低或关闭预取；把长任务拆成可续跑的小步并记录进度；同时保证幂等，即使重复执行也无副作用。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Celery 文档：Tasks",
+    "url": "https://docs.celeryq.dev/en/stable/userguide/tasks.html"
+   },
+   {
+    "title": "BullMQ 文档",
+    "url": "https://docs.bullmq.io/"
+   },
+   {
+    "title": "microservices.io：Transactional outbox",
+    "url": "https://microservices.io/patterns/data/transactional-outbox.html"
+   }
+  ]
+ },
+ {
+  "slug": "health-checks",
+  "def": "健康检查（Health Check）是由负载均衡器、容器编排器或监控系统周期性探测服务实例状态的机制，根据结果决定是否转发流量、重启实例或发出告警。它位于运维与流量调度层，通常分为存活检查（是否需要重启）和就绪检查（能否接流量），是自动故障转移与滚动发布的前提。",
+  "how": [
+   "服务暴露健康端点（如 /healthz、/readyz）或可被探测的 TCP 端口、命令。",
+   "探测方按固定周期请求端点，在超时时间内收到成功响应（如 2xx）即记为一次成功。",
+   "连续失败次数达到阈值后判定不健康：就绪失败则摘除流量，存活失败则重启容器。",
+   "启动较慢的服务用启动探针（startup probe）延后其他探针，避免启动中被误杀。",
+   "实例恢复后连续成功达到阈值再重新加入负载均衡，避免状态频繁抖动。"
+  ],
+  "terms": [
+   {
+    "t": "存活探针 (Liveness Probe)",
+    "d": "判断进程是否卡死，失败则重启容器。"
+   },
+   {
+    "t": "就绪探针 (Readiness Probe)",
+    "d": "判断实例能否接流量，失败则从服务端点摘除。"
+   },
+   {
+    "t": "启动探针 (Startup Probe)",
+    "d": "启动完成前屏蔽其他探针，保护慢启动应用。"
+   },
+   {
+    "t": "失败阈值 (failureThreshold)",
+    "d": "连续失败多少次才判定不健康。"
+   },
+   {
+    "t": "级联故障 (Cascading Failure)",
+    "d": "一个依赖故障通过检查连锁导致全体下线。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "Kubernetes 三类探针",
+   "src": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: api\nspec:\n  containers:\n    - name: api\n      image: example/api:1.4.2\n      ports: [{ containerPort: 8080 }]\n      startupProbe:            # 最多给 30×5=150 秒启动\n        httpGet: { path: /healthz, port: 8080 }\n        periodSeconds: 5\n        failureThreshold: 30\n      livenessProbe:           # 只检查进程自身，不查数据库\n        httpGet: { path: /healthz, port: 8080 }\n        periodSeconds: 10\n        timeoutSeconds: 2\n        failureThreshold: 3\n      readinessProbe:          # 关键依赖不可用时暂停接流量\n        httpGet: { path: /readyz, port: 8080 }\n        periodSeconds: 5\n        failureThreshold: 2",
+   "note": "存活只看自身，就绪可看关键依赖，慢启动用 startupProbe 兜住。"
+  },
+  "table": {
+   "title": "三类探针对比",
+   "head": [
+    "探针",
+    "失败后动作",
+    "应检查什么"
+   ],
+   "rows": [
+    [
+     "Liveness",
+     "重启容器",
+     "进程是否响应、是否死锁"
+    ],
+    [
+     "Readiness",
+     "摘除流量，不重启",
+     "初始化完成、关键依赖可用"
+    ],
+    [
+     "Startup",
+     "超限后重启",
+     "应用是否已完成启动"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "浅检查（只返回 200）",
+    "pros": "快速稳定，不受依赖影响",
+    "cons": "发现不了依赖或内部异常",
+    "when": "Liveness 探针"
+   },
+   {
+    "opt": "深检查（含依赖）",
+    "pros": "能反映真实服务能力",
+    "cons": "依赖抖动可能导致全体摘除",
+    "when": "Readiness 或外部监控"
+   },
+   {
+    "opt": "外部合成监控",
+    "pros": "从用户视角验证端到端",
+    "cons": "定位粒度粗，有成本",
+    "when": "关键用户路径与 SLA 监控"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "存活探针检查数据库，库一抖所有 Pod 被重启",
+    "fix": "Liveness 只检查进程自身，依赖检查放到 Readiness"
+   },
+   {
+    "bad": "超时与阈值过小，GC 停顿就被误判",
+    "fix": "按 P99 响应时间设置超时，失败阈值至少数次"
+   },
+   {
+    "bad": "健康端点需要鉴权或经过限流",
+    "fix": "健康端点轻量、免鉴权，仅暴露在内网或不含敏感信息"
+   },
+   {
+    "bad": "进程收到终止信号仍报告就绪",
+    "fix": "优雅停机时先让 Readiness 失败，等流量摘除再退出"
+   }
+  ],
+  "checklist": [
+   "Liveness 与 Readiness 分离",
+   "Liveness 不依赖外部服务",
+   "超时与阈值基于实测",
+   "慢启动服务配置 startupProbe",
+   "优雅停机与就绪状态联动",
+   "健康端点不泄露内部信息"
+  ],
+  "interview": [
+   {
+    "q": "Readiness 检查依赖数据库有什么风险？",
+    "a": "数据库短暂抖动会让所有实例同时不就绪，负载均衡无可用后端，局部问题放大为全站不可用。可只检查关键且实例独有的依赖，加缓存结果与容忍阈值，或在全部失败时保留流量。"
+   },
+   {
+    "q": "滚动发布中健康检查起什么作用？",
+    "a": "新实例通过 Readiness 才接流量，编排器据此决定是否继续替换旧实例；若新版本始终不就绪，发布会停滞而不是把坏版本推满，为回滚争取时间。"
+   },
+   {
+    "q": "如何实现优雅停机？",
+    "a": "收到 SIGTERM 后先让就绪检查失败或从注册中心注销，等待负载均衡摘除并处理完在途请求，再关闭连接和进程；配合 preStop 钩子与足够的终止宽限期。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Kubernetes 文档：Configure Liveness, Readiness and Startup Probes",
+    "url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/"
+   },
+   {
+    "title": "Kubernetes 文档：Pod Lifecycle",
+    "url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/"
+   },
+   {
+    "title": "Google SRE Book：Monitoring Distributed Systems",
+    "url": "https://sre.google/sre-book/monitoring-distributed-systems/"
+   }
+  ]
+ },
+ {
+  "slug": "slas",
+  "def": "服务等级协议（Service Level Agreement, SLA）是服务提供方与客户之间关于可用性、性能等指标的书面承诺，通常附带未达标时的赔偿条款（如服务抵扣）。它建立在内部的 SLI（指标）与 SLO（目标）之上，属于可靠性工程与商务契约的交界层，决定了系统需要投入多少冗余与运维成本。",
+  "how": [
+   "定义 SLI：可量化的服务指标，如成功请求比例、P99 延迟，并明确统计口径。",
+   "设定 SLO：内部目标值，如 30 天内 99.9% 请求成功，通常比 SLA 更严格。",
+   "对外签订 SLA：承诺值、统计周期、排除项（计划维护、客户原因）与赔偿梯度。",
+   "用 SLO 推出错误预算（Error Budget），预算消耗过快时冻结发布、优先修可靠性。",
+   "持续监控并出具报表，违约时按条款计算服务抵扣，通常需客户主动申请。"
+  ],
+  "terms": [
+   {
+    "t": "SLI (Service Level Indicator)",
+    "d": "衡量服务水平的具体指标，如可用率、延迟。"
+   },
+   {
+    "t": "SLO (Service Level Objective)",
+    "d": "团队为 SLI 设定的内部目标值。"
+   },
+   {
+    "t": "错误预算 (Error Budget)",
+    "d": "1 减 SLO，即周期内允许的不可靠额度。"
+   },
+   {
+    "t": "服务抵扣 (Service Credit)",
+    "d": "未达 SLA 时按比例返还的费用额度。"
+   },
+   {
+    "t": "复合可用性 (Composite Availability)",
+    "d": "串联依赖的可用性相乘，整体低于任一组件。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "可用性与错误预算计算",
+   "src": "def downtime_budget(slo: float, days: int = 30) -> float:\n    \"\"\"返回周期内允许的停机分钟数\"\"\"\n    return (1 - slo) * days * 24 * 60\n\nfor slo in (0.99, 0.999, 0.9995, 0.9999):\n    print(f\"{slo:.2%}  ->  {downtime_budget(slo):7.1f} 分钟/30天\")\n# 99.00% ->   432.0\n# 99.90% ->    43.2\n# 99.95% ->    21.6\n# 99.99% ->     4.3\n\n# 串联依赖：整体可用性 = 各组件相乘\ndeps = {\"负载均衡\": 0.9999, \"应用\": 0.999, \"数据库\": 0.9995}\ntotal = 1.0\nfor a in deps.values():\n    total *= a\nprint(f\"整体约 {total:.4%}\")  # 约 99.84%，低于任一组件\n\n# 错误预算消耗：30 天内已失败请求占比 / 允许占比\nfailed, total_req, slo = 12_000, 20_000_000, 0.999\nprint(f\"预算已用 {failed / total_req / (1 - slo):.0%}\")  # 60%",
+   "note": "每多一个 9，停机预算缩小十倍；串联依赖会拉低整体可用性。"
+  },
+  "table": {
+   "title": "SLI、SLO、SLA 区别",
+   "head": [
+    "概念",
+    "面向",
+    "示例",
+    "未达成后果"
+   ],
+   "rows": [
+    [
+     "SLI",
+     "工程团队",
+     "成功请求比例",
+     "无，仅是度量"
+    ],
+    [
+     "SLO",
+     "内部",
+     "30 天 99.9% 成功",
+     "冻结发布、复盘"
+    ],
+    [
+     "SLA",
+     "客户与法务",
+     "月可用性 99.9%",
+     "服务抵扣或违约"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "提高 SLA 承诺",
+    "pros": "商务竞争力强",
+    "cons": "冗余、值班、跨区成本陡增",
+    "when": "企业客户、核心业务"
+   },
+   {
+    "opt": "SLA 低于 SLO 留余量",
+    "pros": "内部问题不直接触发赔偿",
+    "cons": "对外承诺显得保守",
+    "when": "绝大多数服务的推荐做法"
+   },
+   {
+    "opt": "不提供 SLA",
+    "pros": "无违约风险",
+    "cons": "难以进入企业采购",
+    "when": "Beta、免费或早期产品"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "SLA 和 SLO 设成同一个值",
+    "fix": "SLO 比 SLA 更严格，留出缓冲"
+   },
+   {
+    "bad": "用服务器存活时间衡量可用性",
+    "fix": "以用户可感知的成功请求比例或合成探测为 SLI"
+   },
+   {
+    "bad": "承诺 99.99% 却依赖单一可用区的数据库",
+    "fix": "按依赖链计算复合可用性，补足冗余后再承诺"
+   },
+   {
+    "bad": "SLA 未写清统计口径与排除项",
+    "fix": "明确周期、计算方式、维护窗口与申请赔偿流程"
+   }
+  ],
+  "checklist": [
+   "SLI 口径书面明确",
+   "SLO 严于 SLA",
+   "依赖链复合可用性已核算",
+   "错误预算有消耗告警",
+   "排除项与赔偿流程写入合同",
+   "上游供应商 SLA 已纳入评估"
+  ],
+  "interview": [
+   {
+    "q": "为什么不追求 100% 可用？",
+    "a": "成本随 9 的个数指数增长，且用户侧网络、终端本身也不是 100% 可靠，超过某点用户无感知。留出错误预算可用于发布新功能与实验，在速度与稳定间取得平衡。"
+   },
+   {
+    "q": "错误预算耗尽后怎么办？",
+    "a": "按事先约定的策略执行：暂停非紧急发布、把工程资源转向可靠性修复与复盘，直到预算恢复；关键在于策略由产品和工程提前共同认可，而不是事后争论。"
+   },
+   {
+    "q": "如何为一个 API 选择 SLI？",
+    "a": "从用户体验出发：可用性用非 5xx 且未超时的请求占比；延迟用 P95/P99 低于阈值的比例；在负载均衡或网关处统一采集，排除健康检查与客户端错误，口径保持稳定。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Google SRE Book：Service Level Objectives",
+    "url": "https://sre.google/sre-book/service-level-objectives/"
+   },
+   {
+    "title": "Google SRE Workbook：Implementing SLOs",
+    "url": "https://sre.google/workbook/implementing-slos/"
+   },
+   {
+    "title": "Wikipedia: Service-level agreement",
+    "url": "https://en.wikipedia.org/wiki/Service-level_agreement"
+   }
+  ]
+ },
+ {
+  "slug": "structured-logging",
+  "def": "结构化日志（Structured Logging）是把每条日志输出为带固定字段的机器可解析记录（通常是每行一个 JSON 对象），而不是自由拼接的文本。它属于可观测性层，使日志能被采集系统按字段索引、过滤、聚合，并通过 trace_id 等字段与链路追踪、指标关联。",
+  "how": [
+   "应用使用日志库按键值对记录事件，如 event、user_id、duration_ms，而非拼接字符串。",
+   "处理器链自动补充时间戳、级别、服务名、主机等公共字段，并合并请求上下文。",
+   "请求进入时绑定 request_id / trace_id 到上下文，该请求内所有日志自动携带。",
+   "渲染器把记录序列化为 JSON 写到 stdout，由采集代理（如 Fluent Bit、Vector）收集。",
+   "后端（如 Elasticsearch、Loki、云日志服务）按字段建索引，支持查询与告警。"
+  ],
+  "terms": [
+   {
+    "t": "关联 ID (Correlation ID)",
+    "d": "贯穿一次请求的唯一 ID，用于串联多条日志。"
+   },
+   {
+    "t": "高基数字段 (High Cardinality)",
+    "d": "取值极多的字段，如 user_id，影响索引成本。"
+   },
+   {
+    "t": "上下文绑定 (Context Binding)",
+    "d": "把字段绑定到当前请求，后续日志自动带上。"
+   },
+   {
+    "t": "OpenTelemetry Logs",
+    "d": "OTel 定义的日志数据模型，可与 trace 关联。"
+   },
+   {
+    "t": "脱敏 (Redaction)",
+    "d": "在输出前删除或掩码敏感字段。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "structlog 输出 JSON 日志",
+   "src": "import uuid\nimport structlog\n\nstructlog.configure(\n    processors=[\n        structlog.contextvars.merge_contextvars,      # 合并请求上下文\n        structlog.processors.add_log_level,\n        structlog.processors.TimeStamper(fmt=\"iso\", utc=True),\n        structlog.processors.JSONRenderer(),           # 每行一个 JSON\n    ]\n)\nlog = structlog.get_logger()\n\ndef handle_request(user_id: int):\n    structlog.contextvars.clear_contextvars()\n    structlog.contextvars.bind_contextvars(request_id=str(uuid.uuid4()))\n    log.info(\"order_created\", user_id=user_id, order_id=981, amount_cents=4999)\n    log.warning(\"payment_slow\", provider=\"stripe\", duration_ms=2300)\n\nhandle_request(42)\n# {\"request_id\": \"…\", \"user_id\": 42, \"order_id\": 981, \"amount_cents\": 4999,\n#  \"event\": \"order_created\", \"level\": \"info\", \"timestamp\": \"…Z\"}",
+   "note": "事件名固定、变量放字段；request_id 绑定一次，整条请求的日志都能串起来。"
+  },
+  "table": {
+   "title": "文本日志与结构化日志",
+   "head": [
+    "维度",
+    "文本日志",
+    "结构化日志"
+   ],
+   "rows": [
+    [
+     "查询方式",
+     "正则 grep",
+     "按字段过滤与聚合"
+    ],
+    [
+     "格式变更影响",
+     "解析规则易失效",
+     "加字段不影响旧查询"
+    ],
+    [
+     "人工阅读",
+     "直观",
+     "需工具美化"
+    ],
+    [
+     "关联追踪",
+     "困难",
+     "通过 trace_id 直接关联"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "JSON 行日志",
+    "pros": "通用，采集与查询工具全支持",
+    "cons": "体积较大，人眼阅读差",
+    "when": "生产环境默认"
+   },
+   {
+    "opt": "logfmt 键值格式",
+    "pros": "紧凑，人机都较易读",
+    "cons": "嵌套结构表达弱",
+    "when": "Go 生态、轻量场景"
+   },
+   {
+    "opt": "开发环境彩色文本",
+    "pros": "本地调试友好",
+    "cons": "不适合采集",
+    "when": "本地开发，按环境切换渲染器"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把变量拼进消息：f\"user {id} paid {amt}\"",
+    "fix": "消息保持固定事件名，变量放独立字段"
+   },
+   {
+    "bad": "同一含义字段在各服务命名不同（uid/userId/user_id）",
+    "fix": "制定字段命名规范，或采用 OTel 语义约定"
+   },
+   {
+    "bad": "把密码、token、完整请求体写入日志",
+    "fix": "在处理器链中统一脱敏，并建立敏感字段清单"
+   },
+   {
+    "bad": "异常只记录 str(e)，丢失堆栈",
+    "fix": "使用日志库的异常记录方法输出结构化堆栈"
+   }
+  ],
+  "checklist": [
+   "生产日志为 JSON 输出到 stdout",
+   "每条日志含时间、级别、服务名",
+   "请求链路字段 request_id/trace_id",
+   "字段命名全团队统一",
+   "敏感信息自动脱敏",
+   "AI 生成代码未混用 print 调试"
+  ],
+  "interview": [
+   {
+    "q": "结构化日志和链路追踪如何关联？",
+    "a": "在日志上下文中注入当前 span 的 trace_id 与 span_id（OpenTelemetry 提供日志关联能力），日志后端与追踪后端据此互相跳转：从一条错误日志直接打开对应的完整调用链。"
+   },
+   {
+    "q": "高基数字段会带来什么问题？",
+    "a": "在日志系统中按字段建索引时，user_id、request_id 等高基数字段会增大索引体积与成本；Loki 等以标签索引的系统尤其要避免把它们设为标签，应作为日志内容字段查询。"
+   },
+   {
+    "q": "日志量太大怎么控制成本？",
+    "a": "调整级别、对高频成功日志采样、聚合为指标、设置分层保留期（热数据短、冷存储长），并删除无查询价值的字段。错误与审计日志不采样。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "structlog 文档",
+    "url": "https://www.structlog.org/en/stable/"
+   },
+   {
+    "title": "OpenTelemetry：Logs",
+    "url": "https://opentelemetry.io/docs/concepts/signals/logs/"
+   },
+   {
+    "title": "The Twelve-Factor App：Logs",
+    "url": "https://12factor.net/logs"
+   }
+  ]
+ },
+ {
+  "slug": "log-levels",
+  "def": "日志级别（Log Levels）是给每条日志标注严重程度的分级约定，常见为 DEBUG、INFO、WARN、ERROR、FATAL/CRITICAL，运行时按阈值过滤输出。它属于可观测性规范层，决定日志噪声、存储成本与告警准确性：级别用错会让真正的故障淹没在海量日志里。",
+  "how": [
+   "每个级别对应一个数值，如 Python 中 DEBUG=10、INFO=20、WARNING=30、ERROR=40、CRITICAL=50。",
+   "logger 与 handler 各自设置阈值，只有级别不低于阈值的日志才会被输出。",
+   "阈值通常由环境变量或配置控制：开发环境 DEBUG，生产环境 INFO 或 WARNING。",
+   "支持按模块单独设置级别，如只把某个第三方库调到 WARNING 以减少噪声。",
+   "告警系统通常基于 ERROR 及以上的数量或比例触发，因此级别语义直接影响值班。"
+  ],
+  "terms": [
+   {
+    "t": "阈值 (Threshold)",
+    "d": "低于该级别的日志被丢弃。"
+   },
+   {
+    "t": "syslog 严重性 (RFC 5424)",
+    "d": "0–7 共八级，从 Emergency 到 Debug。"
+   },
+   {
+    "t": "logger 层级 (Logger Hierarchy)",
+    "d": "按点分名称继承级别，如 app.db 继承 app。"
+   },
+   {
+    "t": "动态调级 (Dynamic Log Level)",
+    "d": "不重启进程临时提高某模块的日志详细度。"
+   },
+   {
+    "t": "惰性求值 (Lazy Formatting)",
+    "d": "级别未启用时不执行格式化，减少开销。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "按环境与模块配置级别",
+   "src": "import logging, os\n\nlogging.basicConfig(\n    level=os.getenv(\"LOG_LEVEL\", \"INFO\"),       # 生产默认 INFO\n    format=\"%(asctime)s %(levelname)s %(name)s %(message)s\",\n)\nlogging.getLogger(\"urllib3\").setLevel(logging.WARNING)  # 压制第三方噪声\n\nlog = logging.getLogger(\"app.payment\")\n\ndef charge(order_id, amount):\n    log.debug(\"charge request payload built: %s\", order_id)   # 排查细节\n    log.info(\"charge succeeded order=%s amount=%s\", order_id, amount)\n    log.warning(\"retrying gateway, attempt=%d\", 2)  # 可自愈的异常\n    try:\n        1 / 0\n    except ZeroDivisionError:\n        # 需要人处理的失败，exception() 自动附带堆栈\n        log.exception(\"charge failed order=%s\", order_id)\n\ncharge(981, 4999)\n# 用 %s 占位而非 f-string：级别未启用时不做格式化",
+   "note": "级别由环境变量控制；第三方库单独调高阈值；ERROR 用 exception() 保留堆栈。"
+  },
+  "table": {
+   "title": "级别使用约定",
+   "head": [
+    "级别",
+    "含义",
+    "示例",
+    "是否告警"
+   ],
+   "rows": [
+    [
+     "DEBUG",
+     "排查用细节",
+     "请求参数、分支走向",
+     "否"
+    ],
+    [
+     "INFO",
+     "正常业务事件",
+     "订单创建、任务完成",
+     "否"
+    ],
+    [
+     "WARN",
+     "异常但已自动处理",
+     "重试成功、降级",
+     "看趋势"
+    ],
+    [
+     "ERROR",
+     "需要人处理的失败",
+     "支付失败、未捕获异常",
+     "是"
+    ],
+    [
+     "FATAL/CRITICAL",
+     "进程无法继续",
+     "配置缺失无法启动",
+     "立即"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "生产 INFO",
+    "pros": "保留业务轨迹，便于追溯",
+    "cons": "日志量与成本较高",
+    "when": "大多数服务默认"
+   },
+   {
+    "opt": "生产 WARN",
+    "pros": "噪声与成本低",
+    "cons": "排查时缺少上下文",
+    "when": "超高吞吐服务"
+   },
+   {
+    "opt": "动态调级",
+    "pros": "按需打开 DEBUG 不需发版",
+    "cons": "需配置中心或管理接口",
+    "when": "线上疑难问题排查"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用户输错密码记为 ERROR，告警被刷爆",
+    "fix": "预期内的客户端错误用 INFO 或 WARN，ERROR 留给需处理的问题"
+   },
+   {
+    "bad": "捕获异常后只记 WARN 且吞掉堆栈",
+    "fix": "真正的失败记 ERROR 并附堆栈，或继续抛出"
+   },
+   {
+    "bad": "生产开 DEBUG 忘记关，磁盘和费用暴涨",
+    "fix": "动态调级设置自动过期，并监控日志量"
+   },
+   {
+    "bad": "在循环热路径里拼接大字符串记 DEBUG",
+    "fix": "使用占位符惰性格式化，或先判断 isEnabledFor"
+   }
+  ],
+  "checklist": [
+   "团队有书面的级别使用约定",
+   "生产默认级别可通过配置调整",
+   "ERROR 都对应可行动的问题",
+   "第三方库噪声已压制",
+   "告警规则与级别语义一致",
+   "日志量按级别有监控"
+  ],
+  "interview": [
+   {
+    "q": "WARN 和 ERROR 的分界线在哪？",
+    "a": "看是否需要人介入：系统已自动恢复或降级、不影响结果的记 WARN；请求失败、数据可能不一致、需要排查修复的记 ERROR。原则是每条 ERROR 都应可行动，否则会稀释告警。"
+   },
+   {
+    "q": "4xx 错误应该记什么级别？",
+    "a": "多数客户端错误是预期行为，记 INFO 或 DEBUG 并计入指标即可；但异常激增（如大量 401）可能是攻击或客户端 bug，应通过指标告警而非逐条 ERROR。"
+   },
+   {
+    "q": "为什么推荐用占位符而不是 f-string？",
+    "a": "占位符格式化在确认级别启用后才执行，DEBUG 关闭时几乎零开销；f-string 无论级别都会先计算字符串。同时占位符形式更便于日志聚合按模板分组。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Python 文档：Logging HOWTO",
+    "url": "https://docs.python.org/3/howto/logging.html"
+   },
+   {
+    "title": "RFC 5424: The Syslog Protocol",
+    "url": "https://www.rfc-editor.org/rfc/rfc5424"
+   },
+   {
+    "title": "OpenTelemetry：Logs Data Model（Severity）",
+    "url": "https://opentelemetry.io/docs/specs/otel/logs/data-model/"
+   }
+  ]
+ },
+ {
+  "slug": "rollbacks",
+  "def": "回滚（Rollback）是在新版本发布后出现故障时，把系统快速恢复到上一个已知良好版本的操作。它属于发布与变更管理层，前提是制品不可变、版本可追溯、数据库变更向后兼容。回滚速度直接决定故障的平均恢复时间（MTTR），是比「修好再发」更优先的止血手段。",
+  "how": [
+   "每次发布产出不可变制品（镜像标签或摘要），并记录对应的部署版本历史。",
+   "发布后持续监控错误率、延迟等关键指标，出现异常时人工或自动触发回滚。",
+   "部署平台把运行版本切回上一个制品，如滚动替换为旧镜像或把流量切回旧环境。",
+   "代码可直接回退，但数据库结构须兼容新旧两版；不可逆迁移需用前向修复。",
+   "回滚后确认指标恢复正常，冻结问题版本，复盘根因后再修复并重新上线。"
+  ],
+  "terms": [
+   {
+    "t": "MTTR",
+    "d": "平均恢复时间，从故障发生到服务恢复的时长。"
+   },
+   {
+    "t": "不可变制品 (Immutable Artifact)",
+    "d": "构建后不再修改的产物，用摘要唯一标识。"
+   },
+   {
+    "t": "蓝绿部署 (Blue-Green)",
+    "d": "新旧两套环境并存，切换流量实现秒级回滚。"
+   },
+   {
+    "t": "金丝雀发布 (Canary)",
+    "d": "先给小比例流量验证，异常即停止扩大。"
+   },
+   {
+    "t": "前向修复 (Roll Forward)",
+    "d": "不回退版本，而是快速发布修复版本。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "Kubernetes 回滚操作",
+   "src": "# 查看部署历史\nkubectl rollout history deployment/api\n\n# 查看某个版本的详细配置\nkubectl rollout history deployment/api --revision=7\n\n# 回滚到上一个版本\nkubectl rollout undo deployment/api\n\n# 回滚到指定版本\nkubectl rollout undo deployment/api --to-revision=7\n\n# 观察回滚进度，直到全部 Pod 就绪\nkubectl rollout status deployment/api --timeout=5m\n\n# 发布时用镜像摘要而非 latest，保证回滚目标确定\nkubectl set image deployment/api \\\n  api=registry.example.com/api@sha256:<digest>",
+   "note": "依赖保留的 ReplicaSet 历史（revisionHistoryLimit）；镜像用不可变摘要才能准确回到旧版。"
+  },
+  "table": {
+   "title": "回滚方式对比",
+   "head": [
+    "方式",
+    "回滚速度",
+    "资源成本",
+    "适用"
+   ],
+   "rows": [
+    [
+     "滚动回滚",
+     "分钟级",
+     "低",
+     "常规无状态服务"
+    ],
+    [
+     "蓝绿切换",
+     "秒级",
+     "需双倍资源",
+     "关键服务"
+    ],
+    [
+     "金丝雀中止",
+     "秒级（影响面小）",
+     "中",
+     "高风险变更"
+    ],
+    [
+     "特性开关关闭",
+     "秒级",
+     "低",
+     "功能级问题"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "立即回滚",
+    "pros": "止血最快，降低影响",
+    "cons": "新功能暂时下线",
+    "when": "影响用户且根因不明"
+   },
+   {
+    "opt": "前向修复",
+    "pros": "保留新功能与数据变更",
+    "cons": "修复期间持续受影响",
+    "when": "数据已不可逆或修复极简单"
+   },
+   {
+    "opt": "关闭特性开关",
+    "pros": "不动部署，粒度细",
+    "cons": "需事先接入开关",
+    "when": "问题局限于某新功能"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "使用 latest 标签，回滚后拉到的仍是新镜像",
+    "fix": "用版本号或镜像摘要部署，禁止可变标签"
+   },
+   {
+    "bad": "迁移删除了旧列，代码回滚后直接报错",
+    "fix": "遵循扩展-收缩，破坏性迁移延后到确认稳定后执行"
+   },
+   {
+    "bad": "从未演练，真出事时不会操作或权限不足",
+    "fix": "定期演练回滚并写成 runbook，保证值班可执行"
+   },
+   {
+    "bad": "只回滚代码，忘了配置或开关也一起变了",
+    "fix": "配置与代码一同版本化，回滚时同步还原"
+   }
+  ],
+  "checklist": [
+   "制品不可变且可追溯",
+   "数据库迁移兼容上一版本",
+   "回滚命令或按钮有文档",
+   "发布后有关键指标观察窗口",
+   "回滚流程定期演练",
+   "配置变更同样可回滚"
+  ],
+  "interview": [
+   {
+    "q": "数据库迁移和回滚如何协调？",
+    "a": "让每次迁移对新旧两个版本的代码都兼容：先加列、双写、回填，代码稳定后再删旧结构。这样代码可随时回滚而不受结构影响；真正不可逆的步骤单独发布并先备份。"
+   },
+   {
+    "q": "什么时候该自动回滚？",
+    "a": "指标明确且与发布强相关时，如金丝雀阶段错误率或延迟显著高于基线，由发布系统自动中止并回退。自动化需设置观察窗口和阈值，避免噪声误触发。"
+   },
+   {
+    "q": "回滚和前向修复如何选择？",
+    "a": "默认优先回滚止血；当回滚本身有风险（数据格式已变、外部系统已依赖新接口）或修复非常小且有把握时选择前向修复。关键在于事先评估每次发布的可回滚性。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Kubernetes 文档：Deployments（Rolling Back）",
+    "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-back-a-deployment"
+   },
+   {
+    "title": "kubectl rollout 参考",
+    "url": "https://kubernetes.io/docs/reference/kubectl/generated/kubectl_rollout/"
+   },
+   {
+    "title": "Martin Fowler：BlueGreenDeployment",
+    "url": "https://martinfowler.com/bliki/BlueGreenDeployment.html"
+   }
+  ]
+ },
+ {
+  "slug": "feature-flags",
+  "def": "特性开关（Feature Flags / Feature Toggles）是在运行时通过配置决定某段代码路径是否启用的技术，让「部署代码」与「发布功能」解耦。它位于应用与发布管理层，支持灰度放量、A/B 实验、按用户或租户定向、紧急关停，也是主干开发（Trunk-Based Development）的配套手段。",
+  "how": [
+   "代码中在新功能入口处调用开关判断，传入用户 ID、地区、套餐等评估上下文。",
+   "开关定义存放在配置中心或开关服务，包含默认值、定向规则与放量百分比。",
+   "SDK 拉取或订阅规则并缓存在本地，判断在进程内完成，避免每次网络调用。",
+   "百分比放量通过对用户 ID 哈希分桶实现，保证同一用户结果稳定。",
+   "功能全量且稳定后，删除开关判断代码与配置，避免长期积累成技术债。"
+  ],
+  "terms": [
+   {
+    "t": "发布开关 (Release Toggle)",
+    "d": "短期存在，用于逐步放出未完成或新功能。"
+   },
+   {
+    "t": "运维开关 (Ops Toggle / Kill Switch)",
+    "d": "出现问题时快速关闭某功能或降级。"
+   },
+   {
+    "t": "实验开关 (Experiment Toggle)",
+    "d": "把用户分组做 A/B 测试。"
+   },
+   {
+    "t": "定向规则 (Targeting Rule)",
+    "d": "按属性决定哪些用户看到哪个变体。"
+   },
+   {
+    "t": "OpenFeature",
+    "d": "CNCF 下的厂商中立特性开关 API 标准。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "稳定哈希的百分比放量",
+   "src": "import hashlib\n\nFLAGS = {\n    \"new_checkout\": {\"enabled\": True, \"rollout\": 20,  # 20% 用户\n                     \"allow\": {\"tenant_internal\"}},   # 内部租户全开\n}\n\ndef bucket(flag: str, user_id: str) -> int:\n    \"\"\"同一用户对同一开关总落在同一个桶（0-99）\"\"\"\n    h = hashlib.sha256(f\"{flag}:{user_id}\".encode()).hexdigest()\n    return int(h[:8], 16) % 100\n\ndef is_enabled(flag: str, user_id: str, tenant: str) -> bool:\n    cfg = FLAGS.get(flag)\n    if not cfg or not cfg[\"enabled\"]:   # 总开关，也是紧急关停入口\n        return False\n    if tenant in cfg[\"allow\"]:\n        return True\n    return bucket(flag, user_id) < cfg[\"rollout\"]\n\nif is_enabled(\"new_checkout\", user_id=\"u_42\", tenant=\"acme\"):\n    pass  # 新结账流程\nelse:\n    pass  # 旧流程",
+   "note": "哈希里带上开关名，不同开关的放量人群互相独立；enabled 兼作紧急关停。"
+  },
+  "table": {
+   "title": "开关类型与生命周期",
+   "head": [
+    "类型",
+    "存续时间",
+    "变更频率",
+    "谁来控制"
+   ],
+   "rows": [
+    [
+     "发布开关",
+     "数天到数周",
+     "放量期间频繁",
+     "研发"
+    ],
+    [
+     "实验开关",
+     "数周",
+     "实验期内固定",
+     "产品/数据"
+    ],
+    [
+     "运维开关",
+     "长期",
+     "故障时",
+     "SRE/值班"
+    ],
+    [
+     "权限开关",
+     "长期",
+     "按客户",
+     "商务/产品"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "配置文件/环境变量",
+    "pros": "零依赖，简单",
+    "cons": "改动需重启或发布，无定向",
+    "when": "少量全局开关"
+   },
+   {
+    "opt": "自建开关服务",
+    "pros": "完全可控，数据不出域",
+    "cons": "需维护 UI、SDK、审计",
+    "when": "有平台团队、合规要求高"
+   },
+   {
+    "opt": "托管开关平台",
+    "pros": "定向、实验、审计开箱即用",
+    "cons": "费用与供应商依赖",
+    "when": "希望快速获得完整能力"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "开关全量后从不清理，代码里分支越来越多",
+    "fix": "为发布开关设到期时间，全量后建任务删除"
+   },
+   {
+    "bad": "用随机数决定放量，用户每次刷新结果不同",
+    "fix": "对用户 ID 做稳定哈希分桶"
+   },
+   {
+    "bad": "开关服务不可用时功能行为未定义",
+    "fix": "SDK 本地缓存规则，并为每个开关设定安全默认值"
+   },
+   {
+    "bad": "开关嵌套组合太多，测试覆盖不到",
+    "fix": "限制同时存在的开关数量，关键组合写自动化测试"
+   }
+  ],
+  "checklist": [
+   "每个开关有负责人与到期时间",
+   "开关服务故障时有安全默认值",
+   "放量基于稳定哈希",
+   "开关变更有审计日志",
+   "关键功能有一键关停开关",
+   "全量后清理开关代码"
+  ],
+  "interview": [
+   {
+    "q": "特性开关如何支持主干开发？",
+    "a": "未完成的功能也能合入主干并部署，只是开关关闭，不影响用户。这样避免长期分支带来的合并冲突，发布节奏与开发节奏解耦，同时可在生产上对内部人员先开启验证。"
+   },
+   {
+    "q": "开关评估应该放在服务端还是客户端？",
+    "a": "服务端评估规则不外泄、结果可信；客户端评估响应快但规则与定向属性暴露给用户。敏感或付费功能必须服务端判定，前端开关仅用于展示层。"
+   },
+   {
+    "q": "特性开关和 A/B 实验有什么关系？",
+    "a": "实验依赖开关做分组曝光，但还需要稳定分流、曝光埋点、指标统计与显著性分析。普通开关只决定开或关，实验关心的是不同变体对指标的因果影响。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Martin Fowler：Feature Toggles",
+    "url": "https://martinfowler.com/articles/feature-toggles.html"
+   },
+   {
+    "title": "OpenFeature 官网",
+    "url": "https://openfeature.dev/"
+   },
+   {
+    "title": "Trunk Based Development：Feature Flags",
+    "url": "https://trunkbaseddevelopment.com/feature-flags/"
+   }
+  ]
+ },
+ {
+  "slug": "staging-environments",
+  "def": "预发布环境（Staging Environment）是在上线前用于最终验证的、尽可能贴近生产的独立环境：相同的构建产物、相近的基础设施与配置，但使用隔离的数据和第三方沙箱账号。它位于 CI/CD 流水线中测试与生产之间，用来发现单元测试与本地环境发现不了的集成、配置与部署问题。",
+  "how": [
+   "CI 构建出唯一制品后先部署到 staging，生产随后部署同一个制品，不重新构建。",
+   "staging 使用与生产相同的基础设施定义（IaC），仅规模和密钥不同。",
+   "数据使用脱敏的生产快照或合成数据，外部支付、邮件等接入沙箱账号。",
+   "在 staging 运行端到端测试、数据库迁移演练、冒烟测试和人工验收。",
+   "验证通过后经审批进入生产；有的团队用按 PR 创建的临时预览环境补充。"
+  ],
+  "terms": [
+   {
+    "t": "环境一致性 (Dev/Prod Parity)",
+    "d": "开发、预发、生产尽可能一致，减少「本地能跑」。"
+   },
+   {
+    "t": "基础设施即代码 (IaC)",
+    "d": "用代码定义环境资源，保证可复制。"
+   },
+   {
+    "t": "预览环境 (Preview Environment)",
+    "d": "按分支或 PR 临时创建的短期环境。"
+   },
+   {
+    "t": "冒烟测试 (Smoke Test)",
+    "d": "部署后快速验证核心路径是否可用。"
+   },
+   {
+    "t": "配置漂移 (Configuration Drift)",
+    "d": "环境间配置逐渐不一致的现象。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "GitHub Actions 分环境部署",
+   "src": "name: deploy\non:\n  push:\n    branches: [main]\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: ./scripts/build-image.sh \"$GITHUB_SHA\"   # 只构建一次\n  deploy-staging:\n    needs: build\n    runs-on: ubuntu-latest\n    environment: staging            # 使用 staging 的独立密钥\n    steps:\n      - run: ./scripts/deploy.sh staging \"$GITHUB_SHA\"\n      - run: ./scripts/smoke-test.sh https://staging.example.com\n  deploy-production:\n    needs: deploy-staging\n    runs-on: ubuntu-latest\n    environment: production         # 可在仓库设置中配置必需审批人\n    steps:\n      - run: ./scripts/deploy.sh production \"$GITHUB_SHA\"   # 同一制品",
+   "note": "同一提交的制品依次进入 staging 与生产；environment 隔离密钥并可加人工审批。脚本为示意。"
+  },
+  "table": {
+   "title": "常见环境分工",
+   "head": [
+    "环境",
+    "数据",
+    "主要用途"
+   ],
+   "rows": [
+    [
+     "本地/开发",
+     "种子数据",
+     "日常开发与单元测试"
+    ],
+    [
+     "预览环境",
+     "合成数据",
+     "按 PR 演示与评审"
+    ],
+    [
+     "Staging",
+     "脱敏快照或合成",
+     "集成、迁移、验收"
+    ],
+    [
+     "生产",
+     "真实数据",
+     "服务真实用户"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "长期 staging",
+    "pros": "稳定，便于验收与演练",
+    "cons": "成本高，易与生产漂移",
+    "when": "需要统一集成验证的团队"
+   },
+   {
+    "opt": "按 PR 预览环境",
+    "pros": "并行验证，互不干扰",
+    "cons": "数据与依赖难做全",
+    "when": "前端或无状态服务为主"
+   },
+   {
+    "opt": "生产灰度替代",
+    "pros": "真实流量与数据",
+    "cons": "风险直接作用于用户",
+    "when": "配合开关与金丝雀的成熟团队"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "staging 与生产各自构建，验证的不是同一份产物",
+    "fix": "构建一次，按环境注入配置后部署同一制品"
+   },
+   {
+    "bad": "直接复制生产数据到 staging",
+    "fix": "对个人信息脱敏或使用合成数据，并限制访问"
+   },
+   {
+    "bad": "staging 接真实支付或给真实用户发邮件",
+    "fix": "第三方一律使用沙箱账号与测试收件地址"
+   },
+   {
+    "bad": "staging 长期无人维护，配置与生产漂移",
+    "fix": "用同一套 IaC 管理，定期比对配置差异"
+   }
+  ],
+  "checklist": [
+   "生产部署的制品已在 staging 验证",
+   "基础设施由同一套 IaC 定义",
+   "数据已脱敏或为合成数据",
+   "第三方服务使用沙箱",
+   "迁移在 staging 演练过",
+   "密钥按环境隔离"
+  ],
+  "interview": [
+   {
+    "q": "staging 测过了为什么生产还会出问题？",
+    "a": "数据规模与分布不同、真实流量模式与并发、第三方生产行为差异、配置漂移、缓存与时序问题等都难以在 staging 复现。因此还需要金丝雀、特性开关与可观测性兜底。"
+   },
+   {
+    "q": "为什么强调「构建一次，到处部署」？",
+    "a": "每次重新构建都可能引入不同依赖版本或构建参数，导致验证过的产物与上线产物不一致。固定制品摘要、配置外置注入，才能保证 staging 的验证结论对生产有效。"
+   },
+   {
+    "q": "staging 的数据怎么准备？",
+    "a": "优先合成数据覆盖边界场景；需要真实分布时用生产快照经过不可逆脱敏后导入，并控制访问权限与保留期。迁移演练需要接近生产的数据量。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "The Twelve-Factor App：Dev/prod parity",
+    "url": "https://12factor.net/dev-prod-parity"
+   },
+   {
+    "title": "GitHub Docs：Managing environments for deployment",
+    "url": "https://docs.github.com/en/actions/deployment/targeting-different-environments/managing-environments-for-deployment"
+   },
+   {
+    "title": "Wikipedia: Deployment environment",
+    "url": "https://en.wikipedia.org/wiki/Deployment_environment"
+   }
+  ]
+ }
+]

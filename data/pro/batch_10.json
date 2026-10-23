@@ -1,0 +1,3673 @@
+[
+ {
+  "slug": "runbooks",
+  "def": "运维手册（Runbook）是针对特定告警、故障或例行操作编写的标准化步骤文档，说明触发条件、影响判断、诊断命令、处置动作、验证方法和升级路径。它是事件响应与值班体系的执行层，把专家经验固化为任何值班者都能照做的流程，降低恢复时间对个人的依赖，也是逐步自动化的起点。",
+  "how": [
+   "每条呼叫级告警关联一份手册，常通过告警注解中的 runbook_url 直接跳转。",
+   "手册开头说明这条告警的含义、可能造成的用户影响，以及判断严重度的方法。",
+   "列出按顺序执行的诊断命令和预期输出，帮助值班者快速缩小范围。",
+   "给出具体的处置步骤与回滚方式，醒目标注危险操作和需要审批或双人确认的步骤。",
+   "写明恢复验证标准和升级联系人，并在每次使用后更新，逐步把稳定步骤脚本化。"
+  ],
+  "terms": [
+   {
+    "t": "Playbook",
+    "d": "常与 Runbook 混用，有时指更高层的应对策略集合。"
+   },
+   {
+    "t": "runbook_url 注解",
+    "d": "Prometheus 告警规则中约定俗成的注解字段，用于链接手册。"
+   },
+   {
+    "t": "可执行手册 (Executable Runbook)",
+    "d": "把步骤做成可一键运行的脚本或自动化工作流。"
+   },
+   {
+    "t": "升级路径 (Escalation Path)",
+    "d": "手册无法解决时应联系的人和团队顺序。"
+   },
+   {
+    "t": "琐事 (Toil)",
+    "d": "手动、重复、可自动化且无持久价值的运维工作。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "Pod 频繁重启处置手册",
+   "src": "# Runbook: KubePodCrashLooping（api 命名空间）\n# 影响：重启期间该 Pod 不接流量；若全部副本异常则服务不可用\n\n# 1. 看范围：多少副本在重启？\nkubectl -n api get pods -l app=api\n\n# 2. 看上一次崩溃的日志和退出原因（OOMKilled / Error）\nkubectl -n api logs deploy/api --previous --tail=100\nPOD=$(kubectl -n api get pods -l app=api -o name | head -n1)\nkubectl -n api describe \"$POD\" | grep -A5 'Last State'\n\n# 3. 是否与最近发布相关？\nkubectl -n api rollout history deploy/api\n\n# 4. 处置：若与发布相关，回滚到上一版本\nkubectl -n api rollout undo deploy/api\n\n# 5. 验证：所有 Pod Ready 且错误率回落\nkubectl -n api rollout status deploy/api\n# 未解决：升级到 #team-api 负责人",
+   "note": "手册按范围、原因、关联变更、处置、验证、升级排列，命令均可直接执行。"
+  },
+  "table": {
+   "title": "手册质量分级",
+   "head": [
+    "等级",
+    "形态",
+    "特点"
+   ],
+   "rows": [
+    [
+     "无",
+     "只在专家脑中",
+     "恢复依赖特定人员"
+    ],
+    [
+     "文档化",
+     "步骤与命令清单",
+     "可照做，需人工执行"
+    ],
+    [
+     "半自动",
+     "脚本执行诊断与常规处置",
+     "人判断、机器执行"
+    ],
+    [
+     "全自动",
+     "告警触发自动修复",
+     "需完善的安全护栏"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "详细的手动手册",
+    "pros": "灵活，人可判断",
+    "cons": "执行慢，易遗漏步骤",
+    "when": "罕见或高风险故障"
+   },
+   {
+    "opt": "脚本化手册",
+    "pros": "快速、可重复",
+    "cons": "需维护脚本，异常场景覆盖有限",
+    "when": "频繁发生且步骤固定"
+   },
+   {
+    "opt": "自动修复",
+    "pros": "无需人工介入",
+    "cons": "可能掩盖根因或误操作",
+    "when": "处置低风险且已充分验证"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "手册写成背景介绍，值班时找不到该执行哪条命令。",
+    "fix": "开门见山给诊断与处置步骤，背景放附录。"
+   },
+   {
+    "bad": "手册多年未更新，命令和资源名早已变化。",
+    "fix": "每次使用后更新，并在演练中定期验证。"
+   },
+   {
+    "bad": "危险命令没有标注，值班者误删生产数据。",
+    "fix": "高危操作醒目标注，要求二人确认或审批。"
+   },
+   {
+    "bad": "同一问题反复手动执行同样步骤。",
+    "fix": "高频步骤脚本化，最终考虑自动修复。"
+   }
+  ],
+  "checklist": [
+   "每条呼叫级告警都链接手册",
+   "手册含影响判断、诊断、处置、验证、升级",
+   "命令可复制执行且已验证",
+   "高危操作有明确标注",
+   "有负责人和最近更新日期"
+  ],
+  "interview": [
+   {
+    "q": "一份好的 Runbook 应包含什么？",
+    "a": "告警含义与影响，判断严重度的方法，按顺序的诊断命令及预期结果，处置与回滚步骤，验证恢复的标准，升级联系人，以及负责人和更新时间。目标是让不熟悉该服务的值班者也能处理。"
+   },
+   {
+    "q": "Runbook 和自动化是什么关系？",
+    "a": "手册是自动化的前身。先把经验写成明确步骤，在实践中验证；高频且确定的步骤脚本化；最后对低风险场景实现自动修复。始终保留手动路径以应对自动化失败。"
+   },
+   {
+    "q": "AI Agent 适合执行 Runbook 吗？",
+    "a": "适合执行只读的诊断步骤和整理信息，能节省值班者时间；写操作应要求人确认，权限最小化并全程留痕。手册写得越结构化，Agent 执行越可靠。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Wikipedia：Runbook",
+    "url": "https://en.wikipedia.org/wiki/Runbook"
+   },
+   {
+    "title": "Prometheus Operator Runbooks",
+    "url": "https://runbooks.prometheus-operator.dev/"
+   },
+   {
+    "title": "PagerDuty：What is a Runbook?",
+    "url": "https://www.pagerduty.com/resources/automation/learn/what-is-a-runbook/"
+   }
+  ]
+ },
+ {
+  "slug": "postmortems",
+  "def": "事后复盘（Postmortem）是在重大事件结束后撰写的书面分析，记录影响、时间线、根因与促成因素、做得好与不好的地方，以及带负责人和期限的改进项。无指责（Blameless）原则假定参与者在当时的信息下做出了合理决策，把焦点放在系统和流程缺陷上，从而鼓励如实陈述，防止同类问题再次发生。",
+  "how": [
+   "按标准触发：达到一定严重级、数据丢失、超出错误预算或人工介入回滚等。",
+   "指定作者收集时间线、监控图、日志和聊天记录，还原事件全过程。",
+   "分析根因与促成因素，关注检测、缓解、流程和工具中的缺口，而非个人过失。",
+   "制定改进项，每一项都有负责人、优先级和期限，并录入团队日常使用的工单系统跟踪。",
+   "组织复盘评审会，在更大范围分享结论，并定期检查改进项的完成情况。"
+  ],
+  "terms": [
+   {
+    "t": "无指责文化 (Blameless Culture)",
+    "d": "关注系统原因而不追究个人责任，以获取真实信息。"
+   },
+   {
+    "t": "促成因素 (Contributing Factors)",
+    "d": "使事件发生或扩大的多个条件，常比单一根因更有用。"
+   },
+   {
+    "t": "5 Whys",
+    "d": "连续追问为什么来深入原因的分析方法，需防止过早停在人为错误。"
+   },
+   {
+    "t": "改进项 (Action Items)",
+    "d": "复盘产生的、带负责人与期限的具体改进任务。"
+   },
+   {
+    "t": "时间线 (Timeline)",
+    "d": "按时间记录检测、决策、操作与恢复的关键事件。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "复盘文档模板",
+   "src": "# 事后复盘：订单服务下单失败（SEV-2）\n状态：评审完成 | 作者：@bob | 日期：2026-10-21\n\n## 摘要\n一句话说明发生了什么、影响多大、如何恢复\n\n## 影响\n持续时间、受影响用户/请求比例、是否丢数据、消耗多少错误预算\n\n## 时间线（CST）\n13:45 发布 v2.3 | 13:52 首个告警 | 14:05 宣告事件 | 14:18 回滚完成\n\n## 根因与促成因素\n- 直接原因：……\n- 为什么测试没发现：……\n- 为什么检测花了 7 分钟：……\n\n## 做得好的 / 需要改进的 / 运气好的地方\n\n## 改进项\n| 项目 | 类型（预防/检测/缓解） | 负责人 | 期限 | 工单 |",
+   "note": "模板强调影响、时间线、促成因素与可追踪的改进项，不点名追责。"
+  },
+  "table": {
+   "title": "改进项的分类",
+   "head": [
+    "类型",
+    "目的",
+    "例子"
+   ],
+   "rows": [
+    [
+     "预防",
+     "不让问题再发生",
+     "增加集成测试、配置校验"
+    ],
+    [
+     "检测",
+     "更快发现",
+     "新增基于 SLO 的告警"
+    ],
+    [
+     "缓解",
+     "更快恢复或减小影响",
+     "一键回滚、功能开关"
+    ],
+    [
+     "流程",
+     "改善协作",
+     "更新手册、明确分级标准"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "每次事件都写完整复盘",
+    "pros": "学习最充分",
+    "cons": "成本高，易流于形式",
+    "when": "高严重度或新类型事件"
+   },
+   {
+    "opt": "轻量复盘",
+    "pros": "成本低，覆盖面广",
+    "cons": "分析可能不够深",
+    "when": "低级别或重复类事件"
+   },
+   {
+    "opt": "跨事件趋势分析",
+    "pros": "发现系统性问题",
+    "cons": "需积累和统一格式",
+    "when": "季度或半年回顾"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "结论写成某人操作失误，改进项是加强培训。",
+    "fix": "追问系统为何允许该失误发生并造成影响。"
+   },
+   {
+    "bad": "改进项没有负责人和期限，三个月后无人推进。",
+    "fix": "录入工单系统，定期回顾完成率。"
+   },
+   {
+    "bad": "复盘只在小团队内部传阅。",
+    "fix": "在更大范围分享，让其他团队避免同类问题。"
+   }
+  ],
+  "checklist": [
+   "有明确的复盘触发标准",
+   "时间线基于日志与记录而非回忆",
+   "分析覆盖检测、缓解与预防",
+   "改进项有负责人、期限和工单",
+   "文档用无指责语言撰写",
+   "改进项完成情况定期回顾"
+  ],
+  "interview": [
+   {
+    "q": "为什么复盘要无指责？",
+    "a": "如果追责，当事人会隐瞒细节，组织拿不到真实信息，问题根源被掩盖。人为错误通常是系统缺陷的表现，例如缺少防护、界面误导、流程不清。无指责让大家敢于说出真相，改进才能落到系统上。"
+   },
+   {
+    "q": "如何避免复盘改进项石沉大海？",
+    "a": "改进项要具体可验收，有负责人、期限和优先级，录入团队日常使用的工单系统；在周会或月度可靠性评审中跟踪完成率；把高优先级改进项纳入迭代计划，必要时与错误预算政策挂钩。"
+   },
+   {
+    "q": "根因分析为什么不建议只找一个根因？",
+    "a": "复杂系统的事故通常由多个条件同时成立导致，如代码缺陷、测试缺口、告警延迟、发布策略。只找单一根因容易修一处漏多处；列出促成因素能得到更全面的改进项。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Google SRE Book：Postmortem Culture",
+    "url": "https://sre.google/sre-book/postmortem-culture/"
+   },
+   {
+    "title": "Google SRE Workbook：Postmortem Culture",
+    "url": "https://sre.google/workbook/postmortem-culture/"
+   },
+   {
+    "title": "Atlassian：Incident postmortems",
+    "url": "https://www.atlassian.com/incident-management/postmortem"
+   }
+  ]
+ },
+ {
+  "slug": "graceful-degradation",
+  "def": "优雅降级（Graceful Degradation）是系统在部分组件故障或过载时，有计划地关闭或简化非核心功能，以保住核心功能可用的设计策略。它属于应用韧性层，与超时、熔断、负载卸载配合：依赖失败时返回缓存、默认值或简化结果，而不是整页报错。关键在于提前划分功能优先级并设计每种降级形态。",
+  "how": [
+   "梳理功能，区分核心路径（登录、下单、支付）与可降级功能（推荐、评论、个性化）。",
+   "为每个可降级依赖设计兜底：缓存旧数据、静态默认值、隐藏模块或简化计算。",
+   "调用每个依赖时都设置超时并配熔断器，调用失败或熔断打开时自动走兜底逻辑。",
+   "系统过载时通过功能开关主动关闭高成本功能，把释放出的资源留给核心路径。",
+   "对降级状态打点监控并告警，依赖恢复后自动或手动退出降级，回到完整功能。"
+  ],
+  "terms": [
+   {
+    "t": "兜底响应 (Fallback)",
+    "d": "依赖失败时返回的替代结果，如缓存或默认值。"
+   },
+   {
+    "t": "功能开关 (Feature Flag)",
+    "d": "运行时开启或关闭功能的配置，可用于手动降级。"
+   },
+   {
+    "t": "静态稳定 (Static Stability)",
+    "d": "依赖失效时用既有数据继续工作，不依赖实时变更。"
+   },
+   {
+    "t": "降级模式 (Degraded Mode)",
+    "d": "系统以部分功能运行的状态，应对用户可见并有监控。"
+   },
+   {
+    "t": "过时数据 (Stale Data)",
+    "d": "超过正常新鲜度的缓存数据，降级时可接受的权衡。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "推荐服务失败时兜底",
+   "src": "import logging\nimport requests\n\nPOPULAR_FALLBACK = [\"sku-1001\", \"sku-1002\", \"sku-1003\"]  # 预先算好的热门商品\nlog = logging.getLogger(\"home\")\n\ndef get_recommendations(user_id: str) -> dict:\n    try:\n        r = requests.get(\n            f\"http://recommend:8080/users/{user_id}/recs\",\n            timeout=0.3,              # 非核心依赖：超时要短\n        )\n        r.raise_for_status()\n        return {\"items\": r.json()[\"items\"], \"degraded\": False}\n    except requests.RequestException as e:\n        log.warning(\"recs degraded: %s\", e)  # 记录并计入降级指标\n        return {\"items\": POPULAR_FALLBACK, \"degraded\": True}\n\n# 首页照常渲染：推荐服务挂了，用户看到的是热门商品而不是 500",
+   "note": "非核心依赖用短超时，失败时返回预计算的热门列表并标记 degraded 便于监控。"
+  },
+  "table": {
+   "title": "常见降级形态",
+   "head": [
+    "场景",
+    "降级做法",
+    "代价"
+   ],
+   "rows": [
+    [
+     "推荐服务故障",
+     "显示热门或编辑精选",
+     "个性化缺失"
+    ],
+    [
+     "搜索过载",
+     "关闭模糊匹配和高级筛选",
+     "结果质量下降"
+    ],
+    [
+     "库存服务慢",
+     "展示缓存库存，下单时再校验",
+     "可能短暂显示不准"
+    ],
+    [
+     "图片服务故障",
+     "显示占位图",
+     "视觉体验下降"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "自动降级",
+    "pros": "响应快，无需人工",
+    "cons": "可能掩盖问题，需监控",
+    "when": "依赖故障可明确检测"
+   },
+   {
+    "opt": "手动功能开关",
+    "pros": "可控，适合大范围调整",
+    "cons": "依赖值班反应速度",
+    "when": "过载或计划内维护"
+   },
+   {
+    "opt": "返回旧数据",
+    "pros": "用户体验连续",
+    "cons": "数据可能不准确",
+    "when": "对新鲜度要求不高"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "降级逻辑从未触发过，真出事时兜底代码本身报错。",
+    "fix": "通过故障注入或定期演练验证降级路径。"
+   },
+   {
+    "bad": "非核心依赖超时与核心相同，拖慢整个页面。",
+    "fix": "非核心依赖设更短超时并可并行调用。"
+   },
+   {
+    "bad": "降级后没有指标，几周都处于降级状态无人发现。",
+    "fix": "降级打点计数并告警。"
+   },
+   {
+    "bad": "支付等核心路径也套用宽松兜底，产生错误交易。",
+    "fix": "核心写路径失败应明确报错，不伪造成功。"
+   }
+  ],
+  "checklist": [
+   "功能按核心与非核心分级",
+   "每个非核心依赖有兜底方案",
+   "降级路径经过故障注入验证",
+   "有手动功能开关应对过载",
+   "降级状态有指标与告警"
+  ],
+  "interview": [
+   {
+    "q": "降级和熔断有什么关系？",
+    "a": "熔断决定何时停止调用故障依赖，降级决定停止调用后返回什么。熔断器打开时请求直接进入降级逻辑，返回缓存、默认值或隐藏功能，两者配合才能既保护系统又维持体验。"
+   },
+   {
+    "q": "哪些功能不适合降级？",
+    "a": "涉及资金、库存扣减、权限校验等需要强一致和正确性的路径。它们失败时应明确报错或排队重试，而不是返回假成功或过时结果，否则会造成资损或安全问题。"
+   },
+   {
+    "q": "如何验证降级设计有效？",
+    "a": "在测试或预发环境做故障注入，如让依赖超时、返回错误或断网，观察页面是否正常渲染、指标是否记录降级；生产中可在低峰期小范围演练，并检查核心 SLO 是否保持。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "AWS Well-Architected：REL05-BP01 实施优雅降级",
+    "url": "https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/rel_mitigate_interaction_failure_graceful_degradation.html"
+   },
+   {
+    "title": "Google SRE Book：Addressing Cascading Failures",
+    "url": "https://sre.google/sre-book/addressing-cascading-failures/"
+   },
+   {
+    "title": "OpenFeature（功能开关开放标准）",
+    "url": "https://openfeature.dev/"
+   }
+  ]
+ },
+ {
+  "slug": "autoscaling",
+  "def": "自动扩缩容（Autoscaling）是按负载指标自动增减计算资源的机制，包括水平扩缩副本、垂直调整单实例资源和扩缩节点。它位于编排与基础设施层，在满足性能目标的同时控制成本。典型实现有 Kubernetes HPA、VPA、Cluster Autoscaler、KEDA 和云伸缩组，难点是指标选择、反应速度与防振荡。",
+  "how": [
+   "控制器周期性采集指标，如 CPU 利用率、每秒请求数、队列长度或自定义指标。",
+   "按目标值计算期望副本数，HPA 的基本公式为当前副本数乘以当前值与目标值之比，向上取整。",
+   "施加最小与最大副本限制，并用稳定窗口和速率策略抑制频繁扩缩。",
+   "新副本需要被调度、拉镜像、启动并通过就绪检查后才真正分担流量。",
+   "节点资源不足时，集群自动扩缩器增加节点；负载下降后按策略回收。"
+  ],
+  "terms": [
+   {
+    "t": "HPA (Horizontal Pod Autoscaler)",
+    "d": "Kubernetes 中按指标自动调整副本数的控制器。"
+   },
+   {
+    "t": "稳定窗口 (Stabilization Window)",
+    "d": "扩缩决策参考的历史时间段，HPA 缩容默认 300 秒。"
+   },
+   {
+    "t": "KEDA",
+    "d": "基于事件源（如队列长度）驱动扩缩，可缩到零的 Kubernetes 组件。"
+   },
+   {
+    "t": "集群自动扩缩器 (Cluster Autoscaler)",
+    "d": "根据待调度 Pod 和节点利用率增减节点。"
+   },
+   {
+    "t": "振荡 (Flapping)",
+    "d": "扩缩容决策频繁来回切换，导致不稳定和浪费。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "HPA autoscaling/v2",
+   "src": "apiVersion: autoscaling/v2\nkind: HorizontalPodAutoscaler\nmetadata: { name: api }\nspec:\n  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: api }\n  minReplicas: 3              # 下限：保证可用性与跨区分布\n  maxReplicas: 30             # 上限：保护下游与预算\n  metrics:\n    - type: Resource\n      resource:\n        name: cpu\n        target: { type: Utilization, averageUtilization: 70 }\n  behavior:\n    scaleDown:\n      stabilizationWindowSeconds: 300   # 观察 5 分钟再缩，防抖\n      policies:\n        - { type: Percent, value: 50, periodSeconds: 60 }\n    scaleUp:\n      policies:\n        - { type: Pods, value: 4, periodSeconds: 60 }",
+   "note": "按 CPU 70% 目标扩缩，缩容慢、扩容快；CPU 利用率需要 Pod 设置了 requests。"
+  },
+  "table": {
+   "title": "扩缩容指标选择",
+   "head": [
+    "指标",
+    "适用场景",
+    "局限"
+   ],
+   "rows": [
+    [
+     "CPU 利用率",
+     "计算密集型服务",
+     "I/O 密集服务不敏感"
+    ],
+    [
+     "每秒请求数",
+     "Web/API 服务",
+     "需要自定义指标管道"
+    ],
+    [
+     "队列长度/积压",
+     "异步消费者",
+     "需结合处理速率估算"
+    ],
+    [
+     "定时计划",
+     "可预测的日周期峰值",
+     "无法应对突发"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "响应式扩缩",
+    "pros": "按实际负载，资源利用率高",
+    "cons": "有滞后，突发时来不及",
+    "when": "负载平滑变化"
+   },
+   {
+    "opt": "预测/定时扩缩",
+    "pros": "提前准备容量",
+    "cons": "预测不准时浪费或不足",
+    "when": "有明显周期规律"
+   },
+   {
+    "opt": "缩到零",
+    "pros": "空闲零成本",
+    "cons": "首个请求有冷启动",
+    "when": "低频任务、事件驱动"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "Pod 未设置 CPU requests，HPA 无法计算利用率。",
+    "fix": "为容器设置合理 requests 后再启用按利用率扩缩。"
+   },
+   {
+    "bad": "最大副本数不设或过大，扩容打爆数据库连接数。",
+    "fix": "按下游容量设置上限，配合连接池。"
+   },
+   {
+    "bad": "应用启动慢，扩容跟不上突发流量。",
+    "fix": "优化启动时间，提高最小副本或预测扩容。"
+   },
+   {
+    "bad": "HPA 与 VPA 同时基于 CPU 调整同一工作负载，互相干扰。",
+    "fix": "避免两者使用同一资源指标，或让 VPA 仅给建议。"
+   }
+  ],
+  "checklist": [
+   "容器设置了 requests 与 limits",
+   "最小副本满足跨可用区高可用",
+   "最大副本不超过下游承载能力",
+   "缩容有稳定窗口防抖",
+   "压测验证扩容速度能跟上突发",
+   "节点层扩容已配置并验证"
+  ],
+  "interview": [
+   {
+    "q": "HPA 是如何计算目标副本数的？",
+    "a": "期望副本数等于当前副本数乘以当前指标值与目标值之比，再向上取整。多个指标取最大值；比值接近 1 时在容忍度内不动作；随后应用最小最大限制和 behavior 中的稳定窗口与速率策略。"
+   },
+   {
+    "q": "为什么扩容要快、缩容要慢？",
+    "a": "扩容慢会导致过载和用户受损，代价大；缩容过快可能在负载回升时来不及扩回，造成振荡。因此常让扩容积极，缩容设较长稳定窗口和较小速率。"
+   },
+   {
+    "q": "消息消费者该用什么指标扩缩？",
+    "a": "用队列积压量或积压能被处理完的预计时间，比 CPU 更直接。可以用 KEDA 接入 SQS、Kafka 等事件源，按积压扩缩并支持缩到零；同时注意消费者数量不应超过分区数等并行上限。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Kubernetes：Horizontal Pod Autoscaling",
+    "url": "https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/"
+   },
+   {
+    "title": "Kubernetes：Autoscaling Workloads",
+    "url": "https://kubernetes.io/docs/concepts/workloads/autoscaling/"
+   },
+   {
+    "title": "KEDA 官方网站",
+    "url": "https://keda.sh/"
+   }
+  ]
+ },
+ {
+  "slug": "horizontal-vs-vertical-scaling",
+  "def": "水平扩展（Horizontal Scaling）靠增加实例数量分担负载；垂直扩展（Vertical Scaling）靠给单实例更多 CPU、内存或更快磁盘提升能力。二者是容量规划的两条基本路径：水平扩展上限高、可容错，但要求无状态或分片；垂直扩展改造成本低，却受单机上限约束且常需重启。",
+  "how": [
+   "垂直扩展：更换更大规格的实例或调大容器资源限制，单节点处理能力提升。",
+   "垂直扩展通常需要重启或迁移实例，存在短暂中断，且最终受最大规格限制。",
+   "水平扩展：增加副本，由负载均衡分发请求，应用需无状态或会话外置。",
+   "有状态组件水平扩展需要分片或复制，例如数据库读副本分担读、分片分担写。",
+   "实践中常组合使用：先确定合适的单实例规格，再按负载水平扩展副本。"
+  ],
+  "terms": [
+   {
+    "t": "扩展 (Scale Out / Scale Up)",
+    "d": "前者加机器数量，后者加单机能力。"
+   },
+   {
+    "t": "分片 (Sharding)",
+    "d": "把数据按键拆分到多个节点，实现写入的水平扩展。"
+   },
+   {
+    "t": "读副本 (Read Replica)",
+    "d": "复制主库数据只处理读请求，用于水平扩展读。"
+   },
+   {
+    "t": "VPA (Vertical Pod Autoscaler)",
+    "d": "Kubernetes 中自动推荐或调整 Pod 资源请求的组件。"
+   },
+   {
+    "t": "阿姆达尔定律 (Amdahl's Law)",
+    "d": "程序中不可并行部分决定了加速比的上限。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "两种扩展的 kubectl 操作",
+   "src": "# 水平扩展：副本从 3 增加到 6，由 Service 自动分发流量\nkubectl scale deployment/api --replicas=6\n\n# 垂直扩展：调大单个 Pod 的资源（会触发滚动重建 Pod）\nkubectl set resources deployment/api \\\n  --requests=cpu=1,memory=2Gi \\\n  --limits=cpu=2,memory=4Gi\n\n# 观察效果：资源使用（需要集群安装 metrics-server）\nkubectl top pods -l app=api\n\n# 数据库层的水平扩展通常是加读副本或分片，\n# 不能像无状态服务一样直接 scale 副本数",
+   "note": "无状态服务直接调副本数；调资源会重建 Pod，属于垂直扩展。"
+  },
+  "table": {
+   "title": "两种扩展方式对比",
+   "head": [
+    "维度",
+    "水平扩展",
+    "垂直扩展"
+   ],
+   "rows": [
+    [
+     "上限",
+     "理论上很高，受协调开销限制",
+     "受单机最大规格限制"
+    ],
+    [
+     "容错",
+     "多副本，单点故障影响小",
+     "单实例故障即全停"
+    ],
+    [
+     "改造成本",
+     "需无状态或分片",
+     "几乎不需改代码"
+    ],
+    [
+     "变更中断",
+     "增减副本通常无中断",
+     "常需重启或迁移"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "优先垂直扩展",
+    "pros": "简单快速，无需改架构",
+    "cons": "成本随规格非线性上升，有天花板",
+    "when": "数据库主库、早期产品"
+   },
+   {
+    "opt": "优先水平扩展",
+    "pros": "弹性好，可容错",
+    "cons": "需处理状态、一致性与负载均衡",
+    "when": "无状态 Web/API 服务"
+   },
+   {
+    "opt": "组合使用",
+    "pros": "兼顾单机效率与弹性",
+    "cons": "需要容量规划经验",
+    "when": "多数生产系统"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "应用在内存保存会话，水平扩展后用户频繁掉登录。",
+    "fix": "会话外置到共享存储或使用签名令牌。"
+   },
+   {
+    "bad": "服务水平扩到几十个副本，数据库连接数被打满。",
+    "fix": "使用连接池或数据库代理，按下游容量限制副本。"
+   },
+   {
+    "bad": "单线程程序换更多核的机器，性能毫无提升。",
+    "fix": "先确认瓶颈与并行度，再选扩展方式。"
+   }
+  ],
+  "checklist": [
+   "确认瓶颈资源是 CPU、内存、I/O 还是锁",
+   "水平扩展前应用已无状态化",
+   "下游连接数等共享资源能承受副本增加",
+   "垂直扩展的中断窗口已评估",
+   "有读副本或分片的数据层扩展计划"
+  ],
+  "interview": [
+   {
+    "q": "数据库扩展为什么比应用服务难？",
+    "a": "数据库有状态，水平扩展需要处理数据分布和一致性。读可以用读副本扩展但有复制延迟；写需要分片，带来跨分片事务和重新分片的复杂度。所以数据库常先垂直扩展，再按需引入读副本、缓存和分片。"
+   },
+   {
+    "q": "水平扩展是否能无限提升性能？",
+    "a": "不能。阿姆达尔定律指出不可并行部分限制加速比；协调开销、共享依赖如数据库和锁、网络带宽都会成为瓶颈。扩展前应找出真正瓶颈。"
+   },
+   {
+    "q": "什么时候选择垂直扩展更合理？",
+    "a": "负载稳定、单机规格尚有余量、应用难以无状态化或改造成本高时，例如单主数据库和早期产品。它能快速见效，但要同时规划达到上限后的水平扩展路径。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Wikipedia：Scalability",
+    "url": "https://en.wikipedia.org/wiki/Scalability"
+   },
+   {
+    "title": "Kubernetes Vertical Pod Autoscaler（GitHub）",
+    "url": "https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler"
+   },
+   {
+    "title": "Kubernetes：Autoscaling Workloads",
+    "url": "https://kubernetes.io/docs/concepts/workloads/autoscaling/"
+   }
+  ]
+ },
+ {
+  "slug": "cold-starts",
+  "def": "冷启动（Cold Start）是函数或实例在没有可复用运行环境时，从零创建环境、加载运行时和代码、执行初始化后才能处理首个请求所产生的额外延迟。它常见于 Serverless（如 AWS Lambda、Cloud Run）和缩到零的服务，扩容时也会出现。治理手段包括减小包体、延迟初始化、预置并发和保持最小实例。",
+  "how": [
+   "请求到达时若没有空闲的已初始化环境，平台需要新建执行环境或容器。",
+   "平台下载代码包或镜像，启动运行时，如 Python 解释器或 JVM。",
+   "执行函数处理器外的初始化代码：导入依赖、读取配置、建立数据库连接。",
+   "初始化完成后才开始执行请求处理，用户感知到的额外延迟主要就来自前面这几步。",
+   "环境处理完请求后会被保留一段时间复用，后续请求是热启动，直到被回收。"
+  ],
+  "terms": [
+   {
+    "t": "热启动 (Warm Start)",
+    "d": "复用已初始化的执行环境处理请求，没有初始化开销。"
+   },
+   {
+    "t": "预置并发 (Provisioned Concurrency)",
+    "d": "Lambda 中预先初始化并保持一定数量执行环境。"
+   },
+   {
+    "t": "SnapStart",
+    "d": "Lambda 对初始化后的环境做快照，冷启动时从快照恢复。"
+   },
+   {
+    "t": "最小实例数 (Min Instances)",
+    "d": "Cloud Run 等平台保持常驻的实例数，避免缩到零。"
+   },
+   {
+    "t": "初始化阶段 (Init Phase)",
+    "d": "Lambda 生命周期中运行处理器外代码的阶段。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Lambda 初始化放在外层",
+   "src": "import json\nimport os\nimport boto3\n\n# 处理器外的代码只在冷启动时执行一次，热启动复用\nTABLE = boto3.resource(\"dynamodb\").Table(os.environ[\"TABLE_NAME\"])\n\ndef handler(event, context):\n    # 每次调用只做必要工作，复用外层创建的客户端\n    item = TABLE.get_item(Key={\"id\": event[\"id\"]}).get(\"Item\")\n    return {\"statusCode\": 200, \"body\": json.dumps(item, default=str)}\n\n# 对延迟敏感的别名开启预置并发（AWS CLI）：\n# aws lambda put-provisioned-concurrency-config \\\n#   --function-name orders-api --qualifier live \\\n#   --provisioned-concurrent-executions 5",
+   "note": "客户端在初始化阶段创建并在热启动中复用；预置并发让一部分环境始终就绪。"
+  },
+  "table": {
+   "title": "冷启动治理手段",
+   "head": [
+    "手段",
+    "作用",
+    "代价"
+   ],
+   "rows": [
+    [
+     "减小依赖与包体",
+     "缩短下载和导入时间",
+     "需要裁剪依赖"
+    ],
+    [
+     "延迟加载",
+     "只在用到时初始化",
+     "首次用到时仍有开销"
+    ],
+    [
+     "预置并发/最小实例",
+     "保持环境常驻",
+     "按常驻时长计费"
+    ],
+    [
+     "SnapStart/快照恢复",
+     "跳过大部分初始化",
+     "有运行时与唯一性等限制"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "缩到零",
+    "pros": "空闲零成本",
+    "cons": "首个请求冷启动",
+    "when": "低频、对延迟不敏感"
+   },
+   {
+    "opt": "预置并发/最小实例",
+    "pros": "消除大部分冷启动",
+    "cons": "持续产生费用",
+    "when": "面向用户的延迟敏感接口"
+   },
+   {
+    "opt": "改用常驻服务",
+    "pros": "延迟稳定",
+    "cons": "失去按调用计费的弹性",
+    "when": "流量持续且稳定"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在处理器内每次调用都新建 SDK 客户端和数据库连接。",
+    "fix": "在处理器外初始化并复用，注意连接数上限。"
+   },
+   {
+    "bad": "打包整个大型依赖库，导入耗时数秒。",
+    "fix": "精简依赖，按需导入，或使用分层与容器镜像优化。"
+   },
+   {
+    "bad": "用定时 ping 保温替代预置并发，并发突增时仍大量冷启动。",
+    "fix": "对关键路径使用平台提供的预置并发或最小实例。"
+   },
+   {
+    "bad": "只看平均延迟，冷启动的长尾被掩盖。",
+    "fix": "关注 p99 延迟，并单独统计初始化耗时。"
+   }
+  ],
+  "checklist": [
+   "初始化代码放在处理器外并复用连接",
+   "依赖与包体已精简",
+   "延迟敏感接口配置预置并发或最小实例",
+   "监控初始化耗时与 p99 延迟",
+   "函数并发与数据库连接数匹配"
+  ],
+  "interview": [
+   {
+    "q": "冷启动延迟由哪些部分组成？",
+    "a": "主要包括创建执行环境、下载代码或镜像、启动运行时、执行处理器外的初始化代码。语言运行时、包体大小、依赖导入和初始化中的网络调用都会影响时长。"
+   },
+   {
+    "q": "Lambda 预置并发和 SnapStart 有何区别？",
+    "a": "预置并发预先初始化并持续保持一定数量的执行环境，按时长计费，能基本消除这部分容量内的冷启动；SnapStart 对初始化完成的环境做快照，冷启动时从快照恢复，缩短初始化但不保证零延迟，并对运行时和代码有要求，如唯一性数据需在恢复后重新生成。"
+   },
+   {
+    "q": "缩到零的服务如何兼顾成本与体验？",
+    "a": "对用户直接访问的路径保持少量最小实例或预置并发；后台任务允许缩到零；优化启动时间；在前端用加载状态或异步处理掩盖首次延迟。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "AWS Lambda：执行环境生命周期",
+    "url": "https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtime-environment.html"
+   },
+   {
+    "title": "AWS Lambda：预置并发",
+    "url": "https://docs.aws.amazon.com/lambda/latest/dg/provisioned-concurrency.html"
+   },
+   {
+    "title": "AWS Lambda：SnapStart",
+    "url": "https://docs.aws.amazon.com/lambda/latest/dg/snapstart.html"
+   },
+   {
+    "title": "Cloud Run：最小实例数",
+    "url": "https://cloud.google.com/run/docs/configuring/min-instances"
+   }
+  ]
+ },
+ {
+  "slug": "load-testing",
+  "def": "负载测试（Load Testing）是用工具模拟大量并发用户或请求，测量系统在预期和极限负载下的吞吐、延迟、错误率与资源使用的性能测试。它属于发布前验证和容量规划环节，常细分为基准、负载、压力、尖峰、浸泡等类型，用于找出容量拐点和瓶颈，并为自动扩缩容、限流阈值和 SLO 提供依据。",
+  "how": [
+   "明确目标：要验证的场景、预期峰值流量、延迟与错误率阈值，最好对齐 SLO。",
+   "编写脚本模拟真实用户行为，包括请求比例、思考时间、登录态和参数化数据。",
+   "在与生产相近的环境中按阶段加压，如逐步爬升、保持、再回落，或突然尖峰。",
+   "同时采集客户端指标和服务端指标，如 CPU、内存、连接数、数据库慢查询。",
+   "分析延迟开始急剧上升或错误出现的拐点，定位瓶颈，优化后回归测试。"
+  ],
+  "terms": [
+   {
+    "t": "压力测试 (Stress Test)",
+    "d": "超出预期负载直到系统失效，观察极限与失效方式。"
+   },
+   {
+    "t": "浸泡测试 (Soak Test)",
+    "d": "中等负载长时间运行，发现内存泄漏等渐进问题。"
+   },
+   {
+    "t": "尖峰测试 (Spike Test)",
+    "d": "负载瞬间暴涨，检验扩缩容与限流反应。"
+   },
+   {
+    "t": "虚拟用户 (Virtual User, VU)",
+    "d": "负载工具中模拟单个用户并发执行脚本的单元。"
+   },
+   {
+    "t": "协调遗漏 (Coordinated Omission)",
+    "d": "压测客户端因等待慢响应而少发请求，导致延迟被低估。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "k6 分阶段负载脚本",
+   "src": "import http from \"k6/http\";\nimport { check, sleep } from \"k6\";\n\nexport const options = {\n  stages: [\n    { duration: \"2m\", target: 100 },  // 2 分钟爬升到 100 个虚拟用户\n    { duration: \"5m\", target: 100 },  // 保持 5 分钟\n    { duration: \"1m\", target: 0 },    // 回落\n  ],\n  thresholds: {\n    http_req_duration: [\"p(95)<500\"], // 95% 请求低于 500ms\n    http_req_failed: [\"rate<0.01\"],   // 错误率低于 1%\n  },\n};\n\nexport default function () {\n  const res = http.get(\"https://staging.example.com/api/products\");\n  check(res, { \"status is 200\": (r) => r.status === 200 });\n  sleep(1); // 模拟用户思考时间\n}",
+   "note": "用 k6 run script.js 执行；阈值不达标时命令以非零码退出，可直接接入 CI。"
+  },
+  "table": {
+   "title": "常见测试类型",
+   "head": [
+    "类型",
+    "负载形态",
+    "主要目的"
+   ],
+   "rows": [
+    [
+     "基准/冒烟",
+     "极低负载",
+     "验证脚本与基础性能"
+    ],
+    [
+     "负载测试",
+     "预期峰值并保持",
+     "验证能否满足 SLO"
+    ],
+    [
+     "压力测试",
+     "持续加压超过峰值",
+     "找极限与失效方式"
+    ],
+    [
+     "浸泡测试",
+     "中等负载数小时",
+     "发现泄漏与资源耗尽"
+    ],
+    [
+     "尖峰测试",
+     "瞬间暴涨",
+     "检验扩缩容和限流"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "在预发环境压测",
+    "pros": "不影响用户",
+    "cons": "规模与数据难以完全一致",
+    "when": "常规发布前验证"
+   },
+   {
+    "opt": "生产环境压测",
+    "pros": "结果最真实",
+    "cons": "有影响用户的风险，需隔离标记",
+    "when": "大促前容量确认"
+   },
+   {
+    "opt": "开环到达率模型",
+    "pros": "能反映真实到达流量，避免协调遗漏",
+    "cons": "需更多压测机资源",
+    "when": "测延迟与过载行为"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只压单个接口，没有模拟真实的请求组合。",
+    "fix": "按线上流量比例编排多场景脚本。"
+   },
+   {
+    "bad": "压测机自身 CPU 或带宽先打满，结果反映的是客户端瓶颈。",
+    "fix": "监控压测机资源，必要时分布式压测。"
+   },
+   {
+    "bad": "所有虚拟用户用同一账号和参数，缓存命中率虚高。",
+    "fix": "参数化数据，覆盖缓存未命中路径。"
+   },
+   {
+    "bad": "只看平均延迟。",
+    "fix": "关注 p95、p99 和错误率，并对齐 SLO。"
+   }
+  ],
+  "checklist": [
+   "压测目标与通过标准事先写明",
+   "脚本覆盖真实请求组合与数据",
+   "同时采集服务端与依赖指标",
+   "压测机资源不是瓶颈",
+   "找到容量拐点并记录",
+   "阈值已接入 CI 做回归"
+  ],
+  "interview": [
+   {
+    "q": "负载测试和压力测试有什么区别？",
+    "a": "负载测试在预期负载范围内验证系统是否满足性能目标；压力测试持续加压超出预期，直到出现失败，目的是找到极限、观察失效方式是否优雅以及能否恢复。两者回答的问题不同，通常都要做。"
+   },
+   {
+    "q": "什么是协调遗漏，如何避免？",
+    "a": "闭环压测中，客户端要等上一个响应才发下一个请求，服务变慢时发出的请求也变少，慢的时段被少采样，延迟被低估。使用按固定到达率发请求的开环模型，或使用会做校正的工具。"
+   },
+   {
+    "q": "如何从压测结果确定扩缩容阈值？",
+    "a": "找出单实例在满足延迟目标时能承受的最大吞吐和对应 CPU 或并发，留出余量作为扩缩容目标值；再结合实例启动时间，确保负载上升时新实例能在饱和前就绪。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Grafana k6 文档",
+    "url": "https://grafana.com/docs/k6/latest/"
+   },
+   {
+    "title": "k6：Load test types",
+    "url": "https://grafana.com/docs/k6/latest/testing-guides/test-types/"
+   },
+   {
+    "title": "Locust 文档",
+    "url": "https://docs.locust.io/en/stable/"
+   }
+  ]
+ },
+ {
+  "slug": "memory-leaks",
+  "def": "内存泄漏（Memory Leak）指程序持续保留已不再需要的内存，使占用随运行时间单调增长，最终导致性能下降、频繁 GC 或被 OOM 终止。在 C/C++ 中常因忘记释放；在带垃圾回收的语言里，多因对象仍被意外引用，如无界缓存、未注销的监听器、全局集合和闭包。排查依赖堆快照对比和分配追踪。",
+  "how": [
+   "程序分配对象，并在某处保留引用，例如放进全局字典、缓存或事件监听列表。",
+   "业务上对象已不再使用，但引用仍在，垃圾回收器认为它可达，无法回收。",
+   "随请求或时间累积，常驻内存持续上升，GC 频率和停顿时间增加。",
+   "内存达到容器限制或系统上限，进程被 OOM Killer 杀掉或抛出内存溢出错误。",
+   "排查：在不同时刻取堆快照对比增长最多的对象类型，追溯保留它们的引用链。"
+  ],
+  "terms": [
+   {
+    "t": "常驻内存 (RSS)",
+    "d": "进程实际占用的物理内存，是观察泄漏的常用指标。"
+   },
+   {
+    "t": "堆快照 (Heap Snapshot)",
+    "d": "某时刻堆上所有对象及引用关系的记录，用于对比分析。"
+   },
+   {
+    "t": "保留路径 (Retainer Path)",
+    "d": "从 GC 根到某对象的引用链，解释它为何不能被回收。"
+   },
+   {
+    "t": "弱引用 (Weak Reference)",
+    "d": "不阻止对象被回收的引用，可用于缓存和映射。"
+   },
+   {
+    "t": "内存碎片 (Fragmentation)",
+    "d": "空闲内存分散导致 RSS 偏高，不一定是泄漏。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "tracemalloc 对比快照",
+   "src": "import tracemalloc\n\n_cache = {}  # 无界缓存：典型泄漏源\n\ndef handle(request_id: int):\n    _cache[request_id] = \"x\" * 10_000  # 每个请求都存，从不清理\n\ntracemalloc.start()\nbefore = tracemalloc.take_snapshot()\n\nfor i in range(5_000):\n    handle(i)\n\nafter = tracemalloc.take_snapshot()\n# 按代码行统计增长最多的分配位置\nfor stat in after.compare_to(before, \"lineno\")[:3]:\n    print(stat)\n\n# 修复思路：用有上限的缓存，如 functools.lru_cache(maxsize=1024)\n# 或 cachetools.TTLCache，确保旧条目会被淘汰",
+   "note": "对比前后快照，直接定位到持续分配却不释放的代码行。"
+  },
+  "table": {
+   "title": "常见泄漏来源",
+   "head": [
+    "来源",
+    "语言/环境",
+    "修复"
+   ],
+   "rows": [
+    [
+     "无界缓存或全局集合",
+     "各类语言",
+     "设上限与过期，使用 LRU/TTL"
+    ],
+    [
+     "未移除的事件监听器",
+     "JavaScript/Node.js",
+     "组件销毁时 removeEventListener"
+    ],
+    [
+     "未关闭的连接或文件句柄",
+     "各类语言",
+     "使用 with/try-finally 或连接池"
+    ],
+    [
+     "未释放的手动分配",
+     "C/C++",
+     "RAII、智能指针、ASan/Valgrind 检测"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "定期重启进程",
+    "pros": "立即缓解",
+    "cons": "掩盖问题，根因仍在",
+    "when": "临时止血，排查期间"
+   },
+   {
+    "opt": "堆快照分析",
+    "pros": "能定位根因",
+    "cons": "取快照有停顿，生产需谨慎",
+    "when": "可复现或在预发环境"
+   },
+   {
+    "opt": "持续内存剖析",
+    "pros": "线上长期可见",
+    "cons": "有一定性能开销",
+    "when": "内存敏感的长期运行服务"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "看到内存升高就断定泄漏，实际是缓存预热或 GC 未触发。",
+    "fix": "观察长时间趋势和 GC 后的基线是否持续上升。"
+   },
+   {
+    "bad": "用定时重启长期掩盖泄漏。",
+    "fix": "重启只作临时措施，同时安排定位和修复。"
+   },
+   {
+    "bad": "把请求级数据挂在全局单例上。",
+    "fix": "请求数据随请求生命周期释放，全局对象只放共享只读数据。"
+   }
+  ],
+  "checklist": [
+   "内存使用有长期趋势监控",
+   "所有缓存都有大小上限或过期",
+   "连接与文件句柄确保关闭",
+   "浸泡测试覆盖长时间运行",
+   "知道如何在本服务取堆快照"
+  ],
+  "interview": [
+   {
+    "q": "有 GC 的语言为什么还会内存泄漏？",
+    "a": "GC 只回收不可达对象。如果对象业务上已无用但仍被引用，比如放在全局字典、未注销的监听器、闭包捕获或无界缓存里，它就始终可达，不会被回收，内存持续增长。"
+   },
+   {
+    "q": "线上怀疑内存泄漏，如何排查？",
+    "a": "先看监控确认 GC 后基线持续上升而非正常波动；找出与上升相关的版本或流量；在预发复现，间隔取两次以上堆快照对比增长对象；顺着保留路径找到持有引用的代码；修复后用浸泡测试验证。"
+   },
+   {
+    "q": "内存上涨一定是泄漏吗？",
+    "a": "不一定。缓存预热、负载增加、GC 策略延迟回收、内存碎片或分配器不把内存归还系统都会让 RSS 偏高。判断泄漏要看负载稳定时内存是否无上限地持续增长。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Python 文档：tracemalloc",
+    "url": "https://docs.python.org/3/library/tracemalloc.html"
+   },
+   {
+    "title": "Node.js：Memory diagnostics",
+    "url": "https://nodejs.org/en/learn/diagnostics/memory"
+   },
+   {
+    "title": "Chrome DevTools：Fix memory problems",
+    "url": "https://developer.chrome.com/docs/devtools/memory-problems"
+   }
+  ]
+ },
+ {
+  "slug": "oom-killer",
+  "def": "OOM Killer 是 Linux 内核在系统或 cgroup 内存耗尽且无法回收时，选择并强杀进程以释放内存的机制。容器超出 cgroup 内存上限即被终止，Kubernetes 显示为 OOMKilled、退出码 137。它属于操作系统资源管理层，是设置内存限制、排查神秘重启的关键。",
+  "how": [
+   "进程申请内存，内核尝试回收页缓存、换出等方式满足；容器受 cgroup 上限约束。",
+   "回收失败且达到系统或 cgroup 内存上限时，触发 OOM 处理。",
+   "内核按 oom_score 选择进程，分值主要取决于内存占用，并受 oom_score_adj 调整。",
+   "被选中的进程收到 SIGKILL 立即终止，无法捕获，也没有机会做清理。",
+   "内核日志记录 Killed process 信息；Kubernetes 按重启策略重启容器并记录原因。"
+  ],
+  "terms": [
+   {
+    "t": "oom_score_adj",
+    "d": "取值 -1000 到 1000 的调整值，-1000 表示不会被 OOM 杀死。"
+   },
+   {
+    "t": "cgroup 内存上限 (memory.max)",
+    "d": "cgroup v2 中限制一组进程可用内存的接口文件。"
+   },
+   {
+    "t": "退出码 137",
+    "d": "128 加 9，表示进程被 SIGKILL 终止，常见于 OOM。"
+   },
+   {
+    "t": "QoS 类 (QoS Class)",
+    "d": "按 requests 与 limits 划分的服务质量等级，共三类。"
+   },
+   {
+    "t": "节点压力驱逐 (Node-pressure Eviction)",
+    "d": "kubelet 在节点内存紧张时主动驱逐 Pod，先于内核 OOM。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "排查 OOM 的常用命令",
+   "src": "# 1. 内核日志里找被杀进程\ndmesg -T | grep -iE \"out of memory|killed process\"\n\n# 2. Kubernetes：确认容器上次终止原因\nkubectl get pod api-7d9f -o jsonpath='{.status.containerStatuses[0].lastState.terminated.reason}'\n# 输出 OOMKilled 即为超出内存 limit\n\n# 3. cgroup v2：查看上限与 OOM 次数（在容器内或对应 cgroup 目录）\ncat /sys/fs/cgroup/memory.max\ngrep oom_kill /sys/fs/cgroup/memory.events\n\n# 4. 查看某进程的 OOM 评分与调整值\ncat /proc/$(pgrep -o myapp)/oom_score\ncat /proc/$(pgrep -o myapp)/oom_score_adj",
+   "note": "从内核日志、Pod 状态、cgroup 计数和进程评分四个角度确认是否发生 OOM。"
+  },
+  "table": {
+   "title": "K8s 内存相关终止",
+   "head": [
+    "现象",
+    "触发者",
+    "原因"
+   ],
+   "rows": [
+    [
+     "OOMKilled，退出码 137",
+     "内核 OOM Killer",
+     "容器超出 memory limit"
+    ],
+    [
+     "Evicted",
+     "kubelet",
+     "节点内存低于驱逐阈值"
+    ],
+    [
+     "节点级 OOM",
+     "内核",
+     "节点整体内存耗尽，按 oom_score 选进程"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "requests 等于 limits",
+    "pros": "Guaranteed QoS，最不易被驱逐",
+    "cons": "无法借用空闲内存，成本高",
+    "when": "关键有状态服务"
+   },
+   {
+    "opt": "limits 高于 requests",
+    "pros": "可突发使用内存",
+    "cons": "节点超卖时更易被驱逐或 OOM",
+    "when": "负载波动的无状态服务"
+   },
+   {
+    "opt": "不设内存 limit",
+    "pros": "不会因 limit 被杀",
+    "cons": "可能拖垮整个节点",
+    "when": "一般不推荐"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "JVM 堆上限接近容器 limit，堆外内存一加就 OOM。",
+    "fix": "按容器内存比例设堆，例如用 MaxRAMPercentage 留出堆外空间。"
+   },
+   {
+    "bad": "只看应用日志，找不到崩溃原因。",
+    "fix": "SIGKILL 无法记录日志，应查 Pod 终止原因和内核日志。"
+   },
+   {
+    "bad": "把关键进程 oom_score_adj 设为 -1000，结果其他重要进程被杀。",
+    "fix": "谨慎使用，优先通过合理 limit 和容量规划解决。"
+   },
+   {
+    "bad": "limit 设得刚好等于平均用量。",
+    "fix": "按峰值用量加余量设置，并监控接近上限的告警。"
+   }
+  ],
+  "checklist": [
+   "每个容器设置了内存 requests 与 limits",
+   "运行时堆上限与容器 limit 匹配",
+   "对 OOMKilled 与重启次数设告警",
+   "内存使用接近 limit 时提前告警",
+   "关键服务使用合适的 QoS 类"
+  ],
+  "interview": [
+   {
+    "q": "OOMKilled 和 Evicted 有什么区别？",
+    "a": "OOMKilled 是容器内存超过自己的 limit，被内核 OOM Killer 用 SIGKILL 杀掉，容器原地重启；Evicted 是节点内存压力达到 kubelet 驱逐阈值，kubelet 主动驱逐 Pod，Pod 需要重新调度到其他节点。"
+   },
+   {
+    "q": "内核如何选择要杀的进程？",
+    "a": "为每个进程计算 oom_score，主要依据其内存占用占可用内存的比例，再加上 oom_score_adj 调整，选分数最高的杀掉。Kubernetes 根据 QoS 类为容器设置不同的 oom_score_adj，BestEffort 最先被杀。"
+   },
+   {
+    "q": "Java 应用在容器里频繁 OOM 怎么办？",
+    "a": "确认 JVM 识别容器限制，用 MaxRAMPercentage 等参数让堆只占容器内存一部分，给元空间、线程栈、直接内存留余量；用 NMT 等工具查看堆外占用；同时排查真实泄漏。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Kubernetes：为容器管理资源",
+    "url": "https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/"
+   },
+   {
+    "title": "Kubernetes：节点压力驱逐",
+    "url": "https://kubernetes.io/docs/concepts/scheduling-eviction/node-pressure-eviction/"
+   },
+   {
+    "title": "Linux 内核文档：Control Group v2",
+    "url": "https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html"
+   },
+   {
+    "title": "proc(5) 手册页（oom_score_adj）",
+    "url": "https://man7.org/linux/man-pages/man5/proc.5.html"
+   }
+  ]
+ },
+ {
+  "slug": "ci-cd",
+  "def": "CI/CD 指持续集成（Continuous Integration）与持续交付/持续部署（Continuous Delivery/Deployment）。CI 要求频繁合入主干，每次提交自动构建与测试；持续交付让主干随时可发布，持续部署则自动发布到生产。它是软件交付的流水线层，用自动化缩短反馈周期、降低发布风险。",
+  "how": [
+   "开发者推送代码或发起合并请求（PR），代码托管平台的事件触发流水线运行。",
+   "CI 阶段：拉取代码、安装依赖、静态检查、单元测试、构建制品如容器镜像。",
+   "制品带唯一版本号推送到制品库，后续环境使用同一个制品，不重复构建。",
+   "CD 阶段：部署到测试或预发环境，运行集成测试，再经审批或自动发布到生产。",
+   "生产发布采用滚动、蓝绿或金丝雀策略，监控指标异常时自动或手动回滚。"
+  ],
+  "terms": [
+   {
+    "t": "持续交付 (Continuous Delivery)",
+    "d": "每次变更都可随时发布，但上线需要人工触发。"
+   },
+   {
+    "t": "持续部署 (Continuous Deployment)",
+    "d": "通过所有检查的变更自动发布到生产。"
+   },
+   {
+    "t": "制品 (Artifact)",
+    "d": "构建产出的可部署单元，如镜像、安装包。"
+   },
+   {
+    "t": "主干开发 (Trunk-Based Development)",
+    "d": "开发者频繁合入主干，分支生命周期很短。"
+   },
+   {
+    "t": "DORA 指标 (DORA Metrics)",
+    "d": "部署频率、变更前置时间、变更失败率、恢复时间等交付效能指标。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "GitHub Actions 流水线",
+   "src": "# .github/workflows/ci.yml\nname: ci\non:\n  push: { branches: [main] }\n  pull_request:\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with: { node-version: 20, cache: npm }\n      - run: npm ci          # 按锁文件安装，结果可复现\n      - run: npm run lint\n      - run: npm test\n  deploy:\n    needs: test              # 测试通过才部署\n    if: github.ref == 'refs/heads/main'\n    runs-on: ubuntu-latest\n    environment: production  # 可在仓库设置中配置审批\n    steps:\n      - uses: actions/checkout@v4\n      - run: ./scripts/deploy.sh",
+   "note": "PR 上只跑检查与测试，合入 main 后才部署；environment 可挂审批与密钥。"
+  },
+  "table": {
+   "title": "三个概念的边界",
+   "head": [
+    "阶段",
+    "自动化范围",
+    "上线方式"
+   ],
+   "rows": [
+    [
+     "持续集成",
+     "构建与测试",
+     "不涉及部署"
+    ],
+    [
+     "持续交付",
+     "构建、测试、部署到预发",
+     "生产需人工触发"
+    ],
+    [
+     "持续部署",
+     "全流程",
+     "通过检查即自动上线"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "持续部署",
+    "pros": "交付最快，批次小风险低",
+    "cons": "需要完善测试和监控回滚",
+    "when": "测试覆盖好、可快速回滚的服务"
+   },
+   {
+    "opt": "持续交付加人工审批",
+    "pros": "上线可控",
+    "cons": "审批可能成为瓶颈",
+    "when": "受监管或高风险系统"
+   },
+   {
+    "opt": "定期批量发布",
+    "pros": "协调简单",
+    "cons": "变更大，出错难定位",
+    "when": "移动端商店发布等受限场景"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "每个环境重新构建镜像，生产与测试的不是同一份制品。",
+    "fix": "构建一次，按版本号在各环境晋级。"
+   },
+   {
+    "bad": "流水线不稳定，大家习惯重跑直到变绿。",
+    "fix": "追踪并修复不稳定测试，必要时隔离。"
+   },
+   {
+    "bad": "密钥直接写在流水线文件里。",
+    "fix": "使用平台密钥管理或 OIDC 联合身份。"
+   },
+   {
+    "bad": "AI 生成的代码直接合入，跳过评审与测试。",
+    "fix": "同样走评审、测试和流水线门禁。"
+   }
+  ],
+  "checklist": [
+   "每次提交自动构建与测试",
+   "制品构建一次并在各环境复用",
+   "流水线中无明文密钥",
+   "生产发布有渐进策略与回滚",
+   "流水线耗时与稳定性有度量",
+   "主干始终可发布"
+  ],
+  "interview": [
+   {
+    "q": "持续交付和持续部署的区别？",
+    "a": "两者都保证主干随时可发布并自动部署到预发。持续交付在生产发布前保留人工决策；持续部署在所有自动检查通过后直接发布生产，没有人工步骤，因此对测试、监控和回滚要求更高。"
+   },
+   {
+    "q": "如何衡量 CI/CD 的效果？",
+    "a": "常用 DORA 指标：部署频率、变更前置时间、变更失败率、故障恢复时间。前两者衡量速度，后两者衡量稳定性。好的流水线应同时提升两类指标，而不是以稳定换速度。"
+   },
+   {
+    "q": "为什么强调构建一次、多处部署？",
+    "a": "若每个环境重新构建，依赖版本、构建参数可能不同，测试通过的不一定是上线的。用同一个带版本号的制品在环境间晋级，保证测过的就是部署的，也便于回滚到确定版本。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Martin Fowler：Continuous Integration",
+    "url": "https://martinfowler.com/articles/continuousIntegration.html"
+   },
+   {
+    "title": "GitHub Actions 文档",
+    "url": "https://docs.github.com/en/actions"
+   },
+   {
+    "title": "DORA 官方网站",
+    "url": "https://dora.dev/"
+   }
+  ]
+ },
+ {
+  "slug": "kubernetes",
+  "def": "Kubernetes（K8s）是开源的容器编排平台，用声明式 API 管理容器化应用的部署、扩缩、服务发现、配置和自愈。用户提交期望状态，控制平面中的各类控制器持续把实际状态调谐到期望状态。它位于基础设施与应用之间的平台层，已成为云原生事实标准，但学习和运维成本较高。",
+  "how": [
+   "用户用 YAML 描述期望状态，如 Deployment 的副本数和镜像，通过 kubectl 提交给 API Server。",
+   "API Server 校验后把对象存入 etcd，etcd 是集群状态的唯一来源。",
+   "控制器监听对象变化，例如 Deployment 控制器创建 ReplicaSet，进而创建 Pod。",
+   "调度器根据资源请求、亲和性等约束把 Pod 分配到节点，节点上的 kubelet 拉起容器。",
+   "Service 为一组 Pod 提供稳定访问入口；Pod 故障时控制器自动重建，实现自愈。"
+  ],
+  "terms": [
+   {
+    "t": "Pod",
+    "d": "最小调度单元，包含一个或多个共享网络与存储的容器。"
+   },
+   {
+    "t": "控制循环 (Reconciliation Loop)",
+    "d": "控制器不断比较期望与实际状态并做调整。"
+   },
+   {
+    "t": "etcd",
+    "d": "保存集群全部状态的分布式键值存储。"
+   },
+   {
+    "t": "Service",
+    "d": "为一组 Pod 提供稳定虚拟 IP 和 DNS 名称的抽象。"
+   },
+   {
+    "t": "Operator",
+    "d": "用自定义资源和控制器封装特定应用运维知识的模式。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "Deployment 加 Service",
+   "src": "apiVersion: apps/v1\nkind: Deployment\nmetadata: { name: web }\nspec:\n  replicas: 3                       # 期望状态：始终 3 个副本\n  selector: { matchLabels: { app: web } }\n  template:\n    metadata: { labels: { app: web } }\n    spec:\n      containers:\n        - name: web\n          image: nginx:1.27\n          ports: [{ containerPort: 80 }]\n          resources:\n            requests: { cpu: 100m, memory: 128Mi }\n            limits: { memory: 256Mi }\n---\napiVersion: v1\nkind: Service\nmetadata: { name: web }\nspec:\n  selector: { app: web }            # 按标签找到后端 Pod\n  ports: [{ port: 80, targetPort: 80 }]",
+   "note": "kubectl apply -f 提交后，删掉任意一个 Pod 都会被自动补回，体现声明式与自愈。"
+  },
+  "table": {
+   "title": "核心组件分工",
+   "head": [
+    "组件",
+    "所在位置",
+    "职责"
+   ],
+   "rows": [
+    [
+     "kube-apiserver",
+     "控制平面",
+     "所有操作的统一入口与校验"
+    ],
+    [
+     "etcd",
+     "控制平面",
+     "持久化集群状态"
+    ],
+    [
+     "kube-scheduler",
+     "控制平面",
+     "为 Pod 选择节点"
+    ],
+    [
+     "kube-controller-manager",
+     "控制平面",
+     "运行各类控制器"
+    ],
+    [
+     "kubelet",
+     "每个节点",
+     "按 Pod 规格运行并上报容器状态"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "托管 Kubernetes（EKS/GKE/AKS 等）",
+    "pros": "控制平面由厂商运维",
+    "cons": "仍需管理节点、网络与升级",
+    "when": "需要 K8s 能力的多数团队"
+   },
+   {
+    "opt": "自建集群",
+    "pros": "完全可控",
+    "cons": "运维 etcd、升级、证书成本高",
+    "when": "本地机房或有强定制需求"
+   },
+   {
+    "opt": "更简单的平台（PaaS/Serverless 容器）",
+    "pros": "上手快、运维少",
+    "cons": "灵活性和可移植性较低",
+    "when": "小团队、少量服务"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "不设资源 requests，调度器无法合理分配，节点过载。",
+    "fix": "为所有容器设置 requests 与内存 limit。"
+   },
+   {
+    "bad": "使用 latest 镜像标签，回滚和排查时不知道跑的是哪个版本。",
+    "fix": "使用不可变版本号或镜像摘要。"
+   },
+   {
+    "bad": "直接用 kubectl edit 改生产，配置与仓库不一致。",
+    "fix": "配置纳入 Git，通过 CI 或 GitOps 工具发布。"
+   },
+   {
+    "bad": "把 Secret 当成加密存储。",
+    "fix": "Secret 默认仅 base64 编码，需开启静态加密并控制 RBAC。"
+   }
+  ],
+  "checklist": [
+   "所有容器设置 requests、limits 与探针",
+   "镜像使用固定版本",
+   "配置与清单纳入版本控制",
+   "RBAC 遵循最小权限",
+   "多副本跨节点、跨可用区分布",
+   "有集群升级与 etcd 备份计划"
+  ],
+  "interview": [
+   {
+    "q": "Deployment 创建后发生了什么？",
+    "a": "API Server 校验并写入 etcd；Deployment 控制器创建 ReplicaSet；ReplicaSet 控制器按副本数创建 Pod；调度器为 Pod 选节点；kubelet 通过容器运行时拉镜像启动容器并上报状态；Service 端点随 Pod 就绪更新。"
+   },
+   {
+    "q": "什么是声明式 API，好处是什么？",
+    "a": "用户描述想要的最终状态而不是操作步骤，控制器负责持续让现实接近它。好处是幂等，可重复 apply；自愈，故障后自动恢复；便于把配置纳入 Git 做审计和回滚。"
+   },
+   {
+    "q": "小团队一定要上 Kubernetes 吗？",
+    "a": "不一定。它解决多服务调度、扩缩和自愈问题，但带来网络、存储、升级、安全等运维负担。服务少、团队小时，托管 PaaS 或 Serverless 容器往往更划算，等规模需要时再迁移。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Kubernetes 文档：Overview",
+    "url": "https://kubernetes.io/docs/concepts/overview/"
+   },
+   {
+    "title": "Kubernetes 文档：Kubernetes Components",
+    "url": "https://kubernetes.io/docs/concepts/overview/components/"
+   }
+  ]
+ },
+ {
+  "slug": "log-rotation",
+  "def": "日志轮转（Log Rotation）是按大小或时间把正在写入的日志归档成新文件，并压缩、限量保留、删除过期文件的机制。它属于主机与运行时的运维层，防止日志写满磁盘，并满足保留与合规要求。常见实现有 logrotate、journald 容量限制、Docker 日志驱动选项和 kubelet 容器日志轮转。",
+  "how": [
+   "轮转工具按计划检查日志文件，满足时间（每日、每周）或大小阈值即触发。",
+   "把当前文件重命名为带序号或日期的归档文件，再创建新文件供程序继续写入。",
+   "程序仍持有旧文件句柄时，需要发信号让其重新打开文件，或使用复制后截断。",
+   "旧归档按策略进行压缩，超过保留份数或保留天数的归档文件会被自动删除。",
+   "在容器环境中，应用写 stdout，由运行时或 kubelet 负责轮转，再由采集器发送到集中日志系统。"
+  ],
+  "terms": [
+   {
+    "t": "logrotate",
+    "d": "Linux 常用的日志轮转工具，通过配置文件定义规则。"
+   },
+   {
+    "t": "copytruncate",
+    "d": "先复制日志再截断原文件，适用于无法重开文件的程序，可能丢少量日志。"
+   },
+   {
+    "t": "postrotate 脚本",
+    "d": "轮转后执行的命令，常用于通知进程重新打开日志。"
+   },
+   {
+    "t": "json-file 驱动",
+    "d": "Docker 默认日志驱动，需配置 max-size 和 max-file 才会轮转。"
+   },
+   {
+    "t": "保留策略 (Retention Policy)",
+    "d": "日志保存多长时间或多少份，兼顾排查、成本与合规。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "logrotate 配置示例",
+   "src": "# /etc/logrotate.d/myapp\n/var/log/myapp/*.log {\n    daily                # 每天轮转\n    maxsize 100M         # 不到一天但超过 100M 也轮转\n    rotate 14            # 保留 14 份\n    compress             # gzip 压缩归档\n    delaycompress        # 最近一份暂不压缩，便于查看\n    missingok            # 文件不存在不报错\n    notifempty           # 空文件不轮转\n    create 0640 myapp myapp\n    sharedscripts\n    postrotate\n        # 通知进程重新打开日志文件（进程需支持 SIGHUP 或 USR1）\n        systemctl kill -s HUP myapp.service\n    endscript\n}",
+   "note": "轮转后通过信号让进程重开文件；不支持重开的程序可改用 copytruncate。"
+  },
+  "table": {
+   "title": "不同环境的轮转方式",
+   "head": [
+    "环境",
+    "默认行为",
+    "配置要点"
+   ],
+   "rows": [
+    [
+     "传统主机文件日志",
+     "需自行配置",
+     "logrotate 规则与 postrotate"
+    ],
+    [
+     "systemd-journald",
+     "按磁盘占用自动限制",
+     "journald.conf 中 SystemMaxUse 等"
+    ],
+    [
+     "Docker json-file",
+     "默认不轮转",
+     "log-opts 设置 max-size、max-file"
+    ],
+    [
+     "Kubernetes",
+     "kubelet 轮转容器日志",
+     "containerLogMaxSize、containerLogMaxFiles"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "按时间轮转",
+    "pros": "归档按日期，便于查找",
+    "cons": "突发日志可能单文件过大",
+    "when": "日志量稳定"
+   },
+   {
+    "opt": "按大小轮转",
+    "pros": "磁盘占用可预测",
+    "cons": "文件时间范围不规则",
+    "when": "日志量波动大"
+   },
+   {
+    "opt": "本地少量保留加集中日志",
+    "pros": "本地磁盘压力小，检索方便",
+    "cons": "依赖日志采集链路",
+    "when": "多实例和容器环境"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "Docker 使用默认 json-file 不设上限，容器日志写满宿主机磁盘。",
+    "fix": "在 daemon.json 或运行参数中设置 max-size 与 max-file。"
+   },
+   {
+    "bad": "轮转后没通知进程，程序继续写已被重命名或删除的文件。",
+    "fix": "用 postrotate 发信号重开，或改用 copytruncate。"
+   },
+   {
+    "bad": "删除了仍被进程打开的大日志，磁盘空间不释放。",
+    "fix": "用 lsof 找到持有者并重启或截断，规范轮转流程。"
+   },
+   {
+    "bad": "日志中含个人敏感信息且保留过久。",
+    "fix": "脱敏，并按合规要求设置保留期。"
+   }
+  ],
+  "checklist": [
+   "所有日志路径都有轮转规则",
+   "容器运行时设置了日志大小上限",
+   "轮转后进程能正确写入新文件",
+   "保留期满足排查与合规要求",
+   "磁盘使用率有告警",
+   "日志集中采集，本地只做缓冲"
+  ],
+  "interview": [
+   {
+    "q": "copytruncate 和 create 模式有何区别？",
+    "a": "create 模式重命名旧文件并新建文件，需要程序重新打开日志，否则会继续写旧文件；copytruncate 复制内容后截断原文件，程序无需配合，但复制与截断之间写入的日志可能丢失。能发信号重开时优先 create。"
+   },
+   {
+    "q": "为什么删了日志文件磁盘空间还是没释放？",
+    "a": "在 Linux 中，文件被删除后若仍有进程持有打开的句柄，数据块不会释放。可用 lsof 查看已删除但打开的文件，让进程重开文件或重启，规范地通过轮转工具处理。"
+   },
+   {
+    "q": "容器化后还需要关心日志轮转吗？",
+    "a": "需要。应用应写 stdout/stderr，但运行时仍会把日志落到节点磁盘，Docker json-file 默认不轮转，kubelet 有自己的大小和份数配置。同时需要采集器把日志发到集中系统，避免节点磁盘成为唯一存储。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "logrotate(8) 手册页",
+    "url": "https://man7.org/linux/man-pages/man8/logrotate.8.html"
+   },
+   {
+    "title": "Docker 文档：JSON File logging driver",
+    "url": "https://docs.docker.com/engine/logging/drivers/json-file/"
+   },
+   {
+    "title": "Kubernetes：Logging Architecture",
+    "url": "https://kubernetes.io/docs/concepts/cluster-administration/logging/"
+   }
+  ]
+ },
+ {
+  "slug": "distributed-tracing",
+  "def": "分布式链路追踪（Distributed Tracing）记录一个请求穿越多个服务、队列和数据库的路径与耗时。请求有唯一 Trace ID，每段操作是一个 Span，跨进程靠请求头传播上下文。它是可观测性三支柱之一，用于定位延迟瓶颈与错误源，主流标准为 OpenTelemetry 与 W3C Trace Context。",
+  "how": [
+   "入口服务收到请求时创建根 Span，生成 Trace ID；若请求已带 traceparent 头则沿用。",
+   "服务内部的关键操作创建子 Span，记录开始结束时间、属性和错误状态。",
+   "调用下游时把追踪上下文注入请求头，下游提取后创建子 Span，形成父子关系。",
+   "SDK 把 Span 批量导出到 Collector，再发送到后端存储，如 Jaeger、Tempo 或商业平台。",
+   "后端按 Trace ID 拼接出瀑布图，配合采样策略控制数据量与成本。"
+  ],
+  "terms": [
+   {
+    "t": "Span",
+    "d": "一次操作的记录，含名称、起止时间、属性、状态和父 Span。"
+   },
+   {
+    "t": "Trace ID",
+    "d": "贯穿一次请求所有 Span 的唯一标识，W3C 中为 32 个十六进制字符。"
+   },
+   {
+    "t": "traceparent 头",
+    "d": "W3C 定义的传播头，含版本、Trace ID、父 Span ID 和标志位。"
+   },
+   {
+    "t": "采样 (Sampling)",
+    "d": "只保留部分链路，分头部采样和尾部采样。"
+   },
+   {
+    "t": "OpenTelemetry Collector",
+    "d": "接收、处理并转发遥测数据的独立组件。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "OpenTelemetry 手动埋点",
+   "src": "from opentelemetry import trace\nfrom opentelemetry.propagate import inject\nfrom opentelemetry.sdk.trace import TracerProvider\nfrom opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter\nimport requests\n\nprovider = TracerProvider()\nprovider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))\ntrace.set_tracer_provider(provider)\ntracer = trace.get_tracer(\"checkout\")\n\nwith tracer.start_as_current_span(\"checkout\") as span:\n    span.set_attribute(\"order.items\", 3)\n    with tracer.start_as_current_span(\"call-inventory\"):\n        headers = {}\n        inject(headers)            # 写入 traceparent 头，传给下游\n        requests.get(\"http://inventory:8080/stock\", headers=headers, timeout=2)\n# 生产中把 ConsoleSpanExporter 换成 OTLP 导出器发往 Collector",
+   "note": "创建父子 Span 并把上下文注入请求头；也可用自动埋点库免改代码。"
+  },
+  "table": {
+   "title": "可观测性三支柱",
+   "head": [
+    "信号",
+    "擅长回答",
+    "局限"
+   ],
+   "rows": [
+    [
+     "指标 (Metrics)",
+     "系统整体是否异常、趋势如何",
+     "缺少单个请求细节"
+    ],
+    [
+     "日志 (Logs)",
+     "某个事件的具体上下文",
+     "跨服务难以串联"
+    ],
+    [
+     "链路 (Traces)",
+     "请求慢在哪一段、错在哪个服务",
+     "数据量大，需要采样"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "头部采样",
+    "pros": "实现简单、开销低",
+    "cons": "可能漏掉罕见错误和慢请求",
+    "when": "流量大、成本敏感"
+   },
+   {
+    "opt": "尾部采样",
+    "pros": "可保留所有错误和慢链路",
+    "cons": "Collector 需缓存完整链路，资源消耗大",
+    "when": "重视异常排查"
+   },
+   {
+    "opt": "自动埋点",
+    "pros": "接入快，覆盖常见框架",
+    "cons": "业务语义少，Span 可能过多",
+    "when": "起步阶段"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "某个中间服务没传播上下文，链路在它那里断成两截。",
+    "fix": "所有服务和网关统一使用 W3C Trace Context 传播。"
+   },
+   {
+    "bad": "异步消息没携带追踪上下文。",
+    "fix": "把上下文写入消息头，消费端提取后建立关联。"
+   },
+   {
+    "bad": "把用户 ID 等高基数字段写进 Span 名称。",
+    "fix": "Span 名称保持低基数，变量放在属性中。"
+   },
+   {
+    "bad": "日志里没有 Trace ID，无法从链路跳到日志。",
+    "fix": "在日志中输出 Trace ID 和 Span ID。"
+   }
+  ],
+  "checklist": [
+   "所有服务统一传播 traceparent",
+   "消息队列链路也携带上下文",
+   "日志中包含 Trace ID",
+   "采样策略明确并保留错误链路",
+   "Span 名称低基数、属性规范"
+  ],
+  "interview": [
+   {
+    "q": "链路追踪的上下文是怎么跨服务传递的？",
+    "a": "调用方 SDK 把当前 Trace ID、Span ID 和采样标志按 W3C Trace Context 格式注入 traceparent 请求头；被调方提取后，以该 Span 为父创建新 Span。消息队列则写入消息头。任何一环不传播，链路就会断开。"
+   },
+   {
+    "q": "头部采样和尾部采样怎么选？",
+    "a": "头部采样在入口就决定是否记录，开销小，但无法预知请求会不会出错；尾部采样在链路完成后根据结果决定保留，能保留所有错误和慢请求，代价是 Collector 需缓存完整链路。常组合使用。"
+   },
+   {
+    "q": "有了日志为什么还需要链路追踪？",
+    "a": "日志分散在各服务，难以还原一次请求的完整路径和各段耗时；链路追踪直接给出调用树和瀑布图，快速定位慢段。两者通过 Trace ID 关联，从链路跳到对应日志看细节。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OpenTelemetry：Traces",
+    "url": "https://opentelemetry.io/docs/concepts/signals/traces/"
+   },
+   {
+    "title": "W3C Trace Context",
+    "url": "https://www.w3.org/TR/trace-context/"
+   },
+   {
+    "title": "Google Research：Dapper 论文",
+    "url": "https://research.google/pubs/dapper-a-large-scale-distributed-systems-tracing-infrastructure/"
+   }
+  ]
+ },
+ {
+  "slug": "correlation-ids",
+  "def": "关联标识符（Correlation ID）是在请求入口生成或接收、随请求在服务、队列与日志间传递的唯一 ID，用来把同一请求产生的所有日志和事件串联起来。它是轻量的可观测性手段，常经 X-Request-ID 等请求头传递；已接入分布式追踪时，traceparent 里的 Trace ID 通常可直接充当关联 ID。",
+  "how": [
+   "入口网关或首个服务检查请求头，已有 ID 则沿用，没有则生成一个 UUID 等唯一值。",
+   "服务把 ID 存入请求作用域上下文，如 Python 的 contextvars、Java 的 MDC。",
+   "日志框架通过过滤器或格式化器在每条日志里自动输出该 ID，开发者无需手动传参。",
+   "调用下游 HTTP 服务或发布消息时，把 ID 写入请求头或消息属性继续传递。",
+   "响应头也返回该 ID，用户报障或前端报错时可凭它检索整条链路的日志。"
+  ],
+  "terms": [
+   {
+    "t": "X-Request-ID",
+    "d": "常见的非标准请求 ID 头，许多网关和框架都支持。"
+   },
+   {
+    "t": "MDC (Mapped Diagnostic Context)",
+    "d": "Java 日志框架中按线程保存上下文字段的机制。"
+   },
+   {
+    "t": "contextvars",
+    "d": "Python 标准库中支持异步任务隔离的上下文变量。"
+   },
+   {
+    "t": "结构化日志 (Structured Logging)",
+    "d": "以 JSON 等键值格式输出日志，便于按 ID 检索。"
+   },
+   {
+    "t": "Trace ID",
+    "d": "分布式追踪中的请求标识，可兼作关联 ID。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Flask 注入请求 ID",
+   "src": "import logging, uuid\nfrom contextvars import ContextVar\nfrom flask import Flask, request, g\n\nrequest_id: ContextVar[str] = ContextVar(\"request_id\", default=\"-\")\n\nclass RequestIdFilter(logging.Filter):\n    def filter(self, record):\n        record.request_id = request_id.get()  # 每条日志自动带上 ID\n        return True\n\nhandler = logging.StreamHandler()\nhandler.addFilter(RequestIdFilter())\nhandler.setFormatter(logging.Formatter(\"%(asctime)s %(request_id)s %(message)s\"))\nlogging.basicConfig(level=logging.INFO, handlers=[handler])\n\napp = Flask(__name__)\n\n@app.before_request\ndef assign_id():\n    rid = request.headers.get(\"X-Request-ID\") or str(uuid.uuid4())\n    g.rid = rid\n    request_id.set(rid)\n\n@app.after_request\ndef echo_id(resp):\n    resp.headers[\"X-Request-ID\"] = g.rid      # 回传给调用方\n    return resp",
+   "note": "沿用或生成请求 ID，写入上下文变量并由日志过滤器自动输出，同时回写响应头。"
+  },
+  "table": {
+   "title": "关联 ID 与追踪 ID",
+   "head": [
+    "维度",
+    "关联 ID",
+    "Trace ID"
+   ],
+   "rows": [
+    [
+     "标准",
+     "无统一标准，常用 X-Request-ID",
+     "W3C Trace Context"
+    ],
+    [
+     "信息量",
+     "只有一个标识",
+     "含父子关系与耗时"
+    ],
+    [
+     "实现成本",
+     "很低",
+     "需接入追踪 SDK 与后端"
+    ],
+    [
+     "典型用途",
+     "日志串联、客服排障",
+     "性能分析、调用拓扑"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "自定义关联 ID",
+    "pros": "简单，几乎零依赖",
+    "cons": "没有耗时与调用关系",
+    "when": "尚未接入追踪的系统"
+   },
+   {
+    "opt": "直接使用 Trace ID",
+    "pros": "日志与链路天然打通",
+    "cons": "依赖追踪体系",
+    "when": "已接入 OpenTelemetry"
+   },
+   {
+    "opt": "两者并存",
+    "pros": "兼容外部系统已有 ID",
+    "cons": "需维护映射，易混淆",
+    "when": "对接第三方或遗留系统"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "异步任务或线程池中丢失上下文，后台日志没有 ID。",
+    "fix": "提交任务时显式传递 ID，或使用能复制上下文的执行器。"
+   },
+   {
+    "bad": "盲目信任外部传入的 ID，被注入超长或恶意字符串。",
+    "fix": "校验格式与长度，不合法则重新生成。"
+   },
+   {
+    "bad": "只在入口服务记录 ID，下游调用没传递。",
+    "fix": "在 HTTP 客户端和消息生产者统一注入。"
+   }
+  ],
+  "checklist": [
+   "入口统一生成或沿用 ID",
+   "所有日志自动带 ID 字段",
+   "HTTP 与消息调用均传递 ID",
+   "响应头返回 ID 供排障",
+   "外部传入 ID 有格式校验"
+  ],
+  "interview": [
+   {
+    "q": "有了分布式追踪还需要关联 ID 吗？",
+    "a": "多数情况下可直接用 Trace ID 作为关联 ID，并把它写入日志，二者合一。只有在对接未接入追踪的外部系统、或需要跨越追踪边界的业务 ID 如订单号时，才额外维护关联 ID。"
+   },
+   {
+    "q": "异步场景如何保证关联 ID 不丢？",
+    "a": "把 ID 放进消息头或任务参数，消费端取出后写入当前上下文；在线程池或协程中使用支持上下文复制的机制，如 Python 的 contextvars 配合 asyncio 自动传播，Java 用包装后的执行器传递 MDC。"
+   },
+   {
+    "q": "关联 ID 对客服排障有什么价值？",
+    "a": "把 ID 显示在错误页或返回给客户端，用户报障时提供该 ID，工程师即可在集中日志中一次检索出这次请求在所有服务里的日志，大幅缩短定位时间。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "W3C Trace Context",
+    "url": "https://www.w3.org/TR/trace-context/"
+   },
+   {
+    "title": "Python 文档：contextvars",
+    "url": "https://docs.python.org/3/library/contextvars.html"
+   },
+   {
+    "title": "OpenTelemetry Logs 规范",
+    "url": "https://opentelemetry.io/docs/specs/otel/logs/"
+   }
+  ]
+ },
+ {
+  "slug": "p99-latency",
+  "def": "p99 延迟（99th Percentile Latency）是把一段时间内的请求耗时排序后第 99 百分位的值，即 99% 的请求不超过它、最慢的 1% 超过它。它是衡量长尾延迟的核心指标，比平均值更能反映真实用户体验。在扇出调用中，一个用户请求依赖多个后端，任一后端的长尾都会放大为用户侧的高延迟。",
+  "how": [
+   "服务记录每个请求的耗时，通常用直方图（Histogram）按桶计数而非保存每个值。",
+   "查询时按时间窗口聚合各实例的直方图，估算目标分位数，如 p50、p95、p99。",
+   "平均值会被大量快请求稀释，而 p99 揭示最慢一批用户的真实等待。",
+   "扇出放大：若一个请求并行调用 100 个后端，每个后端 p99 慢，用户请求变慢的概率就很高。",
+   "长尾成因包括 GC 停顿、排队、锁竞争、冷缓存、慢磁盘和网络重传。"
+  ],
+  "terms": [
+   {
+    "t": "百分位数 (Percentile)",
+    "d": "排序后位于某百分比位置的值，p99 表示第 99 百分位。"
+   },
+   {
+    "t": "长尾延迟 (Tail Latency)",
+    "d": "分布中最慢那部分请求的延迟。"
+   },
+   {
+    "t": "直方图 (Histogram)",
+    "d": "把观测值落入预设桶计数，可在服务端聚合后估算分位数。"
+   },
+   {
+    "t": "对冲请求 (Hedged Request)",
+    "d": "请求超过一定时间未返回时向另一副本再发一次，取先到者。"
+   },
+   {
+    "t": "分位数不可平均",
+    "d": "多个实例的 p99 不能直接求平均，需合并原始分布再计算。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "平均值掩盖长尾",
+   "src": "import numpy as np\n\nrng = np.random.default_rng(0)\n# 98% 请求约 50ms，2% 请求遇到 GC/排队约 2s\nfast = rng.normal(50, 10, 9_800)\nslow = rng.normal(2_000, 200, 200)\nlatency_ms = np.concatenate([fast, slow])\n\nprint(f\"mean = {latency_ms.mean():.0f} ms\")            # 约 90ms，看着还行\nprint(f\"p50  = {np.percentile(latency_ms, 50):.0f} ms\")\nprint(f\"p99  = {np.percentile(latency_ms, 99):.0f} ms\")  # 约 2s，真实长尾\n\n# Prometheus 中按直方图计算 p99（先按 le 聚合所有实例再求分位）：\n# histogram_quantile(0.99,\n#   sum by (le) (rate(http_request_duration_seconds_bucket[5m])))",
+   "note": "平均值只有约 90ms，p99 却接近 2 秒；Prometheus 用直方图在聚合后求分位。"
+  },
+  "table": {
+   "title": "常用延迟统计量",
+   "head": [
+    "统计量",
+    "反映什么",
+    "注意点"
+   ],
+   "rows": [
+    [
+     "平均值",
+     "总体水平",
+     "被大量快请求稀释"
+    ],
+    [
+     "p50（中位数）",
+     "典型用户体验",
+     "看不到长尾"
+    ],
+    [
+     "p99",
+     "最慢 1% 的体验",
+     "需要足够样本量"
+    ],
+    [
+     "p99.9 / 最大值",
+     "极端情况",
+     "噪声大，适合排查不宜做目标"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "直方图",
+    "pros": "可跨实例聚合，开销低",
+    "cons": "精度受桶边界限制",
+    "when": "服务端指标的默认选择"
+   },
+   {
+    "opt": "客户端 Summary 分位",
+    "pros": "单实例分位精确",
+    "cons": "不能跨实例聚合",
+    "when": "单实例或仅需本地分位"
+   },
+   {
+    "opt": "对冲请求",
+    "pros": "显著降低长尾",
+    "cons": "增加后端负载",
+    "when": "读请求、幂等调用"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把各实例的 p99 取平均当作全局 p99。",
+    "fix": "合并直方图桶后再计算分位数。"
+   },
+   {
+    "bad": "直方图桶边界与 SLO 阈值不匹配，估算误差大。",
+    "fix": "在 SLO 阈值附近设置桶边界。"
+   },
+   {
+    "bad": "只在低流量时段看 p99，样本太少波动大。",
+    "fix": "确保窗口内样本量足够，或看更长窗口。"
+   },
+   {
+    "bad": "压测工具存在协调遗漏，p99 被低估。",
+    "fix": "使用固定到达率模型或做校正。"
+   }
+  ],
+  "checklist": [
+   "延迟以直方图采集",
+   "看板同时展示 p50、p95、p99",
+   "分位数先聚合分布再计算",
+   "桶边界覆盖 SLO 阈值",
+   "延迟 SLO 基于百分位而非平均"
+  ],
+  "interview": [
+   {
+    "q": "为什么用 p99 而不是平均延迟？",
+    "a": "延迟分布通常右偏，少量很慢的请求对平均值影响有限，却严重影响这部分用户。高频用户在一次会话中会发出很多请求，几乎必然碰到长尾。p99 能直接暴露这部分体验，更适合作为 SLO。"
+   },
+   {
+    "q": "扇出为什么会放大长尾？",
+    "a": "若一个用户请求要等 N 个后端全部返回，用户请求的延迟取决于最慢的那个。即使每个后端只有 1% 的请求慢，N 很大时至少一个慢的概率接近 1 减 0.99 的 N 次方，比如 N 为 100 时约 63%。"
+   },
+   {
+    "q": "有哪些降低长尾延迟的手段？",
+    "a": "减少 GC 停顿与锁竞争；限制队列长度避免排队；预热缓存；对冲请求或绑定请求在多个副本间竞速；把慢操作移出关键路径；对扇出调用设置截止时间并允许部分结果。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Google Research：The Tail at Scale",
+    "url": "https://research.google/pubs/the-tail-at-scale/"
+   },
+   {
+    "title": "Prometheus：Histograms and summaries",
+    "url": "https://prometheus.io/docs/practices/histograms/"
+   },
+   {
+    "title": "Google SRE Book：Monitoring Distributed Systems",
+    "url": "https://sre.google/sre-book/monitoring-distributed-systems/"
+   }
+  ]
+ },
+ {
+  "slug": "alert-fatigue",
+  "def": "告警疲劳（Alert Fatigue）是值班人员长期收到大量无效、重复或无需处理的告警后，对告警变得麻木、响应变慢甚至忽略真实故障的现象。它是监控体系设计不良的结果，也是值班倦怠的主因。治理方向是只对用户可感知的症状告警、每条告警可执行、合并去重，并定期清理噪声。",
+  "how": [
+   "监控项不断增加，几乎每个指标都配一条阈值告警，其中许多与用户影响并无关系。",
+   "大量告警来自瞬时抖动、会自行恢复的问题，或者是同一根因触发的重复通知。",
+   "值班者逐渐习惯性地确认、静音或忽略告警，对每条告警投入的注意力明显下降。",
+   "真正的故障告警淹没在噪声中，响应被延迟，原本可控的故障影响随之扩大。",
+   "治理：按症状和 SLO 告警，设持续时间，分组抑制，并持续回顾告警的可执行率。"
+  ],
+  "terms": [
+   {
+    "t": "症状告警 (Symptom-based Alert)",
+    "d": "基于用户可见问题如错误率、延迟的告警。"
+   },
+   {
+    "t": "原因告警 (Cause-based Alert)",
+    "d": "基于内部指标如 CPU 高的告警，常与用户影响无关。"
+   },
+   {
+    "t": "抑制 (Inhibition)",
+    "d": "某告警触发时屏蔽与之相关的次级告警。"
+   },
+   {
+    "t": "分组 (Grouping)",
+    "d": "把同类告警合并成一条通知，减少消息数量。"
+   },
+   {
+    "t": "可执行告警 (Actionable Alert)",
+    "d": "收到后有明确动作需要人处理的告警。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "从原因告警改为症状告警",
+   "src": "groups:\n  - name: api-alerts\n    rules:\n      # 反例：CPU 一高就呼叫，与用户影响无关，且易抖动\n      # - alert: HighCPU\n      #   expr: avg(rate(process_cpu_seconds_total[1m])) > 0.8\n\n      # 正例：用户可感知的错误率，持续 10 分钟才告警\n      - alert: ApiHighErrorRate\n        expr: |\n          sum(rate(http_requests_total{job=\"api\",code=~\"5..\"}[5m]))\n          / sum(rate(http_requests_total{job=\"api\"}[5m])) > 0.02\n        for: 10m\n        labels: { severity: page }\n        annotations:\n          summary: \"API 5xx 比例超过 2%\"\n          runbook_url: https://wiki.example.com/runbooks/api-errors",
+   "note": "for 过滤瞬时抖动，症状指标直接反映用户影响，并附手册链接。"
+  },
+  "table": {
+   "title": "告警质量自检",
+   "head": [
+    "问题",
+    "若答案为否",
+    "处理"
+   ],
+   "rows": [
+    [
+     "是否影响或即将影响用户",
+     "可能是噪声",
+     "降级为看板或工单"
+    ],
+    [
+     "是否需要人立即动作",
+     "无需呼叫",
+     "改为工单或自动处理"
+    ],
+    [
+     "动作是否明确",
+     "值班者不知所措",
+     "补充手册"
+    ],
+    [
+     "是否与其他告警重复",
+     "消息轰炸",
+     "分组或抑制"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "基于 SLO 燃烧率告警",
+    "pros": "与用户影响直接挂钩，噪声少",
+    "cons": "需先建立 SLO 和指标",
+    "when": "成熟服务"
+   },
+   {
+    "opt": "原因告警保留为工单级",
+    "pros": "保留早期信号",
+    "cons": "需要人定期查看",
+    "when": "磁盘将满等可预见问题"
+   },
+   {
+    "opt": "自动修复替代告警",
+    "pros": "减少人为介入",
+    "cons": "可能掩盖持续问题",
+    "when": "处置确定且低风险"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "每个新指标都加一个呼叫级告警。",
+    "fix": "呼叫级只保留症状告警，其余进工单或看板。"
+   },
+   {
+    "bad": "告警阈值多年未调整，长期误报。",
+    "fix": "定期回顾告警触发与处理数据，删除或调整。"
+   },
+   {
+    "bad": "一个数据库故障触发上百条服务告警。",
+    "fix": "使用分组与抑制规则，聚合到根因。"
+   },
+   {
+    "bad": "静音后忘记恢复，真故障无人知晓。",
+    "fix": "静音设置过期时间并记录原因。"
+   }
+  ],
+  "checklist": [
+   "呼叫级告警都基于用户症状",
+   "每条告警都有手册链接",
+   "告警设置持续时间过滤抖动",
+   "配置了分组与抑制规则",
+   "定期回顾告警可执行率",
+   "静音有过期时间"
+  ],
+  "interview": [
+   {
+    "q": "如何判断告警体系是否存在疲劳问题？",
+    "a": "看数据：每班呼叫次数、夜间呼叫次数、无需处理的告警占比、同一告警的重复触发次数、确认到处理的时间。若大量告警确认后无动作，或值班者普遍静音，即存在疲劳。"
+   },
+   {
+    "q": "为什么推荐症状告警而非原因告警？",
+    "a": "原因指标高不一定影响用户，比如 CPU 高但延迟正常；而用户受影响的原因很多，难以穷举。症状告警直接度量用户体验，误报少、覆盖面广；原因指标用于排查和工单级预警。"
+   },
+   {
+    "q": "减少告警噪声的具体做法有哪些？",
+    "a": "删除从未导致动作的告警；为告警加持续时间；用分组、抑制和去重减少重复通知；基于 SLO 燃烧率告警；区分呼叫与工单级别；每次值班后回顾噪声告警并修改。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Google SRE Book：Monitoring Distributed Systems",
+    "url": "https://sre.google/sre-book/monitoring-distributed-systems/"
+   },
+   {
+    "title": "Prometheus：Alerting 实践",
+    "url": "https://prometheus.io/docs/practices/alerting/"
+   },
+   {
+    "title": "Wikipedia：Alarm fatigue",
+    "url": "https://en.wikipedia.org/wiki/Alarm_fatigue"
+   }
+  ]
+ },
+ {
+  "slug": "error-tracking",
+  "def": "应用错误追踪（Error Tracking）是自动捕获应用运行时的异常与崩溃，附带堆栈、版本、环境、用户操作轨迹等上下文，并按相似性聚合成问题（Issue）进行分配、告警和跟踪的实践。它覆盖前端、移动端和后端，补足日志与指标难以直接呈现的错误细节，常见工具有 Sentry 等。",
+  "how": [
+   "应用集成 SDK，SDK 挂接全局异常处理器和框架中间件，捕获未处理异常。",
+   "捕获时收集堆栈、请求信息、设备与运行时、发布版本、面包屑等上下文。",
+   "事件上报到服务端，按堆栈指纹聚合为一个问题，统计发生次数和影响用户数。",
+   "前端与移动端需要上传 source map 或符号表，把压缩或混淆后的堆栈还原为源码位置。",
+   "新问题或回归问题触发告警，分配给负责人，修复发布后标记解决并观察是否复发。"
+  ],
+  "terms": [
+   {
+    "t": "指纹 (Fingerprint)",
+    "d": "用于判断事件是否属于同一问题的特征，通常基于堆栈。"
+   },
+   {
+    "t": "面包屑 (Breadcrumbs)",
+    "d": "错误发生前的操作和事件轨迹，帮助还原现场。"
+   },
+   {
+    "t": "Source Map",
+    "d": "把压缩后的 JavaScript 位置映射回源码的文件。"
+   },
+   {
+    "t": "回归 (Regression)",
+    "d": "已标记解决的问题在新版本中再次出现。"
+   },
+   {
+    "t": "发布版本 (Release)",
+    "d": "事件关联的应用版本，用于判断哪个版本引入了问题。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Sentry Python SDK 接入",
+   "src": "import sentry_sdk\n\nsentry_sdk.init(\n    dsn=\"https://<key>@<org>.ingest.sentry.io/<project>\",\n    environment=\"production\",\n    release=\"shop-api@1.4.2\",     # 关联版本，便于定位引入问题的发布\n    traces_sample_rate=0.1,         # 性能追踪采样 10%\n    send_default_pii=False,         # 默认不发送个人信息\n)\n\ndef charge(order_id: str):\n    sentry_sdk.set_tag(\"order_id\", order_id)  # 附加检索维度\n    try:\n        risky_payment_call(order_id)\n    except TimeoutError as e:\n        sentry_sdk.capture_exception(e)          # 已处理的异常也可上报\n        raise\n# 未捕获的异常会被 SDK 自动上报",
+   "note": "设置环境与版本，主动上报已处理异常并附标签；未处理异常 SDK 自动捕获。"
+  },
+  "table": {
+   "title": "错误追踪与日志的分工",
+   "head": [
+    "维度",
+    "错误追踪",
+    "日志"
+   ],
+   "rows": [
+    [
+     "关注点",
+     "异常与崩溃",
+     "所有事件记录"
+    ],
+    [
+     "组织方式",
+     "按问题聚合，有状态流转",
+     "按时间流"
+    ],
+    [
+     "上下文",
+     "堆栈、版本、面包屑、用户影响",
+     "自定义字段"
+    ],
+    [
+     "适合场景",
+     "发现与分派缺陷",
+     "排查任意行为"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "SaaS 错误追踪",
+    "pros": "开箱即用，维护成本低",
+    "cons": "数据出境与费用问题",
+    "when": "多数团队"
+   },
+   {
+    "opt": "自托管",
+    "pros": "数据可控",
+    "cons": "需要运维存储与升级",
+    "when": "合规要求严格"
+   },
+   {
+    "opt": "仅依赖日志",
+    "pros": "无需新组件",
+    "cons": "难以聚合与追踪状态",
+    "when": "非常早期或极简系统"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "前端没上传 source map，堆栈全是压缩后的单行代码。",
+    "fix": "在 CI 构建时上传 source map 并与 release 关联。"
+   },
+   {
+    "bad": "上报中包含密码、令牌等敏感数据。",
+    "fix": "关闭默认 PII，使用 before_send 过滤敏感字段。"
+   },
+   {
+    "bad": "所有异常一股脑上报，配额被单一噪声问题耗尽。",
+    "fix": "忽略预期异常，配置采样与速率限制。"
+   },
+   {
+    "bad": "问题无人认领，积压成千上万条。",
+    "fix": "按代码归属自动分配，定期清理分级。"
+   }
+  ],
+  "checklist": [
+   "后端、前端、移动端均已接入",
+   "上报带 environment 与 release",
+   "前端 source map 在构建时上传",
+   "敏感数据已过滤",
+   "新问题和回归问题有告警",
+   "问题有明确归属"
+  ],
+  "interview": [
+   {
+    "q": "错误追踪如何把海量错误聚合成问题？",
+    "a": "服务端根据事件的指纹聚合，默认基于异常类型和堆栈中应用代码的帧，忽略行号偏移等噪声；也可自定义指纹规则。聚合后统计次数、影响用户数、首次和最近出现版本，便于排优先级。"
+   },
+   {
+    "q": "为什么错误事件要关联 release？",
+    "a": "有了版本号，就能知道问题首次出现于哪个发布，判断是否为回归，并与提交记录关联找到可疑变更；修复后也能确认新版本是否还在发生，从而决定是否回滚。"
+   },
+   {
+    "q": "AI 编程工具与错误追踪如何配合？",
+    "a": "可以把聚合后的堆栈、面包屑和相关代码交给 AI 助手分析可能原因并生成修复草案；但修复仍需写测试复现问题、代码评审，并在发布后观察该问题是否停止发生。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Sentry 文档",
+    "url": "https://docs.sentry.io/"
+   },
+   {
+    "title": "Sentry Python SDK",
+    "url": "https://docs.sentry.io/platforms/python/"
+   },
+   {
+    "title": "Sentry：JavaScript Source Maps",
+    "url": "https://docs.sentry.io/platforms/javascript/sourcemaps/"
+   }
+  ]
+ },
+ {
+  "slug": "profiling",
+  "def": "运行时性能剖析（Profiling）是在程序运行时采样或插桩，统计 CPU 时间、内存分配、锁等待、I/O 等资源消耗在各函数和调用栈上的分布，从而定位性能热点的技术。它比日志和指标更细，回答慢在哪行代码。常见工具有 perf、Go pprof、cProfile、py-spy 及持续剖析平台。",
+  "how": [
+   "选择剖析维度：CPU 时间、墙钟时间、内存分配、堆占用、锁竞争或阻塞。",
+   "采样式剖析器按固定频率中断程序、记录当前调用栈，开销较低，适合生产。",
+   "插桩式剖析器在函数进出处计时，结果精确但开销大，适合开发环境。",
+   "汇总大量调用栈样本，得出各函数的自身耗时和包含子调用的累计耗时。",
+   "用火焰图、调用图或热点排行表查看结果，优化之后在相同负载下重新剖析对比。"
+  ],
+  "terms": [
+   {
+    "t": "采样剖析 (Sampling Profiler)",
+    "d": "定时抓取调用栈统计热点，开销低。"
+   },
+   {
+    "t": "插桩剖析 (Instrumenting Profiler)",
+    "d": "在函数入口出口插入计时代码，精确但开销大。"
+   },
+   {
+    "t": "自身时间 (Self Time)",
+    "d": "函数自身代码消耗的时间，不含其调用的子函数。"
+   },
+   {
+    "t": "墙钟时间 (Wall-clock Time)",
+    "d": "包含等待 I/O、锁等在内的真实经过时间。"
+   },
+   {
+    "t": "持续剖析 (Continuous Profiling)",
+    "d": "在生产环境长期低开销采样并存储剖析数据。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "常用剖析命令",
+   "src": "# Python：开发时用内置 cProfile，按累计耗时排序\npython -m cProfile -s cumtime app.py\n\n# Python：对线上进程采样，无需改代码、无需重启\npy-spy top --pid 12345                              # 实时热点排行\npy-spy record -o profile.svg --pid 12345 --duration 30  # 输出火焰图\n\n# Go：服务引入 net/http/pprof 后，采集 30 秒 CPU 剖析并打开网页视图\ngo tool pprof -http=:8080 \"http://localhost:6060/debug/pprof/profile?seconds=30\"\n\n# Linux：系统级 CPU 采样（99Hz，带调用栈）\nperf record -F 99 -g -p 12345 -- sleep 30\nperf report",
+   "note": "开发期用 cProfile，线上用 py-spy、pprof、perf 等采样工具，开销小且不需改代码。"
+  },
+  "table": {
+   "title": "剖析维度与适用问题",
+   "head": [
+    "维度",
+    "回答的问题",
+    "常用工具"
+   ],
+   "rows": [
+    [
+     "CPU",
+     "哪段代码最耗计算",
+     "perf、pprof、py-spy"
+    ],
+    [
+     "墙钟/阻塞",
+     "时间花在等待什么",
+     "pprof block、py-spy --idle"
+    ],
+    [
+     "内存分配",
+     "谁分配最多内存",
+     "pprof heap、tracemalloc"
+    ],
+    [
+     "锁竞争",
+     "哪些锁导致等待",
+     "pprof mutex"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "采样剖析",
+    "pros": "开销低，可用于生产",
+    "cons": "短函数可能统计不准",
+    "when": "线上热点定位"
+   },
+   {
+    "opt": "插桩剖析",
+    "pros": "调用次数和耗时精确",
+    "cons": "开销大，可能扭曲结果",
+    "when": "本地精细分析"
+   },
+   {
+    "opt": "持续剖析平台",
+    "pros": "随时回看任意时段",
+    "cons": "需要部署与存储成本",
+    "when": "性能敏感的长期服务"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "凭直觉优化，没剖析就改代码。",
+    "fix": "先剖析定位热点，再针对性优化并对比。"
+   },
+   {
+    "bad": "只看 CPU 剖析，问题其实是 I/O 等待。",
+    "fix": "CPU 利用率低但延迟高时，看墙钟或阻塞剖析。"
+   },
+   {
+    "bad": "在调试构建或小数据量下剖析，结论不适用生产。",
+    "fix": "用接近生产的构建、数据和负载。"
+   }
+  ],
+  "checklist": [
+   "优化前后都有剖析数据对比",
+   "按问题选对剖析维度",
+   "线上剖析使用采样方式控制开销",
+   "剖析在接近生产的负载下进行",
+   "服务预留剖析入口并受权限保护"
+  ],
+  "interview": [
+   {
+    "q": "采样剖析和插桩剖析如何选择？",
+    "a": "采样剖析定时抓栈，开销低、对程序干扰小，适合生产与整体热点定位；插桩剖析精确记录每次调用，但开销大，可能改变程序行为，适合本地对小范围代码精细分析。通常先采样找方向，再局部深入。"
+   },
+   {
+    "q": "CPU 剖析看不出问题，但接口很慢，怎么办？",
+    "a": "说明时间多花在等待上，如数据库、网络、锁或线程池排队。应使用墙钟剖析或阻塞、锁剖析，结合分布式追踪查看各下游耗时，以及连接池和队列指标。"
+   },
+   {
+    "q": "什么是持续剖析，有何价值？",
+    "a": "在生产中长期以低频采样收集剖析数据并存储，可以回看任意时段、对比不同版本的热点变化，定位偶发性能问题和版本回归，而不必等问题重现时再手动抓取。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Python 文档：The Python Profilers",
+    "url": "https://docs.python.org/3/library/profile.html"
+   },
+   {
+    "title": "py-spy（GitHub）",
+    "url": "https://github.com/benfred/py-spy"
+   },
+   {
+    "title": "Go Blog：Profiling Go Programs",
+    "url": "https://go.dev/blog/pprof"
+   },
+   {
+    "title": "Grafana Pyroscope 文档",
+    "url": "https://grafana.com/docs/pyroscope/latest/"
+   }
+  ]
+ },
+ {
+  "slug": "flame-graphs",
+  "def": "火焰图（Flame Graph）是 Brendan Gregg 提出的剖析数据可视化方法，把大量采样到的调用栈合并后绘制成层叠矩形：纵轴是调用栈深度，横轴宽度表示该函数在样本中出现的比例，即消耗资源的多少。横轴按字母排序而非时间顺序。它让人一眼看出最宽的热点路径，是 CPU、内存和阻塞剖析的通用展示形式。",
+  "how": [
+   "剖析器采集大量调用栈样本，每个样本是从入口函数到当前执行函数的一条路径。",
+   "把相同调用栈合并计数，形成折叠格式：一行一个栈，函数用分号连接，末尾是计数。",
+   "绘图时每个函数画成矩形，宽度与包含它的样本数成正比，子调用叠在上方。",
+   "顶层边缘代表正在 CPU 上执行的函数，又宽又平的顶部就是自身耗时热点。",
+   "通过点击放大、搜索函数名，或对比两次剖析的差分火焰图找回归。"
+  ],
+  "terms": [
+   {
+    "t": "折叠栈 (Folded Stacks)",
+    "d": "每行一个以分号分隔的调用栈及其样本计数的中间格式。"
+   },
+   {
+    "t": "冰柱图 (Icicle Graph)",
+    "d": "上下倒置的火焰图，根在顶部。"
+   },
+   {
+    "t": "差分火焰图 (Differential Flame Graph)",
+    "d": "对比两次剖析，用颜色标出变多或变少的部分。"
+   },
+   {
+    "t": "Off-CPU 火焰图",
+    "d": "展示线程阻塞等待而非执行时的调用栈。"
+   },
+   {
+    "t": "平顶 (Plateau)",
+    "d": "顶部又宽又平的矩形，表示函数自身消耗大量资源。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "perf 生成 CPU 火焰图",
+   "src": "# 依赖 Brendan Gregg 的 FlameGraph 脚本\ngit clone https://github.com/brendangregg/FlameGraph.git\n\n# 1. 以 99Hz 对全系统采样 30 秒，记录调用栈\nsudo perf record -F 99 -a -g -- sleep 30\n\n# 2. 导出样本并折叠成一行一个栈\nsudo perf script > out.perf\n./FlameGraph/stackcollapse-perf.pl out.perf > out.folded\n\n# 3. 生成可交互的 SVG，用浏览器打开可点击放大与搜索\n./FlameGraph/flamegraph.pl out.folded > cpu-flame.svg\n\n# 折叠格式示例：main;handle_request;json_encode 1234",
+   "note": "perf 采样、折叠、绘图三步生成火焰图；py-spy、pprof 等工具也能直接输出。"
+  },
+  "table": {
+   "title": "火焰图读法",
+   "head": [
+    "视觉特征",
+    "含义",
+    "通常的动作"
+   ],
+   "rows": [
+    [
+     "矩形很宽",
+     "该函数及子调用占用多",
+     "优先关注"
+    ],
+    [
+     "顶部平而宽",
+     "自身代码耗时高",
+     "优化该函数逻辑"
+    ],
+    [
+     "栈很深很窄",
+     "调用层次多但耗时少",
+     "通常可忽略"
+    ],
+    [
+     "颜色",
+     "多为随机或按类型区分",
+     "一般不代表耗时"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "On-CPU 火焰图",
+    "pros": "直接显示计算热点",
+    "cons": "看不到等待时间",
+    "when": "CPU 使用率高"
+   },
+   {
+    "opt": "Off-CPU 火焰图",
+    "pros": "揭示阻塞与等待来源",
+    "cons": "采集更复杂，开销更高",
+    "when": "CPU 低但延迟高"
+   },
+   {
+    "opt": "差分火焰图",
+    "pros": "快速发现版本回归",
+    "cons": "需要两次可比的剖析",
+    "when": "版本对比、优化验证"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把横轴当时间轴，以为左边先执行。",
+    "fix": "横轴按函数名排序合并，只有宽度有意义。"
+   },
+   {
+    "bad": "缺少符号或帧指针，火焰图满是 unknown 或栈被截断。",
+    "fix": "安装调试符号，开启帧指针或使用 DWARF 栈展开。"
+   },
+   {
+    "bad": "采样时间太短，热点结论不稳定。",
+    "fix": "在代表性负载下采足样本。"
+   }
+  ],
+  "checklist": [
+   "火焰图来自代表性负载",
+   "符号完整，栈没有截断",
+   "先区分 On-CPU 还是 Off-CPU 问题",
+   "优化后用差分火焰图验证",
+   "关注最宽的平顶而非最高的栈"
+  ],
+  "interview": [
+   {
+    "q": "火焰图的横轴和纵轴分别代表什么？",
+    "a": "纵轴是调用栈深度，下层调用上层；横轴宽度代表该函数出现在样本中的比例，即资源消耗占比。横轴按字母顺序排列以便合并相同栈，不代表时间先后，这一点最容易误读。"
+   },
+   {
+    "q": "火焰图中怎么找优化点？",
+    "a": "先找顶部又宽又平的矩形，它们是自身耗时最多的函数；再沿着宽的塔往下看是哪个业务调用路径引起的；可以搜索特定函数名查看其总占比，并用差分火焰图对比优化前后。"
+   },
+   {
+    "q": "为什么有时火焰图满是 unknown？",
+    "a": "剖析器无法解析函数名或展开调用栈，常见原因是缺少调试符号、编译时省略了帧指针、JIT 语言未输出符号映射，或容器中找不到对应二进制。需要补充符号、开启帧指针或使用语言专用剖析器。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Brendan Gregg：Flame Graphs",
+    "url": "https://www.brendangregg.com/flamegraphs.html"
+   },
+   {
+    "title": "FlameGraph 工具（GitHub）",
+    "url": "https://github.com/brendangregg/FlameGraph"
+   }
+  ]
+ },
+ {
+  "slug": "infrastructure-as-code",
+  "def": "基础设施即代码（IaC）是用代码文件定义服务器、网络、数据库、权限等基础设施，并由工具自动创建、变更和销毁的实践。代码纳入版本控制，经评审和流水线执行，使环境可复现、变更可审计、可回滚。常见工具有 Terraform/OpenTofu、CloudFormation、Pulumi 等。",
+  "how": [
+   "用配置语言描述期望的资源，如一个存储桶、一组安全组规则及其依赖关系。",
+   "工具读取当前状态文件和云端实际资源，计算出要创建、修改或删除的差异。",
+   "plan 阶段展示变更计划，供代码评审和审批，避免意外删除。",
+   "apply 阶段调用云厂商 API 执行变更，并更新状态文件记录资源映射。",
+   "状态文件存放在支持加锁和加密的远程后端，多人协作时避免并发修改造成冲突。"
+  ],
+  "terms": [
+   {
+    "t": "状态文件 (State)",
+    "d": "记录代码中资源与真实资源对应关系的数据，Terraform 的核心。"
+   },
+   {
+    "t": "计划 (Plan)",
+    "d": "执行前计算并展示即将发生的变更。"
+   },
+   {
+    "t": "配置漂移 (Drift)",
+    "d": "真实资源被手工修改，与代码定义不一致。"
+   },
+   {
+    "t": "模块 (Module)",
+    "d": "可复用的一组资源定义，带输入变量与输出。"
+   },
+   {
+    "t": "GitOps",
+    "d": "以 Git 仓库为唯一事实来源，由自动化把变更同步到环境。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "Terraform 定义存储桶",
+   "src": "# main.tf（HCL 语法）\nterraform {\n  backend \"s3\" {                      # 远程状态，团队共享\n    bucket = \"acme-tf-state\"\n    key    = \"prod/storage.tfstate\"\n    region = \"ap-southeast-1\"\n  }\n}\n\nprovider \"aws\" { region = \"ap-southeast-1\" }\n\nresource \"aws_s3_bucket\" \"logs\" {\n  bucket = \"acme-prod-logs\"\n  tags   = { owner = \"platform\", env = \"prod\" }\n}\n\nresource \"aws_s3_bucket_versioning\" \"logs\" {\n  bucket = aws_s3_bucket.logs.id\n  versioning_configuration { status = \"Enabled\" }\n}\n\n# 流程：terraform init → terraform plan（评审）→ terraform apply",
+   "note": "声明一个开启版本控制的存储桶，状态放远程后端；先 plan 评审再 apply。"
+  },
+  "table": {
+   "title": "主流 IaC 工具对比",
+   "head": [
+    "工具",
+    "语言",
+    "适用范围"
+   ],
+   "rows": [
+    [
+     "Terraform / OpenTofu",
+     "HCL",
+     "多云与大量第三方服务"
+    ],
+    [
+     "AWS CloudFormation",
+     "YAML/JSON",
+     "AWS 原生资源"
+    ],
+    [
+     "Pulumi",
+     "TypeScript、Python、Go 等",
+     "偏好通用编程语言的团队"
+    ],
+    [
+     "Ansible",
+     "YAML",
+     "偏配置管理与主机编排"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "声明式（Terraform 等）",
+    "pros": "描述终态，易于审查差异",
+    "cons": "复杂逻辑表达受限",
+    "when": "大多数云资源管理"
+   },
+   {
+    "opt": "通用语言（Pulumi/CDK）",
+    "pros": "可用循环、函数和测试框架",
+    "cons": "代码过于灵活时难以审查",
+    "when": "开发团队主导、逻辑复杂"
+   },
+   {
+    "opt": "控制台手工操作",
+    "pros": "上手快",
+    "cons": "不可复现，无审计",
+    "when": "仅限实验或紧急止血后补录"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "状态文件存在本地或提交进 Git，泄露密钥且多人冲突。",
+    "fix": "使用带加密和锁的远程后端。"
+   },
+   {
+    "bad": "紧急情况在控制台手改资源，之后 apply 又改回去。",
+    "fix": "事后把改动补进代码，定期检测漂移。"
+   },
+   {
+    "bad": "没看 plan 直接 apply，误删数据库。",
+    "fix": "在 CI 中输出 plan 并评审，关键资源加防删除保护。"
+   },
+   {
+    "bad": "让 AI 生成 IaC 后直接在生产 apply。",
+    "fix": "先在非生产环境 plan 与 apply，评审权限和网络暴露面。"
+   }
+  ],
+  "checklist": [
+   "基础设施变更全部经代码与评审",
+   "状态文件远程存储并加锁加密",
+   "CI 自动执行 plan 并附在评审中",
+   "关键资源开启删除保护",
+   "定期检测配置漂移",
+   "密钥不写在代码中"
+  ],
+  "interview": [
+   {
+    "q": "Terraform 的状态文件有什么作用？",
+    "a": "它记录代码中每个资源与云上真实资源 ID 的映射，以及属性快照。Terraform 据此计算差异、决定创建、更新还是删除。状态可能包含敏感信息，需要远程存储、加密和加锁，避免并发修改与泄露。"
+   },
+   {
+    "q": "什么是配置漂移，如何处理？",
+    "a": "真实资源因手工操作或其他工具与代码定义不一致。可以定期运行 plan 检测差异；对合理的手工变更补回代码，对不合理的通过 apply 恢复；通过权限收紧减少控制台直接修改。"
+   },
+   {
+    "q": "IaC 与 AI 编程工具结合时要注意什么？",
+    "a": "AI 可以快速生成模块和资源定义，但可能引入过宽的权限、公开的网络规则或不存在的参数。必须用 plan 审查变更，配合策略检查工具，并先在隔离环境验证，再推向生产。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Terraform 文档",
+    "url": "https://developer.hashicorp.com/terraform/docs"
+   },
+   {
+    "title": "Terraform：State",
+    "url": "https://developer.hashicorp.com/terraform/language/state"
+   },
+   {
+    "title": "AWS CloudFormation 用户指南",
+    "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html"
+   },
+   {
+    "title": "OpenTofu 文档",
+    "url": "https://opentofu.org/docs/"
+   }
+  ]
+ },
+ {
+  "slug": "blue-green-deployments",
+  "def": "蓝绿部署（Blue-Green Deployment）是同时维护两套完整的生产环境：蓝色运行当前版本，绿色部署新版本并完成验证，然后在路由层把全部流量一次性切到绿色；出问题时再切回蓝色即可回滚。它属于发布策略层，以双倍资源换取近乎瞬时的切换和回滚，难点在于数据库变更和有状态组件的兼容。",
+  "how": [
+   "蓝色环境承载全部生产流量，绿色环境部署新版本，配置与规模和蓝色一致。",
+   "在绿色环境运行冒烟测试与关键路径验证，可通过内部入口或测试流量访问。",
+   "切换路由：修改负载均衡目标组、Kubernetes Service 选择器或 DNS 记录，指向绿色。",
+   "观察指标，异常时把路由切回蓝色完成回滚；稳定后蓝色保留一段时间再回收或作为下次发布的目标。",
+   "数据库通常两套环境共享，需要采用扩展-收缩（Expand-Contract）方式做向后兼容的迁移。"
+  ],
+  "terms": [
+   {
+    "t": "扩展-收缩迁移 (Expand-Contract)",
+    "d": "先加兼容新旧版本的结构，切换后再删除旧结构的数据库迁移方式。"
+   },
+   {
+    "t": "流量切换 (Cutover)",
+    "d": "把生产流量从旧环境转到新环境的动作。"
+   },
+   {
+    "t": "冒烟测试 (Smoke Test)",
+    "d": "上线前对关键功能的快速验证。"
+   },
+   {
+    "t": "选择器 (Selector)",
+    "d": "Kubernetes Service 用标签选择后端 Pod，改标签即可切换。"
+   },
+   {
+    "t": "DNS TTL",
+    "d": "DNS 记录缓存时间，影响基于 DNS 切换的生效速度。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "切换 Service 选择器",
+   "src": "# 前提：已有 api-blue 和 api-green 两个 Deployment，\n# Pod 标签分别为 app=api,version=blue 与 app=api,version=green\n\n# 1. 确认绿色环境全部就绪\nkubectl rollout status deployment/api-green\n\n# 2. 一次性把流量切到绿色\nkubectl patch service api \\\n  -p '{\"spec\":{\"selector\":{\"app\":\"api\",\"version\":\"green\"}}}'\n\n# 3. 观察错误率与延迟；如有问题，立刻切回蓝色\n# kubectl patch service api \\\n#   -p '{\"spec\":{\"selector\":{\"app\":\"api\",\"version\":\"blue\"}}}'\n\n# 4. 稳定后缩容蓝色，保留以便快速回滚\nkubectl scale deployment/api-blue --replicas=0",
+   "note": "修改 Service 选择器实现原子切换；回滚只是把选择器改回 blue。"
+  },
+  "table": {
+   "title": "切换层级对比",
+   "head": [
+    "切换方式",
+    "生效速度",
+    "注意点"
+   ],
+   "rows": [
+    [
+     "负载均衡目标组/权重",
+     "秒级",
+     "需负载均衡支持多目标组"
+    ],
+    [
+     "K8s Service 选择器",
+     "秒级",
+     "已有长连接仍在旧 Pod 上"
+    ],
+    [
+     "DNS 记录",
+     "受 TTL 和客户端缓存影响",
+     "回滚同样受缓存影响"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "蓝绿部署",
+    "pros": "切换与回滚几乎瞬时",
+    "cons": "需双倍资源，数据库兼容难",
+    "when": "需要快速回滚、资源充足"
+   },
+   {
+    "opt": "滚动更新",
+    "pros": "资源开销小，K8s 默认支持",
+    "cons": "新旧版本并存，回滚较慢",
+    "when": "大多数无状态服务"
+   },
+   {
+    "opt": "金丝雀发布",
+    "pros": "影响面小，可逐步验证",
+    "cons": "需要流量拆分与指标分析",
+    "when": "高风险变更"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "新版本数据库迁移删除了旧版本依赖的字段，回滚后蓝色报错。",
+    "fix": "采用扩展-收缩迁移，确保新旧版本都能读写。"
+   },
+   {
+    "bad": "绿色环境没预热就切全量流量，冷缓存导致延迟飙升。",
+    "fix": "切换前预热缓存与连接池。"
+   },
+   {
+    "bad": "切换后立即销毁蓝色，出问题无法快速回滚。",
+    "fix": "保留蓝色一段观察期再回收。"
+   },
+   {
+    "bad": "后台任务在蓝绿两边同时运行，重复执行。",
+    "fix": "确保定时任务和消费者只在一侧激活。"
+   }
+  ],
+  "checklist": [
+   "绿色环境与蓝色配置一致",
+   "数据库迁移向后兼容",
+   "切换前完成冒烟测试与预热",
+   "回滚命令已验证可用",
+   "后台任务只在一侧运行",
+   "观察期后再回收旧环境"
+  ],
+  "interview": [
+   {
+    "q": "蓝绿部署中数据库如何处理？",
+    "a": "通常共享一个数据库，所以迁移必须对新旧版本都兼容。采用扩展-收缩：先新增字段或表并双写，切换并稳定后再删除旧结构。这样任何时刻回滚到蓝色都不会因结构变化报错。"
+   },
+   {
+    "q": "蓝绿和金丝雀如何选择？",
+    "a": "蓝绿一次切全量，回滚快但新版本一上来就面对全部用户；金丝雀先给小比例流量，按指标逐步放大，影响面更小但耗时更长、需要流量拆分能力。高风险变更倾向金丝雀，也可组合使用。"
+   },
+   {
+    "q": "蓝绿部署切换后长连接怎么办？",
+    "a": "修改路由只影响新连接，已有的 keep-alive、WebSocket 连接仍连在蓝色。需要在蓝色实施连接排空、关闭空闲连接或让客户端重连，确保流量真正迁移。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Martin Fowler：BlueGreenDeployment",
+    "url": "https://martinfowler.com/bliki/BlueGreenDeployment.html"
+   },
+   {
+    "title": "AWS 白皮书：Blue/Green Deployments on AWS",
+    "url": "https://docs.aws.amazon.com/whitepapers/latest/blue-green-deployments/welcome.html"
+   },
+   {
+    "title": "Argo Rollouts：BlueGreen Deployment Strategy",
+    "url": "https://argo-rollouts.readthedocs.io/en/stable/features/bluegreen/"
+   }
+  ]
+ },
+ {
+  "slug": "canary-releases",
+  "def": "金丝雀发布（Canary Release）是先把新版本发布给一小部分流量或用户，对比新旧版本的关键指标，确认无异常后再逐步扩大比例直至全量的渐进式发布策略。它属于发布与变更管理层，用小范围暴露降低坏版本的影响面，常与自动化指标分析配合，异常时自动中止并回滚。",
+  "how": [
+   "部署少量新版本实例，路由层按比例、请求头或用户分组把一部分流量导向新版本。",
+   "收集金丝雀与基线版本的错误率、延迟、业务指标，进行对比分析。",
+   "按预设步骤逐步提高流量比例，例如 5%、25%、50%、100%，每步停留观察。",
+   "任一阶段指标显著劣化，自动或手动中止发布，流量全部切回旧版本。",
+   "放量到 100% 后清理旧版本，并把本次结果和指标记录下来，用于改进后续的判定阈值。"
+  ],
+  "terms": [
+   {
+    "t": "基线 (Baseline)",
+    "d": "与金丝雀同时运行的旧版本对照组，用于公平比较。"
+   },
+   {
+    "t": "流量权重 (Traffic Weight)",
+    "d": "分配给新版本的流量比例。"
+   },
+   {
+    "t": "自动金丝雀分析 (Automated Canary Analysis)",
+    "d": "按指标统计比较自动判定发布是否继续。"
+   },
+   {
+    "t": "渐进式交付 (Progressive Delivery)",
+    "d": "金丝雀、功能开关等逐步放量的交付方法总称。"
+   },
+   {
+    "t": "服务网格 (Service Mesh)",
+    "d": "如 Istio，可按比例精细拆分服务间流量。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "Argo Rollouts 金丝雀",
+   "src": "apiVersion: argoproj.io/v1alpha1\nkind: Rollout\nmetadata: { name: api }\nspec:\n  replicas: 10\n  selector: { matchLabels: { app: api } }\n  template:\n    metadata: { labels: { app: api } }\n    spec:\n      containers:\n        - name: api\n          image: example/api:1.5.0\n  strategy:\n    canary:\n      steps:\n        - setWeight: 10            # 先放 10% 流量\n        - pause: { duration: 10m } # 观察 10 分钟\n        - setWeight: 50\n        - pause: {}                # 无限期暂停，人工确认后继续\n        - setWeight: 100",
+   "note": "按步骤放量与暂停；可再挂 AnalysisTemplate 按指标自动中止。"
+  },
+  "table": {
+   "title": "流量拆分方式",
+   "head": [
+    "方式",
+    "精度",
+    "适用场景"
+   ],
+   "rows": [
+    [
+     "按副本比例",
+     "粗，受副本数限制",
+     "无网格的简单集群"
+    ],
+    [
+     "网关/服务网格权重",
+     "精确百分比",
+     "需要精细控制"
+    ],
+    [
+     "按用户或请求头",
+     "定向到特定人群",
+     "内部员工、测试用户先用"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "自动分析放量",
+    "pros": "快速、客观，减少人工盯盘",
+    "cons": "需要可靠指标与阈值",
+    "when": "指标体系成熟"
+   },
+   {
+    "opt": "人工审批放量",
+    "pros": "可结合业务判断",
+    "cons": "慢，依赖值守",
+    "when": "重大或首次变更"
+   },
+   {
+    "opt": "按用户分组",
+    "pros": "体验一致，便于排查",
+    "cons": "样本可能不具代表性",
+    "when": "先给内部或低风险用户"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "金丝雀流量太小或时间太短，指标没有统计意义。",
+    "fix": "确保每步有足够请求量与观察时间。"
+   },
+   {
+    "bad": "把金丝雀与历史数据比较，被流量周期误导。",
+    "fix": "与同时段的基线版本对比。"
+   },
+   {
+    "bad": "同一用户请求在新旧版本间跳来跳去，体验不一致。",
+    "fix": "需要时按用户粘性路由。"
+   },
+   {
+    "bad": "数据库迁移在金丝雀开始前就破坏了兼容性。",
+    "fix": "迁移保持向后兼容，与代码发布解耦。"
+   }
+  ],
+  "checklist": [
+   "有明确的放量步骤与观察时长",
+   "对比指标包含错误率、延迟和业务指标",
+   "与同期基线对比",
+   "中止与回滚可自动触发",
+   "数据库变更向后兼容"
+  ],
+  "interview": [
+   {
+    "q": "金丝雀分析应看哪些指标？",
+    "a": "技术指标如错误率、p99 延迟、资源使用和崩溃次数；业务指标如下单转化率、支付成功率。应与同时运行的基线比较，设统计显著性和阈值，并留足样本量，避免小流量下的随机波动误判。"
+   },
+   {
+    "q": "金丝雀和 A/B 测试有何区别？",
+    "a": "金丝雀关注新版本是否安全稳定，目标是尽快全量或回滚；A/B 测试关注不同方案对用户行为的影响，需要长期分组和统计实验设计。两者都拆分流量，但目的和持续时间不同。"
+   },
+   {
+    "q": "没有服务网格能做金丝雀吗？",
+    "a": "可以。通过调整新旧版本副本数比例粗略拆分；或在 Ingress、云负载均衡上配置权重；也可在应用层用功能开关按用户启用。精度和控制能力不如网格，但足够起步。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Martin Fowler：CanaryRelease",
+    "url": "https://martinfowler.com/bliki/CanaryRelease.html"
+   },
+   {
+    "title": "Google SRE Workbook：Canarying Releases",
+    "url": "https://sre.google/workbook/canarying-releases/"
+   },
+   {
+    "title": "Argo Rollouts：Canary Deployment Strategy",
+    "url": "https://argo-rollouts.readthedocs.io/en/stable/features/canary/"
+   }
+  ]
+ },
+ {
+  "slug": "environment-parity",
+  "def": "环境一致性（Environment Parity）指开发、测试、预发与生产环境在操作系统、运行时版本、依赖服务、配置结构和部署方式上尽量保持一致，减少只在线上出问题的情况。十二要素应用把它概括为缩小时间、人员和工具三方面的差距。容器镜像、基础设施即代码和 Testcontainers 等工具是实现它的主要手段。",
+  "how": [
+   "用同一个容器镜像在各环境运行，环境间只通过环境变量和密钥区分配置。",
+   "依赖服务使用与生产相同的类型和主版本，如本地也用 PostgreSQL 而非 SQLite。",
+   "基础设施用 IaC 模块定义，各环境调用同一模块、只改规模参数。",
+   "测试中用 Testcontainers 或 Compose 启动真实依赖，而不是全靠 Mock。",
+   "持续部署缩短代码写完到上线的时间差，让开发者对生产行为保持敏感。"
+  ],
+  "terms": [
+   {
+    "t": "开发/生产一致 (Dev/Prod Parity)",
+    "d": "十二要素的第十条，要求尽量缩小开发与生产的差距。"
+   },
+   {
+    "t": "Testcontainers",
+    "d": "在测试代码中按需启动真实依赖容器的库。"
+   },
+   {
+    "t": "配置漂移 (Configuration Drift)",
+    "d": "各环境配置随时间不受控地偏离。"
+   },
+   {
+    "t": "后端服务 (Backing Services)",
+    "d": "应用依赖的数据库、缓存、队列等，以资源形式挂接。"
+   },
+   {
+    "t": "预发环境 (Staging)",
+    "d": "尽量模拟生产、用于发布前验证的环境。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "用真实数据库做测试",
+   "src": "# pip install \"testcontainers[postgres]\" sqlalchemy psycopg2-binary\nimport sqlalchemy\nfrom testcontainers.postgres import PostgresContainer\n\ndef test_upsert_uses_real_postgres():\n    # 与生产相同的主版本，而不是 SQLite 或 Mock\n    with PostgresContainer(\"postgres:16\") as pg:\n        engine = sqlalchemy.create_engine(pg.get_connection_url())\n        with engine.begin() as conn:\n            conn.execute(sqlalchemy.text(\n                \"CREATE TABLE kv (k TEXT PRIMARY KEY, v INT)\"))\n            # ON CONFLICT 是 PostgreSQL 语法，SQLite 版本差异可能让测试失真\n            conn.execute(sqlalchemy.text(\n                \"INSERT INTO kv VALUES ('a', 1) \"\n                \"ON CONFLICT (k) DO UPDATE SET v = kv.v + 1\"))\n            v = conn.execute(sqlalchemy.text(\"SELECT v FROM kv\")).scalar()\n        assert v == 1",
+   "note": "测试时临时启动与生产同主版本的 PostgreSQL，结束后自动销毁。"
+  },
+  "table": {
+   "title": "常见差异与对策",
+   "head": [
+    "差异",
+    "风险",
+    "对策"
+   ],
+   "rows": [
+    [
+     "数据库类型或版本不同",
+     "语法与行为差异",
+     "各环境同类型同主版本"
+    ],
+    [
+     "依赖安装方式不同",
+     "线上缺依赖或版本不一",
+     "构建一次镜像各环境复用"
+    ],
+    [
+     "配置结构不同",
+     "线上缺配置项",
+     "统一配置模板与校验"
+    ],
+    [
+     "数据规模不同",
+     "线上慢查询",
+     "用脱敏的生产规模数据压测"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "本地运行真实依赖",
+    "pros": "行为接近生产",
+    "cons": "占用本机资源，启动较慢",
+    "when": "集成测试、关键查询"
+   },
+   {
+    "opt": "Mock 依赖",
+    "pros": "快速、隔离",
+    "cons": "可能与真实行为不符",
+    "when": "单元测试"
+   },
+   {
+    "opt": "完整预发环境",
+    "pros": "最接近生产",
+    "cons": "成本高、维护难",
+    "when": "发布前验证"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "本地用 SQLite、线上用 PostgreSQL，SQL 行为差异上线后才暴露。",
+    "fix": "本地与测试也使用同类型同主版本数据库。"
+   },
+   {
+    "bad": "预发环境长期未同步配置，验证结果不可信。",
+    "fix": "用 IaC 与同一配置模板管理各环境。"
+   },
+   {
+    "bad": "测试环境数据极少，查询计划与生产完全不同。",
+    "fix": "用脱敏的生产规模数据做性能验证。"
+   }
+  ],
+  "checklist": [
+   "各环境使用同一镜像",
+   "依赖服务类型与主版本一致",
+   "环境差异仅存在于配置",
+   "基础设施由同一 IaC 模块生成",
+   "集成测试使用真实依赖"
+  ],
+  "interview": [
+   {
+    "q": "十二要素中的环境一致指哪三个差距？",
+    "a": "时间差距：代码写完到部署的时间应尽量短；人员差距：写代码的人也参与部署和观察生产；工具差距：开发与生产使用相同的后端服务类型和版本。缩小这三者能减少只在生产出现的问题。"
+   },
+   {
+    "q": "为什么不建议在测试中全部用 Mock？",
+    "a": "Mock 只反映开发者对依赖行为的假设，SQL 方言、事务隔离、序列化等真实差异无法覆盖。单元测试可用 Mock 保速度，关键集成路径应用真实依赖，例如用 Testcontainers 启动同版本数据库。"
+   },
+   {
+    "q": "AI 生成代码时环境一致性为什么更重要？",
+    "a": "AI 常根据通用示例生成代码，可能默认使用与项目不同的数据库方言或依赖版本。在与生产一致的环境中运行测试，才能及早发现这些不匹配，而不是上线后才暴露。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "The Twelve-Factor App：Dev/prod parity",
+    "url": "https://12factor.net/dev-prod-parity"
+   },
+   {
+    "title": "Testcontainers 官方网站",
+    "url": "https://testcontainers.com/"
+   },
+   {
+    "title": "Testcontainers for Python 文档",
+    "url": "https://testcontainers-python.readthedocs.io/en/latest/"
+   }
+  ]
+ },
+ {
+  "slug": "12-factor-apps",
+  "def": "十二要素应用（The Twelve-Factor App）是 Heroku 工程师整理的一套构建云上 SaaS 应用的方法论，包括代码库、依赖、配置、后端服务、构建发布运行、进程、端口绑定、并发、易处理、开发生产一致、日志和管理进程十二条。它奠定了云原生应用的基本约定，配置入环境、无状态进程、日志即事件流影响最广。",
+  "how": [
+   "一份代码库对应一个应用，多环境部署同一代码；依赖显式声明并隔离。",
+   "配置存放在环境变量中，与代码严格分离，同一构建可部署到任意环境。",
+   "构建、发布、运行三阶段分离：构建产出制品，发布等于制品加配置，运行时不改代码。",
+   "进程无状态，通过端口绑定对外服务，靠增加进程数水平扩展，可快速启停。",
+   "日志作为事件流写到标准输出，由环境收集；一次性管理任务与应用使用相同代码和配置。"
+  ],
+  "terms": [
+   {
+    "t": "配置 (Config)",
+    "d": "随部署环境变化的值，如数据库地址、密钥，应放环境变量。"
+   },
+   {
+    "t": "后端服务 (Backing Services)",
+    "d": "通过网络使用的数据库、缓存等，视为可替换的附加资源。"
+   },
+   {
+    "t": "构建/发布/运行 (Build, Release, Run)",
+    "d": "三个严格分离的阶段，发布有唯一版本号。"
+   },
+   {
+    "t": "易处理 (Disposability)",
+    "d": "进程快速启动、优雅终止，便于扩缩和替换。"
+   },
+   {
+    "t": "日志即事件流 (Logs as Event Streams)",
+    "d": "应用只写 stdout，不管理日志文件。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "配置入环境、日志写 stdout",
+   "src": "import logging\nimport os\nimport sys\nfrom flask import Flask\n\n# 第三条：配置来自环境变量，缺了就启动失败，而不是用硬编码默认值\nDATABASE_URL = os.environ[\"DATABASE_URL\"]\nPORT = int(os.environ.get(\"PORT\", \"8080\"))       # 第七条：端口绑定\n\n# 第十一条：日志写到标准输出，由平台收集\nlogging.basicConfig(stream=sys.stdout, level=logging.INFO)\nlog = logging.getLogger(\"app\")\n\napp = Flask(__name__)\n\n@app.get(\"/healthz\")\ndef healthz():\n    return \"ok\"\n\nif __name__ == \"__main__\":\n    log.info(\"starting on port %s\", PORT)\n    app.run(host=\"0.0.0.0\", port=PORT)",
+   "note": "同一份代码，换一组环境变量就能部署到任何环境，日志交给平台处理。"
+  },
+  "table": {
+   "title": "影响最大的几条要素",
+   "head": [
+    "要素",
+    "核心要求",
+    "违反时的典型问题"
+   ],
+   "rows": [
+    [
+     "III 配置",
+     "配置放环境变量",
+     "密钥进代码库，环境间难切换"
+    ],
+    [
+     "VI 进程",
+     "无状态、不共享内存",
+     "扩容后会话丢失"
+    ],
+    [
+     "IX 易处理",
+     "快速启动、优雅停机",
+     "发布时请求失败"
+    ],
+    [
+     "XI 日志",
+     "写 stdout 作为事件流",
+     "容器内日志文件写满磁盘"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "严格遵循十二要素",
+    "pros": "适合容器与 PaaS，易扩缩",
+    "cons": "遗留应用改造成本高",
+    "when": "新建云原生服务"
+   },
+   {
+    "opt": "部分采纳",
+    "pros": "渐进改进",
+    "cons": "不一致处仍是隐患",
+    "when": "遗留系统迁移上云"
+   },
+   {
+    "opt": "配置中心替代纯环境变量",
+    "pros": "支持动态更新与审计",
+    "cons": "引入额外依赖",
+    "when": "配置多、需动态变更"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "按环境构建不同的镜像，把配置打进镜像里。",
+    "fix": "构建一次，配置在运行时通过环境变量注入。"
+   },
+   {
+    "bad": "把密钥以明文环境变量写在仓库的部署文件里。",
+    "fix": "环境变量值来自密钥管理系统，不进代码库。"
+   },
+   {
+    "bad": "应用自己写日志文件并轮转。",
+    "fix": "写 stdout，交给运行时和采集器。"
+   },
+   {
+    "bad": "数据库迁移在应用启动时由每个副本执行。",
+    "fix": "作为一次性管理进程单独运行。"
+   }
+  ],
+  "checklist": [
+   "配置全部来自环境，不在代码中",
+   "同一制品部署所有环境",
+   "进程无状态，可随时替换",
+   "日志输出到 stdout",
+   "支持 SIGTERM 优雅停机",
+   "管理任务以一次性进程运行"
+  ],
+  "interview": [
+   {
+    "q": "为什么十二要素建议把配置放环境变量？",
+    "a": "环境变量与语言和框架无关，不容易被误提交进代码库，同一个构建产物换一组环境变量即可部署到任意环境。判断标准是：能否在不泄露任何凭据的前提下立刻开源代码库。"
+   },
+   {
+    "q": "十二要素在今天还适用吗？",
+    "a": "核心思想仍是容器和 Kubernetes 的基础，如配置外置、无状态、日志写 stdout、优雅停机。但有补充：密钥更适合用专门的密钥管理而不是裸环境变量，可观测性需加入指标和追踪，配置有时需要动态下发。"
+   },
+   {
+    "q": "构建、发布、运行分离的好处是什么？",
+    "a": "构建产物不可变，发布由制品加配置组成并有唯一版本，运行时不修改代码。这样每次部署都可追溯，回滚就是重新运行上一个发布，避免直接在服务器上改代码造成不可复现。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "The Twelve-Factor App",
+    "url": "https://12factor.net/"
+   },
+   {
+    "title": "The Twelve-Factor App：Config",
+    "url": "https://12factor.net/config"
+   }
+  ]
+ },
+ {
+  "slug": "multi-stage-builds",
+  "def": "多阶段构建（Multi-Stage Builds）是 Dockerfile 中使用多个 FROM 指令划分阶段的技术：前面的阶段安装编译工具、下载依赖并构建，最后一个阶段只从前面阶段复制运行所需的产物。它属于镜像构建层，能显著减小最终镜像体积、减少攻击面，并把构建依赖与运行环境分离，同时利用层缓存加速构建。",
+  "how": [
+   "第一个阶段基于含 SDK 的镜像，用 AS 命名，例如 FROM golang AS build。",
+   "先复制依赖清单并安装依赖，再复制源码构建，使依赖层能被缓存复用。",
+   "最终阶段基于精简基础镜像，如 distroless、alpine 或 scratch。",
+   "用 COPY --from=build 只复制编译产物和必要文件，编译器与源码不进入最终镜像。",
+   "BuildKit 会跳过最终目标不依赖的阶段，也可用 --target 只构建某个阶段用于测试。"
+  ],
+  "terms": [
+   {
+    "t": "构建阶段 (Build Stage)",
+    "d": "Dockerfile 中一个 FROM 开始的段落，可用 AS 命名。"
+   },
+   {
+    "t": "COPY --from",
+    "d": "从其他阶段或镜像复制文件到当前阶段。"
+   },
+   {
+    "t": "Distroless 镜像",
+    "d": "只含应用与运行时依赖、没有 shell 和包管理器的基础镜像。"
+   },
+   {
+    "t": "BuildKit",
+    "d": "Docker 的现代构建后端，支持并行阶段、缓存挂载等特性。"
+   },
+   {
+    "t": "层缓存 (Layer Cache)",
+    "d": "未变化的指令复用之前的层结果，加速重建。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "Go 应用多阶段 Dockerfile",
+   "src": "# syntax=docker/dockerfile:1\n# ---- 阶段 1：构建 ----\nFROM golang:1.23 AS build\nWORKDIR /src\nCOPY go.mod go.sum ./\nRUN go mod download            # 依赖层：go.mod 不变就命中缓存\nCOPY . .\nRUN CGO_ENABLED=0 go build -o /out/app ./cmd/app\n\n# ---- 阶段 2：运行 ----\nFROM gcr.io/distroless/static-debian12:nonroot\nCOPY --from=build /out/app /app\nUSER nonroot:nonroot           # 以非 root 用户运行\nEXPOSE 8080\nENTRYPOINT [\"/app\"]\n\n# 构建：docker build -t example/app:1.0 .\n# 只跑到构建阶段：docker build --target build .",
+   "note": "编译器和源码留在 build 阶段，最终镜像只有静态二进制，且默认非 root。"
+  },
+  "table": {
+   "title": "常见最终基础镜像",
+   "head": [
+    "基础镜像",
+    "特点",
+    "注意点"
+   ],
+   "rows": [
+    [
+     "scratch",
+     "完全空白，体积最小",
+     "无 CA 证书、时区等，需要自行复制"
+    ],
+    [
+     "distroless",
+     "含运行时依赖，无 shell",
+     "排障需用调试变体或临时容器"
+    ],
+    [
+     "alpine",
+     "体积小，有包管理器",
+     "基于 musl libc，可能有兼容差异"
+    ],
+    [
+     "debian-slim",
+     "兼容性好",
+     "体积相对较大"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "distroless/scratch",
+    "pros": "攻击面最小，镜像小",
+    "cons": "无 shell，现场排障不便",
+    "when": "生产环境的编译型语言服务"
+   },
+   {
+    "opt": "slim 发行版镜像",
+    "pros": "兼容性好，便于调试",
+    "cons": "体积和漏洞面更大",
+    "when": "解释型语言、依赖系统库"
+   },
+   {
+    "opt": "单阶段构建",
+    "pros": "Dockerfile 简单",
+    "cons": "镜像含编译工具和源码",
+    "when": "仅本地开发"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "先 COPY . . 再安装依赖，每次改代码都重装依赖。",
+    "fix": "先复制依赖清单安装，再复制源码。"
+   },
+   {
+    "bad": "最终阶段用 scratch，但程序需要 CA 证书访问 HTTPS 而失败。",
+    "fix": "复制证书文件，或改用 distroless/static。"
+   },
+   {
+    "bad": "在构建阶段用 ARG 传入密钥，被写入镜像历史。",
+    "fix": "使用 BuildKit 的 --mount=type=secret。"
+   },
+   {
+    "bad": "动态链接的二进制放进 scratch，运行时找不到 libc。",
+    "fix": "静态编译或选用含 libc 的基础镜像。"
+   }
+  ],
+  "checklist": [
+   "最终镜像不含编译工具与源码",
+   "依赖安装层位于源码复制之前",
+   "使用 .dockerignore 排除无关文件",
+   "构建密钥通过 secret 挂载",
+   "基础镜像固定版本并定期更新",
+   "最终阶段以非 root 运行"
+  ],
+  "interview": [
+   {
+    "q": "多阶段构建如何减小镜像体积？",
+    "a": "把编译器、构建工具、源码和中间产物留在前面的阶段，最终阶段从精简基础镜像开始，只复制运行所需的二进制或打包结果。最终镜像只包含最后阶段的层，前面阶段的内容不会被带入。"
+   },
+   {
+    "q": "多阶段构建对安全有什么帮助？",
+    "a": "最终镜像不含 shell、包管理器和编译工具时，攻击者即使进入容器也缺少可用工具，镜像扫描出的漏洞也更少。配合非 root 用户和只读文件系统效果更好。"
+   },
+   {
+    "q": "解释型语言能用多阶段构建吗？",
+    "a": "可以。例如 Node.js 在构建阶段安装全部依赖并打包，最终阶段只安装生产依赖或复制构建产物；Python 可在构建阶段编译依赖为 wheel 或虚拟环境，再复制到精简运行镜像中。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Docker 文档：Multi-stage builds",
+    "url": "https://docs.docker.com/build/building/multi-stage/"
+   },
+   {
+    "title": "Docker 文档：Building best practices",
+    "url": "https://docs.docker.com/build/building/best-practices/"
+   },
+   {
+    "title": "Distroless 镜像（GitHub）",
+    "url": "https://github.com/GoogleContainerTools/distroless"
+   }
+  ]
+ },
+ {
+  "slug": "non-root-containers",
+  "def": "非 root 容器（Non-Root Containers）指容器主进程以非特权用户（UID 非 0）而非默认的 root 运行。容器与宿主机共享内核，以 root 运行时一旦有逃逸漏洞或错误挂载，攻击者可能拿到宿主机高权限。它是最小权限基线，Pod 安全标准 restricted 级别即要求非 root。",
+  "how": [
+   "在 Dockerfile 中创建专用用户，并用 USER 指令切换，或选用自带非 root 用户的基础镜像。",
+   "确保应用需要写入的目录归属于该用户，其余文件和目录保持只读，避免权限报错。",
+   "Kubernetes 中用 securityContext 设置 runAsNonRoot 与 runAsUser，kubelet 会拒绝以 root 启动。",
+   "进一步禁止提权、丢弃全部 Linux 能力、启用只读根文件系统和 seccomp 默认配置。",
+   "应用监听 8080 等高位端口，避免为了绑定低位端口而需要额外特权。"
+  ],
+  "terms": [
+   {
+    "t": "UID 0",
+    "d": "Linux 中 root 用户的 ID，容器内默认即为它。"
+   },
+   {
+    "t": "Linux 能力 (Capabilities)",
+    "d": "把 root 权限拆分成的细粒度特权，如 NET_BIND_SERVICE。"
+   },
+   {
+    "t": "runAsNonRoot",
+    "d": "Kubernetes 安全上下文字段，镜像以 root 运行时拒绝启动。"
+   },
+   {
+    "t": "allowPrivilegeEscalation",
+    "d": "控制进程能否获得比父进程更多权限，如通过 setuid。"
+   },
+   {
+    "t": "Rootless 模式",
+    "d": "连容器运行时本身也以非 root 运行，比非 root 容器更进一步。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "Pod 安全上下文",
+   "src": "# Dockerfile 中对应：\n#   RUN useradd --uid 10001 --no-create-home app\n#   USER 10001\napiVersion: v1\nkind: Pod\nmetadata: { name: api }\nspec:\n  securityContext:\n    runAsNonRoot: true           # 镜像若以 root 运行则拒绝启动\n    runAsUser: 10001\n    fsGroup: 10001               # 挂载卷归属该组，便于写入\n    seccompProfile: { type: RuntimeDefault }\n  containers:\n    - name: api\n      image: example/api:1.0\n      ports: [{ containerPort: 8080 }]   # 高位端口，无需特权\n      securityContext:\n        allowPrivilegeEscalation: false\n        readOnlyRootFilesystem: true\n        capabilities: { drop: [\"ALL\"] }\n      volumeMounts: [{ name: tmp, mountPath: /tmp }]\n  volumes: [{ name: tmp, emptyDir: {} }]",
+   "note": "满足 Pod 安全标准 restricted 的主要要求；只读根文件系统下用 emptyDir 提供可写目录。"
+  },
+  "table": {
+   "title": "容器权限加固层次",
+   "head": [
+    "措施",
+    "防护目标",
+    "配置位置"
+   ],
+   "rows": [
+    [
+     "非 root 用户",
+     "降低进程默认权限",
+     "Dockerfile USER / runAsUser"
+    ],
+    [
+     "丢弃能力",
+     "移除不需要的内核特权",
+     "capabilities.drop"
+    ],
+    [
+     "禁止提权",
+     "阻止 setuid 等提升权限",
+     "allowPrivilegeEscalation"
+    ],
+    [
+     "只读根文件系统",
+     "防止篡改二进制和植入文件",
+     "readOnlyRootFilesystem"
+    ],
+    [
+     "Rootless 运行时",
+     "运行时自身无 root",
+     "Docker/Podman rootless"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "非 root 加完整加固",
+    "pros": "攻击面最小，符合合规",
+    "cons": "需要调整文件权限与可写目录",
+    "when": "所有生产工作负载"
+   },
+   {
+    "opt": "仅设置非 root",
+    "pros": "改造简单",
+    "cons": "仍保留默认能力等风险",
+    "when": "加固的第一步"
+   },
+   {
+    "opt": "以 root 运行",
+    "pros": "无需改造",
+    "cons": "逃逸或误挂载时风险高",
+    "when": "仅限确需特权的系统组件，并单独隔离"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "USER 用用户名而非数字 UID，runAsNonRoot 无法校验。",
+    "fix": "Dockerfile 中使用数字 UID，或在 Pod 中显式设置 runAsUser。"
+   },
+   {
+    "bad": "切换用户后应用无法写缓存目录，启动报权限错误。",
+    "fix": "为可写目录设置属主，或挂载 emptyDir。"
+   },
+   {
+    "bad": "为绑定 80 端口给容器加特权。",
+    "fix": "应用监听高位端口，由 Service 映射到 80。"
+   },
+   {
+    "bad": "挂载 Docker socket 到非 root 容器，以为很安全。",
+    "fix": "访问 Docker socket 等同宿主机 root，应避免。"
+   }
+  ],
+  "checklist": [
+   "镜像以数字 UID 的非 root 用户运行",
+   "Pod 设置 runAsNonRoot",
+   "禁止提权并丢弃全部能力",
+   "根文件系统只读，可写目录单独挂载",
+   "命名空间启用 Pod 安全标准",
+   "未挂载宿主机敏感路径或 socket"
+  ],
+  "interview": [
+   {
+    "q": "容器已经隔离了，为什么还要非 root？",
+    "a": "容器与宿主机共享内核，隔离依赖命名空间和 cgroup。一旦出现内核或运行时漏洞、错误的卷挂载或特权配置，容器内的 root 可能直接获得宿主机 root。非 root 让攻击者即使逃逸也只拿到普通用户权限。"
+   },
+   {
+    "q": "为什么 runAsNonRoot 要配合数字 UID？",
+    "a": "kubelet 只能根据镜像元数据中的数字 UID 判断是否为 root；若镜像 USER 写的是用户名，kubelet 无法确认，会拒绝启动。因此 Dockerfile 用数字 UID，或在 Pod 中显式指定 runAsUser。"
+   },
+   {
+    "q": "非 root 容器和 rootless 模式有什么区别？",
+    "a": "非 root 容器指容器内进程不是 root，但运行时守护进程可能仍以 root 运行；rootless 模式让 Docker 或 Podman 运行时本身也在非特权用户下运行，进一步降低运行时被攻破的影响。两者可以叠加。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Kubernetes：为 Pod 或容器配置安全上下文",
+    "url": "https://kubernetes.io/docs/tasks/configure-pod-container/security-context/"
+   },
+   {
+    "title": "Kubernetes：Pod Security Standards",
+    "url": "https://kubernetes.io/docs/concepts/security/pod-security-standards/"
+   },
+   {
+    "title": "Docker 文档：Rootless mode",
+    "url": "https://docs.docker.com/engine/security/rootless/"
+   }
+  ]
+ }
+]

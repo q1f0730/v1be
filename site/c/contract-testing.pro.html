@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="契约测试 (Pact) 专业模式：契约测试（Contract Testing）验证两个服务之间的接口约定是否仍被双方遵守，属于介于单元测试与端到端测试之间的集成测试层。主流形态是消费者驱动契约（">
+<title>🎓 契约测试 (Pact) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="contract-testing" data-answer="0" data-prev="ci-workload-identity.pro.html" data-next="burn-rate-alerts.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#ship">🔥 进阶 · 🚀 上线与测试</a><span>›</span><a href="contract-testing.html">契约测试 (Pact)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.498 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="ci-workload-identity.pro.html" rel="prev"><small>‹ 上一个</small><b>🎫 CI 工作负载身份联邦 (OIDC)</b></a><a class="pn next" href="burn-rate-alerts.pro.html" rel="next"><small>下一个 ›</small><b>🔥 错误预算燃烧率告警</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📝</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🚀 上线与测试</span><span>⏱ 约 10 分钟</span></div>
+    <h1>契约测试 (Pact)</h1><p class="en">Contract Testing</p>
+    <div class="hbtns"><a class="prosw back" href="contract-testing.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">契约测试（Contract Testing）验证两个服务之间的接口约定是否仍被双方遵守，属于介于单元测试与端到端测试之间的集成测试层。主流形态是消费者驱动契约（CDC）：调用方用测试生成「我需要什么」的契约文件，提供方在 CI 中回放验证。它让微服务可以独立发布，而不必每次拉起整套环境做联调。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>消费者（Consumer）在单元测试中声明期望：发什么请求、需要响应里哪些字段和类型，测试对着框架提供的 Mock Server 运行。</p></li><li><span class="sn">2</span><p>测试通过后生成契约文件（Pact 中为 JSON 格式的 pact 文件），只包含消费者真正用到的交互，而非提供方完整 API。</p></li><li><span class="sn">3</span><p>契约发布到中心仓库（如 Pact Broker 或 PactFlow），并标记消费者版本、分支或部署环境。</p></li><li><span class="sn">4</span><p>提供方（Provider）在自己的 CI 中拉取相关契约，用真实服务实例逐条回放请求，按 Provider State 预置数据后比对响应。</p></li><li><span class="sn">5</span><p>验证结果回写 Broker，形成「哪个版本与哪个版本兼容」的矩阵。</p></li><li><span class="sn">6</span><p>部署前执行 can-i-deploy 查询矩阵，只有与目标环境中已部署的对端版本均验证通过才放行。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>消费者驱动契约 (Consumer-Driven Contracts)</dt><dd>由调用方定义所需交互，提供方负责满足，避免提供方单方面破坏调用方。</dd></div><div class="term"><dt>提供方状态 (Provider State)</dt><dd>契约中命名的前置条件，如「用户 42 存在」，提供方验证前据此准备测试数据。</dd></div><div class="term"><dt>匹配器 (Matchers)</dt><dd>按类型、正则或数组结构匹配，而非精确值，降低契约对测试数据的脆弱依赖。</dd></div><div class="term"><dt>Pact Broker</dt><dd>存储契约与验证结果的服务，提供版本兼容矩阵和 Webhook 触发验证。</dd></div><div class="term"><dt>can-i-deploy</dt><dd>Pact Broker 提供的命令，查询某版本能否安全部署到指定环境。</dd></div><div class="term"><dt>Pending Pacts</dt><dd>新契约首次验证失败时不阻断提供方构建，给提供方实现时间。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Pact JS 消费者测试</span><em>javascript</em><button class="ccopy">复制</button></div><pre><code>// npm i -D @pact-foundation/pact jest（Node 18+ 自带 fetch）
+const path = require(&#x27;path&#x27;);
+const { PactV3, MatchersV3 } = require(&#x27;@pact-foundation/pact&#x27;);
+const { like, integer } = MatchersV3;
+
+const provider = new PactV3({
+  consumer: &#x27;WebApp&#x27;,
+  provider: &#x27;UserService&#x27;,
+  dir: path.resolve(__dirname, &#x27;pacts&#x27;), // 生成的契约文件位置
+});
+
+test(&#x27;按 ID 获取用户&#x27;, () =&gt; {
+  provider
+    .given(&#x27;user 42 exists&#x27;) // Provider State
+    .uponReceiving(&#x27;a request for user 42&#x27;)
+    .withRequest({ method: &#x27;GET&#x27;, path: &#x27;/users/42&#x27; })
+    .willRespondWith({
+      status: 200,
+      headers: { &#x27;Content-Type&#x27;: &#x27;application/json&#x27; },
+      body: like({ userId: integer(42), name: &#x27;Ada&#x27; }), // 按类型匹配
+    });
+
+  return provider.executeTest(async (mockServer) =&gt; {
+    const res = await fetch(`${mockServer.url}/users/42`);
+    const user = await res.json();
+    expect(user.userId).toBe(42);
+  });
+});</code></pre></div><p class="cnote">消费者对 Mock Server 测试并生成契约文件；提供方随后用真实服务回放验证。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">接口兼容性保障方案</h3><div class="tw"><table><thead><tr><th>方案</th><th>验证对象</th><th>反馈速度</th><th>主要盲区</th></tr></thead><tbody><tr><td data-h="方案">消费者驱动契约 (Pact)</td><td data-h="验证对象">调用方实际用到的交互</td><td data-h="反馈速度">快，单服务 CI 内</td><td data-h="主要盲区">只覆盖写进契约的场景</td></tr><tr><td data-h="方案">OpenAPI Schema 比对</td><td data-h="验证对象">提供方声明的完整 Schema</td><td data-h="反馈速度">很快，静态检查</td><td data-h="主要盲区">不知道哪些字段真被使用</td></tr><tr><td data-h="方案">双向契约 (Bi-Directional)</td><td data-h="验证对象">消费者契约对照提供方 OpenAPI</td><td data-h="反馈速度">快</td><td data-h="主要盲区">依赖 OpenAPI 与实现一致</td></tr><tr><td data-h="方案">端到端测试</td><td data-h="验证对象">整条业务链路</td><td data-h="反馈速度">慢，需全套环境</td><td data-h="主要盲区">失败定位难、易不稳定</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>消费者驱动契约</h4><p><b class="k-p">优点</b>精确知道谁用了什么，破坏性改动发布前暴露</p><p><b class="k-c">代价</b>需要 Broker 和跨团队协作流程</p><p><b class="k-w">适用</b>内部微服务、调用方可控且数量有限</p></div><div class="trd"><h4>提供方 Schema 优先</h4><p><b class="k-p">优点</b>一份 OpenAPI 管全部，工具链成熟</p><p><b class="k-c">代价</b>无法感知调用方真实依赖，易过度保守</p><p><b class="k-w">适用</b>公开 API、调用方未知或很多</p></div><div class="trd"><h4>只做端到端测试</h4><p><b class="k-p">优点</b>最接近真实用户路径</p><p><b class="k-c">代价</b>慢、脆弱、阻塞独立发布</p><p><b class="k-w">适用</b>少量关键主流程的冒烟验证</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>契约里写死精确值，提供方换测试数据就失败</p><p class="fix"><b>✓</b>对 ID、时间等用类型或正则匹配器，只对业务语义字段精确断言</p></li><li><p class="bad"><b>✗</b>把提供方全部字段写进契约</p><p class="fix"><b>✓</b>只写消费者真正读取的字段，否则提供方删任何字段都被阻断</p></li><li><p class="bad"><b>✗</b>用契约测试验证业务逻辑</p><p class="fix"><b>✓</b>契约只管请求/响应形状与语义，业务规则交给提供方自身测试</p></li><li><p class="bad"><b>✗</b>生成了契约却不在部署前跑 can-i-deploy</p><p class="fix"><b>✓</b>把 can-i-deploy 做成发布流水线的硬门禁，并记录部署环境</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个调用方都有契约并发布到 Broker</span></label></li><li><label><input type="checkbox"><span>契约用匹配器，不依赖具体测试数据</span></label></li><li><label><input type="checkbox"><span>提供方 CI 按分支/环境拉取并验证契约</span></label></li><li><label><input type="checkbox"><span>Provider State 有对应的数据准备实现</span></label></li><li><label><input type="checkbox"><span>发布前执行 can-i-deploy 作为门禁</span></label></li><li><label><input type="checkbox"><span>部署后向 Broker 记录版本与环境</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>契约测试与集成测试、E2E 测试的边界？</summary><p>契约测试只验证两服务间接口约定，每侧在自己的 CI 中独立运行，不需要同时启动双方；集成测试通常真实连接依赖；E2E 拉起完整链路验证业务流程。契约测试换来速度和独立发布，代价是不覆盖跨服务业务正确性。</p></details><details class="iv"><summary>提供方想删除一个字段，流程怎么走？</summary><p>先在 Broker 查哪些消费者契约用到该字段；若有，与消费者协商先改代码并发布新契约；确认生产环境中所有消费者版本都不再依赖后，提供方验证通过、can-i-deploy 放行，再删除。即 expand-contract 渐进演进。</p></details><details class="iv"><summary>AI 生成的契约测试要重点审查什么？</summary><p>一是是否只覆盖消费者真实读取的字段，而非照抄完整响应；二是匹配器使用是否得当，避免写死值；三是 Provider State 命名是否与提供方实现一致；四是 HTTP 方法、路径、状态码是否与真实调用代码一致，防止测试自洽但与生产代码脱节。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.pact.io/" target="_blank" rel="noopener"><b>Pact Docs</b><small>docs.pact.io ↗</small></a></li><li><a href="https://docs.pact.io/pact_broker/can_i_deploy" target="_blank" rel="noopener"><b>Pact Docs: Can I Deploy</b><small>docs.pact.io ↗</small></a></li><li><a href="https://martinfowler.com/articles/consumerDrivenContracts.html" target="_blank" rel="noopener"><b>Martin Fowler: Consumer-Driven Contracts</b><small>martinfowler.com ↗</small></a></li><li><a href="https://github.com/pact-foundation/pact-js" target="_blank" rel="noopener"><b>GitHub: pact-foundation/pact-js</b><small>github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="ci-workload-identity.pro.html" rel="prev"><small>‹ 上一个</small><b>🎫 CI 工作负载身份联邦 (OIDC)</b></a><a class="pn next" href="burn-rate-alerts.pro.html" rel="next"><small>下一个 ›</small><b>🔥 错误预算燃烧率告警</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="强一致性 / 线性一致性 专业模式：强一致性通常指线性一致性（Linearizability）：每个操作看起来在调用与返回之间的某个瞬间原子生效，且所有客户端看到的操作顺序与真实时间顺序一致。一旦">
+<title>🎓 强一致性 / 线性一致性 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="strong-consistency" data-answer="0" data-prev="eventual-consistency.pro.html" data-next="raft-consensus.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#dist">🔥 进阶 · 🕸️ 分布式</a><span>›</span><a href="strong-consistency.html">强一致性 / 线性一致性</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.430 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="eventual-consistency.pro.html" rel="prev"><small>‹ 上一个</small><b>⏳ 最终一致性</b></a><a class="pn next" href="raft-consensus.pro.html" rel="next"><small>下一个 ›</small><b>🗳️ Raft分布式共识算法</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🎯</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>强一致性 / 线性一致性</h1><p class="en">Strong Consistency</p>
+    <div class="hbtns"><a class="prosw back" href="strong-consistency.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">强一致性通常指线性一致性（Linearizability）：每个操作看起来在调用与返回之间的某个瞬间原子生效，且所有客户端看到的操作顺序与真实时间顺序一致。一旦写入返回成功，之后任何读取都能看到它。它让分布式系统表现得像单副本，代价是需要共识或同步复制，延迟更高。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>写入需经共识协议（如 Raft）复制到多数副本并提交后才返回成功。</p></li><li><span class="sn">2</span><p>读取不能直接读本地副本，需确认自己仍是领导者或读到已提交的最新索引。</p></li><li><span class="sn">3</span><p>常见做法：读请求走日志（log read）、ReadIndex 确认领导权，或基于租约读。</p></li><li><span class="sn">4</span><p>所有操作在全局形成一个与实时顺序相容的全序，客户端不会看到回退。</p></li><li><span class="sn">5</span><p>分区：少数派一侧无法确认自己持有最新状态，只能拒绝或阻塞请求。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>线性一致性 (Linearizability)</dt><dd>单对象操作满足实时顺序的最强单对象一致性模型。</dd></div><div class="term"><dt>顺序一致性 (Sequential Consistency)</dt><dd>存在全局顺序且符合各客户端程序顺序，但不要求实时。</dd></div><div class="term"><dt>严格可串行化 (Strict Serializability)</dt><dd>多对象事务的可串行化加上实时顺序约束。</dd></div><div class="term"><dt>ReadIndex</dt><dd>Raft 中读前与多数派确认领导权、等待提交索引的读法。</dd></div><div class="term"><dt>租约读 (Lease Read)</dt><dd>领导者在租约期内直接本地读，依赖时钟误差有界。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>etcd 两种读一致性</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 写入：经 Raft 多数派提交后返回
+etcdctl put /config/feature_x on
+
+# 线性一致读（默认，l）：经领导者确认，必然看到最新提交值
+etcdctl get /config/feature_x --consistency=l
+
+# 可串行化读（s）：直接读本地成员，延迟低，但可能读到旧值
+etcdctl get /config/feature_x --consistency=s
+
+# 查看各成员状态：谁是 leader、raft term 与 index
+etcdctl endpoint status --cluster --write-out=table</code></pre></div><p class="cnote">同一集群中线性一致读需要领导者确认，延迟更高；可串行化读更快但可能陈旧。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">一致性模型强弱</h3><div class="tw"><table><thead><tr><th>模型</th><th>保证</th><th>代价</th></tr></thead><tbody><tr><td data-h="模型">线性一致</td><td data-h="保证">实时顺序，读到最新</td><td data-h="代价">需共识/同步复制，延迟高</td></tr><tr><td data-h="模型">顺序一致</td><td data-h="保证">全局顺序，但可能滞后</td><td data-h="代价">比线性一致略低</td></tr><tr><td data-h="模型">因果一致</td><td data-h="保证">因果相关操作有序</td><td data-h="代价">需追踪依赖</td></tr><tr><td data-h="模型">最终一致</td><td data-h="保证">停止写入后收敛</td><td data-h="代价">可能读到旧值</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>线性一致存储</h4><p><b class="k-p">优点</b>语义直观，适合锁和元数据</p><p><b class="k-c">代价</b>写延迟受多数派往返影响</p><p><b class="k-w">适用</b>配置中心、选主、分布式锁</p></div><div class="trd"><h4>同步复制主从</h4><p><b class="k-p">优点</b>实现相对简单</p><p><b class="k-c">代价</b>副本故障会阻塞写入</p><p><b class="k-w">适用</b>单地域、副本少</p></div><div class="trd"><h4>弱一致+补偿</h4><p><b class="k-p">优点</b>吞吐高、可用性强</p><p><b class="k-c">代价</b>业务需处理不一致</p><p><b class="k-w">适用</b>大规模读多写少场景</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>认为写主读从也是强一致</p><p class="fix"><b>✓</b>异步复制的从库可能滞后，强一致读需走主或共识读</p></li><li><p class="bad"><b>✗</b>单节点事务隔离级别高，就以为跨系统也强一致</p><p class="fix"><b>✓</b>跨服务、跨库操作需单独设计一致性，如 Saga</p></li><li><p class="bad"><b>✗</b>依赖租约读却未考虑时钟漂移</p><p class="fix"><b>✓</b>评估时钟误差上界，或改用 ReadIndex 读</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>列出必须线性一致的操作</span></label></li><li><label><input type="checkbox"><span>确认存储的默认读语义</span></label></li><li><label><input type="checkbox"><span>读路径不经过异步副本</span></label></li><li><label><input type="checkbox"><span>分区时客户端有错误处理</span></label></li><li><label><input type="checkbox"><span>评估跨地域写延迟</span></label></li><li><label><input type="checkbox"><span>用 Jepsen 类测试验证</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>线性一致和可串行化有何区别？</summary><p>线性一致针对单个对象的单次操作，要求符合实时顺序；可串行化针对多对象事务，只要求结果等价于某个串行顺序，不要求与实时一致。两者兼具称为严格可串行化。</p></details><details class="iv"><summary>Raft 系统为什么读也要「走一遍」？</summary><p>旧领导者可能已被分区隔离而不自知，若直接本地读会返回过期数据。ReadIndex 让领导者先与多数派确认自己仍是领导者，并等待状态机应用到提交索引后再读，从而保证线性一致。</p></details><details class="iv"><summary>跨地域部署强一致的代价是什么？</summary><p>每次写入要等多数副本确认，跨地域往返时间直接加到写延迟上；某些地域分区时可能整体不可写。常见折中是把领导者放在主要写入地域，或按数据归属地分片。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://jepsen.io/consistency/models/linearizable" target="_blank" rel="noopener"><b>Jepsen: Linearizability</b><small>jepsen.io ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Linearizability" target="_blank" rel="noopener"><b>Linearizability (Wikipedia)</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://etcd.io/docs/v3.5/learning/api_guarantees/" target="_blank" rel="noopener"><b>etcd API guarantees</b><small>etcd.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="eventual-consistency.pro.html" rel="prev"><small>‹ 上一个</small><b>⏳ 最终一致性</b></a><a class="pn next" href="raft-consensus.pro.html" rel="next"><small>下一个 ›</small><b>🗳️ Raft分布式共识算法</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

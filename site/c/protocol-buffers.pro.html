@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="Protobuf二进制序列化 专业模式：Protocol Buffers（Protobuf）是 Google 开发的语言无关、平台无关的结构化数据序列化格式。开发者在 .proto 文件中定义消息结构">
+<title>🎓 Protobuf二进制序列化 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="protocol-buffers" data-answer="0" data-prev="grpc.pro.html" data-next="backward-compatibility.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#net">🔮 高级 · 🌐 网络与 API</a><span>›</span><a href="protocol-buffers.html">Protobuf二进制序列化</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.263 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="grpc.pro.html" rel="prev"><small>‹ 上一个</small><b>🚄 高性能远程过程调用</b></a><a class="pn next" href="backward-compatibility.pro.html" rel="next"><small>下一个 ›</small><b>🎮 向后兼容性</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🗜️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>Protobuf二进制序列化</h1><p class="en">Protocol Buffers</p>
+    <div class="hbtns"><a class="prosw back" href="protocol-buffers.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">Protocol Buffers（Protobuf）是 Google 开发的语言无关、平台无关的结构化数据序列化格式。开发者在 .proto 文件中定义消息结构，编译器生成各语言代码。它以字段编号而非字段名编码，体积小、解析快，并有明确的前后向兼容规则，是 gRPC 的默认载荷格式。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>在 .proto 中为每个字段指定类型和唯一的字段编号。</p></li><li><span class="sn">2</span><p>protoc 生成各语言的消息类，提供序列化与反序列化方法。</p></li><li><span class="sn">3</span><p>编码时每个字段写为“标签 + 值”：标签由字段编号和线路类型组成，整数用变长编码。</p></li><li><span class="sn">4</span><p>未赋值的默认值字段通常不写出；解析时遇到不认识的编号会作为未知字段保留或跳过。</p></li><li><span class="sn">5</span><p>因为只认编号不认名字，改字段名不影响兼容，改编号或类型则会破坏兼容。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>字段编号 (Field Number)</dt><dd>字段在二进制中的唯一标识，一旦使用不可更改。</dd></div><div class="term"><dt>线路类型 (Wire Type)</dt><dd>决定如何读取值：VARINT、I64、LEN、I32 等。</dd></div><div class="term"><dt>Varint</dt><dd>变长整数编码，小数值占用更少字节。</dd></div><div class="term"><dt>reserved</dt><dd>声明已废弃的编号或名称，防止被复用。</dd></div><div class="term"><dt>字段存在性 (Field Presence)</dt><dd>能否区分“未设置”和“设为默认值”。</dd></div><div class="term"><dt>未知字段 (Unknown Fields)</dt><dd>旧代码不认识的新字段，解析时保留不报错。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>.proto 定义与演进规则</span><em>text</em><button class="ccopy">复制</button></div><pre><code>// user.proto
+syntax = &quot;proto3&quot;;
+package demo.v1;
+
+message User {
+  int64  id    = 1;              // 1–15 号字段的标签只占 1 字节，留给高频字段
+  string name  = 2;
+  optional string nickname = 3;  // optional 可区分“未设置”与空字符串
+  repeated string tags = 4;
+  Status status = 5;
+  reserved 6;                    // 已删除字段的编号，永不复用
+  reserved &quot;email&quot;;              // 也保留旧字段名
+}
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;        // proto3 枚举第一个值必须是 0，作为默认值
+  STATUS_ACTIVE = 1;
+  STATUS_BANNED = 2;
+}
+
+// 编码示例：字段 1 为 varint 150 → 字节 08 96 01
+//   08 = (字段号 1 &lt;&lt; 3) | 线路类型 0(VARINT)
+// 生成代码：protoc --python_out=. user.proto</code></pre></div><p class="cnote">编号决定编码与兼容性；删除字段要 reserved，枚举零值作为未指定。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">字段变更的兼容性</h3><div class="tw"><table><thead><tr><th>变更</th><th>是否兼容</th><th>说明</th></tr></thead><tbody><tr><td data-h="变更">新增字段（新编号）</td><td data-h="是否兼容">兼容</td><td data-h="说明">旧代码视为未知字段</td></tr><tr><td data-h="变更">删除字段并 reserved</td><td data-h="是否兼容">兼容</td><td data-h="说明">编号不可再用</td></tr><tr><td data-h="变更">修改字段名</td><td data-h="是否兼容">二进制兼容</td><td data-h="说明">JSON 映射与生成代码会变</td></tr><tr><td data-h="变更">修改编号或不兼容类型</td><td data-h="是否兼容">不兼容</td><td data-h="说明">数据会被错误解析</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>Protobuf</h4><p><b class="k-p">优点</b>体积小、解析快、强类型契约</p><p><b class="k-c">代价</b>不可读，需 schema 才能解码</p><p><b class="k-w">适用</b>服务间通信、大量数据传输</p></div><div class="trd"><h4>JSON</h4><p><b class="k-p">优点</b>人类可读，浏览器原生</p><p><b class="k-c">代价</b>体积大，无强制 schema</p><p><b class="k-w">适用</b>公开 API、调试友好优先</p></div><div class="trd"><h4>Avro / Thrift</h4><p><b class="k-p">优点</b>Avro 适合数据管道与 schema 演进</p><p><b class="k-c">代价</b>生态与工具链差异</p><p><b class="k-w">适用</b>Kafka 等大数据场景</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>删除字段后把编号分配给新字段</p><p class="fix"><b>✓</b>删除时 reserved 编号和名称</p></li><li><p class="bad"><b>✗</b>把 int32 改成 string 等不兼容类型</p><p class="fix"><b>✓</b>新增字段承载新类型，逐步迁移</p></li><li><p class="bad"><b>✗</b>proto3 无法区分“没传”与“传了 0”</p><p class="fix"><b>✓</b>需要区分时用 optional 或包装类型</p></li><li><p class="bad"><b>✗</b>枚举零值赋予业务含义</p><p class="fix"><b>✓</b>零值固定为 UNSPECIFIED，业务值从 1 开始</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>字段编号从未被复用</span></label></li><li><label><input type="checkbox"><span>删除字段已 reserved</span></label></li><li><label><input type="checkbox"><span>枚举零值为 UNSPECIFIED</span></label></li><li><label><input type="checkbox"><span>需要存在性的字段使用 optional</span></label></li><li><label><input type="checkbox"><span>CI 中运行破坏性变更检测</span></label></li><li><label><input type="checkbox"><span>包名带版本号（如 v1）</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Protobuf 为什么比 JSON 小？</summary><p>不传输字段名，只传一个小整数标签；整数用 varint 变长编码，小数值只占一两个字节；默认值字段通常不写出；无引号、括号等语法字符。代价是必须有 schema 才能解读。</p></details><details class="iv"><summary>proto3 的字段存在性问题是什么？</summary><p>早期 proto3 中标量字段无存在性，0、空字符串与未设置无法区分，部分更新语义因此难以表达。现在可用 optional 关键字恢复显式存在性，或使用 google.protobuf 包装类型。</p></details><details class="iv"><summary>如何在团队里防止破坏性 proto 变更？</summary><p>在 CI 中用 buf breaking 等工具对比新旧 schema；约定只新增字段、删除必 reserved；包名带版本，重大变更走新版本包；代码评审重点关注编号与类型改动。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://protobuf.dev/overview/" target="_blank" rel="noopener"><b>Protocol Buffers: Overview</b><small>protobuf.dev ↗</small></a></li><li><a href="https://protobuf.dev/programming-guides/encoding/" target="_blank" rel="noopener"><b>Protocol Buffers: Encoding</b><small>protobuf.dev ↗</small></a></li><li><a href="https://protobuf.dev/programming-guides/proto3/" target="_blank" rel="noopener"><b>Protocol Buffers: Language Guide (proto3)</b><small>protobuf.dev ↗</small></a></li><li><a href="https://protobuf.dev/best-practices/dos-donts/" target="_blank" rel="noopener"><b>Protocol Buffers: Dos and Don&#x27;ts</b><small>protobuf.dev ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="grpc.pro.html" rel="prev"><small>‹ 上一个</small><b>🚄 高性能远程过程调用</b></a><a class="pn next" href="backward-compatibility.pro.html" rel="next"><small>下一个 ›</small><b>🎮 向后兼容性</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="服务端授权 专业模式：服务端授权（Server-Side Authorization）指所有访问控制决策都在服务器或可信后端执行，前端的隐藏按钮、路由守卫只用于体验而不作为安全边界。">
+<title>🎓 服务端授权 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="server-side-authorization" data-answer="0" data-prev="idor.pro.html" data-next="least-privilege.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#sec">🌊 中级 · 🛡️ 安全防线</a><span>›</span><a href="server-side-authorization.html">服务端授权</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.109 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="idor.pro.html" rel="prev"><small>‹ 上一个</small><b>🎫 不安全的直接对象引用</b></a><a class="pn next" href="least-privilege.pro.html" rel="next"><small>下一个 ›</small><b>🗝️ 最小权限原则</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🏦</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>服务端授权</h1><p class="en">Server-Side Authorization</p>
+    <div class="hbtns"><a class="prosw back" href="server-side-authorization.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">服务端授权（Server-Side Authorization）指所有访问控制决策都在服务器或可信后端执行，前端的隐藏按钮、路由守卫只用于体验而不作为安全边界。它基于一个事实：客户端完全由用户控制，任何请求都可以被构造、修改和重放。这是防止越权、IDOR 和权限绕过的基本原则。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>前端可以根据角色显示或隐藏功能，但这只影响界面，不阻止任何请求。</p></li><li><span class="sn">2</span><p>每个请求到达服务端后，从可信会话或经校验的令牌中提取身份，不信任请求体中的角色字段。</p></li><li><span class="sn">3</span><p>服务端在业务处理前执行功能级授权（能否调用此接口）和对象级授权（能否操作此资源）。</p></li><li><span class="sn">4</span><p>默认拒绝：未显式授权的操作一律禁止，新接口必须声明所需权限。</p></li><li><span class="sn">5</span><p>使用 BaaS 时，授权落在数据库规则（如 RLS、Security Rules）上，同样由服务端强制执行。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>默认拒绝 (Deny by Default)</dt><dd>除非明确允许，否则拒绝所有访问。</dd></div><div class="term"><dt>功能级授权 (Function-Level)</dt><dd>判断用户能否调用某个接口或功能。</dd></div><div class="term"><dt>对象级授权 (Object-Level)</dt><dd>判断用户能否访问某个具体数据对象。</dd></div><div class="term"><dt>批量赋值 (Mass Assignment)</dt><dd>把请求体字段直接写入模型，可能改到 role 等敏感字段。</dd></div><div class="term"><dt>策略即代码 (Policy as Code)</dt><dd>用 OPA 等引擎以代码形式集中管理授权规则。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>服务端集中授权与字段白名单</span><em>typescript</em><button class="ccopy">复制</button></div><pre><code>type User = { id: string; role: &quot;admin&quot; | &quot;member&quot; };
+
+// 集中的授权函数：每个动作的规则写在一处，便于测试
+function can(user: User, action: string, post?: { authorId: string }) {
+  switch (action) {
+    case &quot;post:create&quot;: return true;
+    case &quot;post:update&quot;: return user.role === &quot;admin&quot; || post?.authorId === user.id;
+    case &quot;user:setRole&quot;: return user.role === &quot;admin&quot;;
+    default: return false;                       // 默认拒绝
+  }
+}
+
+app.patch(&quot;/posts/:id&quot;, requireLogin, async (req, res) =&gt; {
+  const post = await db.post.findUnique({ where: { id: req.params.id } });
+  if (!post) return res.sendStatus(404);
+  if (!can(req.user, &quot;post:update&quot;, post)) return res.sendStatus(403);
+
+  // 字段白名单，防止批量赋值改到 authorId 等字段
+  const { title, body } = req.body;
+  await db.post.update({ where: { id: post.id }, data: { title, body } });
+  res.sendStatus(204);
+});</code></pre></div><p class="cnote">身份来自 requireLogin 写入的 req.user；授权规则集中且默认拒绝，更新只取白名单字段。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">前端控制 vs 服务端控制</h3><div class="tw"><table><thead><tr><th>位置</th><th>作用</th><th>能否作为安全边界</th></tr></thead><tbody><tr><td data-h="位置">前端隐藏按钮/路由守卫</td><td data-h="作用">改善体验</td><td data-h="能否作为安全边界">不能</td></tr><tr><td data-h="位置">API 网关</td><td data-h="作用">认证、限流、粗粒度规则</td><td data-h="能否作为安全边界">部分</td></tr><tr><td data-h="位置">服务端业务层</td><td data-h="作用">功能级与对象级授权</td><td data-h="能否作为安全边界">能</td></tr><tr><td data-h="位置">数据库 RLS/规则</td><td data-h="作用">数据层兜底</td><td data-h="能否作为安全边界">能</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>代码中手写授权判断</h4><p><b class="k-p">优点</b>直观、灵活</p><p><b class="k-c">代价</b>分散易漏</p><p><b class="k-w">适用</b>小型应用</p></div><div class="trd"><h4>集中授权模块或策略引擎</h4><p><b class="k-p">优点</b>一致、可审计、易测试</p><p><b class="k-c">代价</b>引入抽象与依赖</p><p><b class="k-w">适用</b>多角色、多团队系统</p></div><div class="trd"><h4>数据库层授权（RLS）</h4><p><b class="k-p">优点</b>所有访问路径统一受控</p><p><b class="k-c">代价</b>复杂规则难表达</p><p><b class="k-w">适用</b>前端直连 BaaS 数据库</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>只在前端判断 isAdmin 后显示管理功能</p><p class="fix"><b>✓</b>管理接口在服务端校验角色</p></li><li><p class="bad"><b>✗</b>从请求体或 JWT 未校验部分读取 role</p><p class="fix"><b>✓</b>角色来自服务端存储或经签名校验的令牌</p></li><li><p class="bad"><b>✗</b>把整个 req.body 传给 ORM 更新</p><p class="fix"><b>✓</b>显式挑选允许修改的字段</p></li><li><p class="bad"><b>✗</b>Supabase 表未启用 RLS 就用 anon key 访问</p><p class="fix"><b>✓</b>所有暴露的表启用 RLS 并编写策略</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个接口声明所需权限</span></label></li><li><label><input type="checkbox"><span>未声明权限的操作默认拒绝</span></label></li><li><label><input type="checkbox"><span>身份与角色只来自可信来源</span></label></li><li><label><input type="checkbox"><span>更新操作使用字段白名单</span></label></li><li><label><input type="checkbox"><span>BaaS 数据表启用访问规则</span></label></li><li><label><input type="checkbox"><span>越权场景有自动化测试</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么不能依赖前端做权限控制？</summary><p>前端代码运行在用户设备上，用户可以修改 JavaScript、用开发者工具改变量，或绕过界面直接用 curl、Postman 调用 API。前端控制只决定看到什么，服务端才决定能做什么，所以所有授权必须在服务端执行。</p></details><details class="iv"><summary>什么是批量赋值漏洞？</summary><p>框架把请求体字段自动映射到数据模型并保存时，攻击者可以额外提交 role、isAdmin、ownerId 等本不应由用户修改的字段，从而提权或篡改归属。防御方法是使用字段白名单或专门的输入 DTO。</p></details><details class="iv"><summary>前端直连 Supabase/Firebase 如何做授权？</summary><p>此时没有自建后端，数据库规则就是服务端授权：Supabase 需对表启用行级安全并编写基于 auth.uid() 的策略，Firebase 需编写 Security Rules。公开的 anon/客户端密钥不是秘密，安全完全依赖这些规则。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html" target="_blank" rel="noopener"><b>OWASP Authorization Cheat Sheet</b><small>cheatsheetseries.owasp.org ↗</small></a></li><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Mass_Assignment_Cheat_Sheet.html" target="_blank" rel="noopener"><b>OWASP Mass Assignment Cheat Sheet</b><small>cheatsheetseries.owasp.org ↗</small></a></li><li><a href="https://supabase.com/docs/guides/database/postgres/row-level-security" target="_blank" rel="noopener"><b>Supabase Docs: Row Level Security</b><small>supabase.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="idor.pro.html" rel="prev"><small>‹ 上一个</small><b>🎫 不安全的直接对象引用</b></a><a class="pn next" href="least-privilege.pro.html" rel="next"><small>下一个 ›</small><b>🗝️ 最小权限原则</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="数据模式演进 (Schema Registry) 专业模式：模式演进（Schema Evolution）指数据结构随业务变化而修改时，保证新旧生产者与消费者仍能正确读写的规则与机制。在事件流和数据湖中，数据被长期保存并被">
+<title>🎓 数据模式演进 (Schema Registry) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="schema-evolution" data-answer="0" data-prev="stream-processing.pro.html" data-next="mvcc.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#data">🔥 进阶 · 📊 数据工程</a><span>›</span><a href="schema-evolution.html">数据模式演进 (Schema Registry)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.464 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="stream-processing.pro.html" rel="prev"><small>‹ 上一个</small><b>🌊 流处理 (Flink)</b></a><a class="pn next" href="mvcc.pro.html" rel="next"><small>下一个 ›</small><b>📸 多版本并发控制 (MVCC)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🧬</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>📊 数据工程</span><span>⏱ 约 10 分钟</span></div>
+    <h1>数据模式演进 (Schema Registry)</h1><p class="en">Schema Evolution</p>
+    <div class="hbtns"><a class="prosw back" href="schema-evolution.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">模式演进（Schema Evolution）指数据结构随业务变化而修改时，保证新旧生产者与消费者仍能正确读写的规则与机制。在事件流和数据湖中，数据被长期保存并被多方读取，必须用 Avro、Protobuf、JSON Schema 等带模式的格式，并借助模式注册中心（Schema Registry）在发布前做兼容性校验。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>生产者序列化时把模式注册到注册中心，消息只携带模式 ID，消费者按 ID 取回写入模式进行反序列化。</p></li><li><span class="sn">2</span><p>每个主题（subject）配置兼容级别；新版本模式提交时，注册中心将其与上一版或全部历史版本比对。</p></li><li><span class="sn">3</span><p>向后兼容（BACKWARD）：用新模式的消费者能读旧数据，因此先升级消费者；允许删除字段、新增带默认值的字段。</p></li><li><span class="sn">4</span><p>向前兼容（FORWARD）：用旧模式的消费者能读新数据，因此先升级生产者；FULL 同时满足两者。</p></li><li><span class="sn">5</span><p>读取时由写入模式与读取模式做解析：缺失字段用默认值，多余字段被忽略，类型不兼容则拒绝注册。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>写入/读取模式 (Writer/Reader Schema)</dt><dd>数据写入时使用的模式与消费者期望的模式，Avro 在读取时对两者做解析。</dd></div><div class="term"><dt>BACKWARD</dt><dd>Confluent Schema Registry 默认兼容级别：新模式能读取上一版本模式写入的数据。</dd></div><div class="term"><dt>传递兼容 (Transitive)</dt><dd>要求新模式与所有历史版本兼容，而不仅是上一版本。</dd></div><div class="term"><dt>主题 (Subject)</dt><dd>注册中心中模式版本的命名空间，常按 topic 名加 -key 或 -value 命名。</dd></div><div class="term"><dt>保留字段号 (reserved)</dt><dd>Protobuf 中声明已删除的字段编号和名称，防止被复用。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>注册前校验模式兼容性</span><em>bash</em><button class="ccopy">复制</button></div><pre><code>SR=http://localhost:8081
+CT=&quot;Content-Type: application/vnd.schemaregistry.v1+json&quot;
+
+# 1) 为 orders-value 设置兼容级别
+curl -s -X PUT -H &quot;$CT&quot; --data &#x27;{&quot;compatibility&quot;: &quot;BACKWARD&quot;}&#x27; \
+  $SR/config/orders-value
+
+# 2) 新模式：新增带默认值的 coupon 字段
+NEW=&#x27;{&quot;schema&quot;: &quot;{\&quot;type\&quot;:\&quot;record\&quot;,\&quot;name\&quot;:\&quot;Order\&quot;,\&quot;fields\&quot;:[{\&quot;name\&quot;:\&quot;id\&quot;,\&quot;type\&quot;:\&quot;string\&quot;},{\&quot;name\&quot;:\&quot;amount\&quot;,\&quot;type\&quot;:\&quot;double\&quot;},{\&quot;name\&quot;:\&quot;coupon\&quot;,\&quot;type\&quot;:[\&quot;null\&quot;,\&quot;string\&quot;],\&quot;default\&quot;:null}]}&quot;}&#x27;
+
+# 3) 先测兼容性，返回 {&quot;is_compatible&quot;: true} 再注册
+curl -s -X POST -H &quot;$CT&quot; --data &quot;$NEW&quot; \
+  $SR/compatibility/subjects/orders-value/versions/latest
+
+curl -s -X POST -H &quot;$CT&quot; --data &quot;$NEW&quot; \
+  $SR/subjects/orders-value/versions</code></pre></div><p class="cnote">把第 3 步放进 CI，模式不兼容时构建失败，避免坏模式进入生产。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">兼容级别与升级顺序</h3><div class="tw"><table><thead><tr><th>级别</th><th>允许的改动</th><th>先升级谁</th></tr></thead><tbody><tr><td data-h="级别">BACKWARD</td><td data-h="允许的改动">删字段、加带默认值字段</td><td data-h="先升级谁">消费者</td></tr><tr><td data-h="级别">FORWARD</td><td data-h="允许的改动">加字段、删带默认值字段</td><td data-h="先升级谁">生产者</td></tr><tr><td data-h="级别">FULL</td><td data-h="允许的改动">只能增删带默认值字段</td><td data-h="先升级谁">任意顺序</td></tr><tr><td data-h="级别">*_TRANSITIVE</td><td data-h="允许的改动">同上，但与全部历史版本比对</td><td data-h="先升级谁">同对应级别</td></tr><tr><td data-h="级别">NONE</td><td data-h="允许的改动">不校验</td><td data-h="先升级谁">需人工协调，生产慎用</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>Avro + 注册中心</h4><p><b class="k-p">优点</b>读写模式解析成熟，消息体紧凑</p><p><b class="k-c">代价</b>需要运维注册中心，调试需工具</p><p><b class="k-w">适用</b>Kafka 事件流、数据管道</p></div><div class="trd"><h4>Protobuf</h4><p><b class="k-p">优点</b>跨语言代码生成，字段号机制清晰</p><p><b class="k-c">代价</b>proto3 字段默认值语义需注意</p><p><b class="k-w">适用</b>gRPC 与事件共用模型</p></div><div class="trd"><h4>无模式 JSON</h4><p><b class="k-p">优点</b>上手零成本，人可直接读</p><p><b class="k-c">代价</b>无编译期与发布期校验，易悄悄破坏下游</p><p><b class="k-w">适用</b>原型或单一消费者</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>Protobuf 删字段后复用原字段号</p><p class="fix"><b>✓</b>删除时用 reserved 保留字段号和名称</p></li><li><p class="bad"><b>✗</b>直接改字段类型（如 int 改 string）</p><p class="fix"><b>✓</b>新增字段并双写，下游迁移完成后废弃旧字段</p></li><li><p class="bad"><b>✗</b>BACKWARD 级别下先升级了生产者</p><p class="fix"><b>✓</b>按兼容级别规定的顺序发布，或改用 FULL</p></li><li><p class="bad"><b>✗</b>只与上一版本比对，长期保存的旧数据读不了</p><p class="fix"><b>✓</b>数据会被回放时使用 *_TRANSITIVE 级别</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个主题明确兼容级别并写入文档</span></label></li><li><label><input type="checkbox"><span>CI 中调用兼容性检查接口</span></label></li><li><label><input type="checkbox"><span>新增字段一律提供默认值</span></label></li><li><label><input type="checkbox"><span>删除字段前确认无消费者依赖</span></label></li><li><label><input type="checkbox"><span>Protobuf 已删字段号全部 reserved</span></label></li><li><label><input type="checkbox"><span>发布顺序与兼容级别一致</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>BACKWARD 和 FORWARD 兼容分别保护谁？</summary><p>BACKWARD 保证用新模式的读者能读旧数据，保护的是先升级的消费者以及历史数据回放；FORWARD 保证旧读者能读新数据，保护的是尚未升级的消费者。选择取决于谁先发布：消费者先升级用 BACKWARD，生产者先升级用 FORWARD。</p></details><details class="iv"><summary>如何安全地重命名一个字段？</summary><p>重命名对多数格式等同于删除加新增。安全做法：新增新名字段并带默认值，生产者双写；消费者逐步切换到新字段；确认没有读取方后再删除旧字段。Avro 可用 aliases 辅助读取，但仍需评估各语言实现的支持程度。</p></details><details class="iv"><summary>为什么数据湖也需要模式演进管理？</summary><p>湖中数据会被多年后的作业重读，表格式要能用当前模式读取旧文件。Iceberg 按列 ID 而非列名跟踪字段，支持安全地加列、删列、重命名和部分类型提升；若绕过表格式直接写文件，模式漂移会让查询出错或静默产生空值。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.confluent.io/platform/current/schema-registry/fundamentals/schema-evolution.html" target="_blank" rel="noopener"><b>Confluent: Schema Evolution and Compatibility</b><small>docs.confluent.io ↗</small></a></li><li><a href="https://protobuf.dev/programming-guides/proto3/" target="_blank" rel="noopener"><b>Protocol Buffers: Updating A Message Type</b><small>protobuf.dev ↗</small></a></li><li><a href="https://avro.apache.org/docs/1.11.1/specification/" target="_blank" rel="noopener"><b>Apache Avro Specification</b><small>avro.apache.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="stream-processing.pro.html" rel="prev"><small>‹ 上一个</small><b>🌊 流处理 (Flink)</b></a><a class="pn next" href="mvcc.pro.html" rel="next"><small>下一个 ›</small><b>📸 多版本并发控制 (MVCC)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

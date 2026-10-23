@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="流式输出 专业模式：流式输出（Streaming Output）指模型服务在生成过程中把 token 增量推送给客户端，而不是等完整结果生成后一次性返回。它属于 API 传输与交互">
+<title>🎓 流式输出 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="streaming-output" data-answer="0" data-prev="prompt-injection.pro.html" data-next="typescript-and-types.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#ai">🌊 中级 · 🤖 AI 与提示词</a><span>›</span><a href="streaming-output.html">流式输出</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.89 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="prompt-injection.pro.html" rel="prev"><small>‹ 上一个</small><b>🕳️ 提示词注入</b></a><a class="pn next" href="typescript-and-types.pro.html" rel="next"><small>下一个 ›</small><b>🔷 TypeScript 与类型</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">⌨️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>流式输出</h1><p class="en">Streaming Output</p>
+    <div class="hbtns"><a class="prosw back" href="streaming-output.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">流式输出（Streaming Output）指模型服务在生成过程中把 token 增量推送给客户端，而不是等完整结果生成后一次性返回。它属于 API 传输与交互层，主流 LLM API 通常通过服务器发送事件（Server-Sent Events，SSE）实现，能显著降低首字延迟（TTFT），改善长回答的体验。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>客户端在请求中设置 stream 参数，服务端以 text/event-stream 类型保持 HTTP 连接不关闭。</p></li><li><span class="sn">2</span><p>模型每生成一段内容，服务端就写出一个 SSE 事件，格式为 data: 加 JSON 再加空行。</p></li><li><span class="sn">3</span><p>事件类型通常包括消息开始、内容增量、工具调用参数增量、用量统计和结束信号。</p></li><li><span class="sn">4</span><p>客户端逐块解析并拼接增量，实时渲染到界面；工具调用参数需全部拼完后再解析 JSON。</p></li><li><span class="sn">5</span><p>用户中断时客户端关闭连接或调用 abort，服务端停止生成；中间网关需关闭缓冲才能真正流式。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>SSE (Server-Sent Events)</dt><dd>基于 HTTP 的单向服务器推送协议，MIME 为 text/event-stream。</dd></div><div class="term"><dt>首字延迟 (TTFT)</dt><dd>从发送请求到收到第一个 token 的时间。</dd></div><div class="term"><dt>增量 (Delta)</dt><dd>每个流事件携带的新增内容片段。</dd></div><div class="term"><dt>背压 (Backpressure)</dt><dd>消费端处理不过来时向生产端施加的流量控制。</dd></div><div class="term"><dt>AbortController</dt><dd>Web API，用于取消进行中的 fetch 请求与流。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>前端读取 SSE 流</span><em>typescript</em><button class="ccopy">复制</button></div><pre><code>// 假设后端 /api/chat 以 SSE 转发模型输出，每条为 data: {&quot;text&quot;: &quot;...&quot;}
+const ctrl = new AbortController();
+const res = await fetch(&quot;/api/chat&quot;, {
+  method: &quot;POST&quot;,
+  headers: { &quot;Content-Type&quot;: &quot;application/json&quot; },
+  body: JSON.stringify({ q: &quot;解释一下 SSE&quot; }),
+  signal: ctrl.signal,            // 调用 ctrl.abort() 可中途停止
+});
+
+const reader = res.body!.pipeThrough(new TextDecoderStream()).getReader();
+let buf = &quot;&quot;;
+while (true) {
+  const { value, done } = await reader.read();
+  if (done) break;
+  buf += value;
+  const events = buf.split(&quot;\n\n&quot;);   // SSE 事件以空行分隔
+  buf = events.pop()!;                // 最后一段可能不完整，留到下次
+  for (const ev of events) {
+    if (!ev.startsWith(&quot;data: &quot;)) continue;
+    const payload = ev.slice(6);
+    if (payload === &quot;[DONE]&quot;) continue;
+    output.textContent += JSON.parse(payload).text;
+  }
+}</code></pre></div><p class="cnote">演示按空行切分事件和处理半包；POST 请求不能用 EventSource，故用 fetch 读流。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">实时推送方案对比</h3><div class="tw"><table><thead><tr><th>方案</th><th>方向</th><th>适用</th></tr></thead><tbody><tr><td data-h="方案">SSE</td><td data-h="方向">服务器到客户端</td><td data-h="适用">LLM 文本流、通知</td></tr><tr><td data-h="方案">WebSocket</td><td data-h="方向">双向</td><td data-h="适用">实时语音、协作编辑</td></tr><tr><td data-h="方案">分块传输 (chunked)</td><td data-h="方向">服务器到客户端</td><td data-h="适用">自定义流格式</td></tr><tr><td data-h="方案">轮询</td><td data-h="方向">客户端拉取</td><td data-h="适用">简单状态查询</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>流式返回</h4><p><b class="k-p">优点</b>首字快，可中途取消</p><p><b class="k-c">代价</b>错误处理和解析更复杂</p><p><b class="k-w">适用</b>聊天、长文本生成</p></div><div class="trd"><h4>非流式返回</h4><p><b class="k-p">优点</b>实现简单，便于整体校验</p><p><b class="k-c">代价</b>长回答等待久</p><p><b class="k-w">适用</b>批处理、后台任务、需完整 JSON</p></div><div class="trd"><h4>流式 + 结构化输出</h4><p><b class="k-p">优点</b>边生成边展示</p><p><b class="k-c">代价</b>需处理不完整 JSON</p><p><b class="k-w">适用</b>渐进渲染表单或卡片</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>Nginx 等代理默认缓冲，前端收到一大坨</p><p class="fix"><b>✓</b>关闭代理缓冲，如 proxy_buffering off 或响应头 X-Accel-Buffering: no</p></li><li><p class="bad"><b>✗</b>按网络块直接 JSON.parse，遇半包报错</p><p class="fix"><b>✓</b>维护缓冲区，按事件分隔符切分后再解析</p></li><li><p class="bad"><b>✗</b>流中途出错却只在开头检查状态码</p><p class="fix"><b>✓</b>处理流内的 error 事件和异常断开</p></li><li><p class="bad"><b>✗</b>流式内容先展示再做安全审核</p><p class="fix"><b>✓</b>对敏感场景增量审核，或渲染时做转义与过滤</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>代理和 CDN 已关闭响应缓冲</span></label></li><li><label><input type="checkbox"><span>客户端正确处理半包</span></label></li><li><label><input type="checkbox"><span>支持用户中断并释放连接</span></label></li><li><label><input type="checkbox"><span>流内错误有提示与重试</span></label></li><li><label><input type="checkbox"><span>结束时记录用量统计</span></label></li><li><label><input type="checkbox"><span>渲染 Markdown 时做 XSS 防护</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么 LLM API 多用 SSE 而非 WebSocket？</summary><p>LLM 回复是典型的服务器单向推送，SSE 基于普通 HTTP，易穿透代理、复用现有鉴权和负载均衡，协议简单。WebSocket 需要协议升级和额外的连接管理，适合双向实时场景，如语音对话。</p></details><details class="iv"><summary>流式输出会让总耗时变短吗？</summary><p>通常不会，模型生成全部 token 的时间基本不变。改善的是首字延迟和感知速度：用户能更早开始阅读，并可在发现方向错误时提前中断，节省时间和 token。</p></details><details class="iv"><summary>流式下如何处理工具调用？</summary><p>工具调用的参数也以增量片段到达，客户端需按调用索引累积 JSON 片段，等到该内容块结束事件后再整体解析并执行，不能对半截参数做 JSON.parse。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events" target="_blank" rel="noopener"><b>MDN: Using server-sent events</b><small>developer.mozilla.org ↗</small></a></li><li><a href="https://docs.anthropic.com/en/docs/build-with-claude/streaming" target="_blank" rel="noopener"><b>Anthropic Docs: Streaming Messages</b><small>docs.anthropic.com ↗</small></a></li><li><a href="https://html.spec.whatwg.org/multipage/server-sent-events.html" target="_blank" rel="noopener"><b>HTML Standard: Server-sent events</b><small>html.spec.whatwg.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="prompt-injection.pro.html" rel="prev"><small>‹ 上一个</small><b>🕳️ 提示词注入</b></a><a class="pn next" href="typescript-and-types.pro.html" rel="next"><small>下一个 ›</small><b>🔷 TypeScript 与类型</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

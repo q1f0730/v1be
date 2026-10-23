@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="反压 / 背压机制 专业模式：反压（Backpressure）是数据流系统中下游把自身处理能力反馈给上游、迫使上游减速或暂停的流量控制机制。它出现在流处理库、消息系统、网络协议和服务调用链中">
+<title>🎓 反压 / 背压机制 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="backpressure" data-answer="0" data-prev="race-conditions.pro.html" data-next="load-shedding.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#dist">🔮 高级 · 🕸️ 分布式</a><span>›</span><a href="backpressure.html">反压 / 背压机制</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.285 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="race-conditions.pro.html" rel="prev"><small>‹ 上一个</small><b>🏁 竞态条件</b></a><a class="pn next" href="load-shedding.pro.html" rel="next"><small>下一个 ›</small><b>🚧 负载卸载 / 主动弃载</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🚰</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>反压 / 背压机制</h1><p class="en">Backpressure</p>
+    <div class="hbtns"><a class="prosw back" href="backpressure.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">反压（Backpressure）是数据流系统中下游把自身处理能力反馈给上游、迫使上游减速或暂停的流量控制机制。它出现在流处理库、消息系统、网络协议和服务调用链中，目的是避免生产快于消费时无界缓冲导致内存耗尽和延迟失控，把过载显式地传递回源头处理。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>生产者与消费者之间放置有界缓冲区，容量就是系统愿意承受的积压上限。</p></li><li><span class="sn">2</span><p>缓冲区满时，写入方被阻塞、收到 false 返回值或拒绝信号，而不是继续堆积。</p></li><li><span class="sn">3</span><p>拉模式中消费者按需请求数据，如 Reactive Streams 的 request(n)，上游只发许可数量。</p></li><li><span class="sn">4</span><p>压力沿链路逐级向上传递，最终到达可以减速、丢弃或拒绝的源头。</p></li><li><span class="sn">5</span><p>TCP 滑动窗口是网络层的同类机制：接收窗口缩小，发送方自动放慢。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>有界队列 (Bounded Queue)</dt><dd>容量固定的缓冲区，满了就阻塞或拒绝写入。</dd></div><div class="term"><dt>需求信号 (Demand / request(n))</dt><dd>Reactive Streams 中下游声明还能接收多少元素的信号。</dd></div><div class="term"><dt>高水位线 (highWaterMark)</dt><dd>Node.js 流内部缓冲阈值，超过后 write() 返回 false。</dd></div><div class="term"><dt>流量控制 (Flow Control)</dt><dd>接收方控制发送方速率的机制，如 TCP 窗口、HTTP/2 流控。</dd></div><div class="term"><dt>无界缓冲 (Unbounded Buffer)</dt><dd>不设上限的队列，会把过载转化为内存增长和延迟。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>asyncio 有界队列反压</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import asyncio
+
+async def producer(q: asyncio.Queue):
+    for i in range(1000):
+        await q.put(i)        # 队列满时在这里等待 = 反压生效
+    await q.put(None)        # 结束标记
+
+async def consumer(q: asyncio.Queue):
+    while (item := await q.get()) is not None:
+        await asyncio.sleep(0.01)  # 模拟慢消费者
+        q.task_done()
+
+async def main():
+    q = asyncio.Queue(maxsize=100)  # 有界：最多积压 100 条
+    await asyncio.gather(producer(q), consumer(q))
+
+asyncio.run(main())</code></pre></div><p class="cnote">maxsize 让生产者在队列满时挂起，速度被动对齐消费者，内存不会无限增长。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">过载时的三种应对</h3><div class="tw"><table><thead><tr><th>策略</th><th>行为</th><th>代价</th></tr></thead><tbody><tr><td data-h="策略">反压（阻塞/减速）</td><td data-h="行为">让上游等待</td><td data-h="代价">上游延迟增加，可能级联</td></tr><tr><td data-h="策略">丢弃（drop）</td><td data-h="行为">超出部分直接丢</td><td data-h="代价">数据丢失</td></tr><tr><td data-h="策略">缓冲（buffer）</td><td data-h="行为">暂存积压</td><td data-h="代价">内存与延迟上升，需设上限</td></tr><tr><td data-h="策略">拒绝（load shedding）</td><td data-h="行为">返回错误如 503</td><td data-h="代价">部分请求失败</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>阻塞式反压</h4><p><b class="k-p">优点</b>不丢数据，实现简单</p><p><b class="k-c">代价</b>上游被拖慢，可能占满线程</p><p><b class="k-w">适用</b>批处理、管道内部</p></div><div class="trd"><h4>拉模式按需请求</h4><p><b class="k-p">优点</b>消费者精确控制节奏</p><p><b class="k-c">代价</b>协议和实现更复杂</p><p><b class="k-w">适用</b>流式处理框架、跨服务数据流</p></div><div class="trd"><h4>缓冲加丢弃</h4><p><b class="k-p">优点</b>上游不受影响</p><p><b class="k-c">代价</b>丢失数据，需可观测</p><p><b class="k-w">适用</b>指标、日志等可容忍丢失的流</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>Node.js 中忽略 write() 返回 false，持续写入导致内存暴涨。</p><p class="fix"><b>✓</b>返回 false 时暂停，等 &#x27;drain&#x27; 事件再写，或用 pipeline()。</p></li><li><p class="bad"><b>✗</b>服务间用无界内存队列转发请求。</p><p class="fix"><b>✓</b>所有队列设上限，满时反压或拒绝。</p></li><li><p class="bad"><b>✗</b>反压一路传到用户请求线程，所有请求都卡住。</p><p class="fix"><b>✓</b>在边界处配合超时和负载卸载，快速失败。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有缓冲区和队列都有容量上限</span></label></li><li><label><input type="checkbox"><span>写入方正确处理满或 false 信号</span></label></li><li><label><input type="checkbox"><span>队列深度和等待时间有监控</span></label></li><li><label><input type="checkbox"><span>链路边界处有超时与拒绝策略</span></label></li><li><label><input type="checkbox"><span>明确每类数据过载时是等、丢还是拒</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>反压和负载卸载有什么区别？</summary><p>反压是让上游慢下来，压力被传递而非丢弃；负载卸载是主动拒绝部分请求以保护自身。数据管道内部倾向反压，面向外部请求的入口更适合卸载，因为无法让用户等无限久。</p></details><details class="iv"><summary>为什么无界队列是危险的？</summary><p>它把吞吐不足转化为排队延迟和内存增长，系统看似正常实际越来越慢，最终 OOM。并且排队的请求可能早已超时，处理它们纯属浪费。有界队列让过载尽早显性化。</p></details><details class="iv"><summary>Node.js 流怎样处理反压？</summary><p>可写流内部缓冲超过 highWaterMark 时 write() 返回 false，生产方应暂停直到 &#x27;drain&#x27; 事件；使用 stream.pipeline() 或 pipe() 会自动处理暂停与恢复，并统一传播错误。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://nodejs.org/en/learn/modules/backpressuring-in-streams" target="_blank" rel="noopener"><b>Node.js：Backpressuring in Streams</b><small>nodejs.org ↗</small></a></li><li><a href="https://www.reactive-streams.org/" target="_blank" rel="noopener"><b>Reactive Streams 规范</b><small>reactive-streams.org ↗</small></a></li><li><a href="https://docs.python.org/3/library/asyncio-queue.html" target="_blank" rel="noopener"><b>Python 文档：asyncio.Queue</b><small>docs.python.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="race-conditions.pro.html" rel="prev"><small>‹ 上一个</small><b>🏁 竞态条件</b></a><a class="pn next" href="load-shedding.pro.html" rel="next"><small>下一个 ›</small><b>🚧 负载卸载 / 主动弃载</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

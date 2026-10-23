@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="分布式 SQL 数据库 (NewSQL) 专业模式：分布式 SQL（Distributed SQL，常称 NewSQL）数据库对外提供关系模型、SQL 与 ACID 事务，对内把数据按键范围自动分片到多台节点，并">
+<title>🎓 分布式 SQL 数据库 (NewSQL) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="distributed-sql" data-answer="0" data-prev="expand-contract-migrations.pro.html" data-next="kubernetes-operators.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#db">🔥 进阶 · 🗄️ 数据库</a><span>›</span><a href="distributed-sql.html">分布式 SQL 数据库 (NewSQL)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.469 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="expand-contract-migrations.pro.html" rel="prev"><small>‹ 上一个</small><b>🪗 扩展-收缩式零停机迁移</b></a><a class="pn next" href="kubernetes-operators.pro.html" rel="next"><small>下一个 ›</small><b>🧑‍🔧 K8s Operator 模式</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🌐</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>分布式 SQL 数据库 (NewSQL)</h1><p class="en">Distributed SQL</p>
+    <div class="hbtns"><a class="prosw back" href="distributed-sql.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">分布式 SQL（Distributed SQL，常称 NewSQL）数据库对外提供关系模型、SQL 与 ACID 事务，对内把数据按键范围自动分片到多台节点，并用 Raft/Paxos 共识复制，实现水平扩展和自动故障转移。代表有 Google Spanner、CockroachDB、TiDB、YugabyteDB。它试图同时获得单机关系库的易用性和 NoSQL 的扩展性。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>表数据按主键排序后切成连续的范围（CockroachDB 称 range，TiDB 称 region），超过阈值自动分裂并在节点间迁移以均衡负载。</p></li><li><span class="sn">2</span><p>每个范围有多个副本组成一个共识组，写入需多数派确认，少数节点故障不丢数据、不停服务。</p></li><li><span class="sn">3</span><p>SQL 层把查询拆解为对多个范围的读写，并尽量把过滤和聚合下推到存储节点执行。</p></li><li><span class="sn">4</span><p>跨范围事务借助全局时间戳与 MVCC：Spanner 用 TrueTime，CockroachDB 用混合逻辑时钟，TiDB 用中心化授时（TSO）。</p></li><li><span class="sn">5</span><p>事务提交采用基于共识日志的两阶段提交变体；冲突时事务可能被中止，要求客户端重试。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>范围/Region (Range)</dt><dd>按主键连续切分的数据片段，是复制、迁移与负载均衡的基本单位。</dd></div><div class="term"><dt>多数派 (Quorum)</dt><dd>共识组中超过半数的副本，写入获得多数派确认即视为提交。</dd></div><div class="term"><dt>混合逻辑时钟 (HLC)</dt><dd>结合物理时间与逻辑计数的时钟，用于在无原子钟环境下为事务排序。</dd></div><div class="term"><dt>TrueTime</dt><dd>Spanner 提供带误差区间的全局时间 API，依靠 GPS 与原子钟。</dd></div><div class="term"><dt>热点 (Hotspot)</dt><dd>写入集中在单个范围，如单调递增主键导致的尾部写入热点。</dd></div><div class="term"><dt>事务重试错误 (40001)</dt><dd>序列化冲突的 SQLSTATE，应用需要捕获并重试整个事务。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>避免热点的建表方式</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- CockroachDB：用随机 UUID 主键分散写入，避免自增主键尾部热点
+CREATE TABLE orders (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    UUID NOT NULL,
+  amount     DECIMAL(12, 2) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  INDEX (user_id, created_at)
+);
+
+-- 查看数据被切成了哪些范围、分布在哪些节点
+SHOW RANGES FROM TABLE orders;
+
+-- 调整副本数（默认 3），提高容错
+ALTER TABLE orders CONFIGURE ZONE USING num_replicas = 5;
+
+-- TiDB 的对应做法：AUTO_RANDOM 打散主键
+-- CREATE TABLE orders (id BIGINT PRIMARY KEY AUTO_RANDOM, ...);
+-- SHOW TABLE orders REGIONS;</code></pre></div><p class="cnote">不同产品语法与默认值不同，以各自官方文档为准；应用端务必实现 40001 重试。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">主流分布式 SQL 对比</h3><div class="tw"><table><thead><tr><th>产品</th><th>SQL 兼容</th><th>授时方式</th><th>部署形态</th></tr></thead><tbody><tr><td data-h="产品">Google Spanner</td><td data-h="SQL 兼容">GoogleSQL / PostgreSQL 方言</td><td data-h="授时方式">TrueTime</td><td data-h="部署形态">Google Cloud 托管</td></tr><tr><td data-h="产品">CockroachDB</td><td data-h="SQL 兼容">PostgreSQL 协议</td><td data-h="授时方式">混合逻辑时钟</td><td data-h="部署形态">自建或托管</td></tr><tr><td data-h="产品">TiDB</td><td data-h="SQL 兼容">MySQL 协议</td><td data-h="授时方式">PD 中心授时 (TSO)</td><td data-h="部署形态">自建或托管</td></tr><tr><td data-h="产品">YugabyteDB</td><td data-h="SQL 兼容">PostgreSQL 兼容</td><td data-h="授时方式">混合逻辑时钟</td><td data-h="部署形态">自建或托管</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>分布式 SQL</h4><p><b class="k-p">优点</b>自动分片与故障转移，保留 SQL 与事务</p><p><b class="k-c">代价</b>单次写延迟更高，成本与运维复杂</p><p><b class="k-w">适用</b>单机库容量或可用性到顶，需多地域</p></div><div class="trd"><h4>单机库 + 读副本</h4><p><b class="k-p">优点</b>简单成熟，延迟最低</p><p><b class="k-c">代价</b>写入受单机上限约束</p><p><b class="k-w">适用</b>绝大多数中小规模业务</p></div><div class="trd"><h4>应用层手动分库分表</h4><p><b class="k-p">优点</b>可精确控制数据分布</p><p><b class="k-c">代价</b>跨分片查询与事务需自行处理</p><p><b class="k-w">适用</b>已有大量 MySQL 资产且团队有经验</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>沿用自增主键，写入全部打到最后一个范围</p><p class="fix"><b>✓</b>使用随机或打散的主键，或哈希分片索引</p></li><li><p class="bad"><b>✗</b>应用不处理事务重试错误</p><p class="fix"><b>✓</b>捕获 40001 等可重试错误，整体重试事务并设置上限</p></li><li><p class="bad"><b>✗</b>把单机库的大事务直接搬过来</p><p class="fix"><b>✓</b>拆小事务，避免跨大量范围的长事务</p></li><li><p class="bad"><b>✗</b>多地域部署却忽略副本放置与就近读</p><p class="fix"><b>✓</b>按访问地域配置副本与 leader 位置，评估跨地域写延迟</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>确认单机方案确实无法满足容量或可用性</span></label></li><li><label><input type="checkbox"><span>主键与索引设计避免写热点</span></label></li><li><label><input type="checkbox"><span>客户端实现可重试事务逻辑</span></label></li><li><label><input type="checkbox"><span>压测覆盖跨范围事务与节点故障</span></label></li><li><label><input type="checkbox"><span>副本数与放置策略满足容灾要求</span></label></li><li><label><input type="checkbox"><span>核对与原数据库的 SQL 兼容差异</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>分布式 SQL 如何做到强一致又可扩展？</summary><p>扩展靠按键范围自动分片，每片独立复制与迁移；一致性靠每个分片内的 Raft 多数派写入，加上全局时间戳与 MVCC 为跨分片事务排序，提交走基于共识的两阶段提交。代价是写入至少一次多数派往返，跨分片事务更慢。</p></details><details class="iv"><summary>为什么自增主键在分布式 SQL 中是反模式？</summary><p>数据按主键范围切片，单调递增的键总是落在最后一个范围，所有写入集中到一个共识组的 leader，无法利用其他节点。使用随机 UUID、AUTO_RANDOM 或哈希前缀能把写入分散到多个范围。</p></details><details class="iv"><summary>Spanner 的 TrueTime 解决了什么问题？</summary><p>它给出带误差上界的时间区间，事务提交时等待误差区间过去（commit wait），从而保证提交时间戳顺序与真实时间顺序一致，实现外部一致性。没有原子钟的系统用混合逻辑时钟加最大时钟偏移假设，偏移超限时需拒绝服务或重试。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://research.google/pubs/spanner-googles-globally-distributed-database-2/" target="_blank" rel="noopener"><b>Spanner: Google&#x27;s Globally-Distributed Database</b><small>research.google ↗</small></a></li><li><a href="https://www.cockroachlabs.com/docs/stable/architecture/overview" target="_blank" rel="noopener"><b>CockroachDB: Architecture Overview</b><small>cockroachlabs.com ↗</small></a></li><li><a href="https://docs.pingcap.com/tidb/stable/tidb-architecture" target="_blank" rel="noopener"><b>TiDB Architecture</b><small>docs.pingcap.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="expand-contract-migrations.pro.html" rel="prev"><small>‹ 上一个</small><b>🪗 扩展-收缩式零停机迁移</b></a><a class="pn next" href="kubernetes-operators.pro.html" rel="next"><small>下一个 ›</small><b>🧑‍🔧 K8s Operator 模式</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="Redis内存淘汰策略 专业模式：Redis 内存淘汰策略决定当内存使用达到 maxmemory 上限时，如何为新写入腾出空间：拒绝写入，还是按近似 LRU、LFU、随机或剩余 TTL 删除部分">
+<title>🎓 Redis内存淘汰策略 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="redis-eviction-policies" data-answer="0" data-prev="write-through-vs-write-back.pro.html" data-next="cache-control-headers.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#cache">🔮 高级 · ⚡ 缓存与队列</a><span>›</span><a href="redis-eviction-policies.html">Redis内存淘汰策略</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.276 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="write-through-vs-write-back.pro.html" rel="prev"><small>‹ 上一个</small><b>📒 直写与异步回写</b></a><a class="pn next" href="cache-control-headers.pro.html" rel="next"><small>下一个 ›</small><b>🏷️ HTTP缓存控制头</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🗑️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>⚡ 缓存与队列</span><span>⏱ 约 10 分钟</span></div>
+    <h1>Redis内存淘汰策略</h1><p class="en">Redis Eviction Policies</p>
+    <div class="hbtns"><a class="prosw back" href="redis-eviction-policies.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">Redis 内存淘汰策略决定当内存使用达到 maxmemory 上限时，如何为新写入腾出空间：拒绝写入，还是按近似 LRU、LFU、随机或剩余 TTL 删除部分键。它与过期（TTL 到期删除）是两种不同机制。策略选择直接影响缓存命中率，以及 Redis 被当作存储使用时的数据安全。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>配置 maxmemory 设定内存上限；写入命令执行前检查是否超限。</p></li><li><span class="sn">2</span><p>超限时按 maxmemory-policy 选择淘汰对象：allkeys-* 在所有键中选，volatile-* 只在设置了 TTL 的键中选。</p></li><li><span class="sn">3</span><p>LRU 与 LFU 均为近似算法：每次随机采样若干键（maxmemory-samples，默认 5）选出最该淘汰的。</p></li><li><span class="sn">4</span><p>LFU 使用对数计数器记录访问频率，并随时间衰减，由 lfu-log-factor 与 lfu-decay-time 调节。</p></li><li><span class="sn">5</span><p>noeviction（默认）不淘汰，超限后写命令返回 OOM 错误，读命令仍可执行。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>maxmemory</dt><dd>Redis 可使用的最大内存，达到后触发淘汰策略。</dd></div><div class="term"><dt>LRU</dt><dd>最近最少使用，淘汰最久未被访问的键。</dd></div><div class="term"><dt>LFU</dt><dd>最不经常使用，淘汰访问频率最低的键。</dd></div><div class="term"><dt>volatile-ttl</dt><dd>在有 TTL 的键中优先淘汰剩余时间最短的。</dd></div><div class="term"><dt>过期 (Expiration)</dt><dd>键到达 TTL 后被删除，与内存是否满无关。</dd></div><div class="term"><dt>evicted_keys</dt><dd>INFO stats 中累计被淘汰的键数量。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>配置与观察淘汰行为</span><em>bash</em><button class="ccopy">复制</button></div><pre><code>#!/usr/bin/env bash
+# 纯缓存场景：设上限并在所有键中按访问频率淘汰
+redis-cli CONFIG SET maxmemory 2gb
+redis-cli CONFIG SET maxmemory-policy allkeys-lfu
+redis-cli CONFIG REWRITE            # 写回 redis.conf，重启后仍生效
+
+# 查看当前配置与内存
+redis-cli CONFIG GET &#x27;maxmemory*&#x27;
+redis-cli INFO memory | grep -E &#x27;^(used_memory_human|maxmemory_human|maxmemory_policy):&#x27;
+
+# 淘汰与过期是两个计数
+redis-cli INFO stats | grep -E &#x27;^(evicted_keys|expired_keys):&#x27;
+
+# LFU 策略下可查看单个键的访问频率计数
+redis-cli OBJECT FREQ product:42
+
+# 估算某个键占用的内存（字节）
+redis-cli MEMORY USAGE product:42
+
+# 若 Redis 同时存放会话等不可丢数据，考虑拆实例或改用 volatile-*
+# noeviction 下写满会报：OOM command not allowed when used memory &gt; &#x27;maxmemory&#x27;</code></pre></div><p class="cnote">evicted_keys 是被挤掉，expired_keys 是到期删除；OBJECT FREQ 需 LFU 策略。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">淘汰策略速查</h3><div class="tw"><table><thead><tr><th>策略</th><th>候选范围</th><th>规则</th><th>适用</th></tr></thead><tbody><tr><td data-h="策略">noeviction（默认）</td><td data-h="候选范围">—</td><td data-h="规则">不淘汰，写入报错</td><td data-h="适用">Redis 作为存储，不能丢数据</td></tr><tr><td data-h="策略">allkeys-lru</td><td data-h="候选范围">全部键</td><td data-h="规则">最近最少使用</td><td data-h="适用">通用缓存</td></tr><tr><td data-h="策略">allkeys-lfu</td><td data-h="候选范围">全部键</td><td data-h="规则">访问频率最低</td><td data-h="适用">热点稳定、长尾明显的缓存</td></tr><tr><td data-h="策略">volatile-lru / volatile-lfu</td><td data-h="候选范围">有 TTL 的键</td><td data-h="规则">LRU / LFU</td><td data-h="适用">缓存与持久数据混存</td></tr><tr><td data-h="策略">volatile-ttl</td><td data-h="候选范围">有 TTL 的键</td><td data-h="规则">剩余 TTL 最短</td><td data-h="适用">TTL 能反映重要性时</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>allkeys-lfu</h4><p><b class="k-p">优点</b>抗偶发扫描，保留稳定热点</p><p><b class="k-c">代价</b>新热点需时间积累频率</p><p><b class="k-w">适用</b>访问分布稳定的缓存</p></div><div class="trd"><h4>allkeys-lru</h4><p><b class="k-p">优点</b>对访问模式变化反应快</p><p><b class="k-c">代价</b>一次全量扫描会冲掉热点</p><p><b class="k-w">适用</b>热点快速变化</p></div><div class="trd"><h4>noeviction</h4><p><b class="k-p">优点</b>绝不静默丢数据</p><p><b class="k-c">代价</b>写满即写入失败</p><p><b class="k-w">适用</b>队列、会话、锁等关键数据</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>未设置 maxmemory，Redis 用尽系统内存被 OOM Killer 杀掉</p><p class="fix"><b>✓</b>设置 maxmemory，并为持久化 fork 留出余量</p></li><li><p class="bad"><b>✗</b>用 volatile-* 但大部分键没有 TTL，等同不淘汰</p><p class="fix"><b>✓</b>缓存键统一设置 TTL，或改用 allkeys-*</p></li><li><p class="bad"><b>✗</b>缓存与会话、队列共用实例并开 allkeys 淘汰</p><p class="fix"><b>✓</b>按用途拆分实例，关键数据用 noeviction</p></li><li><p class="bad"><b>✗</b>把 evicted_keys 增长当正常现象长期忽略</p><p class="fix"><b>✓</b>持续淘汰说明容量不足，评估扩容或缩短 TTL</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>已设置 maxmemory 并留有余量</span></label></li><li><label><input type="checkbox"><span>淘汰策略与实例用途匹配</span></label></li><li><label><input type="checkbox"><span>缓存键都有合理 TTL</span></label></li><li><label><input type="checkbox"><span>关键数据与缓存分实例部署</span></label></li><li><label><input type="checkbox"><span>监控 evicted_keys 与内存使用率</span></label></li><li><label><input type="checkbox"><span>大键与热键定期排查</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Redis 的 LRU 为什么是近似的？</summary><p>精确 LRU 需要维护全局访问链表，每次访问都调整，内存与 CPU 开销大。Redis 为每个键记录最近访问时间，淘汰时随机采样 maxmemory-samples 个键，淘汰其中最久未访问的，并维护候选池。增大采样数更接近精确 LRU，但更耗 CPU。</p></details><details class="iv"><summary>LRU 和 LFU 怎么选？</summary><p>热点稳定、偶有批量扫描时选 LFU，扫描访问一次的键不会挤掉高频热点；热点变化快（如新闻、短期活动）时 LRU 对新热点反应更快。不确定时可在影子环境用真实流量对比命中率。</p></details><details class="iv"><summary>淘汰和过期有什么区别？</summary><p>过期是键达到 TTL 后被删除，与内存是否充足无关，Redis 通过访问时惰性检查和后台定期抽样清理。淘汰只在内存超过 maxmemory 时发生，按策略删除可能尚未过期的键。两者分别计入 expired_keys 与 evicted_keys。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://redis.io/docs/latest/develop/reference/eviction/" target="_blank" rel="noopener"><b>Redis: Key eviction</b><small>redis.io ↗</small></a></li><li><a href="https://redis.io/docs/latest/commands/object-freq/" target="_blank" rel="noopener"><b>Redis: OBJECT FREQ</b><small>redis.io ↗</small></a></li><li><a href="https://redis.io/docs/latest/commands/info/" target="_blank" rel="noopener"><b>Redis: INFO 命令</b><small>redis.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="write-through-vs-write-back.pro.html" rel="prev"><small>‹ 上一个</small><b>📒 直写与异步回写</b></a><a class="pn next" href="cache-control-headers.pro.html" rel="next"><small>下一个 ›</small><b>🏷️ HTTP缓存控制头</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

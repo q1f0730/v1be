@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="扩散模型 (图像 / 视频生成) 专业模式：扩散模型（Diffusion Model）是一类生成模型：训练时学习逆转「逐步向数据加噪」的过程，生成时从纯噪声出发，迭代去噪得到图像、视频或音频。Stable">
+<title>🎓 扩散模型 (图像 / 视频生成) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="diffusion-models" data-answer="0" data-prev="reasoning-effort.pro.html" data-next="layered-architecture.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#ai">🌊 中级 · 🤖 AI 与提示词</a><span>›</span><a href="diffusion-models.html">扩散模型 (图像 / 视频生成)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.159 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="reasoning-effort.pro.html" rel="prev"><small>‹ 上一个</small><b>🧠 思考预算 (Reasoning Effort)</b></a><a class="pn next" href="layered-architecture.pro.html" rel="next"><small>下一个 ›</small><b>🍰 分层架构</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🎨</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>扩散模型 (图像 / 视频生成)</h1><p class="en">Diffusion Models</p>
+    <div class="hbtns"><a class="prosw back" href="diffusion-models.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">扩散模型（Diffusion Model）是一类生成模型：训练时学习逆转「逐步向数据加噪」的过程，生成时从纯噪声出发，迭代去噪得到图像、视频或音频。Stable Diffusion 等潜空间扩散在压缩后的潜变量上去噪以降低成本，并通过文本编码器与无分类器引导实现文生图。它是当前主流图像与视频生成的基础方法之一。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>前向过程：按预设噪声调度，逐步向训练图像添加高斯噪声，直到接近纯噪声。</p></li><li><span class="sn">2</span><p>训练：网络（U-Net 或 Transformer）学习在给定时间步和条件下预测所加噪声（或等价目标）。</p></li><li><span class="sn">3</span><p>条件注入：文本经编码器（如 CLIP、T5）转为向量，通过交叉注意力等方式引导去噪方向。</p></li><li><span class="sn">4</span><p>采样：从随机噪声开始，由调度器按若干步迭代去噪；步数越少越快，但质量可能下降。</p></li><li><span class="sn">5</span><p>潜空间扩散先用 VAE 把图像压缩到潜空间，在潜空间去噪后再解码回像素，显著降低显存与计算。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>去噪网络 (Denoiser)</dt><dd>预测并去除噪声的神经网络，常用 U-Net 或 DiT。</dd></div><div class="term"><dt>调度器 (Scheduler / Sampler)</dt><dd>决定每步噪声水平与更新规则的算法。</dd></div><div class="term"><dt>无分类器引导 (CFG)</dt><dd>混合有条件与无条件预测，guidance_scale 越大越贴合提示。</dd></div><div class="term"><dt>潜空间 (Latent Space)</dt><dd>VAE 压缩后的低维表示，在其中去噪更省算力。</dd></div><div class="term"><dt>种子 (Seed)</dt><dd>初始噪声的随机种子，固定后可复现相同结果。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>用 diffusers 文生图</span><em>python</em><button class="ccopy">复制</button></div><pre><code># pip install diffusers transformers accelerate torch
+import torch
+from diffusers import StableDiffusionPipeline
+
+pipe = StableDiffusionPipeline.from_pretrained(
+    &quot;stable-diffusion-v1-5/stable-diffusion-v1-5&quot;,
+    torch_dtype=torch.float16,
+).to(&quot;cuda&quot;)
+
+generator = torch.Generator(&quot;cuda&quot;).manual_seed(42)   # 固定种子可复现
+image = pipe(
+    prompt=&quot;a cozy bubble tea shop at night, watercolor, warm light&quot;,
+    negative_prompt=&quot;blurry, extra fingers, watermark&quot;,
+    num_inference_steps=30,     # 去噪步数
+    guidance_scale=7.5,         # CFG 强度
+    generator=generator,
+).images[0]
+image.save(&quot;shop.png&quot;)</code></pre></div><p class="cnote">需 NVIDIA GPU；使用前请阅读模型许可证。步数、CFG 与种子是最常调的三个参数。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">关键采样参数</h3><div class="tw"><table><thead><tr><th>参数</th><th>作用</th><th>过大/过小的影响</th></tr></thead><tbody><tr><td data-h="参数">num_inference_steps</td><td data-h="作用">去噪迭代次数</td><td data-h="过大/过小的影响">过少粗糙，过多变慢且收益递减</td></tr><tr><td data-h="参数">guidance_scale</td><td data-h="作用">贴合提示的强度</td><td data-h="过大/过小的影响">过大过饱和失真，过小偏离提示</td></tr><tr><td data-h="参数">seed</td><td data-h="作用">初始噪声</td><td data-h="过大/过小的影响">固定可复现，改变得到不同构图</td></tr><tr><td data-h="参数">分辨率</td><td data-h="作用">输出尺寸</td><td data-h="过大/过小的影响">偏离训练分辨率易出现重复与畸变</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>本地开放权重模型</h4><p><b class="k-p">优点</b>可控、可微调（LoRA）、无按张费用</p><p><b class="k-c">代价</b>需 GPU 与调参经验</p><p><b class="k-w">适用</b>批量生成、风格定制</p></div><div class="trd"><h4>托管图像 API</h4><p><b class="k-p">优点</b>质量高、免部署</p><p><b class="k-c">代价</b>按次计费，内容政策受限</p><p><b class="k-w">适用</b>产品集成、低运维</p></div><div class="trd"><h4>少步蒸馏模型</h4><p><b class="k-p">优点</b>一到数步出图，速度快</p><p><b class="k-c">代价</b>细节与多样性可能下降</p><p><b class="k-w">适用</b>实时预览、交互式生成</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>CFG 调得很高以求「更听话」</p><p class="fix"><b>✓</b>在常用范围内调整，并改进提示词本身</p></li><li><p class="bad"><b>✗</b>在远离训练分辨率的尺寸直接生成</p><p class="fix"><b>✓</b>按模型原生分辨率生成，再放大或用分块方法</p></li><li><p class="bad"><b>✗</b>忽视模型许可证与生成内容的版权、肖像风险</p><p class="fix"><b>✓</b>核对许可证与平台政策，建立内容审核</p></li><li><p class="bad"><b>✗</b>不记录种子与参数，好结果无法复现</p><p class="fix"><b>✓</b>保存提示、参数、种子与模型版本</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>模型许可证允许当前用途</span></label></li><li><label><input type="checkbox"><span>记录提示、种子、参数与模型版本</span></label></li><li><label><input type="checkbox"><span>生成内容有安全审核</span></label></li><li><label><input type="checkbox"><span>按原生分辨率生成</span></label></li><li><label><input type="checkbox"><span>评估了显存与单张耗时</span></label></li><li><label><input type="checkbox"><span>输出标注 AI 生成（如需合规）</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>扩散模型和 GAN 相比有什么优势与代价？</summary><p>扩散模型训练更稳定、模式覆盖更好、多样性高，且易于加入文本等条件；代价是采样需多步迭代、推理较慢，因此出现了更快的调度器、蒸馏与一致性模型等加速方法。</p></details><details class="iv"><summary>无分类器引导是怎么工作的？</summary><p>训练时随机丢弃条件，使同一网络学会有条件和无条件预测；采样时把两者按 guidance_scale 外推组合，放大条件方向的影响，换取更贴合提示但多样性下降。</p></details><details class="iv"><summary>为什么要在潜空间做扩散？</summary><p>像素空间维度高，迭代去噪计算与显存开销大；先用 VAE 压缩到低维潜空间，在其中去噪再解码，能大幅降低成本，同时保留感知质量，这是 Latent Diffusion 的核心思想。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://arxiv.org/abs/2006.11239" target="_blank" rel="noopener"><b>Ho et al. 2020：DDPM</b><small>arxiv.org ↗</small></a></li><li><a href="https://arxiv.org/abs/2112.10752" target="_blank" rel="noopener"><b>Rombach et al. 2021：Latent Diffusion Models</b><small>arxiv.org ↗</small></a></li><li><a href="https://arxiv.org/abs/2207.12598" target="_blank" rel="noopener"><b>Ho &amp; Salimans 2022：Classifier-Free Guidance</b><small>arxiv.org ↗</small></a></li><li><a href="https://huggingface.co/docs/diffusers/index" target="_blank" rel="noopener"><b>Hugging Face Diffusers 文档</b><small>huggingface.co ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="reasoning-effort.pro.html" rel="prev"><small>‹ 上一个</small><b>🧠 思考预算 (Reasoning Effort)</b></a><a class="pn next" href="layered-architecture.pro.html" rel="next"><small>下一个 ›</small><b>🍰 分层架构</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

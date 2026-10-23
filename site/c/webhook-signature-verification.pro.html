@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="Webhook签名校验 专业模式：Webhook 签名校验是接收方确认回调请求确实来自声明的发送方、且内容未被篡改的机制。主流做法是发送方用共享密钥对原始请求体（常加时间戳）计算 HMAC-SH">
+<title>🎓 Webhook签名校验 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="webhook-signature-verification" data-answer="0" data-prev="account-enumeration.pro.html" data-next="tls-certificate-expiry.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sec">🔮 高级 · 🛡️ 安全防线</a><span>›</span><a href="webhook-signature-verification.html">Webhook签名校验</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.231 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="account-enumeration.pro.html" rel="prev"><small>‹ 上一个</small><b>🕵️ 账户枚举漏洞</b></a><a class="pn next" href="tls-certificate-expiry.pro.html" rel="next"><small>下一个 ›</small><b>📜 TLS证书过期治理</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔏</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>Webhook签名校验</h1><p class="en">Webhook Signature Verification</p>
+    <div class="hbtns"><a class="prosw back" href="webhook-signature-verification.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">Webhook 签名校验是接收方确认回调请求确实来自声明的发送方、且内容未被篡改的机制。主流做法是发送方用共享密钥对原始请求体（常加时间戳）计算 HMAC-SHA256 并放入请求头，接收方重新计算并常量时间比对，再配合时间窗口和事件去重防重放。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>双方预先共享一个签名密钥（signing secret），由发送方平台生成并在控制台展示。</p></li><li><span class="sn">2</span><p>发送方对原始字节请求体（或“时间戳.请求体”）计算 HMAC，放入如 X-Hub-Signature-256 的请求头。</p></li><li><span class="sn">3</span><p>接收方读取未经解析的原始请求体，用同一密钥和算法重新计算签名。</p></li><li><span class="sn">4</span><p>使用常量时间比较函数对比两个签名，不一致直接返回 401 并记录日志。</p></li><li><span class="sn">5</span><p>校验时间戳在允许窗口内，并按事件 ID 去重，保证重放和重复投递不会被重复处理。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>HMAC</dt><dd>基于哈希的消息认证码（RFC 2104），需要密钥才能生成有效值。</dd></div><div class="term"><dt>原始请求体 (Raw Body)</dt><dd>未经 JSON 解析与重新序列化的字节流，签名针对它计算。</dd></div><div class="term"><dt>常量时间比较 (Constant-time Compare)</dt><dd>比较耗时与内容无关，防止逐字节猜测签名。</dd></div><div class="term"><dt>重放攻击 (Replay Attack)</dt><dd>截获合法请求后原样重发，以触发重复操作。</dd></div><div class="term"><dt>幂等键 (Idempotency Key)</dt><dd>用事件 ID 记录已处理事件，重复到达时跳过。</dd></div><div class="term"><dt>密钥轮换 (Secret Rotation)</dt><dd>新旧密钥并存一段时间，接收方任一校验通过即接受。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>校验 GitHub Webhook</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import hmac, hashlib, os
+from flask import Flask, request, abort
+
+app = Flask(__name__)
+SECRET = os.environ[&quot;GITHUB_WEBHOOK_SECRET&quot;].encode()
+
+@app.post(&quot;/webhooks/github&quot;)
+def github_webhook():
+    body = request.get_data()  # 原始字节，不要先解析再序列化
+    received = request.headers.get(&quot;X-Hub-Signature-256&quot;, &quot;&quot;)
+    expected = &quot;sha256=&quot; + hmac.new(SECRET, body, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected, received):
+        abort(401)
+
+    delivery_id = request.headers.get(&quot;X-GitHub-Delivery&quot;)
+    # 用 delivery_id 做去重后再处理，处理耗时的任务放进队列
+    event = request.get_json()
+    return &quot;&quot;, 204</code></pre></div><p class="cnote">签名基于原始请求体；compare_digest 做常量时间比较，投递 ID 用于去重。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">主流平台签名方案</h3><div class="tw"><table><thead><tr><th>平台</th><th>签名头</th><th>签名内容</th><th>防重放</th></tr></thead><tbody><tr><td data-h="平台">GitHub</td><td data-h="签名头">X-Hub-Signature-256</td><td data-h="签名内容">HMAC-SHA256(请求体)</td><td data-h="防重放">无时间戳，靠投递 ID 去重</td></tr><tr><td data-h="平台">Stripe</td><td data-h="签名头">Stripe-Signature</td><td data-h="签名内容">HMAC-SHA256(时间戳.请求体)</td><td data-h="防重放">SDK 默认 5 分钟窗口</td></tr><tr><td data-h="平台">Standard Webhooks</td><td data-h="签名头">webhook-signature</td><td data-h="签名内容">HMAC-SHA256(id.时间戳.请求体)</td><td data-h="防重放">时间戳 + 消息 ID</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>共享密钥 HMAC</h4><p><b class="k-p">优点</b>实现简单、性能好，生态最普遍</p><p><b class="k-c">代价</b>双方都持密钥，泄露需轮换</p><p><b class="k-w">适用</b>绝大多数 SaaS 回调</p></div><div class="trd"><h4>非对称签名（如 Ed25519）</h4><p><b class="k-p">优点</b>接收方只持公钥，泄露风险低</p><p><b class="k-c">代价</b>实现与密钥分发更复杂</p><p><b class="k-w">适用</b>多租户、大量接收方</p></div><div class="trd"><h4>mTLS 或 IP 白名单</h4><p><b class="k-p">优点</b>网络层拦截，免改业务</p><p><b class="k-c">代价</b>IP 会变，不能防内容篡改</p><p><b class="k-w">适用</b>作为签名之外的补充</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>框架先把 JSON 解析了，再序列化后计算签名</p><p class="fix"><b>✓</b>在中间件中保留原始字节，如 express.raw()</p></li><li><p class="bad"><b>✗</b>用 == 比较签名</p><p class="fix"><b>✓</b>用 hmac.compare_digest 或 crypto.timingSafeEqual</p></li><li><p class="bad"><b>✗</b>签名通过就同步执行耗时业务，超时触发重试</p><p class="fix"><b>✓</b>先返回 2xx，任务入队异步处理并按事件 ID 去重</p></li><li><p class="bad"><b>✗</b>测试环境与生产共用一个签名密钥</p><p class="fix"><b>✓</b>按环境分配密钥，存入密钥管理服务</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>签名针对原始请求体计算</span></label></li><li><label><input type="checkbox"><span>使用常量时间比较</span></label></li><li><label><input type="checkbox"><span>校验时间戳窗口（若平台提供）</span></label></li><li><label><input type="checkbox"><span>按事件 ID 幂等去重</span></label></li><li><label><input type="checkbox"><span>密钥存于密钥管理服务并支持轮换</span></label></li><li><label><input type="checkbox"><span>校验失败有日志与告警</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么签名要包含时间戳？</summary><p>只签请求体时，截获的合法请求可无限期重放。把时间戳纳入签名内容，攻击者改时间戳就会破坏签名；接收方只接受窗口内的请求，再配合事件 ID 去重，即可在窗口内也防重复处理。</p></details><details class="iv"><summary>为什么不能用普通字符串比较？</summary><p>普通比较遇到第一个不同字节就返回，耗时随匹配前缀长度变化。攻击者可通过大量请求测时逐字节猜出正确签名。常量时间比较消除这种时间侧信道。</p></details><details class="iv"><summary>密钥轮换时如何不中断回调？</summary><p>发送方在过渡期同时用新旧密钥签名（或多个签名值），接收方配置两把密钥，任一校验通过即接受；确认全部切换后移除旧密钥。Stripe、Standard Webhooks 都支持多签名并存。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.github.com/en/webhooks/using-webhooks/validating-webhook-deliveries" target="_blank" rel="noopener"><b>GitHub Docs: Validating webhook deliveries</b><small>docs.github.com ↗</small></a></li><li><a href="https://docs.stripe.com/webhooks/signature" target="_blank" rel="noopener"><b>Stripe Docs: Webhook signatures</b><small>docs.stripe.com ↗</small></a></li><li><a href="https://www.standardwebhooks.com/" target="_blank" rel="noopener"><b>Standard Webhooks 规范</b><small>standardwebhooks.com ↗</small></a></li><li><a href="https://www.rfc-editor.org/rfc/rfc2104" target="_blank" rel="noopener"><b>RFC 2104: HMAC</b><small>rfc-editor.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="account-enumeration.pro.html" rel="prev"><small>‹ 上一个</small><b>🕵️ 账户枚举漏洞</b></a><a class="pn next" href="tls-certificate-expiry.pro.html" rel="next"><small>下一个 ›</small><b>📜 TLS证书过期治理</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

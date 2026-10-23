@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="事件驱动架构 (EDA) 专业模式：事件驱动架构（Event-Driven Architecture，EDA）是以“事件”——系统中已发生的、不可变的事实（如订单已创建）——作为服务间通信核心的架">
+<title>🎓 事件驱动架构 (EDA) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="event-driven-architecture" data-answer="0" data-prev="dependency-injection.pro.html" data-next="api-gateway.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#arch">🔮 高级 · 🏛️ 架构设计</a><span>›</span><a href="event-driven-architecture.html">事件驱动架构 (EDA)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.346 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="dependency-injection.pro.html" rel="prev"><small>‹ 上一个</small><b>💉 依赖注入 (DI)</b></a><a class="pn next" href="api-gateway.pro.html" rel="next"><small>下一个 ›</small><b>🚪 API 网关</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📣</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🏛️ 架构设计</span><span>⏱ 约 10 分钟</span></div>
+    <h1>事件驱动架构 (EDA)</h1><p class="en">Event-Driven Architecture</p>
+    <div class="hbtns"><a class="prosw back" href="event-driven-architecture.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">事件驱动架构（Event-Driven Architecture，EDA）是以“事件”——系统中已发生的、不可变的事实（如订单已创建）——作为服务间通信核心的架构风格。生产者发布事件而不关心谁消费，消费者通过消息代理订阅并异步处理。它降低服务间的时间与依赖耦合，便于扩展新功能，但带来最终一致性、调试难度和消息语义等挑战。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>识别领域事件：以过去式命名的业务事实，如 OrderPlaced、PaymentFailed，定义其 schema 与版本。</p></li><li><span class="sn">2</span><p>生产者在完成本地状态变更后发布事件；为保证状态与事件一致，常用事务性发件箱（Outbox）模式。</p></li><li><span class="sn">3</span><p>消息代理（Kafka、RabbitMQ、云事件总线等）持久化并路由事件，支持多个消费者独立订阅。</p></li><li><span class="sn">4</span><p>消费者异步处理事件并更新自身状态；由于通常是至少一次投递，消费者必须幂等。</p></li><li><span class="sn">5</span><p>复杂业务流程可采用编舞（服务互相响应事件）或编排（中心协调者驱动步骤，如 Saga 编排器）。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>领域事件 (Domain Event)</dt><dd>业务中已发生的事实，不可变，以过去式命名。</dd></div><div class="term"><dt>事件通知 (Event Notification)</dt><dd>事件只携带标识，消费者需回查详情。</dd></div><div class="term"><dt>事件携带状态转移 (Event-Carried State Transfer)</dt><dd>事件包含足够数据，消费者无需回查生产者。</dd></div><div class="term"><dt>编舞 vs 编排 (Choreography vs Orchestration)</dt><dd>去中心化响应事件 vs 由协调者统一驱动流程。</dd></div><div class="term"><dt>幂等消费者 (Idempotent Consumer)</dt><dd>重复处理同一事件不会产生额外副作用。</dd></div><div class="term"><dt>CloudEvents</dt><dd>CNCF 的事件元数据格式规范，统一事件描述。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Redis Streams 发布与幂等消费</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import json, redis
+
+r = redis.Redis(decode_responses=True)
+STREAM, GROUP = &quot;orders.events&quot;, &quot;sms-service&quot;
+
+# 生产者：订单写库成功后发布事件（生产中用 Outbox 保证一致）
+r.xadd(STREAM, {&quot;type&quot;: &quot;OrderPlaced&quot;, &quot;id&quot;: &quot;evt-1001&quot;,
+                &quot;data&quot;: json.dumps({&quot;order_id&quot;: 42, &quot;phone&quot;: &quot;138****0000&quot;})})
+
+# 消费者组：每个服务一个组，组内多个实例分摊消息
+try:
+    r.xgroup_create(STREAM, GROUP, id=&quot;0&quot;, mkstream=True)
+except redis.ResponseError:
+    pass  # 组已存在
+
+resp = r.xreadgroup(GROUP, &quot;worker-1&quot;, {STREAM: &quot;&gt;&quot;}, count=10, block=5000)
+for _, messages in resp or []:
+    for msg_id, fields in messages:
+        # 幂等：用事件 ID 去重，SET NX 成功才处理
+        if r.set(f&quot;done:{GROUP}:{fields[&#x27;id&#x27;]}&quot;, 1, nx=True, ex=86400):
+            print(&quot;发送短信&quot;, json.loads(fields[&quot;data&quot;]))
+        r.xack(STREAM, GROUP, msg_id)   # 处理完确认</code></pre></div><p class="cnote">每个服务独立消费组订阅同一事件流；事件 ID 去重保证至少一次投递下的幂等。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">同步调用 vs 事件驱动</h3><div class="tw"><table><thead><tr><th>维度</th><th>同步请求/响应</th><th>事件驱动</th></tr></thead><tbody><tr><td data-h="维度">耦合</td><td data-h="同步请求/响应">调用方需知道被调方及其可用性</td><td data-h="事件驱动">生产者不知道消费者</td></tr><tr><td data-h="维度">一致性</td><td data-h="同步请求/响应">易实现强一致</td><td data-h="事件驱动">通常为最终一致</td></tr><tr><td data-h="维度">故障影响</td><td data-h="同步请求/响应">下游故障直接传导</td><td data-h="事件驱动">代理缓冲，下游可稍后处理</td></tr><tr><td data-h="维度">可观测性</td><td data-h="同步请求/响应">调用链直观</td><td data-h="事件驱动">需追踪 ID 串联事件流</td></tr><tr><td data-h="维度">扩展新功能</td><td data-h="同步请求/响应">修改调用方</td><td data-h="事件驱动">新增订阅者</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>编舞（纯事件响应）</h4><p><b class="k-p">优点</b>高度解耦，易扩展</p><p><b class="k-c">代价</b>全局流程不可见，难排查</p><p><b class="k-w">适用</b>步骤少、团队自治</p></div><div class="trd"><h4>编排（中心协调者）</h4><p><b class="k-p">优点</b>流程清晰，便于补偿与监控</p><p><b class="k-c">代价</b>协调者成为耦合点</p><p><b class="k-w">适用</b>多步骤事务，如 Saga</p></div><div class="trd"><h4>同步 API 调用</h4><p><b class="k-p">优点</b>简单直观，强一致</p><p><b class="k-c">代价</b>耦合高，级联故障风险</p><p><b class="k-w">适用</b>需要立即结果的查询</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>先发事件再写数据库，或反之，二者不在同一事务</p><p class="fix"><b>✓</b>使用 Outbox 模式或 CDC，保证状态与事件一致</p></li><li><p class="bad"><b>✗</b>消费者不幂等，重复投递导致重复扣款</p><p class="fix"><b>✓</b>以事件 ID 去重，或让操作天然幂等</p></li><li><p class="bad"><b>✗</b>事件 schema 随意修改，下游解析失败</p><p class="fix"><b>✓</b>为事件定义版本与兼容规则，使用 schema 注册中心</p></li><li><p class="bad"><b>✗</b>把命令伪装成事件，如“SendEmail”</p><p class="fix"><b>✓</b>事件描述已发生事实，命令定向请求应使用队列或 API</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>事件命名为过去式业务事实</span></label></li><li><label><input type="checkbox"><span>事件有 schema 与版本策略</span></label></li><li><label><input type="checkbox"><span>发布使用 Outbox 或等效机制</span></label></li><li><label><input type="checkbox"><span>消费者幂等并有死信队列</span></label></li><li><label><input type="checkbox"><span>事件携带追踪 ID</span></label></li><li><label><input type="checkbox"><span>流程有端到端监控</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>事件和命令有什么区别？</summary><p>事件是已发生的事实，用过去式命名，发布者不关心谁处理、处理与否，可以有零到多个消费者；命令是请求某个特定接收者执行动作，期望被处理，通常只有一个处理者。混淆二者会导致隐性耦合。</p></details><details class="iv"><summary>如何保证数据库写入和事件发布的一致性？</summary><p>直接“写库后发消息”存在双写问题：写库成功而发消息失败会丢事件。常用事务性 Outbox：在同一数据库事务中写业务数据和待发事件表，再由中继进程或 CDC 把事件可靠投递到消息代理。</p></details><details class="iv"><summary>事件驱动系统如何调试和观测？</summary><p>为每个事件附带关联 ID 与追踪上下文，在生产、代理、消费各环节记录；使用分布式追踪串联异步链路；监控消费延迟、积压和死信数量；保留事件日志以便重放和排查。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://martinfowler.com/articles/201701-event-driven.html" target="_blank" rel="noopener"><b>Martin Fowler：What do you mean by “Event-Driven”?</b><small>martinfowler.com ↗</small></a></li><li><a href="https://cloudevents.io/" target="_blank" rel="noopener"><b>CloudEvents 规范</b><small>cloudevents.io ↗</small></a></li><li><a href="https://redis.io/docs/latest/develop/data-types/streams/" target="_blank" rel="noopener"><b>Redis Streams 文档</b><small>redis.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="dependency-injection.pro.html" rel="prev"><small>‹ 上一个</small><b>💉 依赖注入 (DI)</b></a><a class="pn next" href="api-gateway.pro.html" rel="next"><small>下一个 ›</small><b>🚪 API 网关</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

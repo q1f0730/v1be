@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="双向 TLS (mTLS) 专业模式：双向 TLS（mTLS）是在标准 TLS 基础上要求客户端也出示证书、双方相互验证身份的连接方式。普通 HTTPS 只验证服务器，mTLS 让服务端在握手阶段即">
+<title>🎓 双向 TLS (mTLS) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="mtls" data-answer="0" data-prev="artifact-signing.pro.html" data-next="kms-envelope-encryption.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#sec">🔥 进阶 · 🛡️ 安全防线</a><span>›</span><a href="mtls.html">双向 TLS (mTLS)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.493 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="artifact-signing.pro.html" rel="prev"><small>‹ 上一个</small><b>🔏 制品签名与溯源 (Sigstore / SLSA)</b></a><a class="pn next" href="kms-envelope-encryption.pro.html" rel="next"><small>下一个 ›</small><b>✉️ 密钥管理服务与信封加密</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🤝</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>双向 TLS (mTLS)</h1><p class="en">mTLS</p>
+    <div class="hbtns"><a class="prosw back" href="mtls.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">双向 TLS（mTLS）是在标准 TLS 基础上要求客户端也出示证书、双方相互验证身份的连接方式。普通 HTTPS 只验证服务器，mTLS 让服务端在握手阶段即可确认调用方是哪个服务或设备。它是服务间零信任通信、服务网格、物联网设备接入和高安全 API 的常用机制，通常配合私有 CA 与短期证书自动轮换。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>组织建立私有 CA，为每个服务或设备签发证书，证书中的主体或 SAN 字段承载其身份（如 SPIFFE ID）。</p></li><li><span class="sn">2</span><p>握手时服务端发送证书并请求客户端证书（TLS 1.3 中为 CertificateRequest 消息）。</p></li><li><span class="sn">3</span><p>客户端校验服务端证书链与主机名，再发送自己的证书并用私钥签名握手内容证明持有私钥。</p></li><li><span class="sn">4</span><p>服务端校验客户端证书链、有效期与吊销状态，提取身份后交给授权层判断该身份能否访问目标资源。</p></li><li><span class="sn">5</span><p>服务网格或 SPIRE 等系统自动签发短期证书并轮换，应用通常无需改代码即可获得 mTLS。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>私有 CA (Private CA)</dt><dd>组织内部的证书颁发机构，用于签发服务与设备证书。</dd></div><div class="term"><dt>SPIFFE ID</dt><dd>形如 spiffe://域/路径 的工作负载身份标识，常写入证书的 URI SAN。</dd></div><div class="term"><dt>SVID</dt><dd>SPIFFE 可验证身份文档，常见形式为 X.509 证书。</dd></div><div class="term"><dt>证书轮换 (Rotation)</dt><dd>在证书过期前自动更换新证书，短期证书可减少吊销需求。</dd></div><div class="term"><dt>PeerAuthentication</dt><dd>Istio 中配置服务间 mTLS 模式（如 STRICT）的资源。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>本地搭建 mTLS 并验证</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 1) 私有 CA
+openssl req -x509 -newkey rsa:2048 -nodes -keyout ca.key -out ca.crt \
+  -days 365 -subj &quot;/CN=demo-ca&quot;
+
+# 2) 用 CA 签发服务端（localhost）与客户端（orders-service）证书
+for n in server client; do
+  cn=$([ $n = server ] &amp;&amp; echo localhost || echo orders-service)
+  openssl req -newkey rsa:2048 -nodes -keyout $n.key -out $n.csr -subj &quot;/CN=$cn&quot;
+  openssl x509 -req -in $n.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
+    -out $n.crt -days 30 -extfile &lt;(printf &quot;subjectAltName=DNS:$cn&quot;)
+done
+
+# 3) 要求客户端证书的测试服务（-Verify 表示必须提供客户端证书）
+openssl s_server -accept 8443 -cert server.crt -key server.key \
+  -CAfile ca.crt -Verify 1 -www &amp;
+sleep 1
+
+# 4) 带证书访问成功；不带证书握手失败
+curl --cacert ca.crt --cert client.crt --key client.key https://localhost:8443/ -o /dev/null -w &#x27;%{http_code}\n&#x27;
+curl --cacert ca.crt https://localhost:8443/ || echo &quot;无客户端证书：被拒绝&quot;
+kill %1</code></pre></div><p class="cnote">仅用于学习；生产中应由服务网格或 SPIRE、cert-manager 自动签发短期证书并轮换。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">服务间身份认证方式对比</h3><div class="tw"><table><thead><tr><th>方式</th><th>身份载体</th><th>优点</th><th>缺点</th></tr></thead><tbody><tr><td data-h="方式">mTLS</td><td data-h="身份载体">X.509 证书</td><td data-h="优点">传输层强认证并加密</td><td data-h="缺点">证书生命周期管理复杂</td></tr><tr><td data-h="方式">API Key</td><td data-h="身份载体">共享密钥字符串</td><td data-h="优点">简单</td><td data-h="缺点">易泄露、难轮换、无法证明调用方</td></tr><tr><td data-h="方式">JWT / OAuth 客户端凭证</td><td data-h="身份载体">签名令牌</td><td data-h="优点">可携带权限声明</td><td data-h="缺点">仍需 TLS 保护传输</td></tr><tr><td data-h="方式">服务网格自动 mTLS</td><td data-h="身份载体">网格签发的工作负载证书</td><td data-h="优点">对应用透明、自动轮换</td><td data-h="缺点">需要运维服务网格</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>服务网格自动 mTLS</h4><p><b class="k-p">优点</b>零代码改动，统一策略与轮换</p><p><b class="k-c">代价</b>增加 sidecar 或节点代理开销</p><p><b class="k-w">适用</b>Kubernetes 上的大量微服务</p></div><div class="trd"><h4>应用内直接配置 mTLS</h4><p><b class="k-p">优点</b>不依赖额外基础设施</p><p><b class="k-c">代价</b>每种语言都要处理证书加载与轮换</p><p><b class="k-w">适用</b>服务少或跨环境的点对点集成</p></div><div class="trd"><h4>网关终止 mTLS</h4><p><b class="k-p">优点</b>集中管理外部客户端证书</p><p><b class="k-c">代价</b>网关到后端需另行保护</p><p><b class="k-w">适用</b>对外 B2B 或设备接入 API</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>证书有效期很长且没有自动轮换</p><p class="fix"><b>✓</b>使用短期证书与自动化签发，监控到期时间</p></li><li><p class="bad"><b>✗</b>认为通过 mTLS 就等于有访问权限</p><p class="fix"><b>✓</b>认证之后仍需基于身份的授权策略</p></li><li><p class="bad"><b>✗</b>迁移时直接开启严格模式，未改造的服务全部中断</p><p class="fix"><b>✓</b>先用宽松模式兼容明文，确认全部就绪再切严格</p></li><li><p class="bad"><b>✗</b>客户端关闭证书校验以绕过报错</p><p class="fix"><b>✓</b>正确配置 CA 信任链，禁止跳过校验</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>证书由私有 CA 或网格自动签发</span></label></li><li><label><input type="checkbox"><span>证书短期有效且自动轮换</span></label></li><li><label><input type="checkbox"><span>到期时间有监控告警</span></label></li><li><label><input type="checkbox"><span>身份提取后有授权策略</span></label></li><li><label><input type="checkbox"><span>迁移有宽松到严格的过渡计划</span></label></li><li><label><input type="checkbox"><span>CA 私钥受严格保护</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>mTLS 握手比普通 TLS 多了什么？</summary><p>服务端在握手中发送证书请求，客户端除校验服务端证书外，还要发送自己的证书链，并用私钥对握手记录签名以证明持有私钥；服务端校验链、有效期与吊销状态后才完成握手。这让身份认证在任何应用数据传输前完成。</p></details><details class="iv"><summary>为什么服务网格普遍采用短期证书？</summary><p>证书吊销检查在分布式环境中难以可靠实施。把证书有效期缩短到小时或天级并自动轮换，即使私钥泄露，可被利用的窗口也很短，基本无需依赖吊销列表，同时避免人工续期导致的过期事故。</p></details><details class="iv"><summary>mTLS 和零信任的关系？</summary><p>零信任要求每次访问都验证身份而不信任网络位置。mTLS 为服务间通信提供基于加密证明的工作负载身份与加密通道，是零信任在服务层的关键构件；但还需要授权策略、设备与用户身份、持续监控共同组成完整体系。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.rfc-editor.org/rfc/rfc8446" target="_blank" rel="noopener"><b>RFC 8446: TLS 1.3</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://spiffe.io/docs/latest/spiffe-about/overview/" target="_blank" rel="noopener"><b>SPIFFE Overview</b><small>spiffe.io ↗</small></a></li><li><a href="https://istio.io/latest/docs/tasks/security/authentication/mtls-migration/" target="_blank" rel="noopener"><b>Istio: Mutual TLS Migration</b><small>istio.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="artifact-signing.pro.html" rel="prev"><small>‹ 上一个</small><b>🔏 制品签名与溯源 (Sigstore / SLSA)</b></a><a class="pn next" href="kms-envelope-encryption.pro.html" rel="next"><small>下一个 ›</small><b>✉️ 密钥管理服务与信封加密</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="数据库事务 专业模式：数据库事务（Transaction）是一组作为不可分割单元执行的读写操作，满足 ACID：原子性、一致性、隔离性、持久性。它由存储引擎通过日志与锁或多版本并发控">
+<title>🎓 数据库事务 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="transactions" data-answer="0" data-prev="database-migrations.pro.html" data-next="foreign-keys.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#db">🌊 中级 · 🗄️ 数据库</a><span>›</span><a href="transactions.html">数据库事务</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.127 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="database-migrations.pro.html" rel="prev"><small>‹ 上一个</small><b>🏗️ 数据库模式迁移</b></a><a class="pn next" href="foreign-keys.pro.html" rel="next"><small>下一个 ›</small><b>🔗 外键约束</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🤝</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>数据库事务</h1><p class="en">Transactions</p>
+    <div class="hbtns"><a class="prosw back" href="transactions.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">数据库事务（Transaction）是一组作为不可分割单元执行的读写操作，满足 ACID：原子性、一致性、隔离性、持久性。它由存储引擎通过日志与锁或多版本并发控制实现，解决并发访问与故障中途中断时的数据正确性问题，是业务一致性的最底层保障。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>客户端执行 BEGIN 开启事务，后续语句共享同一事务上下文与快照。</p></li><li><span class="sn">2</span><p>修改先写入预写日志（WAL / redo log），保证崩溃后可重放或撤销。</p></li><li><span class="sn">3</span><p>隔离通过锁或 MVCC 实现：读者看到某个一致快照，写者对行加锁防止冲突。</p></li><li><span class="sn">4</span><p>COMMIT 时日志刷盘即视为持久化；ROLLBACK 时利用旧版本或 undo 撤销修改。</p></li><li><span class="sn">5</span><p>并发冲突时，较高隔离级别可能抛出序列化失败，需要应用捕获后重试整个事务。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>ACID</dt><dd>原子性、一致性、隔离性、持久性四项事务保证。</dd></div><div class="term"><dt>隔离级别 (Isolation Level)</dt><dd>读未提交、读已提交、可重复读、可串行化，越高异常越少。</dd></div><div class="term"><dt>MVCC</dt><dd>多版本并发控制，读不阻塞写，每个事务看到自己的快照。</dd></div><div class="term"><dt>写偏斜 (Write Skew)</dt><dd>两事务基于同一快照各自更新不同行，合起来破坏约束。</dd></div><div class="term"><dt>保存点 (Savepoint)</dt><dd>事务内的回滚标记，可部分回滚而不放弃整个事务。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>转账事务与重试</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import psycopg  # psycopg 3
+from psycopg import errors
+
+def transfer(conn, src, dst, amount, retries=3):
+    for _ in range(retries):
+        try:
+            # with conn.transaction(): 正常退出 COMMIT，异常 ROLLBACK
+            with conn.transaction():
+                conn.execute(&quot;SET TRANSACTION ISOLATION LEVEL SERIALIZABLE&quot;)
+                cur = conn.execute(
+                    &quot;SELECT balance FROM accounts WHERE id=%s FOR UPDATE&quot;, (src,))
+                (balance,) = cur.fetchone()
+                if balance &lt; amount:
+                    raise ValueError(&quot;余额不足&quot;)
+                conn.execute(&quot;UPDATE accounts SET balance=balance-%s WHERE id=%s&quot;, (amount, src))
+                conn.execute(&quot;UPDATE accounts SET balance=balance+%s WHERE id=%s&quot;, (amount, dst))
+            return True
+        except errors.SerializationFailure:
+            continue  # 序列化冲突：整个事务重来
+    raise RuntimeError(&quot;重试次数用尽&quot;)
+
+with psycopg.connect(&quot;dbname=app&quot;) as conn:
+    transfer(conn, 1, 2, 100)</code></pre></div><p class="cnote">扣款和入账必须同成同败；SERIALIZABLE 冲突时要重试整个事务而非单条语句。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">隔离级别与异常</h3><div class="tw"><table><thead><tr><th>隔离级别</th><th>脏读</th><th>不可重复读</th><th>幻读</th></tr></thead><tbody><tr><td data-h="隔离级别">读未提交</td><td data-h="脏读">可能</td><td data-h="不可重复读">可能</td><td data-h="幻读">可能</td></tr><tr><td data-h="隔离级别">读已提交</td><td data-h="脏读">不会</td><td data-h="不可重复读">可能</td><td data-h="幻读">可能</td></tr><tr><td data-h="隔离级别">可重复读</td><td data-h="脏读">不会</td><td data-h="不可重复读">不会</td><td data-h="幻读">标准允许，实现各异</td></tr><tr><td data-h="隔离级别">可串行化</td><td data-h="脏读">不会</td><td data-h="不可重复读">不会</td><td data-h="幻读">不会</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>悲观锁 SELECT … FOR UPDATE</h4><p><b class="k-p">优点</b>语义直观，冲突时排队等待</p><p><b class="k-c">代价</b>持锁时间长会阻塞、可能死锁</p><p><b class="k-w">适用</b>热点行、冲突概率高</p></div><div class="trd"><h4>乐观锁（版本号字段）</h4><p><b class="k-p">优点</b>无锁等待，读多写少时吞吐高</p><p><b class="k-c">代价</b>冲突时需重试，业务要处理失败</p><p><b class="k-w">适用</b>冲突少、可接受重试</p></div><div class="trd"><h4>SERIALIZABLE 隔离</h4><p><b class="k-p">优点</b>数据库兜底所有并发异常</p><p><b class="k-c">代价</b>冲突中止率高，必须有重试逻辑</p><p><b class="k-w">适用</b>复杂不变量难以手工加锁</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>在事务中调用外部 HTTP 或等用户输入</p><p class="fix"><b>✓</b>事务只包数据库操作，外部调用放在事务外或用 outbox 模式</p></li><li><p class="bad"><b>✗</b>以为默认隔离级别能防止所有并发问题</p><p class="fix"><b>✓</b>确认数据库默认级别（PostgreSQL 为读已提交），按需加锁或提级</p></li><li><p class="bad"><b>✗</b>捕获异常后继续在已失败的事务里执行语句</p><p class="fix"><b>✓</b>出错后先 ROLLBACK（或回到保存点）再继续</p></li><li><p class="bad"><b>✗</b>跨多个服务的数据库期待单个本地事务保证一致</p><p class="fix"><b>✓</b>改用 Saga、outbox 等最终一致方案并设计补偿</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>多步写操作都在同一事务中</span></label></li><li><label><input type="checkbox"><span>事务内没有网络调用与长耗时计算</span></label></li><li><label><input type="checkbox"><span>明确使用的隔离级别及其异常</span></label></li><li><label><input type="checkbox"><span>序列化失败与死锁有重试逻辑</span></label></li><li><label><input type="checkbox"><span>加锁顺序一致以避免死锁</span></label></li><li><label><input type="checkbox"><span>ORM 的自动提交行为已确认</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>什么是写偏斜？如何防止？</summary><p>两个事务读取同一快照，各自更新不同行，单独都合法，合起来违反约束（如值班至少一人）。可重复读/快照隔离防不住。可用 SERIALIZABLE、对相关行 SELECT FOR UPDATE，或把约束物化为可加锁的行。</p></details><details class="iv"><summary>PostgreSQL 与 MySQL InnoDB 默认隔离级别有何不同？</summary><p>PostgreSQL 默认读已提交，每条语句取新快照；InnoDB 默认可重复读，事务内一致快照，并通过间隙锁在锁定读时减少幻读。迁移代码时要注意行为差异。</p></details><details class="iv"><summary>事务提交了，数据一定不丢吗？</summary><p>取决于持久化配置：日志是否同步刷盘（如 synchronous_commit、innodb_flush_log_at_trx_commit）、存储是否可靠、主从复制是同步还是异步。异步复制下主库故障切换可能丢失最近已提交事务。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.postgresql.org/docs/current/transaction-iso.html" target="_blank" rel="noopener"><b>PostgreSQL 文档：Transaction Isolation</b><small>postgresql.org ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/ACID" target="_blank" rel="noopener"><b>Wikipedia: ACID</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://www.psycopg.org/psycopg3/docs/basic/transactions.html" target="_blank" rel="noopener"><b>psycopg 3：Transactions management</b><small>psycopg.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="database-migrations.pro.html" rel="prev"><small>‹ 上一个</small><b>🏗️ 数据库模式迁移</b></a><a class="pn next" href="foreign-keys.pro.html" rel="next"><small>下一个 ›</small><b>🔗 外键约束</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

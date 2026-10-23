@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="流处理 (Flink) 专业模式：流处理（Stream Processing）是对持续到达的无界事件流进行增量、低延迟计算的数据处理范式，与按批处理有界数据集相对。Apache Flink 是代">
+<title>🎓 流处理 (Flink) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="stream-processing" data-answer="0" data-prev="lakehouse.pro.html" data-next="schema-evolution.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#data">🔥 进阶 · 📊 数据工程</a><span>›</span><a href="stream-processing.html">流处理 (Flink)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.463 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="lakehouse.pro.html" rel="prev"><small>‹ 上一个</small><b>🏞️ 湖仓一体 (Iceberg / Delta Lake)</b></a><a class="pn next" href="schema-evolution.pro.html" rel="next"><small>下一个 ›</small><b>🧬 数据模式演进 (Schema Registry)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🌊</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>📊 数据工程</span><span>⏱ 约 10 分钟</span></div>
+    <h1>流处理 (Flink)</h1><p class="en">Stream Processing</p>
+    <div class="hbtns"><a class="prosw back" href="stream-processing.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">流处理（Stream Processing）是对持续到达的无界事件流进行增量、低延迟计算的数据处理范式，与按批处理有界数据集相对。Apache Flink 是代表性引擎，提供事件时间语义、水位线、窗口、有状态计算和基于检查点的容错，常用于实时风控、实时指标、实时特征和 CDC 数据同步。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>从 Kafka 等消息系统或 CDC 源持续读取事件，事件携带业务发生时间（事件时间）。</p></li><li><span class="sn">2</span><p>水位线（Watermark）声明「早于某时间的事件应已到齐」，驱动窗口触发，并容忍一定程度的乱序。</p></li><li><span class="sn">3</span><p>按键分区后在窗口内聚合：滚动、滑动、会话窗口，或无窗口的持续聚合与流式 Join。</p></li><li><span class="sn">4</span><p>算子状态保存在状态后端（内存或 RocksDB），引擎周期性做分布式快照（检查点）记录状态与源位点。</p></li><li><span class="sn">5</span><p>故障时从最近检查点恢复状态并回退源位点重放；配合事务性或幂等输出可达到端到端精确一次。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>事件时间 (Event Time)</dt><dd>事件在业务中实际发生的时间，相对于被处理时的处理时间。</dd></div><div class="term"><dt>水位线 (Watermark)</dt><dd>表示事件时间进度的标记，用于判断窗口何时可以输出结果。</dd></div><div class="term"><dt>滚动窗口 (Tumbling Window)</dt><dd>固定长度、不重叠的时间窗口，如每 1 分钟一个。</dd></div><div class="term"><dt>检查点 (Checkpoint)</dt><dd>Flink 对全部算子状态与源偏移做的一致性快照，用于故障恢复。</dd></div><div class="term"><dt>迟到数据 (Late Data)</dt><dd>在水位线越过其窗口后才到达的事件，需丢弃、侧输出或更新结果。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Flink SQL 每分钟订单统计</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- 从 Kafka 读取订单，声明事件时间与 5 秒乱序容忍
+CREATE TABLE orders (
+  order_id STRING,
+  amount   DECIMAL(10, 2),
+  ts       TIMESTAMP(3),
+  WATERMARK FOR ts AS ts - INTERVAL &#x27;5&#x27; SECOND
+) WITH (
+  &#x27;connector&#x27; = &#x27;kafka&#x27;,
+  &#x27;topic&#x27; = &#x27;orders&#x27;,
+  &#x27;properties.bootstrap.servers&#x27; = &#x27;kafka:9092&#x27;,
+  &#x27;properties.group.id&#x27; = &#x27;order-stats&#x27;,
+  &#x27;scan.startup.mode&#x27; = &#x27;latest-offset&#x27;,
+  &#x27;format&#x27; = &#x27;json&#x27;
+);
+
+-- 窗口表值函数：1 分钟滚动窗口
+SELECT window_start, window_end,
+       COUNT(*)    AS order_cnt,
+       SUM(amount) AS gmv
+FROM TABLE(
+  TUMBLE(TABLE orders, DESCRIPTOR(ts), INTERVAL &#x27;1&#x27; MINUTES))
+GROUP BY window_start, window_end;</code></pre></div><p class="cnote">水位线决定窗口何时输出：延迟超过 5 秒的事件默认不再计入已关闭窗口。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">流处理引擎关键语义</h3><div class="tw"><table><thead><tr><th>语义</th><th>含义</th><th>工程影响</th></tr></thead><tbody><tr><td data-h="语义">至少一次</td><td data-h="含义">故障重放可能重复计算</td><td data-h="工程影响">下游需幂等或去重</td></tr><tr><td data-h="语义">精确一次（状态）</td><td data-h="含义">引擎内部状态不重不漏</td><td data-h="工程影响">依赖检查点与可重放源</td></tr><tr><td data-h="语义">端到端精确一次</td><td data-h="含义">输出到外部系统也不重复</td><td data-h="工程影响">需事务性 Sink 或幂等写</td></tr><tr><td data-h="语义">事件时间</td><td data-h="含义">按发生时间统计</td><td data-h="工程影响">需设计水位线与迟到处理</td></tr><tr><td data-h="语义">处理时间</td><td data-h="含义">按到达时间统计</td><td data-h="工程影响">实现简单，但结果不可复现</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>Flink 等流引擎</h4><p><b class="k-p">优点</b>毫秒到秒级延迟，强状态与时间语义</p><p><b class="k-c">代价</b>运维、状态管理和调试复杂</p><p><b class="k-w">适用</b>风控、实时特征等强实时场景</p></div><div class="trd"><h4>微批（如 Spark Structured Streaming）</h4><p><b class="k-p">优点</b>与批处理统一 API，生态成熟</p><p><b class="k-c">代价</b>延迟通常受批间隔限制</p><p><b class="k-w">适用</b>分钟级延迟可接受、团队熟悉 Spark</p></div><div class="trd"><h4>定时批处理</h4><p><b class="k-p">优点</b>最简单，易重跑与核对</p><p><b class="k-c">代价</b>延迟为小时或天级</p><p><b class="k-w">适用</b>报表与离线分析</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>用处理时间做业务统计，重跑结果对不上</p><p class="fix"><b>✓</b>使用事件时间与水位线，保证结果可复现</p></li><li><p class="bad"><b>✗</b>水位线设得过紧，大量迟到数据被丢弃</p><p class="fix"><b>✓</b>按实际乱序分布设定延迟，并为迟到数据配置侧输出</p></li><li><p class="bad"><b>✗</b>无限增长的状态（如无 TTL 的去重表）</p><p class="fix"><b>✓</b>为状态设置 TTL，或用窗口限定状态范围</p></li><li><p class="bad"><b>✗</b>以为开了检查点就端到端精确一次</p><p class="fix"><b>✓</b>确认 Sink 支持事务或幂等写，否则仍可能重复</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>明确使用事件时间还是处理时间</span></label></li><li><label><input type="checkbox"><span>水位线延迟基于实测乱序分布</span></label></li><li><label><input type="checkbox"><span>迟到数据有明确处理策略</span></label></li><li><label><input type="checkbox"><span>检查点间隔与状态大小经过压测</span></label></li><li><label><input type="checkbox"><span>所有状态都有 TTL 或边界</span></label></li><li><label><input type="checkbox"><span>监控消费延迟、反压与检查点耗时</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>水位线解决了什么问题？代价是什么？</summary><p>事件会乱序到达，引擎需要知道何时某个事件时间窗口已经完整可以输出。水位线给出事件时间进度的估计。代价是延迟与完整性的权衡：等得越久结果越完整、输出越晚；等得太短会把迟到事件排除在外。</p></details><details class="iv"><summary>Flink 检查点如何保证状态一致？</summary><p>JobManager 周期性向源注入屏障（barrier），屏障随数据流动；算子收到所有输入的屏障后对状态做快照，基于 Chandy-Lamport 思想的异步屏障快照。恢复时所有算子回到同一检查点，源回退到对应偏移重放，状态即不重不漏。</p></details><details class="iv"><summary>实时特征为什么常用流处理计算？</summary><p>推荐、风控模型依赖最近几分钟的行为，如过去 5 分钟点击数、短时内交易次数。批处理延迟太高；流处理以滑动窗口持续更新并写入在线特征存储，同时需保证训练和推理的特征口径一致。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://nightlies.apache.org/flink/flink-docs-stable/docs/concepts/time/" target="_blank" rel="noopener"><b>Apache Flink: Timely Stream Processing</b><small>nightlies.apache.org ↗</small></a></li><li><a href="https://nightlies.apache.org/flink/flink-docs-stable/docs/sql/reference/queries/window-tvf/" target="_blank" rel="noopener"><b>Flink SQL: Window TVF</b><small>nightlies.apache.org ↗</small></a></li><li><a href="https://nightlies.apache.org/flink/flink-docs-stable/docs/concepts/stateful-stream-processing/" target="_blank" rel="noopener"><b>Apache Flink: Stateful Stream Processing</b><small>nightlies.apache.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="lakehouse.pro.html" rel="prev"><small>‹ 上一个</small><b>🏞️ 湖仓一体 (Iceberg / Delta Lake)</b></a><a class="pn next" href="schema-evolution.pro.html" rel="next"><small>下一个 ›</small><b>🧬 数据模式演进 (Schema Registry)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

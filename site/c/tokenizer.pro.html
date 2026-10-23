@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="分词器 (Tokenizer / BPE) 专业模式：分词器（Tokenizer）把文本映射为模型词表中的整数 ID 序列，并能反向解码。主流 LLM 使用子词算法：BPE（字节对编码）及其字节级变体、Senten">
+<title>🎓 分词器 (Tokenizer / BPE) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="tokenizer" data-answer="0" data-prev="branch-protection.pro.html" data-next="sampling-top-p-top-k.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#ai">🌊 中级 · 🤖 AI 与提示词</a><span>›</span><a href="tokenizer.html">分词器 (Tokenizer / BPE)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.153 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="branch-protection.pro.html" rel="prev"><small>‹ 上一个</small><b>🛡️ 版本库分支保护规则</b></a><a class="pn next" href="sampling-top-p-top-k.pro.html" rel="next"><small>下一个 ›</small><b>🎲 采样策略 (Top-p / Top-k)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔪</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>分词器 (Tokenizer / BPE)</h1><p class="en">Tokenizer / BPE</p>
+    <div class="hbtns"><a class="prosw back" href="tokenizer.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">分词器（Tokenizer）把文本映射为模型词表中的整数 ID 序列，并能反向解码。主流 LLM 使用子词算法：BPE（字节对编码）及其字节级变体、SentencePiece 的 Unigram/BPE 等。它决定了 Token 计数、计费、上下文占用与多语言效率，每个模型族的分词器各不相同，不能混用。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>训练阶段：从字节或字符起步，BPE 反复合并语料中最高频的相邻符号对，直到达到目标词表大小。</p></li><li><span class="sn">2</span><p>字节级 BPE 以 UTF-8 字节为基本单元，任何文本都能编码，不存在未登录词。</p></li><li><span class="sn">3</span><p>编码时先做预切分（按空格、标点、数字等规则），再按合并规则把片段转为 Token ID。</p></li><li><span class="sn">4</span><p>高频片段（常见英文单词、代码关键字）成为单个 Token；低频文字被拆成多个子词或字节。</p></li><li><span class="sn">5</span><p>特殊 Token（如对话角色分隔符、结束符）由对话模板插入，标记消息边界。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>BPE (Byte Pair Encoding)</dt><dd>迭代合并高频符号对构建子词词表的算法。</dd></div><div class="term"><dt>词表 (Vocabulary)</dt><dd>分词器可输出的全部 Token 集合，大小影响压缩率与嵌入层参数。</dd></div><div class="term"><dt>SentencePiece</dt><dd>Google 的分词库，直接处理原始文本，支持 Unigram 与 BPE。</dd></div><div class="term"><dt>特殊 Token (Special Tokens)</dt><dd>表示开始、结束、角色等控制信息的保留 Token。</dd></div><div class="term"><dt>Token 生育率 (Fertility)</dt><dd>平均每个词或字被切成的 Token 数，衡量语言效率。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>用 tiktoken 观察切分</span><em>python</em><button class="ccopy">复制</button></div><pre><code># pip install tiktoken
+import tiktoken
+
+# o200k_base 是 OpenAI 较新模型使用的编码之一
+enc = tiktoken.get_encoding(&quot;o200k_base&quot;)
+
+samples = {
+    &quot;英文&quot;: &quot;Hello, how are you today?&quot;,
+    &quot;中文&quot;: &quot;你好，今天过得怎么样？&quot;,
+    &quot;代码&quot;: &quot;def add(a, b): return a + b&quot;,
+    &quot;长数字&quot;: &quot;3.14159265358979323846&quot;,
+}
+for name, text in samples.items():
+    ids = enc.encode(text)
+    # 单个 Token 可能是不完整的 UTF-8 字节，用 bytes 形式查看
+    pieces = [enc.decode_single_token_bytes(i) for i in ids]
+    print(f&quot;{name}: {len(text)} 字符 -&gt; {len(ids)} tokens&quot;)
+    print(&quot;   &quot;, pieces[:8])
+
+assert enc.decode(enc.encode(&quot;往返测试&quot;)) == &quot;往返测试&quot;</code></pre></div><p class="cnote">tiktoken 只对应 OpenAI 模型；Claude、Gemini 等需用各自的计数接口或分词器。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">主流分词方案对比</h3><div class="tw"><table><thead><tr><th>方案</th><th>基本单元</th><th>代表使用者</th></tr></thead><tbody><tr><td data-h="方案">字节级 BPE</td><td data-h="基本单元">UTF-8 字节</td><td data-h="代表使用者">GPT 系列（tiktoken）</td></tr><tr><td data-h="方案">SentencePiece BPE</td><td data-h="基本单元">Unicode 字符，可回退字节</td><td data-h="代表使用者">Llama 2 等</td></tr><tr><td data-h="方案">SentencePiece Unigram</td><td data-h="基本单元">概率子词模型</td><td data-h="代表使用者">T5 等</td></tr><tr><td data-h="方案">WordPiece</td><td data-h="基本单元">子词（## 前缀）</td><td data-h="代表使用者">BERT</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>大词表</h4><p><b class="k-p">优点</b>序列更短，多语言更高效</p><p><b class="k-c">代价</b>嵌入与输出层参数增大</p><p><b class="k-w">适用</b>多语言、长上下文模型</p></div><div class="trd"><h4>小词表</h4><p><b class="k-p">优点</b>参数少，训练更易收敛</p><p><b class="k-c">代价</b>序列更长，推理与计费更贵</p><p><b class="k-w">适用</b>小模型或单语言场景</p></div><div class="trd"><h4>字节级回退</h4><p><b class="k-p">优点</b>无未登录词，任何输入可编码</p><p><b class="k-c">代价</b>罕见文字被拆得很碎</p><p><b class="k-w">适用</b>通用开放域模型</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>用 tiktoken 估算非 OpenAI 模型的 Token 与费用</p><p class="fix"><b>✓</b>使用目标模型官方的计数 API 或其分词器</p></li><li><p class="bad"><b>✗</b>按「字数 ≈ Token 数」做预算</p><p class="fix"><b>✓</b>用真实分词器在样本数据上统计比例</p></li><li><p class="bad"><b>✗</b>截断文本时按字符切，破坏 Token 或 UTF-8 边界</p><p class="fix"><b>✓</b>在 Token 层截断后再解码，或按句子边界切</p></li><li><p class="bad"><b>✗</b>把 Base64、长日志、压缩 JSON 直接塞进提示</p><p class="fix"><b>✓</b>先摘要或抽取关键字段，图片走多模态接口</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>Token 预算用目标模型的分词器计算</span></label></li><li><label><input type="checkbox"><span>长输入在 Token 层截断</span></label></li><li><label><input type="checkbox"><span>已统计业务语料的平均 Token 比例</span></label></li><li><label><input type="checkbox"><span>对话模板与特殊 Token 由官方模板生成</span></label></li><li><label><input type="checkbox"><span>日志与大数据不直接进入提示</span></label></li><li><label><input type="checkbox"><span>费用监控按输入/输出 Token 分开</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么同样内容中文可能比英文更费 Token？</summary><p>分词器词表由训练语料统计得出。若英文占比高，英文常见词被合并为单个 Token，而中文字符 UTF-8 为 3 字节，合并不足时一个字占一个或多个 Token。较新的大词表分词器（如 o200k_base）中文效率明显改善，差距因模型而异，应实测。</p></details><details class="iv"><summary>BPE 是怎么构建词表的？</summary><p>从基础符号（字符或字节）开始，统计语料中相邻符号对的频率，把最高频的一对合并为新符号并记录规则，重复直到词表达到预设大小。编码时按学到的合并顺序应用规则。</p></details><details class="iv"><summary>分词器对模型能力有什么影响？</summary><p>影响算术与字符级任务（数字被不规则切分、模型难以数字母），影响多语言效率与有效上下文长度，也影响代码缩进、空格的表达。换分词器通常意味着需要重新训练嵌入层乃至整个模型。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://arxiv.org/abs/1508.07909" target="_blank" rel="noopener"><b>Sennrich et al. 2016：Subword Units (BPE)</b><small>arxiv.org ↗</small></a></li><li><a href="https://github.com/openai/tiktoken" target="_blank" rel="noopener"><b>tiktoken（GitHub）</b><small>github.com ↗</small></a></li><li><a href="https://github.com/google/sentencepiece" target="_blank" rel="noopener"><b>SentencePiece（GitHub）</b><small>github.com ↗</small></a></li><li><a href="https://huggingface.co/docs/tokenizers/index" target="_blank" rel="noopener"><b>Hugging Face Tokenizers 文档</b><small>huggingface.co ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="branch-protection.pro.html" rel="prev"><small>‹ 上一个</small><b>🛡️ 版本库分支保护规则</b></a><a class="pn next" href="sampling-top-p-top-k.pro.html" rel="next"><small>下一个 ›</small><b>🎲 采样策略 (Top-p / Top-k)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

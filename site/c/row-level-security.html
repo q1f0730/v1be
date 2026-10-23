@@ -1,47 +1,94 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="行级安全策略 (RLS)：数据库自己保证：每人只能看自己的行">
 <title>🗂️ 行级安全策略 (RLS) · AI 造物指南</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
 <link rel="stylesheet" href="../assets/style.css">
-</head><body class="" data-root="../">
+</head><body class="is-concept" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
 <div id="readbar"></div>
-<header class="top"><a class="brand" href="../index.html">🧭 <b>AI 造物指南</b></a>
-<nav class="tools">
-<a href="../glossary.html" title="词汇表">📚<span>词汇表</span></a>
-<button data-act="rand" title="随便学一个">🎲<span>随机</span></button>
-<button data-act="font-" title="字变小">A-</button><button data-act="font+" title="字变大">A+</button>
-<button data-act="calm" title="宽松阅读：字距行距更大">🫧<span>宽松</span></button>
-<button data-act="focus" title="专注模式：只亮当前这块">🔦<span>专注</span></button>
-<button data-act="motion" title="暂停/播放动画">⏯️<span>动画</span></button>
-</nav></header>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
 
-<main class="cp l3" data-slug="row-level-security" data-answer="2">
-<nav class="crumb"><a href="../index.html">🏠 首页</a> › <a href="../index.html#l3">🔮 高级</a> › 🛡️ 安全防线</nav>
-<section class="hero blk" id="s-hero">
-  <div class="hemo">🗂️</div>
-  <div><div class="meta"><span class="lvb">🔮 高级</span><span>No.154 / 310</span><span>⏱ 约 2 分钟</span></div>
-  <h1>行级安全策略 (RLS)</h1><p class="en">Row-Level Security</p></div>
-  <button class="say" data-say="s-hero s-one s-ana" title="读给我听">🔊 读给我听</button>
+<main class="cp l3" id="main" data-slug="row-level-security" data-pro="1" data-answer="2"
+  data-prev="security-headers.html" data-next="rbac.html"
+  data-next-name="🎫 基于角色的访问控制">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sec">🔮 高级 · 🛡️ 安全防线</a><span>›</span><b>行级安全策略 (RLS)</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb">🔮 高级</span><span class="muted">No.224 / 500</span></div>
+    <ol class="rail-list"><li><a href="#s-one" data-sec="s-one"><span class="re">🎯</span><span class="rl">一句话</span><i class="rc">✓</i></a></li><li><a href="#s-ana" data-sec="s-ana"><span class="re">🧸</span><span class="rl">打个比方</span><i class="rc">✓</i></a></li><li><a href="#s-anim" data-sec="s-anim"><span class="re">🎬</span><span class="rl">动起来看</span><i class="rc">✓</i></a></li><li><a href="#s-tab" data-sec="s-tab"><span class="re">📊</span><span class="rl">对比表</span><i class="rc">✓</i></a></li><li><a href="#s-how" data-sec="s-how"><span class="re">👣</span><span class="rl">怎么做</span><i class="rc">✓</i></a></li><li><a href="#s-oops" data-sec="s-oops"><span class="re">💥</span><span class="rl">翻车现场</span><i class="rc">✓</i></a></li><li><a href="#s-ai" data-sec="s-ai"><span class="re">🤖</span><span class="rl">给 AI 的话</span><i class="rc">✓</i></a></li><li><a href="#s-quiz" data-sec="s-quiz"><span class="re">✅</span><span class="rl">小测一下</span><i class="rc">✓</i></a></li><li><a href="#s-words" data-sec="s-words"><span class="re">📚</span><span class="rl">词汇</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="security-headers.html" rel="prev"><small>‹ 上一个</small><b>🏷️ 安全响应头</b></a><a class="pn next" href="rbac.html" rel="next"><small>下一个 ›</small><b>🎫 基于角色的访问控制</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🗂️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb">🔮 高级</span><span>🛡️ 安全防线</span><span>No.224 / 500</span><span>⏱ 约 2 分钟</span></div>
+    <h1>行级安全策略 (RLS)</h1><p class="en">Row-Level Security</p>
+    <div class="hbtns"><button class="say big" data-say="s-hero s-one s-ana">🔊 读给我听</button><a class="prosw" href="row-level-security.pro.html" data-mode="pro" title="更详细、更专业的版本">🎓 专业模式</a></div>
+  </div>
+  <img class="mascot-s" src="../assets/mascot-sm.webp" alt="" width="256" height="256">
 </section>
-<ol class="steps-nav" aria-label="本页进度">
-<li><a href="#s-one">🎯</a></li><li><a href="#s-ana">🧸</a></li><li><a href="#s-anim">🎬</a></li><li><a href="#s-tab">📊</a></li><li><a href="#s-how">👣</a></li><li><a href="#s-oops">💥</a></li><li><a href="#s-ai">🤖</a></li><li><a href="#s-quiz">✅</a></li></ol>
-<section class="blk one" id="s-one"><h2>🎯 一句话</h2><p class="big">数据库自己保证：每人只能看自己的行</p></section>
-<section class="blk" id="s-ana"><h2>🧸 打个比方</h2><p>几家公司共用一本账。A 公司的人翻开，只看到自己那几行。别人的自动隐形。</p><ul class="pts"><li>🧱 规则写在数据库里，不靠代码</li><li>😅 不怕忘写过滤条件</li><li>⚡ 用 Supabase 时一定要开</li></ul>
-<button class="say sm" data-say="s-ana">🔊</button></section>
-<section class="blk" id="s-anim"><h2>🎬 动起来看</h2><div class="sc sc-fan sc-split"><div class="src"><div class="nd big pulse"><span class="ne">🗄️</span><span class="nl">一张表</span></div></div><i class="fly" style="--y:18%;--d:0.0s"></i><i class="fly" style="--y:50%;--d:0.45s"></i><i class="fly" style="--y:82%;--d:0.9s"></i><div class="tg" style="top:18%"><div class="nd "><span class="ne">🅰️</span><span class="nl">A的数据</span></div></div><div class="tg" style="top:50%"><div class="nd "><span class="ne">🅱️</span><span class="nl">B的数据</span></div></div><div class="tg" style="top:82%"><div class="nd "><span class="ne">©️</span><span class="nl">C的数据</span></div></div></div><p class="cap">👀 同一张表，各看各的</p></section>
-<section class="blk" id="s-tab"><h2>📊 开不开 RLS</h2><div class="tw"><table><thead><tr><th>场景</th><th>没开 RLS</th><th>开了 RLS</th></tr></thead><tbody><tr><td>忘写过滤条件</td><td>全表泄露</td><td>只看自己</td></tr><tr><td>前端直连数据库</td><td>谁都能读</td><td>按规则读</td></tr><tr><td>新人写新接口</td><td>容易出错</td><td>有兜底</td></tr></tbody></table></div></section>
-<section class="blk" id="s-how"><h2>👣 你该怎么做</h2><ol class="how"><li><span class="sn">1</span><p>🔍 打开 Supabase 看每张表的 RLS</p></li><li><span class="sn">2</span><p>🔒 让 AI 为每张表写好策略</p></li><li><span class="sn">3</span><p>🧪 换个账号测试能否看到别人数据</p></li></ol><button class="say sm" data-say="s-how">🔊</button></section>
-<section class="blk oops" id="s-oops"><h2>💥 翻车现场</h2><p>Supabase 表忘了开 RLS，有人用公开 key 一查，全部用户的数据都下载走了。</p></section>
-<section class="blk ai" id="s-ai"><h2>🤖 复制给 AI 的话</h2><pre class="prompt">请检查 Supabase 里所有表是否开启 Row-Level Security，并为每张表写策略：用户只能读写 user_id 等于自己的行。</pre><button class="copy">📋 一键复制</button></section>
-<section class="blk quiz" id="s-quiz"><h2>✅ 小测一下</h2><p class="q">RLS 的规则写在哪里？</p><div class="opts"><button class="opt" data-i="0">A. 前端按钮上</button><button class="opt" data-i="1">B. 用户的手机上</button><button class="opt" data-i="2">C. 数据库里</button></div>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#s-one" data-sec="s-one"><span>🎯</span>一句话</a><a class="sc-chip" href="#s-ana" data-sec="s-ana"><span>🧸</span>打个比方</a><a class="sc-chip" href="#s-anim" data-sec="s-anim"><span>🎬</span>动起来看</a><a class="sc-chip" href="#s-tab" data-sec="s-tab"><span>📊</span>对比表</a><a class="sc-chip" href="#s-how" data-sec="s-how"><span>👣</span>怎么做</a><a class="sc-chip" href="#s-oops" data-sec="s-oops"><span>💥</span>翻车现场</a><a class="sc-chip" href="#s-ai" data-sec="s-ai"><span>🤖</span>给 AI 的话</a><a class="sc-chip" href="#s-quiz" data-sec="s-quiz"><span>✅</span>小测一下</a><a class="sc-chip" href="#s-words" data-sec="s-words"><span>📚</span>词汇</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento">
+<section class="t sec s-one t-lemon" id="s-one"><header class="th"><span class="tag">🎯 01 · 一句话</span><button class="say sm" data-say="s-one" aria-label="读这一块">🔊</button></header><p class="big">数据库自己保证：每人只能看自己的行</p></section>
+<section class="t sec s-ana" id="s-ana"><header class="th"><span class="tag">🧸 02 · 打个比方</span><button class="say sm" data-say="s-ana" aria-label="读这一块">🔊</button></header><p class="ana">几家公司共用一本账。A 公司的人翻开，只看到自己那几行。别人的自动隐形。</p><ul class="pts"><li>🧱 规则写在数据库里，不靠代码</li><li>😅 不怕忘写过滤条件</li><li>⚡ 用 Supabase 时一定要开</li></ul></section>
+<section class="t sec s-anim t-sky" id="s-anim"><header class="th"><span class="tag">🎬 03 · 动起来看</span></header><div class="sc sc-fan sc-split"><div class="src"><div class="nd big pulse"><span class="ne">🗄️</span><span class="nl">一张表</span></div></div><i class="fly" style="--y:18%;--d:0.0s"></i><i class="fly" style="--y:50%;--d:0.45s"></i><i class="fly" style="--y:82%;--d:0.9s"></i><div class="tg" style="top:18%"><div class="nd "><span class="ne">🅰️</span><span class="nl">A的数据</span></div></div><div class="tg" style="top:50%"><div class="nd "><span class="ne">🅱️</span><span class="nl">B的数据</span></div></div><div class="tg" style="top:82%"><div class="nd "><span class="ne">©️</span><span class="nl">C的数据</span></div></div></div><p class="cap">👀 同一张表，各看各的</p></section>
+<section class="t sec s-tab" id="s-tab"><header class="th"><span class="tag">📊 04 · 对比表</span></header><h3 class="tt">开不开 RLS</h3><div class="tw"><table><thead><tr><th>场景</th><th>没开 RLS</th><th>开了 RLS</th></tr></thead><tbody><tr><td data-h="场景">忘写过滤条件</td><td data-h="没开 RLS">全表泄露</td><td data-h="开了 RLS">只看自己</td></tr><tr><td data-h="场景">前端直连数据库</td><td data-h="没开 RLS">谁都能读</td><td data-h="开了 RLS">按规则读</td></tr><tr><td data-h="场景">新人写新接口</td><td data-h="没开 RLS">容易出错</td><td data-h="开了 RLS">有兜底</td></tr></tbody></table></div></section>
+<section class="t sec s-how t-pist" id="s-how"><header class="th"><span class="tag">👣 05 · 怎么做</span><button class="say sm" data-say="s-how" aria-label="读这一块">🔊</button></header><ol class="how"><li><span class="sn">1</span><p>🔍 打开 Supabase 看每张表的 RLS</p></li><li><span class="sn">2</span><p>🔒 让 AI 为每张表写好策略</p></li><li><span class="sn">3</span><p>🧪 换个账号测试能否看到别人数据</p></li></ol></section>
+<section class="t sec s-oops t-blush" id="s-oops"><header class="th"><span class="tag">💥 06 · 翻车现场</span><button class="say sm" data-say="s-oops" aria-label="读这一块">🔊</button></header><p class="story">Supabase 表忘了开 RLS，有人用公开 key 一查，全部用户的数据都下载走了。</p></section>
+<section class="t sec s-ai t-lilac" id="s-ai"><header class="th"><span class="tag">🤖 07 · 给 AI 的话</span></header><pre class="prompt">请检查 Supabase 里所有表是否开启 Row-Level Security，并为每张表写策略：用户只能读写 user_id 等于自己的行。</pre><button class="btn pri copy">📋 一键复制</button></section>
+<section class="t sec s-quiz" id="s-quiz"><header class="th"><span class="tag">✅ 08 · 小测一下</span></header><p class="q">RLS 的规则写在哪里？</p><div class="opts"><button class="opt" data-i="0"><span class="ok">A</span><span>前端按钮上</span></button><button class="opt" data-i="1"><span class="ok">B</span><span>用户的手机上</span></button><button class="opt" data-i="2"><span class="ok">C</span><span>数据库里</span></button></div>
 <p class="why" hidden>💡 规则由数据库执行，代码漏写也有兜底。</p></section>
-<section class="blk words"><h2>📚 顺便认识这些词</h2><div class="chips"><span class="chip">多租户 (Multi-tenant)</span><span class="chip">策略 (Policy)</span><span class="chip">Supabase</span><span class="chip">PostgreSQL</span></div>
-<h3>🔗 相关概念</h3><div class="rels"><a class="rel" href="backend-as-a-service.html">🧰 后端即服务 (Supabase / Firebase)</a><a class="rel" href="server-side-authorization.html">🏦 服务端授权</a><a class="rel" href="idor.html">🎫 不安全的直接对象引用</a><a class="rel" href="least-privilege.html">🗝️ 最小权限原则</a></div></section>
-<div class="done-row"><button class="done">🙋 我学会了！</button></div>
-<nav class="pnav"><a class="pn prev" href="security-headers.html">⬅️ <span>上一个</span><b>🏷️ 安全响应头</b></a><a class="pn next" href="rbac.html"><span>下一个</span><b>🎫 基于角色的访问控制</b> ➡️</a></nav>
+<section class="t sec s-words" id="s-words"><header class="th"><span class="tag">📚 09 · 词汇</span></header><div class="chips"><span class="chip">多租户 (Multi-tenant)</span><span class="chip">策略 (Policy)</span><span class="chip">Supabase</span><span class="chip">PostgreSQL</span></div>
+<h3 class="relh">🔗 相关概念</h3><div class="rels"><a class="rel" href="backend-as-a-service.html"><span>🧰</span>后端即服务 (Supabase / Firebase)</a><a class="rel" href="server-side-authorization.html"><span>🏦</span>服务端授权</a><a class="rel" href="idor.html"><span>🎫</span>不安全的直接对象引用</a><a class="rel" href="least-privilege.html"><span>🗝️</span>最小权限原则</a></div></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">看完了？给自己打个卡</h2><p class="muted">进度只存在你的浏览器里。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="security-headers.html" rel="prev"><small>‹ 上一个</small><b>🏷️ 安全响应头</b></a><a class="pn next" href="rbac.html" rel="next"><small>下一个 ›</small><b>🎫 基于角色的访问控制</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
 </main>
-<footer class="foot">🧭 AI 造物指南 · 给不会代码的人 · by Q1f730 · 内容可能有疏漏，欢迎在 GitHub 提 Issue</footer>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
 <script src="../assets/index.js"></script>
 <script src="../assets/app.js"></script>
 </body></html>

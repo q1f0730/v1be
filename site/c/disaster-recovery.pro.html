@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="灾难恢复体系 (DR) 专业模式：灾难恢复（Disaster Recovery, DR）是在区域级故障、数据损坏、勒索软件或误删除等严重事件后，按预定目标恢复系统和数据的策略、技术与流程总和。它">
+<title>🎓 灾难恢复体系 (DR) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="disaster-recovery" data-answer="0" data-prev="single-points-of-failure.pro.html" data-next="rto-and-rpo.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sre">🔮 高级 · 🩺 高可用 SRE</a><span>›</span><a href="disaster-recovery.html">灾难恢复体系 (DR)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.299 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="single-points-of-failure.pro.html" rel="prev"><small>‹ 上一个</small><b>🎯 单点故障 (SPOF)</b></a><a class="pn next" href="rto-and-rpo.pro.html" rel="next"><small>下一个 ›</small><b>⏱️ 恢复时间与恢复点目标</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🆘</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>灾难恢复体系 (DR)</h1><p class="en">Disaster Recovery</p>
+    <div class="hbtns"><a class="prosw back" href="disaster-recovery.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">灾难恢复（Disaster Recovery, DR）是在区域级故障、数据损坏、勒索软件或误删除等严重事件后，按预定目标恢复系统和数据的策略、技术与流程总和。它比日常高可用覆盖更极端的场景，以 RTO 和 RPO 为核心指标，常见方案从备份恢复、指示灯、温备到多活，成本与恢复速度依次上升。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>业务影响分析：按系统重要性确定每个系统的 RTO 与 RPO 目标。</p></li><li><span class="sn">2</span><p>选择 DR 策略：备份恢复、指示灯（Pilot Light）、温备（Warm Standby）或多活。</p></li><li><span class="sn">3</span><p>数据保护：定期备份并复制到异地，启用时间点恢复，关键备份设为不可变。</p></li><li><span class="sn">4</span><p>基础设施用 IaC 描述，保证能在另一区域快速重建同样的环境。</p></li><li><span class="sn">5</span><p>编写并定期演练恢复手册，测量实际恢复时间与数据损失，与目标对比改进。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>备份恢复 (Backup &amp; Restore)</dt><dd>只保留备份，灾时重建环境并恢复数据，成本最低、最慢。</dd></div><div class="term"><dt>指示灯 (Pilot Light)</dt><dd>异地只运行核心数据复制，灾时再拉起其余组件。</dd></div><div class="term"><dt>温备 (Warm Standby)</dt><dd>异地运行缩小规模的完整环境，灾时扩容接管。</dd></div><div class="term"><dt>时间点恢复 (PITR)</dt><dd>利用备份加日志把数据库恢复到任意指定时刻。</dd></div><div class="term"><dt>不可变备份 (Immutable Backup)</dt><dd>写入后在保留期内无法修改或删除的备份，防勒索与误删。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>PostgreSQL 异地备份与演练</span><em>bash</em><button class="ccopy">复制</button></div><pre><code>#!/usr/bin/env bash
+set -euo pipefail
+TS=$(date -u +%Y%m%dT%H%M%SZ)
+FILE=&quot;orders-$TS.dump&quot;
+
+# 1. 自定义格式导出，便于选择性恢复
+pg_dump --format=custom --file=&quot;$FILE&quot; &quot;$DATABASE_URL&quot;
+
+# 2. 复制到另一区域的存储桶（桶已开启版本控制/对象锁）
+aws s3 cp &quot;$FILE&quot; &quot;s3://dr-backups-eu/orders/$FILE&quot; --region eu-west-1
+
+# 3. 定期演练：恢复到临时库并做冒烟校验
+createdb restore_test
+pg_restore --dbname=restore_test --no-owner &quot;$FILE&quot;
+psql -d restore_test -c &quot;SELECT count(*) FROM orders;&quot;
+dropdb restore_test</code></pre></div><p class="cnote">备份写到异地存储并定期恢复验证；只有能恢复的备份才算备份。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">DR 策略梯度</h3><div class="tw"><table><thead><tr><th>策略</th><th>相对成本</th><th>RTO/RPO 量级</th><th>异地常驻资源</th></tr></thead><tbody><tr><td data-h="策略">备份恢复</td><td data-h="相对成本">最低</td><td data-h="RTO/RPO 量级">小时级</td><td data-h="异地常驻资源">仅备份数据</td></tr><tr><td data-h="策略">指示灯</td><td data-h="相对成本">低</td><td data-h="RTO/RPO 量级">十分钟到小时级</td><td data-h="异地常驻资源">核心数据复制</td></tr><tr><td data-h="策略">温备</td><td data-h="相对成本">中</td><td data-h="RTO/RPO 量级">分钟级</td><td data-h="异地常驻资源">缩小规模的完整环境</td></tr><tr><td data-h="策略">多活</td><td data-h="相对成本">最高</td><td data-h="RTO/RPO 量级">接近零</td><td data-h="异地常驻资源">满规模运行</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>备份恢复</h4><p><b class="k-p">优点</b>成本低、实现简单</p><p><b class="k-c">代价</b>恢复慢，重建易出错</p><p><b class="k-w">适用</b>非核心系统、可容忍长时间中断</p></div><div class="trd"><h4>温备</h4><p><b class="k-p">优点</b>恢复较快，环境已验证</p><p><b class="k-c">代价</b>持续运行成本</p><p><b class="k-w">适用</b>重要业务、分钟级 RTO</p></div><div class="trd"><h4>多活</h4><p><b class="k-p">优点</b>几乎无中断</p><p><b class="k-c">代价</b>数据一致性与成本挑战大</p><p><b class="k-w">适用</b>核心交易、全球业务</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>备份和生产在同一账号同一区域，一次误操作或入侵全部丢失。</p><p class="fix"><b>✓</b>备份跨区域、跨账号存放，并启用不可变保护。</p></li><li><p class="bad"><b>✗</b>只备份不演练，灾难时才发现备份损坏或缺表。</p><p class="fix"><b>✓</b>定期做恢复演练并自动校验数据完整性。</p></li><li><p class="bad"><b>✗</b>只恢复数据库，忘了密钥、配置、DNS 和第三方白名单。</p><p class="fix"><b>✓</b>DR 手册覆盖全部依赖，并用 IaC 管理环境。</p></li><li><p class="bad"><b>✗</b>高可用复制把误删除也同步到了备库。</p><p class="fix"><b>✓</b>保留时间点恢复和延迟副本，用于逻辑错误恢复。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个系统定义了 RTO 与 RPO</span></label></li><li><label><input type="checkbox"><span>备份跨区域跨账号且不可变</span></label></li><li><label><input type="checkbox"><span>恢复演练定期执行并记录用时</span></label></li><li><label><input type="checkbox"><span>环境可通过 IaC 在异地重建</span></label></li><li><label><input type="checkbox"><span>DR 手册覆盖密钥、DNS、配置</span></label></li><li><label><input type="checkbox"><span>有明确的灾难宣告与决策人</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>高可用和灾难恢复有什么区别？</summary><p>高可用处理日常组件故障，追求自动、无感切换，通常在区域内；灾难恢复处理区域级故障、数据损坏、勒索等极端事件，往往需要人工决策，按 RTO/RPO 目标恢复。复制能提供高可用，但会同步误删除，所以 DR 还需要时间点备份。</p></details><details class="iv"><summary>如何为不同系统选择 DR 策略？</summary><p>先做业务影响分析，明确每个系统停机一小时和丢一小时数据的代价，得出 RTO/RPO；再选成本最低且能满足目标的策略；核心交易用温备或多活，内部工具用备份恢复。</p></details><details class="iv"><summary>为什么说不演练的备份等于没有备份？</summary><p>备份可能损坏、不完整、依赖已丢失的密钥，或恢复耗时远超 RTO。只有定期恢复到隔离环境并校验数据完整性，才能确认备份可用，并测出真实恢复时间。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/disaster-recovery-options-in-the-cloud.html" target="_blank" rel="noopener"><b>AWS 白皮书：Disaster Recovery Options in the Cloud</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://cloud.google.com/architecture/dr-scenarios-planning-guide" target="_blank" rel="noopener"><b>Google Cloud：Disaster recovery planning guide</b><small>cloud.google.com ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/app-pgdump.html" target="_blank" rel="noopener"><b>PostgreSQL 文档：pg_dump</b><small>postgresql.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="single-points-of-failure.pro.html" rel="prev"><small>‹ 上一个</small><b>🎯 单点故障 (SPOF)</b></a><a class="pn next" href="rto-and-rpo.pro.html" rel="next"><small>下一个 ›</small><b>⏱️ 恢复时间与恢复点目标</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

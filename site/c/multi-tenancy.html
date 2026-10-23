@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="多租户架构：一套系统同时服务很多客户，数据互不串">
+<title>🏢 多租户架构 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp l4" id="main" data-slug="multi-tenancy" data-pro="1" data-answer="0"
+  data-prev="hexagonal-architecture.html" data-next="lakehouse.html"
+  data-next-name="🏞️ 湖仓一体 (Iceberg / Delta Lake)">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#arch">🔥 进阶 · 🏛️ 架构设计</a><span>›</span><b>多租户架构</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb">🔥 进阶</span><span class="muted">No.461 / 500</span></div>
+    <ol class="rail-list"><li><a href="#s-one" data-sec="s-one"><span class="re">🎯</span><span class="rl">一句话</span><i class="rc">✓</i></a></li><li><a href="#s-ana" data-sec="s-ana"><span class="re">🧸</span><span class="rl">打个比方</span><i class="rc">✓</i></a></li><li><a href="#s-anim" data-sec="s-anim"><span class="re">🎬</span><span class="rl">动起来看</span><i class="rc">✓</i></a></li><li><a href="#s-tab" data-sec="s-tab"><span class="re">📊</span><span class="rl">对比表</span><i class="rc">✓</i></a></li><li><a href="#s-how" data-sec="s-how"><span class="re">👣</span><span class="rl">怎么做</span><i class="rc">✓</i></a></li><li><a href="#s-oops" data-sec="s-oops"><span class="re">💥</span><span class="rl">翻车现场</span><i class="rc">✓</i></a></li><li><a href="#s-ai" data-sec="s-ai"><span class="re">🤖</span><span class="rl">给 AI 的话</span><i class="rc">✓</i></a></li><li><a href="#s-quiz" data-sec="s-quiz"><span class="re">✅</span><span class="rl">小测一下</span><i class="rc">✓</i></a></li><li><a href="#s-words" data-sec="s-words"><span class="re">📚</span><span class="rl">词汇</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="hexagonal-architecture.html" rel="prev"><small>‹ 上一个</small><b>⬡ 六边形架构 / 整洁架构</b></a><a class="pn next" href="lakehouse.html" rel="next"><small>下一个 ›</small><b>🏞️ 湖仓一体 (Iceberg / Delta Lake)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🏢</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb">🔥 进阶</span><span>🏛️ 架构设计</span><span>No.461 / 500</span><span>⏱ 约 2 分钟</span></div>
+    <h1>多租户架构</h1><p class="en">Multi-Tenancy</p>
+    <div class="hbtns"><button class="say big" data-say="s-hero s-one s-ana">🔊 读给我听</button><a class="prosw" href="multi-tenancy.pro.html" data-mode="pro" title="更详细、更专业的版本">🎓 专业模式</a></div>
+  </div>
+  <img class="mascot-s" src="../assets/mascot-sm.webp" alt="" width="256" height="256">
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#s-one" data-sec="s-one"><span>🎯</span>一句话</a><a class="sc-chip" href="#s-ana" data-sec="s-ana"><span>🧸</span>打个比方</a><a class="sc-chip" href="#s-anim" data-sec="s-anim"><span>🎬</span>动起来看</a><a class="sc-chip" href="#s-tab" data-sec="s-tab"><span>📊</span>对比表</a><a class="sc-chip" href="#s-how" data-sec="s-how"><span>👣</span>怎么做</a><a class="sc-chip" href="#s-oops" data-sec="s-oops"><span>💥</span>翻车现场</a><a class="sc-chip" href="#s-ai" data-sec="s-ai"><span>🤖</span>给 AI 的话</a><a class="sc-chip" href="#s-quiz" data-sec="s-quiz"><span>✅</span>小测一下</a><a class="sc-chip" href="#s-words" data-sec="s-words"><span>📚</span>词汇</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento">
+<section class="t sec s-one t-lemon" id="s-one"><header class="th"><span class="tag">🎯 01 · 一句话</span><button class="say sm" data-say="s-one" aria-label="读这一块">🔊</button></header><p class="big">一套系统同时服务很多客户，数据互不串</p></section>
+<section class="t sec s-ana" id="s-ana"><header class="th"><span class="tag">🧸 02 · 打个比方</span><button class="say sm" data-say="s-ana" aria-label="读这一块">🔊</button></header><p class="ana">像一栋写字楼租给很多公司。大楼、电梯共用。每家办公室门锁各自独立。</p><ul class="pts"><li>🏷️ 每条数据都要打上属于哪家客户</li><li>🔒 查数据时必须带上客户编号</li><li>💰 共用资源省钱，但隔离要做好</li></ul></section>
+<section class="t sec s-anim t-sky" id="s-anim"><header class="th"><span class="tag">🎬 03 · 动起来看</span></header><div class="sc sc-fan sc-split"><div class="src"><div class="nd big pulse"><span class="ne">🏢</span><span class="nl">一套系统</span></div></div><i class="fly" style="--y:18%;--d:0.0s"></i><i class="fly" style="--y:50%;--d:0.45s"></i><i class="fly" style="--y:82%;--d:0.9s"></i><div class="tg" style="top:18%"><div class="nd "><span class="ne">🟦</span><span class="nl">客户 A</span></div></div><div class="tg" style="top:50%"><div class="nd "><span class="ne">🟩</span><span class="nl">客户 B</span></div></div><div class="tg" style="top:82%"><div class="nd "><span class="ne">🟧</span><span class="nl">客户 C</span></div></div></div><p class="cap">👀 同一套系统，分给多家客户用</p></section>
+<section class="t sec s-tab" id="s-tab"><header class="th"><span class="tag">📊 04 · 对比表</span></header><h3 class="tt">三种隔离方式</h3><div class="tw"><table><thead><tr><th>方式</th><th>隔离强度</th><th>成本</th></tr></thead><tbody><tr><td data-h="方式">共用表+标记</td><td data-h="隔离强度">弱</td><td data-h="成本">最低</td></tr><tr><td data-h="方式">每家一套表</td><td data-h="隔离强度">中</td><td data-h="成本">中等</td></tr><tr><td data-h="方式">每家一个库</td><td data-h="隔离强度">强</td><td data-h="成本">最高</td></tr></tbody></table></div></section>
+<section class="t sec s-how t-pist" id="s-how"><header class="th"><span class="tag">👣 05 · 怎么做</span><button class="say sm" data-say="s-how" aria-label="读这一块">🔊</button></header><ol class="how"><li><span class="sn">1</span><p>🏷️ 让 AI 给每张表加客户编号字段</p></li><li><span class="sn">2</span><p>🔒 开启行级权限，自动按客户过滤</p></li><li><span class="sn">3</span><p>🧪 用两个测试账号互查，确认看不到</p></li></ol></section>
+<section class="t sec s-oops t-blush" id="s-oops"><header class="th"><span class="tag">💥 06 · 翻车现场</span><button class="say sm" data-say="s-oops" aria-label="读这一块">🔊</button></header><p class="story">小冯的 SaaS 漏了一处客户过滤。A 公司的老板，在报表里看到了 B 公司的订单。</p></section>
+<section class="t sec s-ai t-lilac" id="s-ai"><header class="th"><span class="tag">🤖 07 · 给 AI 的话</span></header><pre class="prompt">我的 SaaS 要支持多家公司使用。请检查所有数据库查询是否都按公司编号过滤，列出遗漏的地方。</pre><button class="btn pri copy">📋 一键复制</button></section>
+<section class="t sec s-quiz" id="s-quiz"><header class="th"><span class="tag">✅ 08 · 小测一下</span></header><p class="q">多租户最怕出什么事？</p><div class="opts"><button class="opt" data-i="0"><span class="ok">A</span><span>客户数据串到别家</span></button><button class="opt" data-i="1"><span class="ok">B</span><span>页面颜色不统一</span></button><button class="opt" data-i="2"><span class="ok">C</span><span>服务器太便宜</span></button></div>
+<p class="why" hidden>💡 多个客户共用系统，数据隔离失败就是严重事故。</p></section>
+<section class="t sec s-words" id="s-words"><header class="th"><span class="tag">📚 09 · 词汇</span></header><div class="chips"><span class="chip">租户 (Tenant)</span><span class="chip">SaaS</span><span class="chip">数据隔离 (Isolation)</span><span class="chip">行级安全 (RLS)</span></div>
+<h3 class="relh">🔗 相关概念</h3><div class="rels"><a class="rel" href="row-level-security.html"><span>🗂️</span>行级安全策略 (RLS)</a><a class="rel" href="idor.html"><span>🎫</span>不安全的直接对象引用</a><a class="rel" href="server-side-authorization.html"><span>🏦</span>服务端授权</a><a class="rel" href="sharding.html"><span>🍕</span>数据库水平分片</a></div></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">看完了？给自己打个卡</h2><p class="muted">进度只存在你的浏览器里。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="hexagonal-architecture.html" rel="prev"><small>‹ 上一个</small><b>⬡ 六边形架构 / 整洁架构</b></a><a class="pn next" href="lakehouse.html" rel="next"><small>下一个 ›</small><b>🏞️ 湖仓一体 (Iceberg / Delta Lake)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

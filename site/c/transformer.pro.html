@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="Transformer 架构 专业模式：Transformer 是 2017 年论文《Attention Is All You Need》提出的神经网络架构，用自注意力（Self-Attention）">
+<title>🎓 Transformer 架构 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="transformer" data-answer="0" data-prev="git-hooks.pro.html" data-next="attention-mechanism.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#llmops">🌊 中级 · 🧠 模型工程与推理部署</a><span>›</span><a href="transformer.html">Transformer 架构</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.184 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="git-hooks.pro.html" rel="prev"><small>‹ 上一个</small><b>🪝 Git 钩子 (pre-commit)</b></a><a class="pn next" href="attention-mechanism.pro.html" rel="next"><small>下一个 ›</small><b>👀 注意力机制 (Self-Attention)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🏗️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🧠 模型工程与推理部署</span><span>⏱ 约 10 分钟</span></div>
+    <h1>Transformer 架构</h1><p class="en">Transformer</p>
+    <div class="hbtns"><a class="prosw back" href="transformer.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">Transformer 是 2017 年论文《Attention Is All You Need》提出的神经网络架构，用自注意力（Self-Attention）替代循环结构来建模序列中任意位置间的依赖。它由嵌入、位置编码和若干堆叠的注意力 + 前馈网络块组成，可高度并行训练，是 GPT、Claude、Llama 等主流大语言模型的共同骨架。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>分词器把文本切成 token，每个 token 映射为向量（嵌入），再注入位置信息（原论文为正弦位置编码，现代模型多用 RoPE 等）。</p></li><li><span class="sn">2</span><p>每个 Transformer 块先做多头自注意力，让每个位置按相关性聚合其他位置的信息，再经过逐位置的前馈网络（FFN）。</p></li><li><span class="sn">3</span><p>每个子层外包残差连接和层归一化，使几十上百层的深网络能稳定训练；现代 LLM 多采用 Pre-LN 结构。</p></li><li><span class="sn">4</span><p>仅解码器（decoder-only）模型使用因果掩码，每个位置只能看到之前的 token，以“预测下一个 token”为训练目标。</p></li><li><span class="sn">5</span><p>最后一层输出经线性层与 softmax 得到词表概率分布，按采样策略选出下一个 token，追加后重复，直到结束。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>自注意力 (Self-Attention)</dt><dd>序列内部每个位置对所有位置计算相关权重并加权求和。</dd></div><div class="term"><dt>前馈网络 (FFN / MLP)</dt><dd>注意力后逐位置的两层全连接网络，占据大部分参数。</dd></div><div class="term"><dt>残差连接 (Residual Connection)</dt><dd>把子层输入直接加到输出上，缓解深层网络梯度问题。</dd></div><div class="term"><dt>仅解码器 (Decoder-only)</dt><dd>只保留带因果掩码的解码器堆叠，GPT 系列等 LLM 采用。</dd></div><div class="term"><dt>位置编码 (Positional Encoding)</dt><dd>为无序的注意力注入 token 顺序信息，如正弦编码、RoPE。</dd></div><div class="term"><dt>因果掩码 (Causal Mask)</dt><dd>屏蔽未来位置，保证生成时只依赖已出现的 token。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>PyTorch 搭一个最小编码器</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import torch
+import torch.nn as nn
+
+d_model, n_head, n_layer = 512, 8, 6   # 原论文 base 配置
+layer = nn.TransformerEncoderLayer(
+    d_model=d_model, nhead=n_head,
+    dim_feedforward=2048, batch_first=True,
+    norm_first=True,          # Pre-LN，现代模型常用
+)
+encoder = nn.TransformerEncoder(layer, num_layers=n_layer)
+
+x = torch.randn(2, 10, d_model)      # (batch, 序列长度, 维度)
+# 因果掩码：上三角为 True 表示不可见
+mask = nn.Transformer.generate_square_subsequent_mask(10).bool()
+y = encoder(x, mask=mask, is_causal=True)
+print(y.shape)                         # torch.Size([2, 10, 512])</code></pre></div><p class="cnote">用 PyTorch 内置模块堆叠 6 层注意力+FFN 块，并加因果掩码模拟解码器式的单向可见性。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">三种 Transformer 变体</h3><div class="tw"><table><thead><tr><th>结构</th><th>代表模型</th><th>训练目标</th><th>典型用途</th></tr></thead><tbody><tr><td data-h="结构">仅编码器</td><td data-h="代表模型">BERT</td><td data-h="训练目标">掩码语言建模</td><td data-h="典型用途">分类、检索、嵌入</td></tr><tr><td data-h="结构">编码器-解码器</td><td data-h="代表模型">T5、原始 Transformer</td><td data-h="训练目标">序列到序列</td><td data-h="典型用途">翻译、摘要</td></tr><tr><td data-h="结构">仅解码器</td><td data-h="代表模型">GPT、Llama、Claude 等</td><td data-h="训练目标">下一个 token 预测</td><td data-h="典型用途">对话、代码生成、通用 LLM</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>Transformer（稠密）</h4><p><b class="k-p">优点</b>并行训练、长程依赖建模好</p><p><b class="k-c">代价</b>注意力计算随序列长度平方增长</p><p><b class="k-w">适用</b>通用 LLM 的默认选择</p></div><div class="trd"><h4>混合专家 MoE</h4><p><b class="k-p">优点</b>参数量大但每 token 只激活部分专家</p><p><b class="k-c">代价</b>显存占用大、路由训练复杂</p><p><b class="k-w">适用</b>追求大容量又要控制推理计算</p></div><div class="trd"><h4>RNN / 状态空间模型</h4><p><b class="k-p">优点</b>推理时每步成本与长度无关</p><p><b class="k-c">代价</b>并行训练难或生态较小</p><p><b class="k-w">适用</b>超长序列或流式场景研究</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>把“层数多”等同于“模型强”</p><p class="fix"><b>✓</b>能力取决于参数、数据量与训练计算的平衡，盲目加深难以训练且收益有限</p></li><li><p class="bad"><b>✗</b>以为模型能看见“字”</p><p class="fix"><b>✓</b>模型只看到 token 序列，拼写、数字位数等问题常源于分词</p></li><li><p class="bad"><b>✗</b>认为上下文窗口内信息被同等利用</p><p class="fix"><b>✓</b>注意力分配不均，长上下文中段信息常被弱化，关键内容应放首尾</p></li><li><p class="bad"><b>✗</b>把 Transformer 和“会推理”画等号</p><p class="fix"><b>✓</b>架构只决定计算方式，推理能力来自训练数据与后训练方法</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>理解所用模型的上下文长度与计费方式</span></label></li><li><label><input type="checkbox"><span>长输入任务评估注意力成本与延迟</span></label></li><li><label><input type="checkbox"><span>关键指令放在提示首尾</span></label></li><li><label><input type="checkbox"><span>了解模型是否为 MoE 以估算显存</span></label></li><li><label><input type="checkbox"><span>部署时确认支持的位置编码与上下文扩展</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Transformer 为什么比 RNN 训练快？</summary><p>RNN 必须按时间步顺序计算，第 t 步依赖第 t-1 步的隐藏状态，无法在序列维度并行。Transformer 用注意力一次性计算所有位置间的关系，训练时整段序列可在 GPU 上并行矩阵运算，因而能扩展到更大数据和模型。</p></details><details class="iv"><summary>为什么需要位置编码？</summary><p>自注意力对输入顺序是置换等变的：打乱 token 顺序，每个位置的计算结果只是跟着重排。不注入位置信息，模型无法区分“狗咬人”和“人咬狗”。因此要加绝对位置编码或 RoPE 等相对位置方案。</p></details><details class="iv"><summary>FFN 在 Transformer 中起什么作用？</summary><p>注意力负责在位置之间搬运信息，FFN 负责在每个位置内做非线性变换，被认为存储了大量知识。FFN 隐藏层通常是模型维度的数倍（原论文为 4 倍），参数量占比最大，MoE 正是把 FFN 拆成多个专家。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener"><b>Attention Is All You Need (arXiv)</b><small>arxiv.org ↗</small></a></li><li><a href="https://jalammar.github.io/illustrated-transformer/" target="_blank" rel="noopener"><b>The Illustrated Transformer</b><small>jalammar.github.io ↗</small></a></li><li><a href="https://pytorch.org/docs/stable/generated/torch.nn.Transformer.html" target="_blank" rel="noopener"><b>PyTorch nn.Transformer 文档</b><small>pytorch.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="git-hooks.pro.html" rel="prev"><small>‹ 上一个</small><b>🪝 Git 钩子 (pre-commit)</b></a><a class="pn next" href="attention-mechanism.pro.html" rel="next"><small>下一个 ›</small><b>👀 注意力机制 (Self-Attention)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

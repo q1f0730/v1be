@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="水平与垂直扩展 专业模式：水平扩展（Horizontal Scaling）靠增加实例数量分担负载；垂直扩展（Vertical Scaling）靠给单实例更多 CPU、内存或更快磁盘提升能">
+<title>🎓 水平与垂直扩展 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="horizontal-vs-vertical-scaling" data-answer="0" data-prev="autoscaling.pro.html" data-next="cold-starts.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sre">🔮 高级 · 🩺 高可用 SRE</a><span>›</span><a href="horizontal-vs-vertical-scaling.html">水平与垂直扩展</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.309 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="autoscaling.pro.html" rel="prev"><small>‹ 上一个</small><b>📈 自动弹性扩缩容</b></a><a class="pn next" href="cold-starts.pro.html" rel="next"><small>下一个 ›</small><b>🥶 冷启动延迟</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🐎</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>水平与垂直扩展</h1><p class="en">Horizontal vs Vertical Scaling</p>
+    <div class="hbtns"><a class="prosw back" href="horizontal-vs-vertical-scaling.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">水平扩展（Horizontal Scaling）靠增加实例数量分担负载；垂直扩展（Vertical Scaling）靠给单实例更多 CPU、内存或更快磁盘提升能力。二者是容量规划的两条基本路径：水平扩展上限高、可容错，但要求无状态或分片；垂直扩展改造成本低，却受单机上限约束且常需重启。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>垂直扩展：更换更大规格的实例或调大容器资源限制，单节点处理能力提升。</p></li><li><span class="sn">2</span><p>垂直扩展通常需要重启或迁移实例，存在短暂中断，且最终受最大规格限制。</p></li><li><span class="sn">3</span><p>水平扩展：增加副本，由负载均衡分发请求，应用需无状态或会话外置。</p></li><li><span class="sn">4</span><p>有状态组件水平扩展需要分片或复制，例如数据库读副本分担读、分片分担写。</p></li><li><span class="sn">5</span><p>实践中常组合使用：先确定合适的单实例规格，再按负载水平扩展副本。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>扩展 (Scale Out / Scale Up)</dt><dd>前者加机器数量，后者加单机能力。</dd></div><div class="term"><dt>分片 (Sharding)</dt><dd>把数据按键拆分到多个节点，实现写入的水平扩展。</dd></div><div class="term"><dt>读副本 (Read Replica)</dt><dd>复制主库数据只处理读请求，用于水平扩展读。</dd></div><div class="term"><dt>VPA (Vertical Pod Autoscaler)</dt><dd>Kubernetes 中自动推荐或调整 Pod 资源请求的组件。</dd></div><div class="term"><dt>阿姆达尔定律 (Amdahl&#x27;s Law)</dt><dd>程序中不可并行部分决定了加速比的上限。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>两种扩展的 kubectl 操作</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 水平扩展：副本从 3 增加到 6，由 Service 自动分发流量
+kubectl scale deployment/api --replicas=6
+
+# 垂直扩展：调大单个 Pod 的资源（会触发滚动重建 Pod）
+kubectl set resources deployment/api \
+  --requests=cpu=1,memory=2Gi \
+  --limits=cpu=2,memory=4Gi
+
+# 观察效果：资源使用（需要集群安装 metrics-server）
+kubectl top pods -l app=api
+
+# 数据库层的水平扩展通常是加读副本或分片，
+# 不能像无状态服务一样直接 scale 副本数</code></pre></div><p class="cnote">无状态服务直接调副本数；调资源会重建 Pod，属于垂直扩展。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">两种扩展方式对比</h3><div class="tw"><table><thead><tr><th>维度</th><th>水平扩展</th><th>垂直扩展</th></tr></thead><tbody><tr><td data-h="维度">上限</td><td data-h="水平扩展">理论上很高，受协调开销限制</td><td data-h="垂直扩展">受单机最大规格限制</td></tr><tr><td data-h="维度">容错</td><td data-h="水平扩展">多副本，单点故障影响小</td><td data-h="垂直扩展">单实例故障即全停</td></tr><tr><td data-h="维度">改造成本</td><td data-h="水平扩展">需无状态或分片</td><td data-h="垂直扩展">几乎不需改代码</td></tr><tr><td data-h="维度">变更中断</td><td data-h="水平扩展">增减副本通常无中断</td><td data-h="垂直扩展">常需重启或迁移</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>优先垂直扩展</h4><p><b class="k-p">优点</b>简单快速，无需改架构</p><p><b class="k-c">代价</b>成本随规格非线性上升，有天花板</p><p><b class="k-w">适用</b>数据库主库、早期产品</p></div><div class="trd"><h4>优先水平扩展</h4><p><b class="k-p">优点</b>弹性好，可容错</p><p><b class="k-c">代价</b>需处理状态、一致性与负载均衡</p><p><b class="k-w">适用</b>无状态 Web/API 服务</p></div><div class="trd"><h4>组合使用</h4><p><b class="k-p">优点</b>兼顾单机效率与弹性</p><p><b class="k-c">代价</b>需要容量规划经验</p><p><b class="k-w">适用</b>多数生产系统</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>应用在内存保存会话，水平扩展后用户频繁掉登录。</p><p class="fix"><b>✓</b>会话外置到共享存储或使用签名令牌。</p></li><li><p class="bad"><b>✗</b>服务水平扩到几十个副本，数据库连接数被打满。</p><p class="fix"><b>✓</b>使用连接池或数据库代理，按下游容量限制副本。</p></li><li><p class="bad"><b>✗</b>单线程程序换更多核的机器，性能毫无提升。</p><p class="fix"><b>✓</b>先确认瓶颈与并行度，再选扩展方式。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>确认瓶颈资源是 CPU、内存、I/O 还是锁</span></label></li><li><label><input type="checkbox"><span>水平扩展前应用已无状态化</span></label></li><li><label><input type="checkbox"><span>下游连接数等共享资源能承受副本增加</span></label></li><li><label><input type="checkbox"><span>垂直扩展的中断窗口已评估</span></label></li><li><label><input type="checkbox"><span>有读副本或分片的数据层扩展计划</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>数据库扩展为什么比应用服务难？</summary><p>数据库有状态，水平扩展需要处理数据分布和一致性。读可以用读副本扩展但有复制延迟；写需要分片，带来跨分片事务和重新分片的复杂度。所以数据库常先垂直扩展，再按需引入读副本、缓存和分片。</p></details><details class="iv"><summary>水平扩展是否能无限提升性能？</summary><p>不能。阿姆达尔定律指出不可并行部分限制加速比；协调开销、共享依赖如数据库和锁、网络带宽都会成为瓶颈。扩展前应找出真正瓶颈。</p></details><details class="iv"><summary>什么时候选择垂直扩展更合理？</summary><p>负载稳定、单机规格尚有余量、应用难以无状态化或改造成本高时，例如单主数据库和早期产品。它能快速见效，但要同时规划达到上限后的水平扩展路径。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://en.wikipedia.org/wiki/Scalability" target="_blank" rel="noopener"><b>Wikipedia：Scalability</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler" target="_blank" rel="noopener"><b>Kubernetes Vertical Pod Autoscaler（GitHub）</b><small>github.com ↗</small></a></li><li><a href="https://kubernetes.io/docs/concepts/workloads/autoscaling/" target="_blank" rel="noopener"><b>Kubernetes：Autoscaling Workloads</b><small>kubernetes.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="autoscaling.pro.html" rel="prev"><small>‹ 上一个</small><b>📈 自动弹性扩缩容</b></a><a class="pn next" href="cold-starts.pro.html" rel="next"><small>下一个 ›</small><b>🥶 冷启动延迟</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

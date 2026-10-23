@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="Pod中断预算 (PDB) 专业模式：Pod 中断预算（PodDisruptionBudget，PDB）是 Kubernetes 中限制自愿中断时同时不可用 Pod 数量的策略对象。在节点排空、集群">
+<title>🎓 Pod中断预算 (PDB) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="pod-disruption-budgets" data-answer="0" data-prev="resource-requests-and-limits.pro.html" data-next="rag-evaluation.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#devops">🔥 进阶 · 🔭 可观测与交付</a><span>›</span><a href="pod-disruption-budgets.html">Pod中断预算 (PDB)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.450 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="resource-requests-and-limits.pro.html" rel="prev"><small>‹ 上一个</small><b>📦 K8s资源请求与硬限制</b></a><a class="pn next" href="rag-evaluation.pro.html" rel="next"><small>下一个 ›</small><b>📝 RAG 评测 (召回率 / 忠实度)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🏦</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>Pod中断预算 (PDB)</h1><p class="en">Pod Disruption Budgets</p>
+    <div class="hbtns"><a class="prosw back" href="pod-disruption-budgets.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">Pod 中断预算（PodDisruptionBudget，PDB）是 Kubernetes 中限制自愿中断时同时不可用 Pod 数量的策略对象。在节点排空、集群升级、自动缩容等通过驱逐 API 进行的操作中，若驱逐会使可用 Pod 低于预算，请求就会被拒绝，从而保证维护期间服务仍有足够副本运行。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>定义预算：用标签选择器匹配一组 Pod，设置 minAvailable 或 maxUnavailable。</p></li><li><span class="sn">2</span><p>自愿中断：kubectl drain、集群自动扩缩器等通过驱逐 API 请求移除 Pod。</p></li><li><span class="sn">3</span><p>预算检查：API Server 计算当前健康 Pod 数，驱逐后若违反预算则拒绝该请求。</p></li><li><span class="sn">4</span><p>重试推进：调用方稍后重试，待替换 Pod 在其他节点就绪后，驱逐才得以继续。</p></li><li><span class="sn">5</span><p>范围限制：节点宕机等非自愿中断不受 PDB 约束，直接删除 Pod 也会绕过 PDB。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>自愿中断 (Voluntary Disruption)</dt><dd>由运维操作主动发起的中断，如排空节点、升级。</dd></div><div class="term"><dt>非自愿中断 (Involuntary Disruption)</dt><dd>硬件故障、内核崩溃、节点失联等不可控中断。</dd></div><div class="term"><dt>驱逐 API (Eviction API)</dt><dd>会检查 PDB 的 Pod 移除接口，drain 通过它工作。</dd></div><div class="term"><dt>minAvailable / maxUnavailable</dt><dd>至少保持可用数或最多不可用数，可写整数或百分比。</dd></div><div class="term"><dt>unhealthyPodEvictionPolicy</dt><dd>控制不健康 Pod 是否可在预算不足时被驱逐。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>PDB 定义与检查</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code>apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api-pdb
+  namespace: shop
+spec:
+  maxUnavailable: 1            # 任意时刻最多 1 个副本因自愿中断不可用
+  selector:
+    matchLabels:
+      app: api
+  # 不健康的 Pod 即使预算不足也允许被驱逐，避免卡住排空
+  unhealthyPodEvictionPolicy: AlwaysAllow
+
+# 查看当前允许的中断数：
+#   kubectl get pdb -n shop
+#   ALLOWED DISRUPTIONS 为 0 时，drain 会一直等待重试</code></pre></div><p class="cnote">maxUnavailable 在扩缩副本时更稳定；ALLOWED DISRUPTIONS 长期为 0 会阻塞节点维护。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">PDB 配置选择</h3><div class="tw"><table><thead><tr><th>配置</th><th>效果</th><th>风险</th></tr></thead><tbody><tr><td data-h="配置">maxUnavailable: 1</td><td data-h="效果">每次只中断 1 个</td><td data-h="风险">副本多时升级较慢</td></tr><tr><td data-h="配置">minAvailable: 50%</td><td data-h="效果">至少一半副本在线</td><td data-h="风险">副本数很少时取整可能过严</td></tr><tr><td data-h="配置">minAvailable 等于副本数</td><td data-h="效果">不允许任何自愿驱逐</td><td data-h="风险">节点排空与升级被永久阻塞</td></tr><tr><td data-h="配置">maxUnavailable: 0</td><td data-h="效果">同样不允许驱逐</td><td data-h="风险">同上，应避免</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>maxUnavailable</h4><p><b class="k-p">优点</b>随副本数变化仍允许固定中断量</p><p><b class="k-c">代价</b>副本少时比例可能过大</p><p><b class="k-w">适用</b>多数无状态服务</p></div><div class="trd"><h4>minAvailable</h4><p><b class="k-p">优点</b>直观表达最低在线要求</p><p><b class="k-c">代价</b>副本数调整后需同步修改</p><p><b class="k-w">适用</b>有明确最小副本要求的服务</p></div><div class="trd"><h4>不设 PDB</h4><p><b class="k-p">优点</b>维护操作不受阻</p><p><b class="k-c">代价</b>排空时可能同时下线全部副本</p><p><b class="k-w">适用</b>可接受中断的批处理或开发环境</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>单副本服务配 minAvailable: 1，节点永远排空不了</p><p class="fix"><b>✓</b>关键服务至少两副本，或用 maxUnavailable: 1 接受短暂中断</p></li><li><p class="bad"><b>✗</b>以为 PDB 能防止节点宕机导致的不可用</p><p class="fix"><b>✓</b>PDB 只管自愿中断，可用性还需多副本和跨可用区分布</p></li><li><p class="bad"><b>✗</b>PDB 选择器与 Deployment 标签不匹配，预算形同虚设</p><p class="fix"><b>✓</b>用 kubectl get pdb 检查 CURRENT/ALLOWED 字段是否符合预期</p></li><li><p class="bad"><b>✗</b>Pod 一直不就绪导致预算耗尽，维护被卡住</p><p class="fix"><b>✓</b>修复就绪探针或设置 unhealthyPodEvictionPolicy: AlwaysAllow</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>关键服务有 PDB</span></label></li><li><label><input type="checkbox"><span>副本数大于 PDB 要求</span></label></li><li><label><input type="checkbox"><span>选择器与工作负载匹配</span></label></li><li><label><input type="checkbox"><span>ALLOWED DISRUPTIONS 非 0</span></label></li><li><label><input type="checkbox"><span>副本跨节点/可用区分布</span></label></li><li><label><input type="checkbox"><span>升级前检查 PDB 状态</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>PDB 能防住哪些中断，防不住哪些？</summary><p>能限制经由驱逐 API 的自愿中断，如 kubectl drain、集群自动缩容、托管集群节点升级。防不住节点宕机、内核崩溃、网络分区等非自愿中断，也拦不住直接删除 Pod 或删除 Deployment。</p></details><details class="iv"><summary>集群升级卡在排空节点，怎么排查？</summary><p>先看 kubectl get pdb 是否有 ALLOWED DISRUPTIONS 为 0 的预算；常见原因是单副本服务配置了 minAvailable: 1、Pod 未就绪占用预算、副本无法在其他节点调度。按原因扩副本、修复探针或调整 PDB。</p></details><details class="iv"><summary>minAvailable 和 maxUnavailable 怎么选？</summary><p>maxUnavailable 表达每次允许中断几个，副本数增加时也不需修改，对滚动维护更友好；minAvailable 表达最少在线数，适合对最低容量有硬性要求的服务。两者只能设置一个。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://kubernetes.io/docs/concepts/workloads/pods/disruptions/" target="_blank" rel="noopener"><b>Kubernetes: Disruptions</b><small>kubernetes.io ↗</small></a></li><li><a href="https://kubernetes.io/docs/tasks/run-application/configure-pdb/" target="_blank" rel="noopener"><b>Kubernetes: Specifying a Disruption Budget</b><small>kubernetes.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="resource-requests-and-limits.pro.html" rel="prev"><small>‹ 上一个</small><b>📦 K8s资源请求与硬限制</b></a><a class="pn next" href="rag-evaluation.pro.html" rel="next"><small>下一个 ›</small><b>📝 RAG 评测 (召回率 / 忠实度)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="模型文件格式 (GGUF / safetensors) 专业模式：模型文件格式决定了权重张量、元数据和分词器如何序列化到磁盘，直接影响加载速度、安全性和可用的推理引擎。主流有 safetensors（只存张量、可 mmap、不">
+<title>🎓 模型文件格式 (GGUF / safetensors) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="model-file-formats" data-answer="0" data-prev="ttft-and-tpot.pro.html" data-next="openai-compatible-api.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#llmops">🌊 中级 · 🧠 模型工程与推理部署</a><span>›</span><a href="model-file-formats.html">模型文件格式 (GGUF / safetensors)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.187 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="ttft-and-tpot.pro.html" rel="prev"><small>‹ 上一个</small><b>⏱️ 首字延迟与出字速度 (TTFT / TPOT)</b></a><a class="pn next" href="openai-compatible-api.pro.html" rel="next"><small>下一个 ›</small><b>🔌 OpenAI 兼容接口</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📦</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🧠 模型工程与推理部署</span><span>⏱ 约 10 分钟</span></div>
+    <h1>模型文件格式 (GGUF / safetensors)</h1><p class="en">Model File Formats</p>
+    <div class="hbtns"><a class="prosw back" href="model-file-formats.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">模型文件格式决定了权重张量、元数据和分词器如何序列化到磁盘，直接影响加载速度、安全性和可用的推理引擎。主流有 safetensors（只存张量、可 mmap、不含代码）、GGUF（llama.cpp 生态单文件格式，内置量化与元数据），以及基于 pickle 的 PyTorch .bin/.pt，后者加载时有任意代码执行风险。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>训练框架在内存中保存的是张量字典（参数名到多维数组），保存时需要选一种序列化格式写入磁盘。</p></li><li><span class="sn">2</span><p>PyTorch 传统的 torch.save 使用 pickle，反序列化时可执行任意 Python 对象构造逻辑，恶意文件可借此运行代码。</p></li><li><span class="sn">3</span><p>safetensors 文件开头 8 字节记录头部长度，随后是 JSON 头（张量名、dtype、形状、偏移），之后是连续的原始数据，可零拷贝 mmap 加载。</p></li><li><span class="sn">4</span><p>GGUF 在单文件内存储超参数、分词器、聊天模板等键值元数据和各张量，张量可使用 Q4_K、Q8_0 等量化类型，供 llama.cpp、Ollama 等直接加载。</p></li><li><span class="sn">5</span><p>大模型常按体积拆为多个分片（shard），配合 index JSON 记录每个张量位于哪个文件；GGUF 也支持分片文件。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>safetensors</dt><dd>只含张量与 JSON 头的安全格式，支持 mmap 与惰性加载。</dd></div><div class="term"><dt>GGUF</dt><dd>llama.cpp 定义的二进制格式，单文件包含权重、元数据和量化信息。</dd></div><div class="term"><dt>pickle 反序列化风险</dt><dd>加载 pickle 文件可能执行任意代码，不可信来源需避免。</dd></div><div class="term"><dt>量化类型 (Quant Type)</dt><dd>如 Q4_K_M、Q8_0，表示每个权重用的位数与分组方式。</dd></div><div class="term"><dt>分片 (Shard)</dt><dd>把大模型权重拆为多个文件，配合索引文件加载。</dd></div><div class="term"><dt>内存映射 (mmap)</dt><dd>把文件直接映射进地址空间，按需读取，加快加载并省内存。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>读写 safetensors 并查看文件头</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import json, struct
+import torch
+from safetensors.torch import save_file, load_file
+
+tensors = {&quot;w&quot;: torch.randn(4, 4), &quot;b&quot;: torch.zeros(4)}
+save_file(tensors, &quot;demo.safetensors&quot;, metadata={&quot;note&quot;: &quot;demo&quot;})
+
+# 文件结构：8 字节小端整数 = JSON 头长度，随后是 JSON 头
+with open(&quot;demo.safetensors&quot;, &quot;rb&quot;) as f:
+    n = struct.unpack(&quot;&lt;Q&quot;, f.read(8))[0]
+    header = json.loads(f.read(n))
+print(header[&quot;w&quot;])          # dtype、shape、data_offsets
+
+loaded = load_file(&quot;demo.safetensors&quot;)   # 不经过 pickle
+print(torch.equal(loaded[&quot;w&quot;], tensors[&quot;w&quot;]))  # True</code></pre></div><p class="cnote">说明 safetensors 只是“JSON 头 + 原始字节”，加载过程不执行任何代码。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">主流格式对比</h3><div class="tw"><table><thead><tr><th>格式</th><th>主要生态</th><th>是否可执行代码</th><th>典型用途</th></tr></thead><tbody><tr><td data-h="格式">safetensors</td><td data-h="主要生态">Transformers、Diffusers</td><td data-h="是否可执行代码">否</td><td data-h="典型用途">模型发布、训练、GPU 推理</td></tr><tr><td data-h="格式">GGUF</td><td data-h="主要生态">llama.cpp、Ollama、LM Studio</td><td data-h="是否可执行代码">否</td><td data-h="典型用途">本地 CPU/GPU 量化推理</td></tr><tr><td data-h="格式">PyTorch .bin/.pt (pickle)</td><td data-h="主要生态">早期 PyTorch</td><td data-h="是否可执行代码">可能</td><td data-h="典型用途">遗留模型与检查点</td></tr><tr><td data-h="格式">ONNX</td><td data-h="主要生态">ONNX Runtime 等</td><td data-h="是否可执行代码">否</td><td data-h="典型用途">跨框架部署、边缘设备</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>safetensors + GPU 推理引擎</h4><p><b class="k-p">优点</b>精度高、生态完整、加载快</p><p><b class="k-c">代价</b>显存需求大</p><p><b class="k-w">适用</b>有服务器 GPU、生产推理</p></div><div class="trd"><h4>GGUF 量化文件</h4><p><b class="k-p">优点</b>单文件易分发，消费级硬件可跑</p><p><b class="k-c">代价</b>低比特量化有质量损失</p><p><b class="k-w">适用</b>个人电脑、离线本地使用</p></div><div class="trd"><h4>自行转换格式</h4><p><b class="k-p">优点</b>可定制量化与精度</p><p><b class="k-c">代价</b>转换脚本与版本兼容需验证</p><p><b class="k-w">适用</b>官方未提供所需格式时</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>从不可信来源加载 .bin/.pt 文件</p><p class="fix"><b>✓</b>优先 safetensors；必须用 torch.load 时设 weights_only=True</p></li><li><p class="bad"><b>✗</b>只看参数量挑文件，忽略量化位数</p><p class="fix"><b>✓</b>按“参数量 × 每权重位数”估算体积，并为 KV 缓存留显存</p></li><li><p class="bad"><b>✗</b>GGUF 聊天模板与模型不匹配导致输出异常</p><p class="fix"><b>✓</b>使用文件内置模板或官方推荐模板，升级推理引擎</p></li><li><p class="bad"><b>✗</b>下载了 LoRA 适配器却当完整模型加载</p><p class="fix"><b>✓</b>检查是否为 adapter 文件，需与对应基座模型合并或一起加载</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>确认推理引擎支持的格式与量化类型</span></label></li><li><label><input type="checkbox"><span>优先选择 safetensors 或 GGUF</span></label></li><li><label><input type="checkbox"><span>校验文件来源与哈希</span></label></li><li><label><input type="checkbox"><span>按显存选择量化等级并预留余量</span></label></li><li><label><input type="checkbox"><span>检查模型许可证</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么社区从 pickle 迁移到 safetensors？</summary><p>pickle 反序列化能调用任意可调用对象，模型文件可藏恶意代码，在共享平台上风险很大。safetensors 只描述张量布局，没有可执行逻辑，同时支持 mmap 零拷贝和按需加载单个张量，加载速度更快。</p></details><details class="iv"><summary>GGUF 相比 safetensors 的定位差异？</summary><p>safetensors 是通用张量容器，通常保存 FP16/BF16 原始权重，配合 config 与 tokenizer 文件使用。GGUF 是面向推理的自包含格式，把元数据、分词器和量化权重打包在一个文件，便于本地工具开箱即用。</p></details><details class="iv"><summary>如何估算 GGUF 文件能否在显卡上运行？</summary><p>文件体积约等于权重显存占用，再加上 KV 缓存（随上下文长度和并发增长）与运行时开销。显存不足时可部分层卸载到 CPU，但速度会下降。实际可用性以推理引擎的报告为准。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://huggingface.co/docs/safetensors/index" target="_blank" rel="noopener"><b>safetensors 文档 (Hugging Face)</b><small>huggingface.co ↗</small></a></li><li><a href="https://github.com/ggml-org/ggml/blob/master/docs/gguf.md" target="_blank" rel="noopener"><b>GGUF 规范 (ggml)</b><small>github.com ↗</small></a></li><li><a href="https://huggingface.co/docs/hub/gguf" target="_blank" rel="noopener"><b>Hugging Face Hub：GGUF</b><small>huggingface.co ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="ttft-and-tpot.pro.html" rel="prev"><small>‹ 上一个</small><b>⏱️ 首字延迟与出字速度 (TTFT / TPOT)</b></a><a class="pn next" href="openai-compatible-api.pro.html" rel="next"><small>下一个 ›</small><b>🔌 OpenAI 兼容接口</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

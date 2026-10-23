@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="TLS证书过期治理 专业模式：TLS 证书过期治理是对服务端证书生命周期的工程化管理：签发、部署、监控、续期与吊销。证书过期后客户端握手失败，表现为浏览器拦截页、API 调用报错甚至移动端整">
+<title>🎓 TLS证书过期治理 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="tls-certificate-expiry" data-answer="0" data-prev="webhook-signature-verification.pro.html" data-next="encryption-at-rest.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sec">🔮 高级 · 🛡️ 安全防线</a><span>›</span><a href="tls-certificate-expiry.html">TLS证书过期治理</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.232 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="webhook-signature-verification.pro.html" rel="prev"><small>‹ 上一个</small><b>🔏 Webhook签名校验</b></a><a class="pn next" href="encryption-at-rest.pro.html" rel="next"><small>下一个 ›</small><b>🗄️ 静态数据加密</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📜</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>TLS证书过期治理</h1><p class="en">TLS Certificate Expiry</p>
+    <div class="hbtns"><a class="prosw back" href="tls-certificate-expiry.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">TLS 证书过期治理是对服务端证书生命周期的工程化管理：签发、部署、监控、续期与吊销。证书过期后客户端握手失败，表现为浏览器拦截页、API 调用报错甚至移动端整体不可用。随着行业逐步缩短证书最长有效期，自动化续期已成为硬性要求。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>证书由 CA 签发，带 notBefore/notAfter 有效期，客户端握手时校验链路、域名与有效期。</p></li><li><span class="sn">2</span><p>ACME 协议（RFC 8555）让客户端自动完成域名验证（HTTP-01/DNS-01/TLS-ALPN-01）并获取证书。</p></li><li><span class="sn">3</span><p>续期通常在到期前一段时间触发（如 Let&#x27;s Encrypt 90 天证书常在剩余约 30 天时续），证书落盘后重载服务。</p></li><li><span class="sn">4</span><p>中间证书与根证书同样会过期或更替，服务端需下发完整证书链。</p></li><li><span class="sn">5</span><p>监控从外部探测实际对外的证书，按剩余天数分级告警，覆盖所有域名与端口。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>ACME</dt><dd>自动化证书管理协议，Let&#x27;s Encrypt 等 CA 使用。</dd></div><div class="term"><dt>证书链 (Certificate Chain)</dt><dd>叶子证书、中间证书到受信根的签名链路。</dd></div><div class="term"><dt>DNS-01 验证</dt><dd>通过写 TXT 记录证明域名控制权，可签通配符证书。</dd></div><div class="term"><dt>证书透明度 (Certificate Transparency)</dt><dd>公开日志记录所有签发证书，可用于盘点资产。</dd></div><div class="term"><dt>ARI (ACME Renewal Information)</dt><dd>CA 告知客户端建议续期时间窗口的 ACME 扩展。</dd></div><div class="term"><dt>OCSP / CRL</dt><dd>查询证书吊销状态的两种机制。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>检查到期并演练续期</span><em>bash</em><button class="ccopy">复制</button></div><pre><code>#!/usr/bin/env bash
+HOST=example.com
+
+# 查看线上实际下发证书的到期时间、主体和签发者
+echo | openssl s_client -connect &quot;$HOST:443&quot; -servername &quot;$HOST&quot; 2&gt;/dev/null \
+  | openssl x509 -noout -enddate -subject -issuer
+
+# 30 天内到期则返回非 0（-checkend 单位是秒），可接入告警
+if ! echo | openssl s_client -connect &quot;$HOST:443&quot; -servername &quot;$HOST&quot; 2&gt;/dev/null \
+     | openssl x509 -noout -checkend $((30*24*3600)); then
+  echo &quot;WARN: $HOST 证书 30 天内到期&quot;
+fi
+
+# certbot：演练续期，不实际替换证书
+sudo certbot renew --dry-run
+
+# 确认自动续期定时器存在
+systemctl list-timers | grep -i certbot</code></pre></div><p class="cnote">从外部看真实下发的证书，而不是磁盘文件；--dry-run 验证续期链路可用。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">公开 TLS 证书有效期上限</h3><div class="tw"><table><thead><tr><th>生效时间</th><th>最长有效期</th><th>依据</th></tr></thead><tbody><tr><td data-h="生效时间">2020-09 起</td><td data-h="最长有效期">398 天</td><td data-h="依据">浏览器根计划要求</td></tr><tr><td data-h="生效时间">2026-03-15 起</td><td data-h="最长有效期">200 天</td><td data-h="依据">CA/B 论坛 SC-081</td></tr><tr><td data-h="生效时间">2027-03-15 起</td><td data-h="最长有效期">100 天</td><td data-h="依据">CA/B 论坛 SC-081</td></tr><tr><td data-h="生效时间">2029-03-15 起</td><td data-h="最长有效期">47 天</td><td data-h="依据">CA/B 论坛 SC-081</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>ACME 自动续期</h4><p><b class="k-p">优点</b>免费、零人工，适应短有效期</p><p><b class="k-c">代价</b>依赖验证通道与 CA 可用性</p><p><b class="k-w">适用</b>公网 Web 服务默认选择</p></div><div class="trd"><h4>云托管证书（ACM 等）</h4><p><b class="k-p">优点</b>与负载均衡/CDN 集成，自动续期</p><p><b class="k-c">代价</b>私钥不可导出，绑定云厂商</p><p><b class="k-w">适用</b>流量经云 LB/CDN 终止 TLS</p></div><div class="trd"><h4>人工购买 OV/EV 证书</h4><p><b class="k-p">优点</b>有组织验证信息</p><p><b class="k-c">代价</b>需人工续期，易遗忘</p><p><b class="k-w">适用</b>合规或合同明确要求</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>续期成功但服务没重载，仍在用旧证书</p><p class="fix"><b>✓</b>配置 deploy hook 重载 Nginx 等，并从外部验证</p></li><li><p class="bad"><b>✗</b>只监控主站，漏掉 API、邮件、内部域名</p><p class="fix"><b>✓</b>用 CT 日志与资产清单盘点全部证书</p></li><li><p class="bad"><b>✗</b>依赖 CA 的到期提醒邮件</p><p class="fix"><b>✓</b>自建监控；Let&#x27;s Encrypt 已于 2025 年停发到期邮件</p></li><li><p class="bad"><b>✗</b>移动端证书固定（pinning）叶子证书</p><p class="fix"><b>✓</b>固定公钥或中间 CA，并预置备用钥</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有证书都有自动续期并演练过</span></label></li><li><label><input type="checkbox"><span>续期后自动重载服务</span></label></li><li><label><input type="checkbox"><span>外部探测剩余天数并分级告警</span></label></li><li><label><input type="checkbox"><span>证书资产清单含负责人</span></label></li><li><label><input type="checkbox"><span>服务端下发完整证书链</span></label></li><li><label><input type="checkbox"><span>DNS-01 凭据最小权限保存</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>证书有效期越来越短，对团队有什么影响？</summary><p>按 CA/B 论坛 SC-081，公开证书上限从 2026 年 3 月起为 200 天，逐步降到 2029 年的 47 天。人工续期将不可行，必须全链路自动化：签发、部署、重载、验证与监控，并清点所有手工维护的证书。</p></details><details class="iv"><summary>为什么续期了还会出现过期？</summary><p>常见原因：服务未重载仍持有旧证书；多台机器只更新了一台；CDN/LB 上另有一份证书；中间证书过期或链不完整；客户端缓存了旧链。所以监控要从外部探测真实下发的证书。</p></details><details class="iv"><summary>HTTP-01 和 DNS-01 如何选？</summary><p>HTTP-01 简单，需 80 端口可达，不支持通配符。DNS-01 支持通配符、内网服务，但要把 DNS API 凭据交给续期程序，需最小权限。多机或 CDN 后的场景常选 DNS-01。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.rfc-editor.org/rfc/rfc8555" target="_blank" rel="noopener"><b>RFC 8555: ACME</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://letsencrypt.org/docs/" target="_blank" rel="noopener"><b>Let&#x27;s Encrypt 文档</b><small>letsencrypt.org ↗</small></a></li><li><a href="https://eff-certbot.readthedocs.io/en/stable/" target="_blank" rel="noopener"><b>Certbot 文档</b><small>eff-certbot.readthedocs.io ↗</small></a></li><li><a href="https://cabforum.org/2025/04/11/ballot-sc081v3-introduce-schedule-of-reducing-validity-and-data-reuse-periods/" target="_blank" rel="noopener"><b>CA/B Forum Ballot SC-081v3</b><small>cabforum.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="webhook-signature-verification.pro.html" rel="prev"><small>‹ 上一个</small><b>🔏 Webhook签名校验</b></a><a class="pn next" href="encryption-at-rest.pro.html" rel="next"><small>下一个 ›</small><b>🗄️ 静态数据加密</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

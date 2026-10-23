@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="模块化单体 专业模式：模块化单体（Modular Monolith）是作为单个可部署单元运行、但内部按业务能力划分为边界清晰模块的架构。每个模块拥有自己的领域逻辑和数据，只通过显式的">
+<title>🎓 模块化单体 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="modular-monolith" data-answer="0" data-prev="api-gateway.pro.html" data-next="architecture-decision-records.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#arch">🔮 高级 · 🏛️ 架构设计</a><span>›</span><a href="modular-monolith.html">模块化单体</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.348 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="api-gateway.pro.html" rel="prev"><small>‹ 上一个</small><b>🚪 API 网关</b></a><a class="pn next" href="architecture-decision-records.pro.html" rel="next"><small>下一个 ›</small><b>📓 架构决策记录 (ADR)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🧱</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🏛️ 架构设计</span><span>⏱ 约 10 分钟</span></div>
+    <h1>模块化单体</h1><p class="en">Modular Monolith</p>
+    <div class="hbtns"><a class="prosw back" href="modular-monolith.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">模块化单体（Modular Monolith）是作为单个可部署单元运行、但内部按业务能力划分为边界清晰模块的架构。每个模块拥有自己的领域逻辑和数据，只通过显式的公开接口或进程内事件与其他模块交互，并借助工具强制依赖规则。它保留单体的部署与调试简单性，又获得微服务式的边界，是在拆分微服务前更务实的选择。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>按业务能力（限界上下文）划分模块，如订单、计费、商品，而不是按技术层（controller、service）划分。</p></li><li><span class="sn">2</span><p>每个模块定义公开 API（接口、门面或事件），内部实现对外不可见。</p></li><li><span class="sn">3</span><p>数据归属明确：模块只访问自己的表或 schema，不跨模块直接查询或 JOIN 他人数据。</p></li><li><span class="sn">4</span><p>通过静态检查工具（如 import-linter、Spring Modulith、ArchUnit）在 CI 中强制模块依赖规则。</p></li><li><span class="sn">5</span><p>当某模块确有独立扩展或部署需求时，因边界已清晰，可较低成本地将其抽取为独立服务。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>限界上下文 (Bounded Context)</dt><dd>领域模型适用的边界，常作为模块划分依据。</dd></div><div class="term"><dt>模块公开接口 (Module API)</dt><dd>模块对外暴露的唯一访问入口。</dd></div><div class="term"><dt>架构适应度函数 (Fitness Function)</dt><dd>自动化检查架构约束是否被遵守的测试。</dd></div><div class="term"><dt>进程内事件 (In-process Event)</dt><dd>模块间通过事件解耦，但仍在同一进程内传递。</dd></div><div class="term"><dt>分布式单体 (Distributed Monolith)</dt><dd>拆成多个服务却仍紧密耦合，兼具两者缺点的反模式。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>用 import-linter 强制模块边界</span><em>text</em><button class="ccopy">复制</button></div><pre><code># .importlinter （pip install import-linter，运行 lint-imports）
+[importlinter]
+root_package = shop
+
+# 业务模块之间互不直接导入
+[importlinter:contract:modules-independent]
+name = Business modules are independent
+type = independence
+modules =
+    shop.orders
+    shop.billing
+    shop.catalog
+
+# 每个模块内部分层：api 可依赖 domain，反之不行
+[importlinter:contract:orders-layers]
+name = Orders layering
+type = layers
+layers =
+    shop.orders.api
+    shop.orders.domain
+    shop.orders.infra</code></pre></div><p class="cnote">在 CI 中运行 lint-imports，违反模块独立性或分层规则即失败；模块间协作改走共享事件或接口包。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">三种架构对比</h3><div class="tw"><table><thead><tr><th>维度</th><th>传统单体</th><th>模块化单体</th><th>微服务</th></tr></thead><tbody><tr><td data-h="维度">部署单元</td><td data-h="传统单体">一个</td><td data-h="模块化单体">一个</td><td data-h="微服务">多个</td></tr><tr><td data-h="维度">模块边界</td><td data-h="传统单体">弱，易形成“大泥球”</td><td data-h="模块化单体">强，由工具约束</td><td data-h="微服务">强，由网络隔离</td></tr><tr><td data-h="维度">调用方式</td><td data-h="传统单体">任意函数调用</td><td data-h="模块化单体">公开接口/进程内事件</td><td data-h="微服务">网络调用</td></tr><tr><td data-h="维度">运维复杂度</td><td data-h="传统单体">低</td><td data-h="模块化单体">低</td><td data-h="微服务">高</td></tr><tr><td data-h="维度">独立扩缩容</td><td data-h="传统单体">不能</td><td data-h="模块化单体">不能</td><td data-h="微服务">能</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>模块化单体</h4><p><b class="k-p">优点</b>部署简单、事务简单、重构成本低</p><p><b class="k-c">代价</b>无法按模块独立扩缩容与部署</p><p><b class="k-w">适用</b>中小团队、业务边界仍在演化</p></div><div class="trd"><h4>微服务</h4><p><b class="k-p">优点</b>独立部署与扩展，技术栈自治</p><p><b class="k-c">代价</b>分布式复杂度、运维成本高</p><p><b class="k-w">适用</b>大团队、模块需独立扩展</p></div><div class="trd"><h4>传统单体</h4><p><b class="k-p">优点</b>起步最快</p><p><b class="k-c">代价</b>长期易失控、难拆分</p><p><b class="k-w">适用</b>原型与短期项目</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>按技术层划分模块，业务逻辑散落各处</p><p class="fix"><b>✓</b>按业务能力划分，每个模块内部再分层</p></li><li><p class="bad"><b>✗</b>模块间共享数据库表并相互 JOIN</p><p class="fix"><b>✓</b>每张表只归一个模块，跨模块数据经接口获取</p></li><li><p class="bad"><b>✗</b>只靠约定维持边界，日久失效</p><p class="fix"><b>✓</b>在 CI 中用工具强制依赖规则</p></li><li><p class="bad"><b>✗</b>为“未来可能拆分”过早引入消息中间件</p><p class="fix"><b>✓</b>先用进程内接口或事件，真正拆分时再替换实现</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>模块按业务能力划分</span></label></li><li><label><input type="checkbox"><span>每个模块有明确的公开接口</span></label></li><li><label><input type="checkbox"><span>数据表归属单一模块</span></label></li><li><label><input type="checkbox"><span>CI 中自动检查模块依赖</span></label></li><li><label><input type="checkbox"><span>模块间无循环依赖</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>模块化单体和微服务的核心区别是什么？</summary><p>两者都强调按业务划分的清晰边界，区别在于部署与通信方式：模块化单体是一个进程，模块间用函数调用或进程内事件，共享一次部署和数据库实例；微服务各自部署，通过网络通信，各自拥有数据存储，获得独立扩展能力，也承担分布式系统的全部复杂度。</p></details><details class="iv"><summary>什么时候应该从模块化单体拆出微服务？</summary><p>当某个模块有明显不同的扩缩容需求、发布节奏或可靠性要求，或团队规模增长到需要独立交付时。若边界已清晰，拆分主要是把进程内调用替换为网络调用并迁移数据，风险可控。</p></details><details class="iv"><summary>为什么它对 AI 辅助开发友好？</summary><p>清晰的模块边界缩小了每次改动需要理解的上下文范围，Agent 可以只读取一个模块及其公开接口；CI 中的依赖检查还能自动拦截 AI 生成的越界引用，减少架构腐化。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://shopify.engineering/deconstructing-monolith-designing-software-maximizes-developer-productivity" target="_blank" rel="noopener"><b>Shopify：Deconstructing the Monolith</b><small>shopify.engineering ↗</small></a></li><li><a href="https://martinfowler.com/bliki/MonolithFirst.html" target="_blank" rel="noopener"><b>Martin Fowler：MonolithFirst</b><small>martinfowler.com ↗</small></a></li><li><a href="https://import-linter.readthedocs.io/" target="_blank" rel="noopener"><b>import-linter 文档</b><small>import-linter.readthedocs.io ↗</small></a></li><li><a href="https://spring.io/projects/spring-modulith" target="_blank" rel="noopener"><b>Spring Modulith</b><small>spring.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="api-gateway.pro.html" rel="prev"><small>‹ 上一个</small><b>🚪 API 网关</b></a><a class="pn next" href="architecture-decision-records.pro.html" rel="next"><small>下一个 ›</small><b>📓 架构决策记录 (ADR)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

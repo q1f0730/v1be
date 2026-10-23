@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="账户枚举漏洞 专业模式：账户枚举（Account Enumeration）是指攻击者通过登录、注册、找回密码等接口的响应差异，判断某个用户名或邮箱是否已注册。差异可能来自提示文案、HT">
+<title>🎓 账户枚举漏洞 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="account-enumeration" data-answer="0" data-prev="session-fixation.pro.html" data-next="webhook-signature-verification.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sec">🔮 高级 · 🛡️ 安全防线</a><span>›</span><a href="account-enumeration.html">账户枚举漏洞</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.230 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="session-fixation.pro.html" rel="prev"><small>‹ 上一个</small><b>🎟️ 会话固定攻击</b></a><a class="pn next" href="webhook-signature-verification.pro.html" rel="next"><small>下一个 ›</small><b>🔏 Webhook签名校验</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🕵️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>账户枚举漏洞</h1><p class="en">Account Enumeration</p>
+    <div class="hbtns"><a class="prosw back" href="account-enumeration.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">账户枚举（Account Enumeration）是指攻击者通过登录、注册、找回密码等接口的响应差异，判断某个用户名或邮箱是否已注册。差异可能来自提示文案、HTTP 状态码、响应时长或后续行为。它常是撞库、定向钓鱼和暴力破解的前置侦察。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>攻击者准备候选用户名或邮箱列表，批量调用登录、注册等认证相关接口。</p></li><li><span class="sn">2</span><p>比较响应正文、状态码、重定向目标、Set-Cookie 等可观测差异。</p></li><li><span class="sn">3</span><p>测量响应时间：用户存在时执行慢哈希，不存在时立即返回，形成时间侧信道。</p></li><li><span class="sn">4</span><p>把确认存在的账户用于撞库、口令喷洒或社会工程，提高攻击命中率。</p></li><li><span class="sn">5</span><p>防御方统一对外响应与耗时，并用限流、验证码和监控提高批量探测成本。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>时间侧信道 (Timing Side Channel)</dt><dd>通过响应耗时差异推断内部分支走向。</dd></div><div class="term"><dt>口令喷洒 (Password Spraying)</dt><dd>用少量常见口令轮流尝试大量账户，规避单账户锁定。</dd></div><div class="term"><dt>撞库 (Credential Stuffing)</dt><dd>用其他站点泄露的账号密码组合批量登录。</dd></div><div class="term"><dt>统一响应 (Generic Response)</dt><dd>无论账户是否存在都返回相同文案、状态码与结构。</dd></div><div class="term"><dt>虚拟哈希 (Dummy Hash)</dt><dd>账户不存在时也做一次哈希校验，使耗时一致。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>统一文案与耗时的登录</span><em>python</em><button class="ccopy">复制</button></div><pre><code>from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError
+
+ph = PasswordHasher()
+# 启动时预先算好一个虚拟哈希，参数与真实用户一致
+DUMMY_HASH = ph.hash(&quot;dummy-password-for-timing&quot;)
+GENERIC = &quot;用户名或密码错误&quot;
+
+def login(username: str, password: str):
+    user = find_user(username)          # 业务查询，可能返回 None
+    stored = user.password_hash if user else DUMMY_HASH
+    try:
+        ph.verify(stored, password)     # 两条分支都执行慢哈希
+        ok = user is not None
+    except VerifyMismatchError:
+        ok = False
+    if not ok:
+        return 401, GENERIC             # 文案、状态码完全一致
+    return 200, &quot;ok&quot;</code></pre></div><p class="cnote">账户不存在时也跑一次哈希，消除时间差；find_user 为业务自定义。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">各接口的泄露点与改法</h3><div class="tw"><table><thead><tr><th>接口</th><th>常见泄露</th><th>推荐响应</th></tr></thead><tbody><tr><td data-h="接口">登录</td><td data-h="常见泄露">“用户不存在”/“密码错误”</td><td data-h="推荐响应">统一“用户名或密码错误”</td></tr><tr><td data-h="接口">找回密码</td><td data-h="常见泄露">“该邮箱未注册”</td><td data-h="推荐响应">“若邮箱已注册，将收到邮件”</td></tr><tr><td data-h="接口">注册</td><td data-h="常见泄露">“邮箱已被占用”</td><td data-h="推荐响应">统一提示查收邮件，邮件内说明已注册</td></tr><tr><td data-h="接口">用户名检查 API</td><td data-h="常见泄露">实时返回是否可用</td><td data-h="推荐响应">加限流与验证码，或登录后才可用</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>完全统一响应</h4><p><b class="k-p">优点</b>从根上消除枚举</p><p><b class="k-c">代价</b>注册体验变差，用户困惑</p><p><b class="k-w">适用</b>金融、医疗等高敏场景</p></div><div class="trd"><h4>保留友好提示 + 强限流</h4><p><b class="k-p">优点</b>体验好，攻击成本可控</p><p><b class="k-c">代价</b>仍可慢速枚举</p><p><b class="k-w">适用</b>社交、内容类公开账户</p></div><div class="trd"><h4>验证码/风控挑战</h4><p><b class="k-p">优点</b>有效抑制自动化</p><p><b class="k-c">代价</b>增加摩擦，可被打码平台绕过</p><p><b class="k-w">适用</b>检测到异常频率时触发</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>文案统一了，但状态码或重定向仍不同</p><p class="fix"><b>✓</b>对比两种情况的完整 HTTP 响应，包括头和跳转</p></li><li><p class="bad"><b>✗</b>用户不存在时直接返回，耗时明显更短</p><p class="fix"><b>✓</b>执行虚拟哈希，或把发邮件等操作放入异步队列</p></li><li><p class="bad"><b>✗</b>锁定策略本身暴露存在性（只有真账户会被锁）</p><p class="fix"><b>✓</b>对不存在账户也计数，或改用渐进延迟</p></li><li><p class="bad"><b>✗</b>只修了 Web 页面，App/API 端仍有差异</p><p class="fix"><b>✓</b>所有客户端共用同一认证服务与响应规范</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>登录、注册、找回密码返回一致文案和状态码</span></label></li><li><label><input type="checkbox"><span>存在与不存在账户的耗时差在噪声范围内</span></label></li><li><label><input type="checkbox"><span>找回密码邮件发送走异步队列</span></label></li><li><label><input type="checkbox"><span>认证接口按 IP 与账户双维度限流</span></label></li><li><label><input type="checkbox"><span>异常失败率有告警与看板</span></label></li><li><label><input type="checkbox"><span>API、App、Web 三端行为一致</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>怎样实际测试是否存在时间侧信道？</summary><p>选一个确定存在和一个确定不存在的账户，各请求数百次，统计响应时间分布（中位数、P95），看分布是否可区分。需在相近网络条件下测，排除缓存与冷启动影响。</p></details><details class="iv"><summary>注册必须告诉用户“邮箱已占用”怎么办？</summary><p>可把结论移到邮件里：页面统一显示“请查收邮件”，已注册者收到“你已有账户，可直接登录或重置密码”。若产品坚持页面提示，就配合严格限流、验证码和异常监控。</p></details><details class="iv"><summary>枚举漏洞风险等级该怎么评？</summary><p>单独看多为低到中危，但要结合场景：用户名是否公开、是否有限流和 MFA、账户本身是否敏感（如成人、医疗类网站，存在性本身就是隐私）。与撞库结合时影响会放大。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html" target="_blank" rel="noopener"><b>OWASP Authentication Cheat Sheet</b><small>cheatsheetseries.owasp.org ↗</small></a></li><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html" target="_blank" rel="noopener"><b>OWASP Forgot Password Cheat Sheet</b><small>cheatsheetseries.owasp.org ↗</small></a></li><li><a href="https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/03-Identity_Management_Testing/04-Testing_for_Account_Enumeration_and_Guessable_User_Account" target="_blank" rel="noopener"><b>OWASP WSTG: Testing for Account Enumeration</b><small>owasp.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="session-fixation.pro.html" rel="prev"><small>‹ 上一个</small><b>🎟️ 会话固定攻击</b></a><a class="pn next" href="webhook-signature-verification.pro.html" rel="next"><small>下一个 ›</small><b>🔏 Webhook签名校验</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="无指责事后复盘 专业模式：事后复盘（Postmortem）是在重大事件结束后撰写的书面分析，记录影响、时间线、根因与促成因素、做得好与不好的地方，以及带负责人和期限的改进项。无指责（Bl">
+<title>🎓 无指责事后复盘 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="postmortems" data-answer="0" data-prev="runbooks.pro.html" data-next="graceful-degradation.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sre">🔮 高级 · 🩺 高可用 SRE</a><span>›</span><a href="postmortems.html">无指责事后复盘</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.306 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="runbooks.pro.html" rel="prev"><small>‹ 上一个</small><b>📒 标准化运维操作手册</b></a><a class="pn next" href="graceful-degradation.pro.html" rel="next"><small>下一个 ›</small><b>🦎 优雅降级</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔍</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>无指责事后复盘</h1><p class="en">Postmortems</p>
+    <div class="hbtns"><a class="prosw back" href="postmortems.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">事后复盘（Postmortem）是在重大事件结束后撰写的书面分析，记录影响、时间线、根因与促成因素、做得好与不好的地方，以及带负责人和期限的改进项。无指责（Blameless）原则假定参与者在当时的信息下做出了合理决策，把焦点放在系统和流程缺陷上，从而鼓励如实陈述，防止同类问题再次发生。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>按标准触发：达到一定严重级、数据丢失、超出错误预算或人工介入回滚等。</p></li><li><span class="sn">2</span><p>指定作者收集时间线、监控图、日志和聊天记录，还原事件全过程。</p></li><li><span class="sn">3</span><p>分析根因与促成因素，关注检测、缓解、流程和工具中的缺口，而非个人过失。</p></li><li><span class="sn">4</span><p>制定改进项，每一项都有负责人、优先级和期限，并录入团队日常使用的工单系统跟踪。</p></li><li><span class="sn">5</span><p>组织复盘评审会，在更大范围分享结论，并定期检查改进项的完成情况。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>无指责文化 (Blameless Culture)</dt><dd>关注系统原因而不追究个人责任，以获取真实信息。</dd></div><div class="term"><dt>促成因素 (Contributing Factors)</dt><dd>使事件发生或扩大的多个条件，常比单一根因更有用。</dd></div><div class="term"><dt>5 Whys</dt><dd>连续追问为什么来深入原因的分析方法，需防止过早停在人为错误。</dd></div><div class="term"><dt>改进项 (Action Items)</dt><dd>复盘产生的、带负责人与期限的具体改进任务。</dd></div><div class="term"><dt>时间线 (Timeline)</dt><dd>按时间记录检测、决策、操作与恢复的关键事件。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>复盘文档模板</span><em>text</em><button class="ccopy">复制</button></div><pre><code># 事后复盘：订单服务下单失败（SEV-2）
+状态：评审完成 | 作者：@bob | 日期：2026-10-21
+
+## 摘要
+一句话说明发生了什么、影响多大、如何恢复
+
+## 影响
+持续时间、受影响用户/请求比例、是否丢数据、消耗多少错误预算
+
+## 时间线（CST）
+13:45 发布 v2.3 | 13:52 首个告警 | 14:05 宣告事件 | 14:18 回滚完成
+
+## 根因与促成因素
+- 直接原因：……
+- 为什么测试没发现：……
+- 为什么检测花了 7 分钟：……
+
+## 做得好的 / 需要改进的 / 运气好的地方
+
+## 改进项
+| 项目 | 类型（预防/检测/缓解） | 负责人 | 期限 | 工单 |</code></pre></div><p class="cnote">模板强调影响、时间线、促成因素与可追踪的改进项，不点名追责。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">改进项的分类</h3><div class="tw"><table><thead><tr><th>类型</th><th>目的</th><th>例子</th></tr></thead><tbody><tr><td data-h="类型">预防</td><td data-h="目的">不让问题再发生</td><td data-h="例子">增加集成测试、配置校验</td></tr><tr><td data-h="类型">检测</td><td data-h="目的">更快发现</td><td data-h="例子">新增基于 SLO 的告警</td></tr><tr><td data-h="类型">缓解</td><td data-h="目的">更快恢复或减小影响</td><td data-h="例子">一键回滚、功能开关</td></tr><tr><td data-h="类型">流程</td><td data-h="目的">改善协作</td><td data-h="例子">更新手册、明确分级标准</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>每次事件都写完整复盘</h4><p><b class="k-p">优点</b>学习最充分</p><p><b class="k-c">代价</b>成本高，易流于形式</p><p><b class="k-w">适用</b>高严重度或新类型事件</p></div><div class="trd"><h4>轻量复盘</h4><p><b class="k-p">优点</b>成本低，覆盖面广</p><p><b class="k-c">代价</b>分析可能不够深</p><p><b class="k-w">适用</b>低级别或重复类事件</p></div><div class="trd"><h4>跨事件趋势分析</h4><p><b class="k-p">优点</b>发现系统性问题</p><p><b class="k-c">代价</b>需积累和统一格式</p><p><b class="k-w">适用</b>季度或半年回顾</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>结论写成某人操作失误，改进项是加强培训。</p><p class="fix"><b>✓</b>追问系统为何允许该失误发生并造成影响。</p></li><li><p class="bad"><b>✗</b>改进项没有负责人和期限，三个月后无人推进。</p><p class="fix"><b>✓</b>录入工单系统，定期回顾完成率。</p></li><li><p class="bad"><b>✗</b>复盘只在小团队内部传阅。</p><p class="fix"><b>✓</b>在更大范围分享，让其他团队避免同类问题。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>有明确的复盘触发标准</span></label></li><li><label><input type="checkbox"><span>时间线基于日志与记录而非回忆</span></label></li><li><label><input type="checkbox"><span>分析覆盖检测、缓解与预防</span></label></li><li><label><input type="checkbox"><span>改进项有负责人、期限和工单</span></label></li><li><label><input type="checkbox"><span>文档用无指责语言撰写</span></label></li><li><label><input type="checkbox"><span>改进项完成情况定期回顾</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么复盘要无指责？</summary><p>如果追责，当事人会隐瞒细节，组织拿不到真实信息，问题根源被掩盖。人为错误通常是系统缺陷的表现，例如缺少防护、界面误导、流程不清。无指责让大家敢于说出真相，改进才能落到系统上。</p></details><details class="iv"><summary>如何避免复盘改进项石沉大海？</summary><p>改进项要具体可验收，有负责人、期限和优先级，录入团队日常使用的工单系统；在周会或月度可靠性评审中跟踪完成率；把高优先级改进项纳入迭代计划，必要时与错误预算政策挂钩。</p></details><details class="iv"><summary>根因分析为什么不建议只找一个根因？</summary><p>复杂系统的事故通常由多个条件同时成立导致，如代码缺陷、测试缺口、告警延迟、发布策略。只找单一根因容易修一处漏多处；列出促成因素能得到更全面的改进项。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://sre.google/sre-book/postmortem-culture/" target="_blank" rel="noopener"><b>Google SRE Book：Postmortem Culture</b><small>sre.google ↗</small></a></li><li><a href="https://sre.google/workbook/postmortem-culture/" target="_blank" rel="noopener"><b>Google SRE Workbook：Postmortem Culture</b><small>sre.google ↗</small></a></li><li><a href="https://www.atlassian.com/incident-management/postmortem" target="_blank" rel="noopener"><b>Atlassian：Incident postmortems</b><small>atlassian.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="runbooks.pro.html" rel="prev"><small>‹ 上一个</small><b>📒 标准化运维操作手册</b></a><a class="pn next" href="graceful-degradation.pro.html" rel="next"><small>下一个 ›</small><b>🦎 优雅降级</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

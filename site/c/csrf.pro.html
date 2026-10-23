@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="跨站请求伪造 专业模式：跨站请求伪造（Cross-Site Request Forgery，CSRF）是恶意网站诱导已登录用户的浏览器向目标站点发送请求，借助浏览器自动携带的 Cook">
+<title>🎓 跨站请求伪造 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="csrf" data-answer="0" data-prev="xss.pro.html" data-next="cors.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#sec">🌊 中级 · 🛡️ 安全防线</a><span>›</span><a href="csrf.html">跨站请求伪造</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.106 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="xss.pro.html" rel="prev"><small>‹ 上一个</small><b>📜 跨站脚本攻击</b></a><a class="pn next" href="cors.pro.html" rel="next"><small>下一个 ›</small><b>🌐 跨源资源共享</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🎭</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>跨站请求伪造</h1><p class="en">CSRF</p>
+    <div class="hbtns"><a class="prosw back" href="csrf.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">跨站请求伪造（Cross-Site Request Forgery，CSRF）是恶意网站诱导已登录用户的浏览器向目标站点发送请求，借助浏览器自动携带的 Cookie 以用户身份执行非本意操作的攻击。它针对依赖 Cookie 等环境凭证认证的状态变更接口，攻击者通常看不到响应，只求操作生效。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>用户已登录目标站点，浏览器中保存着该站点的会话 Cookie。</p></li><li><span class="sn">2</span><p>用户访问攻击者页面，页面通过自动提交的表单、图片或脚本向目标站点发起请求。</p></li><li><span class="sn">3</span><p>浏览器按规则自动附加目标站点的 Cookie，服务器无法仅凭 Cookie 区分请求是否出自用户本意。</p></li><li><span class="sn">4</span><p>若接口只校验会话而不验证请求来源，就会执行转账、改邮箱等状态变更操作。</p></li><li><span class="sn">5</span><p>防御方案让请求必须携带攻击者无法获取或伪造的信息，或拒绝跨站来源的请求。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>环境凭证 (Ambient Credential)</dt><dd>浏览器自动附带的凭证，如 Cookie、HTTP Basic 认证。</dd></div><div class="term"><dt>同步令牌模式 (Synchronizer Token)</dt><dd>服务端生成随机令牌嵌入表单，提交时校验。</dd></div><div class="term"><dt>双重提交 Cookie (Double Submit)</dt><dd>令牌同时放在 Cookie 和请求参数中比对，推荐签名版本。</dd></div><div class="term"><dt>Origin 头</dt><dd>浏览器在跨源和 POST 请求中附带的请求来源，可用于校验。</dd></div><div class="term"><dt>Fetch Metadata</dt><dd>Sec-Fetch-Site 等请求头，标明请求是否跨站。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Flask 同步令牌防护</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import secrets, hmac
+from flask import Flask, session, request, abort
+
+app = Flask(__name__)
+app.secret_key = &quot;replace-with-env-secret&quot;   # 实际从环境变量读取
+
+@app.get(&quot;/settings&quot;)
+def settings_form():
+    session.setdefault(&quot;csrf&quot;, secrets.token_urlsafe(32))
+    return f&#x27;&#x27;&#x27;&lt;form method=&quot;post&quot; action=&quot;/settings/email&quot;&gt;
+      &lt;input type=&quot;hidden&quot; name=&quot;csrf&quot; value=&quot;{session[&#x27;csrf&#x27;]}&quot;&gt;
+      &lt;input name=&quot;email&quot;&gt;&lt;button&gt;保存&lt;/button&gt;&lt;/form&gt;&#x27;&#x27;&#x27;
+
+@app.post(&quot;/settings/email&quot;)
+def change_email():
+    token = request.form.get(&quot;csrf&quot;, &quot;&quot;)
+    # 恒定时间比较，攻击者页面无法读取这个令牌
+    if not hmac.compare_digest(token, session.get(&quot;csrf&quot;, &quot;&quot;)):
+        abort(403)
+    # ... 更新邮箱
+    return &quot;ok&quot;</code></pre></div><p class="cnote">演示原理；生产中优先使用框架内置 CSRF 中间件，如 Flask-WTF、Django CSRF。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">CSRF 防御手段</h3><div class="tw"><table><thead><tr><th>手段</th><th>原理</th><th>注意</th></tr></thead><tbody><tr><td data-h="手段">CSRF 令牌</td><td data-h="原理">攻击者无法读取随机令牌</td><td data-h="注意">主流且可靠，框架多内置</td></tr><tr><td data-h="手段">SameSite Cookie</td><td data-h="原理">跨站请求不带 Cookie</td><td data-h="注意">Lax 仍允许顶级 GET 导航</td></tr><tr><td data-h="手段">校验 Origin/Sec-Fetch-Site</td><td data-h="原理">拒绝跨站来源</td><td data-h="注意">需处理头缺失情况</td></tr><tr><td data-h="手段">敏感操作二次确认</td><td data-h="原理">要求输入密码或验证码</td><td data-h="注意">影响体验，用于高危操作</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>框架内置 CSRF 令牌</h4><p><b class="k-p">优点</b>成熟可靠</p><p><b class="k-c">代价</b>SPA 需额外传递令牌</p><p><b class="k-w">适用</b>服务端渲染表单应用</p></div><div class="trd"><h4>SameSite + Origin 校验</h4><p><b class="k-p">优点</b>无需令牌，实现轻</p><p><b class="k-c">代价</b>依赖浏览器行为</p><p><b class="k-w">适用</b>现代浏览器为主的 API</p></div><div class="trd"><h4>Authorization 头携带令牌</h4><p><b class="k-p">优点</b>非环境凭证，天然免疫 CSRF</p><p><b class="k-c">代价</b>令牌存储易受 XSS 影响</p><p><b class="k-w">适用</b>纯 API 与移动端</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>用 GET 请求执行状态变更</p><p class="fix"><b>✓</b>状态变更只用 POST/PUT/DELETE，GET 保持安全无副作用</p></li><li><p class="bad"><b>✗</b>只依赖 SameSite 不做其他防护</p><p class="fix"><b>✓</b>配合 CSRF 令牌或 Origin 校验作为纵深防御</p></li><li><p class="bad"><b>✗</b>CSRF 令牌放在 URL 中</p><p class="fix"><b>✓</b>放在请求体或自定义头，避免经 Referer 和日志泄露</p></li><li><p class="bad"><b>✗</b>存在 XSS 时仍以为 CSRF 令牌有效</p><p class="fix"><b>✓</b>XSS 可读取令牌，必须先修复 XSS</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>GET 请求无副作用</span></label></li><li><label><input type="checkbox"><span>状态变更接口有 CSRF 防护</span></label></li><li><label><input type="checkbox"><span>会话 Cookie 设置 SameSite</span></label></li><li><label><input type="checkbox"><span>令牌比较使用恒定时间</span></label></li><li><label><input type="checkbox"><span>登录与登出接口同样防护</span></label></li><li><label><input type="checkbox"><span>高危操作需要再次认证</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>CSRF 和 XSS 有什么区别？</summary><p>XSS 是在目标站点执行攻击者脚本，脚本能读写页面和发任意同源请求；CSRF 是在攻击者站点构造请求，借用户浏览器自动带的凭证让目标站点执行操作，通常读不到响应。存在 XSS 时，CSRF 防御基本失效。</p></details><details class="iv"><summary>用 Bearer Token 的 API 还需要防 CSRF 吗？</summary><p>如果令牌放在 Authorization 头中由前端代码显式添加，浏览器不会自动携带，跨站页面无法读取它，因此天然不受 CSRF 影响。但若令牌放在 Cookie 中，就重新变成环境凭证，需要 CSRF 防护。</p></details><details class="iv"><summary>为什么 CORS 不能防 CSRF？</summary><p>CORS 控制的是跨源脚本能否读取响应，而不是能否发送请求。简单请求（如表单 POST）不触发预检，会直接发到服务器并执行，只是攻击者读不到结果。CSRF 只需要请求被执行，因此 CORS 不能替代 CSRF 防护。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html" target="_blank" rel="noopener"><b>OWASP CSRF Prevention Cheat Sheet</b><small>cheatsheetseries.owasp.org ↗</small></a></li><li><a href="https://developer.mozilla.org/en-US/docs/Web/Security/Attacks/CSRF" target="_blank" rel="noopener"><b>MDN: Cross-site request forgery (CSRF)</b><small>developer.mozilla.org ↗</small></a></li><li><a href="https://web.dev/articles/fetch-metadata" target="_blank" rel="noopener"><b>web.dev: Protect your resources with Fetch Metadata</b><small>web.dev ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="xss.pro.html" rel="prev"><small>‹ 上一个</small><b>📜 跨站脚本攻击</b></a><a class="pn next" href="cors.pro.html" rel="next"><small>下一个 ›</small><b>🌐 跨源资源共享</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

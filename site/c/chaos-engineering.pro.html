@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="混沌工程 专业模式：混沌工程（Chaos Engineering）是在生产或类生产环境中主动、受控地注入故障（如杀进程、加网络延迟、断依赖），通过实验验证系统能否维持稳态的工程实践">
+<title>🎓 混沌工程 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="chaos-engineering" data-answer="0" data-prev="multi-region.pro.html" data-next="capacity-planning.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#sre">🔥 进阶 · 🩺 高可用 SRE</a><span>›</span><a href="chaos-engineering.html">混沌工程</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.443 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="multi-region.pro.html" rel="prev"><small>‹ 上一个</small><b>🌏 跨地域多活/容灾</b></a><a class="pn next" href="capacity-planning.pro.html" rel="next"><small>下一个 ›</small><b>📐 容量规划工程</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🐒</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>混沌工程</h1><p class="en">Chaos Engineering</p>
+    <div class="hbtns"><a class="prosw back" href="chaos-engineering.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">混沌工程（Chaos Engineering）是在生产或类生产环境中主动、受控地注入故障（如杀进程、加网络延迟、断依赖），通过实验验证系统能否维持稳态的工程实践。它以科学实验方式发现韧性缺陷：先定义稳态和假设，再控制爆炸半径注入故障，观察并修复，而不是随意破坏。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>定义稳态：选择反映用户体验的指标作为正常基线，如成功率、延迟、订单量。</p></li><li><span class="sn">2</span><p>提出假设：在某种故障下（如一个实例宕机），稳态指标应保持在可接受范围内。</p></li><li><span class="sn">3</span><p>设计实验：选择故障类型、作用范围（爆炸半径）、持续时间和中止条件。</p></li><li><span class="sn">4</span><p>执行观察：注入故障并实时监控，一旦指标越过中止阈值立即停止并回滚。</p></li><li><span class="sn">5</span><p>改进扩展：修复发现的问题，逐步扩大范围，并把实验自动化持续运行。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>稳态 (Steady State)</dt><dd>系统正常运行时可度量的输出特征，作为实验对照。</dd></div><div class="term"><dt>爆炸半径 (Blast Radius)</dt><dd>实验可能影响的用户与系统范围，应从小开始。</dd></div><div class="term"><dt>故障注入 (Fault Injection)</dt><dd>人为引入延迟、错误、资源耗尽等故障的手段。</dd></div><div class="term"><dt>游戏日 (Game Day)</dt><dd>团队集中演练故障场景并检验应急流程的活动。</dd></div><div class="term"><dt>中止条件 (Abort Condition)</dt><dd>指标恶化到该阈值时立即停止实验。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Chaos Mesh 注入网络延迟</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code>apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: payment-delay
+  namespace: chaos-testing
+spec:
+  action: delay
+  mode: one                     # 只影响一个匹配的 Pod，控制爆炸半径
+  selector:
+    namespaces: [&quot;shop&quot;]
+    labelSelectors:
+      app: payment
+  delay:
+    latency: &quot;200ms&quot;
+    jitter: &quot;50ms&quot;
+    correlation: &quot;25&quot;
+  duration: &quot;5m&quot;                # 到期自动恢复</code></pre></div><p class="cnote">假设：支付服务单实例延迟 200ms 时，下单成功率不低于基线；同时观察超时与重试行为。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见故障实验</h3><div class="tw"><table><thead><tr><th>实验</th><th>验证什么</th><th>常用工具</th></tr></thead><tbody><tr><td data-h="实验">杀 Pod/实例</td><td data-h="验证什么">自动恢复与冗余</td><td data-h="常用工具">Chaos Mesh、Chaos Monkey</td></tr><tr><td data-h="实验">网络延迟/丢包</td><td data-h="验证什么">超时、重试与熔断设置</td><td data-h="常用工具">Chaos Mesh、tc</td></tr><tr><td data-h="实验">依赖不可用</td><td data-h="验证什么">降级与兜底逻辑</td><td data-h="常用工具">故障注入代理、服务网格</td></tr><tr><td data-h="实验">资源耗尽</td><td data-h="验证什么">限流与资源隔离</td><td data-h="常用工具">stress-ng、云故障注入服务</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>生产环境实验</h4><p><b class="k-p">优点</b>最真实，能发现环境特有问题</p><p><b class="k-c">代价</b>有影响用户的风险</p><p><b class="k-w">适用</b>监控完善、有中止机制后</p></div><div class="trd"><h4>预发环境实验</h4><p><b class="k-p">优点</b>风险低，可大胆尝试</p><p><b class="k-c">代价</b>流量与配置不同，结论有偏差</p><p><b class="k-w">适用</b>起步阶段、新实验首次运行</p></div><div class="trd"><h4>游戏日人工演练</h4><p><b class="k-p">优点</b>同时检验人和流程</p><p><b class="k-c">代价</b>频率低，难以持续</p><p><b class="k-w">适用</b>验证应急响应与手册</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>没有监控与稳态定义就开始注入故障</p><p class="fix"><b>✓</b>先建立可观测性和基线，否则无法判断实验结果</p></li><li><p class="bad"><b>✗</b>一开始就扩大到全量或核心链路</p><p class="fix"><b>✓</b>从单实例、小比例流量开始，逐步扩大爆炸半径</p></li><li><p class="bad"><b>✗</b>实验没有自动停止条件，故障持续扩散</p><p class="fix"><b>✓</b>设置持续时间与指标中止阈值，并准备一键回滚</p></li><li><p class="bad"><b>✗</b>发现问题后只记录不修复</p><p class="fix"><b>✓</b>把发现转成工单跟踪修复，并复跑实验验证</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>稳态指标已定义</span></label></li><li><label><input type="checkbox"><span>假设写成可验证形式</span></label></li><li><label><input type="checkbox"><span>爆炸半径从小开始</span></label></li><li><label><input type="checkbox"><span>有中止条件与回滚</span></label></li><li><label><input type="checkbox"><span>相关团队已知情</span></label></li><li><label><input type="checkbox"><span>发现项有跟踪与复验</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>混沌工程和故障测试有什么区别？</summary><p>传统测试验证已知条件下的预期行为；混沌工程以实验方式探索未知：在接近真实的环境中注入真实故障，观察整体系统的涌现行为，常发现配置、超时、依赖链等在单元测试中看不到的问题。</p></details><details class="iv"><summary>如何安全地在生产做混沌实验？</summary><p>有完善监控和稳态基线；从最小爆炸半径开始；设置自动中止条件和持续时间；选择低峰期并通知相关方；准备回滚手段；实验前确认已有的冗余和降级机制理论上能应对该故障。</p></details><details class="iv"><summary>第一个混沌实验你会做什么？</summary><p>选一个有多副本的无状态服务，在预发环境随机杀掉一个实例，假设成功率和延迟不受明显影响。它风险低，却能验证健康检查、负载均衡摘除、自动重建和告警是否按预期工作。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://principlesofchaos.org/" target="_blank" rel="noopener"><b>Principles of Chaos Engineering</b><small>principlesofchaos.org ↗</small></a></li><li><a href="https://chaos-mesh.org/docs/" target="_blank" rel="noopener"><b>Chaos Mesh 文档</b><small>chaos-mesh.org ↗</small></a></li><li><a href="https://docs.aws.amazon.com/fis/latest/userguide/what-is.html" target="_blank" rel="noopener"><b>AWS Fault Injection Service</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://github.com/Netflix/chaosmonkey" target="_blank" rel="noopener"><b>Netflix Chaos Monkey</b><small>github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="multi-region.pro.html" rel="prev"><small>‹ 上一个</small><b>🌏 跨地域多活/容灾</b></a><a class="pn next" href="capacity-planning.pro.html" rel="next"><small>下一个 ›</small><b>📐 容量规划工程</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

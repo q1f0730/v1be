@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="软件供应链攻击 专业模式：软件供应链攻击指攻击者不直接攻击目标系统，而是污染其依赖的源代码、第三方包、构建工具、CI 流水线或分发渠道，让恶意代码随正常更新进入下游。与“已知漏洞”不同，">
+<title>🎓 软件供应链攻击 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="supply-chain-attacks" data-answer="0" data-prev="dependency-vulnerabilities.pro.html" data-next="explain-analyze.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sec">🔮 高级 · 🛡️ 安全防线</a><span>›</span><a href="supply-chain-attacks.html">软件供应链攻击</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.235 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="dependency-vulnerabilities.pro.html" rel="prev"><small>‹ 上一个</small><b>🧩 依赖项已知漏洞</b></a><a class="pn next" href="explain-analyze.pro.html" rel="next"><small>下一个 ›</small><b>⏱️ 真实执行计划剖析</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">☠️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>软件供应链攻击</h1><p class="en">Supply Chain Attacks</p>
+    <div class="hbtns"><a class="prosw back" href="supply-chain-attacks.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">软件供应链攻击指攻击者不直接攻击目标系统，而是污染其依赖的源代码、第三方包、构建工具、CI 流水线或分发渠道，让恶意代码随正常更新进入下游。与“已知漏洞”不同，这里的组件本身是被故意植入恶意行为，扫描已知 CVE 往往发现不了。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>入口一：注册与流行包相似的名字（typosquatting），或 AI 幻觉出的包名，等待误装。</p></li><li><span class="sn">2</span><p>入口二：依赖混淆，把内部包名发布到公共仓库并给出更高版本号，诱使解析器优先拉取。</p></li><li><span class="sn">3</span><p>入口三：接管维护者账号或长期潜伏取得信任，在正常版本中植入后门（如 2024 年 xz-utils 事件）。</p></li><li><span class="sn">4</span><p>恶意代码常借安装脚本（npm postinstall、setup.py）在安装时立即执行，窃取凭据或植入持久化。</p></li><li><span class="sn">5</span><p>入口四：攻破构建系统或 CI，篡改产物而源码看起来干净；防御依赖来源证明与可复现构建。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>Typosquatting</dt><dd>注册与知名包拼写相近的名字诱导误装。</dd></div><div class="term"><dt>依赖混淆 (Dependency Confusion)</dt><dd>利用公私仓库解析顺序，让公共同名包替换内部包。</dd></div><div class="term"><dt>Slopsquatting</dt><dd>抢注大模型常幻觉出的不存在包名，等 AI 生成代码去安装。</dd></div><div class="term"><dt>SLSA</dt><dd>供应链制品完整性分级框架，要求可追溯的构建来源。</dd></div><div class="term"><dt>来源证明 (Provenance)</dt><dd>签名声明制品由哪个仓库、哪次构建产出。</dd></div><div class="term"><dt>Sigstore</dt><dd>开源签名基础设施，用短期证书和透明日志签名制品。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>安装与构建加固</span><em>bash</em><button class="ccopy">复制</button></div><pre><code>#!/usr/bin/env bash
+set -euo pipefail
+
+# Node：严格按锁文件安装，并禁止依赖的安装脚本自动执行
+npm ci --ignore-scripts
+
+# 校验已安装包的 registry 签名与来源证明（provenance）
+npm audit signatures
+
+# 发布自己的包时附带来源证明（需在受支持的 CI 中运行）
+# npm publish --provenance --access public
+
+# Python：用 pip-tools 生成带哈希的锁定文件
+pip-compile --generate-hashes -o requirements.txt requirements.in
+# 安装时任何包哈希不匹配都会失败
+pip install --require-hashes -r requirements.txt
+
+# 安装 AI 建议的新依赖前，先确认包确实存在且来源可信
+npm view some-package name repository.url time.created</code></pre></div><p class="cnote">锁版本+校验哈希+禁安装脚本+来源证明，并核实 AI 推荐的包名。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">攻击入口与防线</h3><div class="tw"><table><thead><tr><th>入口</th><th>代表手法</th><th>主要防线</th></tr></thead><tbody><tr><td data-h="入口">包仓库</td><td data-h="代表手法">仿冒名、AI 幻觉包名</td><td data-h="主要防线">核实包名、锁文件、私有镜像</td></tr><tr><td data-h="入口">包解析</td><td data-h="代表手法">依赖混淆</td><td data-h="主要防线">命名空间/scope、仓库映射</td></tr><tr><td data-h="入口">维护者</td><td data-h="代表手法">账号接管、潜伏投毒</td><td data-h="主要防线">2FA、新版本延迟采纳</td></tr><tr><td data-h="入口">构建/CI</td><td data-h="代表手法">篡改产物、窃取密钥</td><td data-h="主要防线">SLSA 来源证明、最小权限 token</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>私有代理仓库 + 白名单</h4><p><b class="k-p">优点</b>集中管控可安装的包</p><p><b class="k-c">代价</b>引入新包流程变慢</p><p><b class="k-w">适用</b>企业内网与高合规团队</p></div><div class="trd"><h4>新版本冷却期</h4><p><b class="k-p">优点</b>多数恶意版本几天内被发现下架</p><p><b class="k-c">代价</b>安全补丁也会延迟采纳</p><p><b class="k-w">适用</b>非紧急的常规升级</p></div><div class="trd"><h4>禁用安装脚本</h4><p><b class="k-p">优点</b>阻断最常见的安装即执行</p><p><b class="k-c">代价</b>部分原生模块需手动构建</p><p><b class="k-w">适用</b>CI 与开发机默认开启</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>直接运行 AI 生成的 pip/npm install 命令</p><p class="fix"><b>✓</b>安装前核实包名、维护者、下载量和仓库链接</p></li><li><p class="bad"><b>✗</b>CI 中的 Action/镜像只用可变标签如 @v3、latest</p><p class="fix"><b>✓</b>固定到完整 commit SHA 或镜像 digest</p></li><li><p class="bad"><b>✗</b>CI 令牌拥有全仓库写权限</p><p class="fix"><b>✓</b>按任务最小权限，发布用 OIDC 短期凭据</p></li><li><p class="bad"><b>✗</b>内部包名未加 scope，公共仓库可被抢注</p><p class="fix"><b>✓</b>用组织 scope，并在公共仓库占位</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>锁文件与哈希校验已启用</span></label></li><li><label><input type="checkbox"><span>CI 默认禁止依赖安装脚本</span></label></li><li><label><input type="checkbox"><span>第三方 Action 与镜像固定到 SHA/digest</span></label></li><li><label><input type="checkbox"><span>发布账号开启 2FA，用可信发布</span></label></li><li><label><input type="checkbox"><span>内部包使用 scope 并配置仓库映射</span></label></li><li><label><input type="checkbox"><span>新增依赖有人工审核</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>供应链攻击和依赖漏洞有什么区别？</summary><p>依赖漏洞是无意的缺陷，通常有 CVE，可被扫描器匹配；供应链攻击是故意投毒，恶意版本刚发布时没有 CVE，需靠来源验证、行为检测、锁定版本和审核新依赖来防御。</p></details><details class="iv"><summary>依赖混淆是怎么发生的？如何防？</summary><p>构建同时配置了私有与公共仓库，解析器按版本号取最高者，攻击者在公共仓库发布同名高版本即可被拉取。防法：使用 scope/命名空间，配置包到仓库的显式映射，只允许私有代理转发白名单包。</p></details><details class="iv"><summary>用 AI 写代码会带来哪些供应链新风险？</summary><p>模型可能推荐不存在的包名，攻击者抢注后被自动安装（slopsquatting）；Agent 在终端自动执行安装命令时缺少人工把关。应限制 Agent 安装权限、核实新依赖，并在 CI 中统一校验。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://slsa.dev/" target="_blank" rel="noopener"><b>SLSA 框架</b><small>slsa.dev ↗</small></a></li><li><a href="https://docs.npmjs.com/generating-provenance-statements" target="_blank" rel="noopener"><b>npm Docs: Generating provenance statements</b><small>docs.npmjs.com ↗</small></a></li><li><a href="https://pip.pypa.io/en/stable/topics/secure-installs/" target="_blank" rel="noopener"><b>pip: Secure installs</b><small>pip.pypa.io ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/XZ_Utils_backdoor" target="_blank" rel="noopener"><b>Wikipedia: XZ Utils backdoor (CVE-2024-3094)</b><small>en.wikipedia.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="dependency-vulnerabilities.pro.html" rel="prev"><small>‹ 上一个</small><b>🧩 依赖项已知漏洞</b></a><a class="pn next" href="explain-analyze.pro.html" rel="next"><small>下一个 ›</small><b>⏱️ 真实执行计划剖析</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

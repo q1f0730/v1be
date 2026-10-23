@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="事务四大基石特性 专业模式：ACID 是数据库事务的四项保证：原子性（Atomicity）、一致性（Consistency）、隔离性（Isolation）、持久性（Durability）。">
+<title>🎓 事务四大基石特性 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="acid" data-answer="0" data-prev="down-migrations.pro.html" data-next="isolation-levels.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#db">🔮 高级 · 🗄️ 数据库</a><span>›</span><a href="acid.html">事务四大基石特性</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.239 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="down-migrations.pro.html" rel="prev"><small>‹ 上一个</small><b>↩️ 数据库回滚迁移</b></a><a class="pn next" href="isolation-levels.pro.html" rel="next"><small>下一个 ›</small><b>🚧 事务隔离级别</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🏛️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>事务四大基石特性</h1><p class="en">ACID</p>
+    <div class="hbtns"><a class="prosw back" href="acid.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">ACID 是数据库事务的四项保证：原子性（Atomicity）、一致性（Consistency）、隔离性（Isolation）、持久性（Durability）。它定义了一组读写操作作为整体执行时数据库应提供的行为，是关系型数据库区别于很多早期 NoSQL 的核心能力，也是业务正确性的基础。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>原子性：事务内的修改要么全部生效要么全部撤销，引擎借助日志在失败时回滚。</p></li><li><span class="sn">2</span><p>一致性：事务前后数据满足约束（主键、外键、CHECK）与业务不变式，后者需应用配合保证。</p></li><li><span class="sn">3</span><p>隔离性：并发事务互不干扰的程度，由锁或 MVCC 实现，强弱由隔离级别决定。</p></li><li><span class="sn">4</span><p>持久性：提交成功后即使崩溃也不丢失，通常靠预写日志（WAL）在提交时刷盘。</p></li><li><span class="sn">5</span><p>崩溃恢复时，引擎重放已提交事务的日志、撤销未提交的修改，恢复到一致状态。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>预写日志 (WAL)</dt><dd>先把变更写入日志并落盘，再修改数据页。</dd></div><div class="term"><dt>MVCC</dt><dd>多版本并发控制，读不阻塞写，各事务看到自己的快照。</dd></div><div class="term"><dt>保存点 (Savepoint)</dt><dd>事务内的回滚点，可只撤销部分操作。</dd></div><div class="term"><dt>不变式 (Invariant)</dt><dd>任何时刻都必须成立的业务规则，如余额不为负。</dd></div><div class="term"><dt>fsync</dt><dd>要求操作系统把数据真正写到持久存储的系统调用。</dd></div><div class="term"><dt>BASE</dt><dd>基本可用、软状态、最终一致，常与 ACID 对照的设计取向。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>转账事务与约束</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- 一致性的一部分交给约束：余额不能为负
+CREATE TABLE accounts (
+  id      int PRIMARY KEY,
+  balance numeric(12,2) NOT NULL CHECK (balance &gt;= 0)
+);
+INSERT INTO accounts VALUES (1, 100), (2, 0);
+
+-- 原子性：两条更新作为整体
+BEGIN;
+UPDATE accounts SET balance = balance - 150 WHERE id = 1;  -- 违反 CHECK，报错
+UPDATE accounts SET balance = balance + 150 WHERE id = 2;
+COMMIT;  -- PostgreSQL 中事务已处于失败状态，COMMIT 实际执行回滚
+
+-- 保存点：只撤销事务中的一部分
+BEGIN;
+UPDATE accounts SET balance = balance - 30 WHERE id = 1;
+SAVEPOINT before_bonus;
+UPDATE accounts SET balance = balance + 999 WHERE id = 2;
+ROLLBACK TO SAVEPOINT before_bonus;  -- 撤销加 999
+UPDATE accounts SET balance = balance + 30 WHERE id = 2;
+COMMIT;
+
+SELECT * FROM accounts;  -- 1: 70, 2: 30</code></pre></div><p class="cnote">约束保证不变式，事务保证整体生效；保存点可局部回滚。以 PostgreSQL 为例。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">四项特性的实现机制</h3><div class="tw"><table><thead><tr><th>特性</th><th>典型机制</th><th>可调项/注意</th></tr></thead><tbody><tr><td data-h="特性">原子性</td><td data-h="典型机制">WAL / undo 日志</td><td data-h="可调项/注意">长事务回滚代价高</td></tr><tr><td data-h="特性">一致性</td><td data-h="典型机制">约束 + 应用逻辑</td><td data-h="可调项/注意">约束外的规则靠代码保证</td></tr><tr><td data-h="特性">隔离性</td><td data-h="典型机制">MVCC、锁</td><td data-h="可调项/注意">由隔离级别决定强弱</td></tr><tr><td data-h="特性">持久性</td><td data-h="典型机制">提交时 WAL 刷盘</td><td data-h="可调项/注意">如 synchronous_commit 可换性能</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>严格 ACID 单库事务</h4><p><b class="k-p">优点</b>正确性推理简单</p><p><b class="k-c">代价</b>扩展受单机或单分片限制</p><p><b class="k-w">适用</b>订单、支付、库存等核心数据</p></div><div class="trd"><h4>放宽持久性（异步提交）</h4><p><b class="k-p">优点</b>写入延迟显著下降</p><p><b class="k-c">代价</b>崩溃可能丢最近少量已确认事务</p><p><b class="k-w">适用</b>日志、埋点等可丢数据</p></div><div class="trd"><h4>跨服务 Saga</h4><p><b class="k-p">优点</b>支持微服务各自独立存储</p><p><b class="k-c">代价</b>无全局隔离，需补偿逻辑</p><p><b class="k-w">适用</b>无法放进同一数据库时</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>以为 ACID 的一致性会自动保证所有业务规则</p><p class="fix"><b>✓</b>把关键规则落到约束，其余在事务内显式校验</p></li><li><p class="bad"><b>✗</b>ORM 默认自动提交，多步操作没包事务</p><p class="fix"><b>✓</b>显式开启事务，确认框架的事务边界</p></li><li><p class="bad"><b>✗</b>事务中调用外部 HTTP，长时间持锁</p><p class="fix"><b>✓</b>外部调用移出事务，或使用 outbox 模式</p></li><li><p class="bad"><b>✗</b>以为默认隔离级别就能防所有并发异常</p><p class="fix"><b>✓</b>了解所用库默认级别，必要时加锁或升级</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>多步写操作都在显式事务中</span></label></li><li><label><input type="checkbox"><span>关键不变式有数据库约束兜底</span></label></li><li><label><input type="checkbox"><span>事务内不包含外部网络调用</span></label></li><li><label><input type="checkbox"><span>已确认数据库默认隔离级别</span></label></li><li><label><input type="checkbox"><span>持久性参数未被误改为异步</span></label></li><li><label><input type="checkbox"><span>事务失败有重试与幂等处理</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>ACID 中的 C 和 CAP 中的 C 一样吗？</summary><p>不一样。ACID 的一致性指事务把数据从一个满足约束的状态带到另一个；CAP 的一致性指分布式系统中读到最新写入（线性一致）。很多人认为 ACID 的 C 更多由应用保证，引擎只提供约束工具。</p></details><details class="iv"><summary>数据库如何在崩溃后保证持久性和原子性？</summary><p>提交时先确保 WAL 刷盘再返回成功。重启时从检查点开始重放日志，把已提交但未写入数据页的修改补上；未提交事务的修改被撤销或因 MVCC 不可见。</p></details><details class="iv"><summary>微服务里怎样获得类似事务的效果？</summary><p>常用 Saga：把大事务拆成本地事务序列，每步有补偿操作；配合 outbox 模式保证本地写与消息发送原子；全程幂等。代价是中间状态对外可见，没有跨服务的隔离性。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.postgresql.org/docs/current/tutorial-transactions.html" target="_blank" rel="noopener"><b>PostgreSQL Tutorial: Transactions</b><small>postgresql.org ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/wal-intro.html" target="_blank" rel="noopener"><b>PostgreSQL: Write-Ahead Logging</b><small>postgresql.org ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/ACID" target="_blank" rel="noopener"><b>Wikipedia: ACID</b><small>en.wikipedia.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="down-migrations.pro.html" rel="prev"><small>‹ 上一个</small><b>↩️ 数据库回滚迁移</b></a><a class="pn next" href="isolation-levels.pro.html" rel="next"><small>下一个 ›</small><b>🚧 事务隔离级别</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

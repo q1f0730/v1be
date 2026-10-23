@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="数据备份体系 专业模式：数据备份体系（Backups）是按策略定期复制数据并独立保存，以便在误删、硬件故障、勒索软件、错误迁移等事故后恢复的机制。它由备份频率、保留周期、存储位置、加密">
+<title>🎓 数据备份体系 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l1" id="main" data-slug="backups" data-answer="0" data-prev="mfa.pro.html" data-next="dns.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l1.html#db">🌱 初级 · 🗄️ 数据库</a><span>›</span><a href="backups.html">数据备份体系</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.51 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="mfa.pro.html" rel="prev"><small>‹ 上一个</small><b>📲 多因素认证</b></a><a class="pn next" href="dns.pro.html" rel="next"><small>下一个 ›</small><b>📖 域名系统</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🗂️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌱 初级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>数据备份体系</h1><p class="en">Backups</p>
+    <div class="hbtns"><a class="prosw back" href="backups.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">数据备份体系（Backups）是按策略定期复制数据并独立保存，以便在误删、硬件故障、勒索软件、错误迁移等事故后恢复的机制。它由备份频率、保留周期、存储位置、加密和恢复演练共同构成，以 RPO（可容忍丢失多少数据）和 RTO（可容忍停机多久）衡量。未经恢复验证的备份不能算可靠备份。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>定目标：按业务影响确定 RPO 和 RTO，决定备份频率与恢复方式。</p></li><li><span class="sn">2</span><p>选方式：全量、增量、差异备份组合，数据库可加连续日志归档实现时间点恢复。</p></li><li><span class="sn">3</span><p>隔离存储：备份放在与生产不同的账号、区域或介质，防止同一事故一起损毁。</p></li><li><span class="sn">4</span><p>保护备份：加密、设置不可变（WORM）或版本保留，防止被勒索软件删除或篡改。</p></li><li><span class="sn">5</span><p>定期演练：按计划把备份恢复到隔离环境，校验数据完整性并记录实际恢复耗时。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>RPO</dt><dd>恢复点目标：事故后最多可丢失多长时间的数据。</dd></div><div class="term"><dt>RTO</dt><dd>恢复时间目标：从事故到服务恢复的最长可接受时间。</dd></div><div class="term"><dt>3-2-1 原则</dt><dd>至少 3 份数据，2 种介质，1 份异地。</dd></div><div class="term"><dt>时间点恢复 (PITR)</dt><dd>借助日志把数据库恢复到任意指定时刻。</dd></div><div class="term"><dt>不可变备份 (Immutable Backup)</dt><dd>在保留期内无法被修改或删除的备份。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>PostgreSQL 备份与恢复验证</span><em>bash</em><button class="ccopy">复制</button></div><pre><code>#!/usr/bin/env bash
+set -euo pipefail
+TS=$(date +%Y%m%d-%H%M)
+
+# 1. 逻辑备份（自定义格式，压缩且支持选择性恢复）
+pg_dump &quot;$DATABASE_URL&quot; -Fc -f &quot;backup-$TS.dump&quot;
+
+# 2. 生成校验和，防止传输或存储损坏
+sha256sum &quot;backup-$TS.dump&quot; &gt; &quot;backup-$TS.dump.sha256&quot;
+
+# 3. 上传到独立账号的对象存储（示例：AWS CLI，桶应开启版本控制）
+# aws s3 cp &quot;backup-$TS.dump&quot; s3://my-backups/db/
+
+# 4. 恢复演练：还原到临时数据库并做基本校验
+createdb restore_test
+pg_restore -d restore_test --no-owner &quot;backup-$TS.dump&quot;
+psql -d restore_test -c &quot;SELECT count(*) FROM users;&quot;
+dropdb restore_test</code></pre></div><p class="cnote">备份脚本要包含恢复验证这一步；只备份不还原，等于不知道备份是否可用。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">备份方式对比</h3><div class="tw"><table><thead><tr><th>方式</th><th>恢复粒度</th><th>存储开销</th><th>说明</th></tr></thead><tbody><tr><td data-h="方式">全量备份</td><td data-h="恢复粒度">备份时刻</td><td data-h="存储开销">大</td><td data-h="说明">恢复最简单</td></tr><tr><td data-h="方式">增量备份</td><td data-h="恢复粒度">备份时刻</td><td data-h="存储开销">小</td><td data-h="说明">恢复需按顺序叠加多个增量</td></tr><tr><td data-h="方式">快照（磁盘/云盘）</td><td data-h="恢复粒度">快照时刻</td><td data-h="存储开销">中</td><td data-h="说明">快，但需确保应用数据一致</td></tr><tr><td data-h="方式">日志归档 + PITR</td><td data-h="恢复粒度">任意时刻</td><td data-h="存储开销">中</td><td data-h="说明">满足较小 RPO，托管数据库常内置</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>托管数据库自动备份</h4><p><b class="k-p">优点</b>开箱即用，支持时间点恢复</p><p><b class="k-c">代价</b>与生产同账号，误删账号可能连带</p><p><b class="k-w">适用</b>默认开启，作为第一层</p></div><div class="trd"><h4>额外异地/跨账号备份</h4><p><b class="k-p">优点</b>抵御账号级与区域级灾难</p><p><b class="k-c">代价</b>额外成本与流程</p><p><b class="k-w">适用</b>核心业务数据</p></div><div class="trd"><h4>高频备份</h4><p><b class="k-p">优点</b>RPO 小，丢数据少</p><p><b class="k-c">代价</b>存储与性能开销大</p><p><b class="k-w">适用</b>交易类、写入频繁的系统</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>备份从未做过恢复演练</p><p class="fix"><b>✓</b>定期恢复到隔离环境，记录耗时与问题</p></li><li><p class="bad"><b>✗</b>备份和生产在同一台机器或同一账号</p><p class="fix"><b>✓</b>备份隔离到不同账号、区域，并开启不可变保护</p></li><li><p class="bad"><b>✗</b>只备份数据库，忘了上传文件与配置</p><p class="fix"><b>✓</b>盘点所有数据：对象存储、配置、密钥恢复方式</p></li><li><p class="bad"><b>✗</b>让 Agent 执行迁移前没有备份</p><p class="fix"><b>✓</b>破坏性操作前先做备份或确认时间点恢复可用</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>已定义 RPO 与 RTO</span></label></li><li><label><input type="checkbox"><span>满足 3-2-1 原则</span></label></li><li><label><input type="checkbox"><span>备份加密并启用不可变或版本保留</span></label></li><li><label><input type="checkbox"><span>定期恢复演练并记录</span></label></li><li><label><input type="checkbox"><span>备份失败有告警</span></label></li><li><label><input type="checkbox"><span>高风险变更前有额外备份</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>RPO 和 RTO 如何影响架构？</summary><p>RPO 决定备份频率：RPO 一天可每日备份，RPO 分钟级则需要日志归档或同步复制。RTO 决定恢复手段：小时级可从备份重建，分钟级需要热备与自动故障切换。目标越严格成本越高，应按业务价值取舍。</p></details><details class="iv"><summary>主从复制能代替备份吗？</summary><p>不能。复制会把误删、错误更新和勒索加密同步到从库，它解决的是可用性而非数据恢复。备份是时间维度上的独立副本，能回到事故之前的状态。两者需要同时具备。</p></details><details class="iv"><summary>如何防御勒索软件破坏备份？</summary><p>备份存放在独立账号或离线介质；启用对象锁定等不可变保留；备份系统使用独立凭证与 MFA；监控异常删除；保留多个时间点版本；定期演练从隔离备份恢复整个系统。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.postgresql.org/docs/current/backup.html" target="_blank" rel="noopener"><b>PostgreSQL 文档: Backup and Restore</b><small>postgresql.org ↗</small></a></li><li><a href="https://www.cisa.gov/audiences/small-and-medium-businesses/secure-your-business/back-up-business-data" target="_blank" rel="noopener"><b>CISA: Back Up Sensitive Business Information</b><small>cisa.gov ↗</small></a></li><li><a href="https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/disaster-recovery-workloads-on-aws.html" target="_blank" rel="noopener"><b>AWS: Disaster Recovery of Workloads on AWS（白皮书）</b><small>docs.aws.amazon.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="mfa.pro.html" rel="prev"><small>‹ 上一个</small><b>📲 多因素认证</b></a><a class="pn next" href="dns.pro.html" rel="next"><small>下一个 ›</small><b>📖 域名系统</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

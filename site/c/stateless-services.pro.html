@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="无状态服务架构 专业模式：无状态服务（Stateless Service）指服务实例不在本地内存或磁盘中保存跨请求的业务状态，每个请求携带或从外部存储取得所需上下文，因此任意实例都能处理">
+<title>🎓 无状态服务架构 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="stateless-services" data-answer="0" data-prev="connection-draining.pro.html" data-next="failover.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sre">🔮 高级 · 🩺 高可用 SRE</a><span>›</span><a href="stateless-services.html">无状态服务架构</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.295 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="connection-draining.pro.html" rel="prev"><small>‹ 上一个</small><b>🚪 连接排空</b></a><a class="pn next" href="failover.pro.html" rel="next"><small>下一个 ›</small><b>🔀 故障自动转移</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🧑‍🍳</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>无状态服务架构</h1><p class="en">Stateless Services</p>
+    <div class="hbtns"><a class="prosw back" href="stateless-services.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">无状态服务（Stateless Service）指服务实例不在本地内存或磁盘中保存跨请求的业务状态，每个请求携带或从外部存储取得所需上下文，因此任意实例都能处理任意请求。它是云原生应用层的基础设计原则，使水平扩展、滚动发布、故障替换和自动扩缩容变得简单；状态被下沉到数据库、缓存、对象存储等专门的有状态组件。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>会话、购物车、上传中的文件等状态从进程内存移到 Redis、数据库或对象存储。</p></li><li><span class="sn">2</span><p>身份信息由请求携带，例如签名的 Cookie、JWT，或会话 ID 指向外部会话存储。</p></li><li><span class="sn">3</span><p>负载均衡器可以把请求发给任意一个健康实例，不需要粘性会话，负载分配更均匀。</p></li><li><span class="sn">4</span><p>实例可随时被创建、销毁和替换，扩缩容只需修改副本数，故障实例直接丢弃重建。</p></li><li><span class="sn">5</span><p>真正有状态的组件单独管理，用 StatefulSet、托管数据库等承担持久化与复制。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>粘性会话 (Session Affinity)</dt><dd>负载均衡把同一客户端固定到同一实例，是有状态的信号。</dd></div><div class="term"><dt>外部化会话 (Externalized Session)</dt><dd>把会话数据存到共享存储，任意实例都可读取。</dd></div><div class="term"><dt>StatefulSet</dt><dd>Kubernetes 中为有状态应用提供稳定标识和持久卷的控制器。</dd></div><div class="term"><dt>可丢弃性 (Disposability)</dt><dd>进程可快速启动和停止，十二要素原则之一。</dd></div><div class="term"><dt>JWT (JSON Web Token)</dt><dd>自包含的签名令牌，服务端无需存储即可校验身份声明。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>购物车状态外置到 Redis</span><em>python</em><button class="ccopy">复制</button></div><pre><code>from flask import Flask, request, jsonify
+import redis
+
+app = Flask(__name__)
+store = redis.Redis(host=&quot;redis&quot;, decode_responses=True)
+# 反例：carts = {}  放在进程内存，换个实例就丢
+
+@app.post(&quot;/cart/&lt;user_id&gt;/items&quot;)
+def add_item(user_id):
+    sku = request.json[&quot;sku&quot;]
+    key = f&quot;cart:{user_id}&quot;
+    store.hincrby(key, sku, 1)       # 状态写到共享存储
+    store.expire(key, 7 * 24 * 3600) # 购物车保留 7 天
+    return jsonify(store.hgetall(key))
+
+@app.get(&quot;/cart/&lt;user_id&gt;&quot;)
+def get_cart(user_id):
+    return jsonify(store.hgetall(f&quot;cart:{user_id}&quot;))</code></pre></div><p class="cnote">购物车写入 Redis 而非进程字典，任何实例都能读写，实例可随意扩缩。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">状态放在哪里</h3><div class="tw"><table><thead><tr><th>状态类型</th><th>推荐位置</th><th>说明</th></tr></thead><tbody><tr><td data-h="状态类型">登录会话</td><td data-h="推荐位置">Redis 或签名 Cookie/JWT</td><td data-h="说明">JWT 需考虑吊销</td></tr><tr><td data-h="状态类型">用户上传文件</td><td data-h="推荐位置">对象存储（如 S3）</td><td data-h="说明">不要写本地磁盘</td></tr><tr><td data-h="状态类型">业务数据</td><td data-h="推荐位置">数据库</td><td data-h="说明">持久化与事务</td></tr><tr><td data-h="状态类型">进程内缓存</td><td data-h="推荐位置">本地内存（可丢）</td><td data-h="说明">只存可重建的数据</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>外部会话存储</h4><p><b class="k-p">优点</b>实例完全可替换</p><p><b class="k-c">代价</b>多一次网络访问，存储需高可用</p><p><b class="k-w">适用</b>大多数 Web 服务</p></div><div class="trd"><h4>自包含令牌（JWT）</h4><p><b class="k-p">优点</b>无需服务端查询</p><p><b class="k-c">代价</b>吊销困难，令牌体积大</p><p><b class="k-w">适用</b>跨服务认证、短有效期</p></div><div class="trd"><h4>粘性会话</h4><p><b class="k-p">优点</b>改造成本低</p><p><b class="k-c">代价</b>负载不均，实例下线丢会话</p><p><b class="k-w">适用</b>遗留系统过渡期</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>上传文件先存本地磁盘，后续请求落到其他实例找不到文件。</p><p class="fix"><b>✓</b>直接上传到对象存储，或用预签名 URL。</p></li><li><p class="bad"><b>✗</b>进程内定时任务在每个副本都跑一遍。</p><p class="fix"><b>✓</b>定时任务独立部署或使用分布式锁/调度器。</p></li><li><p class="bad"><b>✗</b>进程内缓存被当作唯一数据源。</p><p class="fix"><b>✓</b>本地缓存只存可从外部重建的数据，并设过期。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>实例重启后不丢任何用户可见状态</span></label></li><li><label><input type="checkbox"><span>不依赖粘性会话</span></label></li><li><label><input type="checkbox"><span>文件写入对象存储而非本地盘</span></label></li><li><label><input type="checkbox"><span>定时任务不会在多副本重复执行</span></label></li><li><label><input type="checkbox"><span>任意副本被杀，请求可在其他副本重试成功</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>无状态服务是不是就完全没有状态？</summary><p>不是。它指实例不持有跨请求的业务状态，状态被外置到数据库、缓存等专门组件。系统整体仍有状态，只是集中到少数可专门做复制和备份的地方，计算层因此可以随意扩缩替换。</p></details><details class="iv"><summary>JWT 和服务端会话怎么选？</summary><p>服务端会话可随时吊销、令牌小，但需要共享存储；JWT 无需查询，适合跨服务，但吊销难，只能靠短有效期加刷新令牌或黑名单。高敏感场景偏向服务端会话。</p></details><details class="iv"><summary>如何验证一个服务真的是无状态的？</summary><p>部署多个副本并关闭粘性会话，压测过程中随机杀副本，观察请求是否全部成功、用户会话是否保持；检查代码中的全局变量、本地文件写入和进程内定时任务。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://12factor.net/processes" target="_blank" rel="noopener"><b>The Twelve-Factor App：Processes</b><small>12factor.net ↗</small></a></li><li><a href="https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/" target="_blank" rel="noopener"><b>Kubernetes：StatefulSets</b><small>kubernetes.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="connection-draining.pro.html" rel="prev"><small>‹ 上一个</small><b>🚪 连接排空</b></a><a class="pn next" href="failover.pro.html" rel="next"><small>下一个 ›</small><b>🔀 故障自动转移</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

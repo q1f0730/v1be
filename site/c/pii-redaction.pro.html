@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="个人敏感信息脱敏 (PII) 专业模式：PII 脱敏（PII Redaction）指在日志、分析数据、第三方调用（包括发给大模型的提示）中识别并遮蔽、替换或删除个人身份信息，如姓名、手机号、证件号、邮">
+<title>🎓 个人敏感信息脱敏 (PII) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="pii-redaction" data-answer="0" data-prev="command-injection.pro.html" data-next="data-privacy-compliance.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sec">🔮 高级 · 🛡️ 安全防线</a><span>›</span><a href="pii-redaction.html">个人敏感信息脱敏 (PII)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.396 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="command-injection.pro.html" rel="prev"><small>‹ 上一个</small><b>💣 命令注入 / 远程代码执行 (RCE)</b></a><a class="pn next" href="data-privacy-compliance.pro.html" rel="next"><small>下一个 ›</small><b>⚖️ 数据合规 (GDPR / 个人信息保护法)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🙈</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>个人敏感信息脱敏 (PII)</h1><p class="en">PII Redaction</p>
+    <div class="hbtns"><a class="prosw back" href="pii-redaction.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">PII 脱敏（PII Redaction）指在日志、分析数据、第三方调用（包括发给大模型的提示）中识别并遮蔽、替换或删除个人身份信息，如姓名、手机号、证件号、邮箱、地址、银行卡号。它属于数据安全与隐私工程层，是数据最小化原则的落地手段，可降低泄露影响与合规风险。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>梳理数据流，确定 PII 可能出现的位置：请求日志、错误追踪、分析埋点、LLM 提示与输出。</p></li><li><span class="sn">2</span><p>识别：用正则与校验规则（如证件号校验位）、字典、NER 模型或组合检测器找出 PII 实体。</p></li><li><span class="sn">3</span><p>处理：按场景选择遮蔽（138****5678）、替换为类型占位符、哈希、加密或可逆的令牌化。</p></li><li><span class="sn">4</span><p>在数据离开受信边界前执行，如日志写入前、调用外部模型前，而非事后清洗。</p></li><li><span class="sn">5</span><p>需要还原时（如 LLM 回答中引用用户姓名），由服务端用令牌映射表替换回原值，映射表严格限权。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>PII (Personally Identifiable Information)</dt><dd>能直接或结合其他信息识别个人的数据。</dd></div><div class="term"><dt>遮蔽 (Masking)</dt><dd>用星号等字符替换部分内容，保留格式。</dd></div><div class="term"><dt>令牌化 (Tokenization)</dt><dd>用无意义令牌替换原值，映射表单独保存，可逆。</dd></div><div class="term"><dt>假名化 (Pseudonymisation)</dt><dd>处理后需借助额外信息才能识别个人，GDPR 中仍属个人数据。</dd></div><div class="term"><dt>匿名化 (Anonymisation)</dt><dd>无法再识别个人，通常不再受个人数据法规约束。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>日志与 LLM 调用前的脱敏</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import re, uuid
+
+PATTERNS = {
+    &quot;PHONE&quot;: re.compile(r&quot;(?&lt;!\d)1[3-9]\d{9}(?!\d)&quot;),             # 中国大陆手机号
+    &quot;ID&quot;:    re.compile(r&quot;(?&lt;!\d)\d{17}[\dXx](?!\d)&quot;),             # 18 位身份证号
+    &quot;EMAIL&quot;: re.compile(r&quot;[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+&quot;),
+}
+
+def redact(text: str, vault: dict | None = None) -&gt; str:
+    &quot;&quot;&quot;把 PII 替换为占位符；传入 vault 时记录映射以便服务端还原&quot;&quot;&quot;
+    for kind, pat in PATTERNS.items():
+        def sub(m):
+            token = f&quot;&lt;{kind}_{uuid.uuid4().hex[:6]}&gt;&quot;
+            if vault is not None:
+                vault[token] = m.group()
+            return token
+        text = pat.sub(sub, text)
+    return text
+
+vault = {}
+prompt = redact(&quot;我叫小王，电话13812345678，邮箱wang@example.com&quot;, vault)
+print(prompt)   # 发给模型的内容不含原始手机号与邮箱
+# 模型回复中的占位符可用 vault 在服务端替换回原值</code></pre></div><p class="cnote">正则只覆盖格式固定的 PII；姓名、地址需 NER（如 Microsoft Presidio）辅助检测。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">脱敏方式对比</h3><div class="tw"><table><thead><tr><th>方式</th><th>可逆</th><th>保留可用性</th><th>典型场景</th></tr></thead><tbody><tr><td data-h="方式">遮蔽</td><td data-h="可逆">否</td><td data-h="保留可用性">保留格式，便于人工核对</td><td data-h="典型场景">客服界面、日志</td></tr><tr><td data-h="方式">占位符替换</td><td data-h="可逆">否（或配映射表）</td><td data-h="保留可用性">保留语义类型</td><td data-h="典型场景">LLM 提示、分析</td></tr><tr><td data-h="方式">哈希（加盐/HMAC）</td><td data-h="可逆">否</td><td data-h="保留可用性">可做关联与去重</td><td data-h="典型场景">埋点用户 ID</td></tr><tr><td data-h="方式">令牌化/加密</td><td data-h="可逆">是（需密钥/映射）</td><td data-h="保留可用性">可还原原值</td><td data-h="典型场景">支付卡、需回填的流程</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>规则/正则检测</h4><p><b class="k-p">优点</b>快、可解释、零成本</p><p><b class="k-c">代价</b>对姓名、地址等非结构化 PII 漏检</p><p><b class="k-w">适用</b>格式固定的字段</p></div><div class="trd"><h4>NER 模型检测</h4><p><b class="k-p">优点</b>覆盖非结构化文本</p><p><b class="k-c">代价</b>有误报漏报，需算力，中文支持需验证</p><p><b class="k-w">适用</b>聊天记录、文档</p></div><div class="trd"><h4>源头不记录（字段白名单）</h4><p><b class="k-p">优点</b>最彻底</p><p><b class="k-c">代价</b>排障信息可能不足</p><p><b class="k-w">适用</b>日志与埋点设计</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>先全量写日志，再定期批量清洗</p><p class="fix"><b>✓</b>在写入前脱敏，并对日志字段使用白名单</p></li><li><p class="bad"><b>✗</b>只脱敏请求体，忽略 URL 参数和错误堆栈</p><p class="fix"><b>✓</b>覆盖 URL、Header、异常信息与第三方 SDK 上报</p></li><li><p class="bad"><b>✗</b>用无盐哈希处理手机号，被字典轻易还原</p><p class="fix"><b>✓</b>使用带密钥的 HMAC，或改用令牌化</p></li><li><p class="bad"><b>✗</b>把可逆映射表和脱敏数据放在一起</p><p class="fix"><b>✓</b>映射表单独存储、加密并严格限制访问</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>梳理 PII 数据流与存储位置</span></label></li><li><label><input type="checkbox"><span>日志采用字段白名单并在写入前脱敏</span></label></li><li><label><input type="checkbox"><span>调用外部模型前执行脱敏</span></label></li><li><label><input type="checkbox"><span>错误追踪与埋点 SDK 已配置过滤</span></label></li><li><label><input type="checkbox"><span>可逆映射表单独加密存储</span></label></li><li><label><input type="checkbox"><span>定期抽查日志中的 PII 残留</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>假名化和匿名化有什么区别？</summary><p>假名化后借助额外信息（如映射表、密钥）仍可识别个人，GDPR 下仍是个人数据；匿名化后无法以合理手段重新识别，才可能脱离个人数据范畴。仅哈希手机号通常只算假名化。</p></details><details class="iv"><summary>向 LLM 发送数据时如何处理 PII？</summary><p>先评估是否真的需要；需要时在服务端用占位符替换，模型只处理语义，返回后再还原；同时确认供应商的数据保留与训练使用政策，签订数据处理协议。</p></details><details class="iv"><summary>为什么正则脱敏不够？</summary><p>正则只能匹配格式固定的模式；姓名、地址、自由文本中的健康信息等无固定格式，还存在组合识别风险。需要 NER 模型、字段级白名单与数据最小化共同作用。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://microsoft.github.io/presidio/" target="_blank" rel="noopener"><b>Microsoft Presidio 文档</b><small>microsoft.github.io ↗</small></a></li><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html" target="_blank" rel="noopener"><b>OWASP：Logging Cheat Sheet</b><small>cheatsheetseries.owasp.org ↗</small></a></li><li><a href="https://csrc.nist.gov/pubs/sp/800/122/final" target="_blank" rel="noopener"><b>NIST SP 800-122：Guide to Protecting the Confidentiality of PII</b><small>csrc.nist.gov ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="command-injection.pro.html" rel="prev"><small>‹ 上一个</small><b>💣 命令注入 / 远程代码执行 (RCE)</b></a><a class="pn next" href="data-privacy-compliance.pro.html" rel="next"><small>下一个 ›</small><b>⚖️ 数据合规 (GDPR / 个人信息保护法)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

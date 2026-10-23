@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="无服务器 GPU 推理 专业模式：无服务器 GPU（Serverless GPU）指由平台按请求自动启动、扩缩和回收 GPU 容器，用户只为实际运行时间（通常按秒）付费，无需管理服务器。它属于模">
+<title>🎓 无服务器 GPU 推理 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="serverless-gpu" data-answer="0" data-prev="numeric-precision.pro.html" data-next="llm-gateway.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#llmops">🔮 高级 · 🧠 模型工程与推理部署</a><span>›</span><a href="serverless-gpu.html">无服务器 GPU 推理</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.388 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="numeric-precision.pro.html" rel="prev"><small>‹ 上一个</small><b>🔢 数值精度 (FP32 / BF16 / FP8)</b></a><a class="pn next" href="llm-gateway.pro.html" rel="next"><small>下一个 ›</small><b>🚦 模型网关 (LiteLLM / OpenRouter)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">☁️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🧠 模型工程与推理部署</span><span>⏱ 约 10 分钟</span></div>
+    <h1>无服务器 GPU 推理</h1><p class="en">Serverless GPU</p>
+    <div class="hbtns"><a class="prosw back" href="serverless-gpu.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">无服务器 GPU（Serverless GPU）指由平台按请求自动启动、扩缩和回收 GPU 容器，用户只为实际运行时间（通常按秒）付费，无需管理服务器。它属于模型部署与基础设施层，适合部署自定义或开源模型、负载波动大的推理与批处理任务。代表平台有 Modal、Replicate、RunPod Serverless 等，核心挑战是冷启动。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>开发者定义容器镜像（依赖、模型权重来源）、GPU 类型和处理函数，提交到平台。</p></li><li><span class="sn">2</span><p>请求到达时，若无热容器，平台调度 GPU、启动容器并加载模型权重，即冷启动。</p></li><li><span class="sn">3</span><p>容器处理请求，平台根据排队长度与并发上限自动扩容出更多 GPU 副本。</p></li><li><span class="sn">4</span><p>空闲超过设定时间后容器被回收并停止计费；可配置最小常驻副本消除冷启动，但需持续付费。</p></li><li><span class="sn">5</span><p>冷启动优化手段包括：权重放入镜像或高速卷、容器启动时预加载模型、内存/GPU 快照等平台特性。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>冷启动 (Cold Start)</dt><dd>从零启动容器并加载模型到可服务的延迟。</dd></div><div class="term"><dt>缩容到零 (Scale to Zero)</dt><dd>无请求时不保留实例，不产生计算费用。</dd></div><div class="term"><dt>最小副本数 (Min Containers)</dt><dd>常驻热实例数量，以费用换取无冷启动。</dd></div><div class="term"><dt>空闲回收窗口 (Scaledown Window)</dt><dd>最后一次请求后容器保持存活的时间。</dd></div><div class="term"><dt>模型权重卷 (Volume)</dt><dd>持久化存储权重，避免每次启动重新下载。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Modal 部署 GPU 推理函数</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import modal
+
+image = modal.Image.debian_slim().pip_install(&quot;transformers&quot;, &quot;torch&quot;, &quot;accelerate&quot;)
+app = modal.App(&quot;qwen-api&quot;, image=image)
+
+@app.cls(gpu=&quot;A10G&quot;, scaledown_window=300)   # 空闲 5 分钟后回收
+class Model:
+    @modal.enter()                    # 容器启动时加载一次，之后的请求复用
+    def load(self):
+        from transformers import pipeline
+        self.pipe = pipeline(&quot;text-generation&quot;, model=&quot;Qwen/Qwen2.5-0.5B-Instruct&quot;,
+                             device_map=&quot;cuda&quot;)
+
+    @modal.method()
+    def generate(self, prompt: str) -&gt; str:
+        out = self.pipe(prompt, max_new_tokens=128)
+        return out[0][&quot;generated_text&quot;]
+
+@app.local_entrypoint()
+def main():
+    print(Model().generate.remote(&quot;用一句话介绍 KV 缓存&quot;))
+# 运行：modal run app.py   部署：modal deploy app.py</code></pre></div><p class="cnote">@modal.enter 把模型加载放在容器启动时；scaledown_window 控制空闲回收时间。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">GPU 推理部署方式对比</h3><div class="tw"><table><thead><tr><th>方式</th><th>计费</th><th>冷启动</th><th>适用</th></tr></thead><tbody><tr><td data-h="方式">托管模型 API</td><td data-h="计费">按 Token</td><td data-h="冷启动">无（平台承担）</td><td data-h="适用">通用大模型能力</td></tr><tr><td data-h="方式">Serverless GPU</td><td data-h="计费">按秒运行时间</td><td data-h="冷启动">有，秒级到分钟级</td><td data-h="适用">自定义模型、波动负载</td></tr><tr><td data-h="方式">专用 GPU 实例</td><td data-h="计费">按小时/包月</td><td data-h="冷启动">无（常驻）</td><td data-h="适用">稳定高负载</td></tr><tr><td data-h="方式">自建 GPU 集群</td><td data-h="计费">硬件 + 运维</td><td data-h="冷启动">无</td><td data-h="适用">超大规模、强合规</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>缩容到零</h4><p><b class="k-p">优点</b>空闲零成本</p><p><b class="k-c">代价</b>首个请求承受冷启动</p><p><b class="k-w">适用</b>低频调用、内部工具</p></div><div class="trd"><h4>保留最小副本</h4><p><b class="k-p">优点</b>无冷启动、延迟稳定</p><p><b class="k-c">代价</b>空闲时持续付费</p><p><b class="k-w">适用</b>面向用户的实时接口</p></div><div class="trd"><h4>批处理队列模式</h4><p><b class="k-p">优点</b>高利用率、成本低</p><p><b class="k-c">代价</b>非实时</p><p><b class="k-w">适用</b>离线生成、批量打标</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>每次启动都从 Hugging Face 下载权重</p><p class="fix"><b>✓</b>把权重放进镜像或持久化卷，并在容器启动时预加载</p></li><li><p class="bad"><b>✗</b>在请求处理函数里加载模型</p><p class="fix"><b>✓</b>模型加载放在容器初始化钩子中，只执行一次</p></li><li><p class="bad"><b>✗</b>设置常驻副本后忘记，空闲照常计费</p><p class="fix"><b>✓</b>按时段调整最小副本数，设置预算告警</p></li><li><p class="bad"><b>✗</b>选了远超需要的 GPU 型号</p><p class="fix"><b>✓</b>按模型显存与吞吐需求选择型号，压测后再定</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>权重缓存在镜像或卷中</span></label></li><li><label><input type="checkbox"><span>模型在容器启动阶段加载</span></label></li><li><label><input type="checkbox"><span>测量冷启动与热请求延迟</span></label></li><li><label><input type="checkbox"><span>最小副本与空闲窗口按流量设定</span></label></li><li><label><input type="checkbox"><span>设置并发上限与预算告警</span></label></li><li><label><input type="checkbox"><span>接口有鉴权</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Serverless GPU 和托管模型 API 如何选择？</summary><p>需要通用强模型、无定制需求，用托管 API 最省事；需要运行自定义/微调/开源模型（含图像、语音），或数据控制要求高、负载波动大，用 Serverless GPU。持续高负载时专用实例可能更便宜。</p></details><details class="iv"><summary>冷启动由哪些部分组成？</summary><p>调度 GPU 机器、拉取镜像、启动容器与运行时、下载或读取权重、把权重加载到 GPU 并完成初始化。大模型通常以权重传输和加载为主，可通过缓存、预加载与快照缩短。</p></details><details class="iv"><summary>如何估算 Serverless GPU 成本？</summary><p>单次请求 GPU 秒数 × 每秒单价 × 请求量，加上冷启动与空闲窗口内的计费时间、常驻副本费用。再与托管 API 按 Token 成本和专用实例月费对比。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://modal.com/docs/guide/gpu" target="_blank" rel="noopener"><b>Modal 文档：GPU acceleration</b><small>modal.com ↗</small></a></li><li><a href="https://modal.com/docs/guide/cold-start" target="_blank" rel="noopener"><b>Modal 文档：Cold start performance</b><small>modal.com ↗</small></a></li><li><a href="https://docs.runpod.io/serverless/overview" target="_blank" rel="noopener"><b>RunPod 文档：Serverless overview</b><small>docs.runpod.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="numeric-precision.pro.html" rel="prev"><small>‹ 上一个</small><b>🔢 数值精度 (FP32 / BF16 / FP8)</b></a><a class="pn next" href="llm-gateway.pro.html" rel="next"><small>下一个 ›</small><b>🚦 模型网关 (LiteLLM / OpenRouter)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="基于游标的分页 专业模式：基于游标的分页（Cursor / Keyset Pagination）用上一页最后一条记录的排序键作为下一页的起点，以 WHERE 键 &gt; 游标 代替 OFFS">
+<title>🎓 基于游标的分页 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="cursor-based-pagination" data-answer="0" data-prev="uuids-vs-auto-increment.pro.html" data-next="rest-api.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#db">🌊 中级 · 🗄️ 数据库</a><span>›</span><a href="cursor-based-pagination.html">基于游标的分页</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.132 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="uuids-vs-auto-increment.pro.html" rel="prev"><small>‹ 上一个</small><b>🎫 UUID与自增主键</b></a><a class="pn next" href="rest-api.pro.html" rel="next"><small>下一个 ›</small><b>🍽️ REST API</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔖</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>基于游标的分页</h1><p class="en">Cursor-Based Pagination</p>
+    <div class="hbtns"><a class="prosw back" href="cursor-based-pagination.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">基于游标的分页（Cursor / Keyset Pagination）用上一页最后一条记录的排序键作为下一页的起点，以 WHERE 键 &gt; 游标 代替 OFFSET 跳过行。它位于 API 与查询设计层，解决深分页越翻越慢、数据插入删除导致的重复或漏项问题，是信息流与大列表接口的主流方案。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>确定稳定且唯一的排序键，常用 (created_at, id) 组合，id 用于打破时间相同的并列。</p></li><li><span class="sn">2</span><p>首页按排序键取 limit+1 条，多取的一条用于判断是否还有下一页。</p></li><li><span class="sn">3</span><p>把最后一条的排序键编码（常见 base64 JSON）为不透明游标，随响应返回给客户端。</p></li><li><span class="sn">4</span><p>下一页请求携带游标，服务端解码后执行 WHERE (created_at, id) &lt; (?, ?) ORDER BY … LIMIT。</p></li><li><span class="sn">5</span><p>配合与排序键一致的复合索引，每页只扫描所需行，耗时与页码深度无关。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>键集分页 (Keyset Pagination)</dt><dd>用排序键比较而非偏移量定位下一页。</dd></div><div class="term"><dt>不透明游标 (Opaque Cursor)</dt><dd>客户端不解析、只原样回传的分页令牌。</dd></div><div class="term"><dt>行值比较 (Row Value Comparison)</dt><dd>(a,b) &lt; (x,y) 形式的多列字典序比较。</dd></div><div class="term"><dt>并列打破 (Tie-breaker)</dt><dd>在非唯一排序键后追加唯一列保证顺序确定。</dd></div><div class="term"><dt>深分页 (Deep Pagination)</dt><dd>OFFSET 很大时需扫描并丢弃大量行的性能问题。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>游标编码与查询</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import base64, json
+
+def encode_cursor(row):
+    data = {&quot;t&quot;: row[&quot;created_at&quot;].isoformat(), &quot;id&quot;: row[&quot;id&quot;]}
+    return base64.urlsafe_b64encode(json.dumps(data).encode()).decode()
+
+def decode_cursor(cursor):
+    return json.loads(base64.urlsafe_b64decode(cursor.encode()))
+
+SQL_FIRST = &quot;&quot;&quot;SELECT id, created_at, title FROM posts
+  ORDER BY created_at DESC, id DESC LIMIT %(n)s&quot;&quot;&quot;
+SQL_NEXT = &quot;&quot;&quot;SELECT id, created_at, title FROM posts
+  WHERE (created_at, id) &lt; (%(t)s, %(id)s)   -- 行值比较
+  ORDER BY created_at DESC, id DESC LIMIT %(n)s&quot;&quot;&quot;
+
+def list_posts(cur, limit=20, cursor=None):
+    params = {&quot;n&quot;: limit + 1}               # 多取一条判断 has_more
+    if cursor:
+        params.update(decode_cursor(cursor))
+    cur.execute(SQL_NEXT if cursor else SQL_FIRST, params)
+    rows = cur.fetchall()                   # 假设使用 dict_row 行工厂
+    has_more = len(rows) &gt; limit
+    rows = rows[:limit]
+    nxt = encode_cursor(rows[-1]) if has_more else None
+    return {&quot;data&quot;: rows, &quot;next_cursor&quot;: nxt}
+# 需要索引：CREATE INDEX ON posts (created_at DESC, id DESC);</code></pre></div><p class="cnote">排序键加 id 保证唯一；limit+1 判断是否有下一页；索引顺序须与 ORDER BY 一致。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">分页方式对比</h3><div class="tw"><table><thead><tr><th>方式</th><th>深页性能</th><th>跳页</th><th>数据变动时</th></tr></thead><tbody><tr><td data-h="方式">OFFSET/LIMIT</td><td data-h="深页性能">随页码线性变慢</td><td data-h="跳页">支持</td><td data-h="数据变动时">易重复或漏项</td></tr><tr><td data-h="方式">游标/键集</td><td data-h="深页性能">稳定</td><td data-h="跳页">不支持</td><td data-h="数据变动时">结果稳定</td></tr><tr><td data-h="方式">页码 + 游标混合</td><td data-h="深页性能">较好</td><td data-h="跳页">有限支持</td><td data-h="数据变动时">较稳定</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>OFFSET 分页</h4><p><b class="k-p">优点</b>实现简单，可直接跳到第 N 页</p><p><b class="k-c">代价</b>深页慢，并发写入导致错位</p><p><b class="k-w">适用</b>后台管理、数据量小</p></div><div class="trd"><h4>游标分页</h4><p><b class="k-p">优点</b>性能稳定，无重复漏项</p><p><b class="k-c">代价</b>不能跳页，排序字段受限</p><p><b class="k-w">适用</b>信息流、无限滚动、公开 API</p></div><div class="trd"><h4>游标 + 近似总数</h4><p><b class="k-p">优点</b>兼顾体验与性能</p><p><b class="k-c">代价</b>总数不精确，需额外说明</p><p><b class="k-w">适用</b>需显示大致结果量的列表</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>只按 created_at 排序，时间相同的行被跳过或重复</p><p class="fix"><b>✓</b>追加唯一列 id 作并列打破，游标同时包含两者</p></li><li><p class="bad"><b>✗</b>游标直接暴露原始 SQL 字段且未校验</p><p class="fix"><b>✓</b>游标编码为不透明令牌，解码后校验类型，必要时签名</p></li><li><p class="bad"><b>✗</b>ORDER BY 方向与索引不一致，退化为排序</p><p class="fix"><b>✓</b>按 ORDER BY 列与方向建复合索引并用 EXPLAIN 验证</p></li><li><p class="bad"><b>✗</b>排序字段可被更新，导致记录在页间移动</p><p class="fix"><b>✓</b>选择不可变或很少变化的字段做排序键</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>排序键唯一且确定</span></label></li><li><label><input type="checkbox"><span>有与排序一致的复合索引</span></label></li><li><label><input type="checkbox"><span>游标对客户端不透明</span></label></li><li><label><input type="checkbox"><span>非法或过期游标返回 400</span></label></li><li><label><input type="checkbox"><span>响应包含 next_cursor/has_more</span></label></li><li><label><input type="checkbox"><span>limit 有上限防止一次拉取过多</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么 OFFSET 深分页很慢？</summary><p>数据库必须按序生成并丢弃前 OFFSET 行才能返回结果，扫描量与偏移成正比。即便有索引也要遍历这些索引项。键集分页直接从索引中游标位置开始读取，代价只与页大小有关。</p></details><details class="iv"><summary>游标分页如何支持多种排序？</summary><p>每种排序都需要唯一排序键组合和对应索引，游标中记录排序方式与键值，服务端校验游标与当前排序一致。排序维度过多时应限制可选项。</p></details><details class="iv"><summary>如何实现「上一页」？</summary><p>反转比较方向与 ORDER BY 查询（如 &gt; 游标 ORDER BY ASC），取到后再在应用层反转结果顺序；也可同时返回 prev_cursor 与 next_cursor。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://use-the-index-luke.com/no-offset" target="_blank" rel="noopener"><b>Use The Index, Luke：Paging Through Results</b><small>use-the-index-luke.com ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/functions-comparisons.html" target="_blank" rel="noopener"><b>PostgreSQL 文档：Row Constructor Comparison</b><small>postgresql.org ↗</small></a></li><li><a href="https://docs.stripe.com/api/pagination" target="_blank" rel="noopener"><b>Stripe API：Pagination</b><small>docs.stripe.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="uuids-vs-auto-increment.pro.html" rel="prev"><small>‹ 上一个</small><b>🎫 UUID与自增主键</b></a><a class="pn next" href="rest-api.pro.html" rel="next"><small>下一个 ›</small><b>🍽️ REST API</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

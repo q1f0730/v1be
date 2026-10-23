@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="应用错误追踪与聚合 专业模式：应用错误追踪（Error Tracking）是自动捕获应用运行时的异常与崩溃，附带堆栈、版本、环境、用户操作轨迹等上下文，并按相似性聚合成问题（Issue）进行">
+<title>🎓 应用错误追踪与聚合 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="error-tracking" data-answer="0" data-prev="alert-fatigue.pro.html" data-next="profiling.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#devops">🔮 高级 · 🔭 可观测与交付</a><span>›</span><a href="error-tracking.html">应用错误追踪与聚合</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.321 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="alert-fatigue.pro.html" rel="prev"><small>‹ 上一个</small><b>🔕 告警疲劳</b></a><a class="pn next" href="profiling.pro.html" rel="next"><small>下一个 ›</small><b>🩺 运行时性能剖析</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🪲</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>应用错误追踪与聚合</h1><p class="en">Error Tracking</p>
+    <div class="hbtns"><a class="prosw back" href="error-tracking.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">应用错误追踪（Error Tracking）是自动捕获应用运行时的异常与崩溃，附带堆栈、版本、环境、用户操作轨迹等上下文，并按相似性聚合成问题（Issue）进行分配、告警和跟踪的实践。它覆盖前端、移动端和后端，补足日志与指标难以直接呈现的错误细节，常见工具有 Sentry 等。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>应用集成 SDK，SDK 挂接全局异常处理器和框架中间件，捕获未处理异常。</p></li><li><span class="sn">2</span><p>捕获时收集堆栈、请求信息、设备与运行时、发布版本、面包屑等上下文。</p></li><li><span class="sn">3</span><p>事件上报到服务端，按堆栈指纹聚合为一个问题，统计发生次数和影响用户数。</p></li><li><span class="sn">4</span><p>前端与移动端需要上传 source map 或符号表，把压缩或混淆后的堆栈还原为源码位置。</p></li><li><span class="sn">5</span><p>新问题或回归问题触发告警，分配给负责人，修复发布后标记解决并观察是否复发。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>指纹 (Fingerprint)</dt><dd>用于判断事件是否属于同一问题的特征，通常基于堆栈。</dd></div><div class="term"><dt>面包屑 (Breadcrumbs)</dt><dd>错误发生前的操作和事件轨迹，帮助还原现场。</dd></div><div class="term"><dt>Source Map</dt><dd>把压缩后的 JavaScript 位置映射回源码的文件。</dd></div><div class="term"><dt>回归 (Regression)</dt><dd>已标记解决的问题在新版本中再次出现。</dd></div><div class="term"><dt>发布版本 (Release)</dt><dd>事件关联的应用版本，用于判断哪个版本引入了问题。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Sentry Python SDK 接入</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import sentry_sdk
+
+sentry_sdk.init(
+    dsn=&quot;https://&lt;key&gt;@&lt;org&gt;.ingest.sentry.io/&lt;project&gt;&quot;,
+    environment=&quot;production&quot;,
+    release=&quot;shop-api@1.4.2&quot;,     # 关联版本，便于定位引入问题的发布
+    traces_sample_rate=0.1,         # 性能追踪采样 10%
+    send_default_pii=False,         # 默认不发送个人信息
+)
+
+def charge(order_id: str):
+    sentry_sdk.set_tag(&quot;order_id&quot;, order_id)  # 附加检索维度
+    try:
+        risky_payment_call(order_id)
+    except TimeoutError as e:
+        sentry_sdk.capture_exception(e)          # 已处理的异常也可上报
+        raise
+# 未捕获的异常会被 SDK 自动上报</code></pre></div><p class="cnote">设置环境与版本，主动上报已处理异常并附标签；未处理异常 SDK 自动捕获。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">错误追踪与日志的分工</h3><div class="tw"><table><thead><tr><th>维度</th><th>错误追踪</th><th>日志</th></tr></thead><tbody><tr><td data-h="维度">关注点</td><td data-h="错误追踪">异常与崩溃</td><td data-h="日志">所有事件记录</td></tr><tr><td data-h="维度">组织方式</td><td data-h="错误追踪">按问题聚合，有状态流转</td><td data-h="日志">按时间流</td></tr><tr><td data-h="维度">上下文</td><td data-h="错误追踪">堆栈、版本、面包屑、用户影响</td><td data-h="日志">自定义字段</td></tr><tr><td data-h="维度">适合场景</td><td data-h="错误追踪">发现与分派缺陷</td><td data-h="日志">排查任意行为</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>SaaS 错误追踪</h4><p><b class="k-p">优点</b>开箱即用，维护成本低</p><p><b class="k-c">代价</b>数据出境与费用问题</p><p><b class="k-w">适用</b>多数团队</p></div><div class="trd"><h4>自托管</h4><p><b class="k-p">优点</b>数据可控</p><p><b class="k-c">代价</b>需要运维存储与升级</p><p><b class="k-w">适用</b>合规要求严格</p></div><div class="trd"><h4>仅依赖日志</h4><p><b class="k-p">优点</b>无需新组件</p><p><b class="k-c">代价</b>难以聚合与追踪状态</p><p><b class="k-w">适用</b>非常早期或极简系统</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>前端没上传 source map，堆栈全是压缩后的单行代码。</p><p class="fix"><b>✓</b>在 CI 构建时上传 source map 并与 release 关联。</p></li><li><p class="bad"><b>✗</b>上报中包含密码、令牌等敏感数据。</p><p class="fix"><b>✓</b>关闭默认 PII，使用 before_send 过滤敏感字段。</p></li><li><p class="bad"><b>✗</b>所有异常一股脑上报，配额被单一噪声问题耗尽。</p><p class="fix"><b>✓</b>忽略预期异常，配置采样与速率限制。</p></li><li><p class="bad"><b>✗</b>问题无人认领，积压成千上万条。</p><p class="fix"><b>✓</b>按代码归属自动分配，定期清理分级。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>后端、前端、移动端均已接入</span></label></li><li><label><input type="checkbox"><span>上报带 environment 与 release</span></label></li><li><label><input type="checkbox"><span>前端 source map 在构建时上传</span></label></li><li><label><input type="checkbox"><span>敏感数据已过滤</span></label></li><li><label><input type="checkbox"><span>新问题和回归问题有告警</span></label></li><li><label><input type="checkbox"><span>问题有明确归属</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>错误追踪如何把海量错误聚合成问题？</summary><p>服务端根据事件的指纹聚合，默认基于异常类型和堆栈中应用代码的帧，忽略行号偏移等噪声；也可自定义指纹规则。聚合后统计次数、影响用户数、首次和最近出现版本，便于排优先级。</p></details><details class="iv"><summary>为什么错误事件要关联 release？</summary><p>有了版本号，就能知道问题首次出现于哪个发布，判断是否为回归，并与提交记录关联找到可疑变更；修复后也能确认新版本是否还在发生，从而决定是否回滚。</p></details><details class="iv"><summary>AI 编程工具与错误追踪如何配合？</summary><p>可以把聚合后的堆栈、面包屑和相关代码交给 AI 助手分析可能原因并生成修复草案；但修复仍需写测试复现问题、代码评审，并在发布后观察该问题是否停止发生。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.sentry.io/" target="_blank" rel="noopener"><b>Sentry 文档</b><small>docs.sentry.io ↗</small></a></li><li><a href="https://docs.sentry.io/platforms/python/" target="_blank" rel="noopener"><b>Sentry Python SDK</b><small>docs.sentry.io ↗</small></a></li><li><a href="https://docs.sentry.io/platforms/javascript/sourcemaps/" target="_blank" rel="noopener"><b>Sentry：JavaScript Source Maps</b><small>docs.sentry.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="alert-fatigue.pro.html" rel="prev"><small>‹ 上一个</small><b>🔕 告警疲劳</b></a><a class="pn next" href="profiling.pro.html" rel="next"><small>下一个 ›</small><b>🩺 运行时性能剖析</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

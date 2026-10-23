@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="提示链 (Prompt Chaining) 专业模式：提示链（Prompt Chaining）把复杂任务分解为一系列有序的 LLM 调用，每步的输出作为下一步的输入，步骤之间可插入程序化检查（gate）。它属于 L">
+<title>🎓 提示链 (Prompt Chaining) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="prompt-chaining" data-answer="0" data-prev="sampling-top-p-top-k.pro.html" data-next="jailbreak.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#ai">🌊 中级 · 🤖 AI 与提示词</a><span>›</span><a href="prompt-chaining.html">提示链 (Prompt Chaining)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.155 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="sampling-top-p-top-k.pro.html" rel="prev"><small>‹ 上一个</small><b>🎲 采样策略 (Top-p / Top-k)</b></a><a class="pn next" href="jailbreak.pro.html" rel="next"><small>下一个 ›</small><b>🔓 越狱攻击 (Jailbreak)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔗</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>提示链 (Prompt Chaining)</h1><p class="en">Prompt Chaining</p>
+    <div class="hbtns"><a class="prosw back" href="prompt-chaining.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">提示链（Prompt Chaining）把复杂任务分解为一系列有序的 LLM 调用，每步的输出作为下一步的输入，步骤之间可插入程序化检查（gate）。它属于 LLM 应用编排层，是最基础的工作流模式：以多一点延迟换取每步更高的准确率、可观测性与可调试性，介于单次提示与自主 Agent 之间。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>把任务拆成边界清晰的子任务，如「抽取 → 分析 → 撰写 → 校对」，每步有明确输入输出格式。</p></li><li><span class="sn">2</span><p>每步用专门的提示，只携带该步所需上下文，减少干扰并降低单次 Token 消耗。</p></li><li><span class="sn">3</span><p>步骤间用代码做校验：解析 JSON、检查必填字段、规则判断，不合格则重试或中止。</p></li><li><span class="sn">4</span><p>顺序固定的流程由代码控制流程走向，而非让模型自行决定，因此行为可预测。</p></li><li><span class="sn">5</span><p>每步输入输出可单独记录与评测，定位问题时只需重跑出错的那一步。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>工作流 (Workflow)</dt><dd>由代码预定义路径编排 LLM 调用，区别于模型自主决策的 Agent。</dd></div><div class="term"><dt>关卡 (Gate)</dt><dd>步骤之间的程序化检查，决定继续、重试或终止。</dd></div><div class="term"><dt>中间表示 (Intermediate Output)</dt><dd>步骤间传递的结构化结果，常用 JSON。</dd></div><div class="term"><dt>路由 (Routing)</dt><dd>先分类输入，再交给不同的专门链路处理。</dd></div><div class="term"><dt>自我修正 (Self-correction)</dt><dd>增加一步让模型审查并修改上一步结果。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>三步链 + 程序化关卡</span><em>python</em><button class="ccopy">复制</button></div><pre><code># pip install anthropic
+import json, anthropic
+
+client = anthropic.Anthropic()
+MODEL = &quot;claude-sonnet-4-5&quot;  # 换成你在用的模型
+
+def llm(prompt: str) -&gt; str:
+    msg = client.messages.create(model=MODEL, max_tokens=2000,
+                                 messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: prompt}])
+    return msg.content[0].text
+
+review = open(&quot;feedback.txt&quot;, encoding=&quot;utf-8&quot;).read()
+
+# 第 1 步：抽取结构化问题列表
+raw = llm(f&quot;从以下用户反馈中抽取问题，只输出 JSON 数组，元素含 issue 和 severity(1-3)：\n{review}&quot;)
+issues = json.loads(raw)                     # 关卡：解析失败直接抛错
+assert all({&quot;issue&quot;, &quot;severity&quot;} &lt;= set(i) for i in issues), &quot;字段缺失&quot;
+
+# 第 2 步：只取严重问题写修复建议
+serious = [i for i in issues if i[&quot;severity&quot;] &gt;= 2]
+plan = llm(f&quot;为这些问题写简短修复建议：\n{json.dumps(serious, ensure_ascii=False)}&quot;)
+
+# 第 3 步：面向用户改写成回复
+reply = llm(f&quot;把以下内部建议改写成礼貌的客服回复，不提内部细节：\n{plan}&quot;)
+print(reply)</code></pre></div><p class="cnote">每步单一职责；第 1 步后用代码校验格式，生产中还应加重试与结构化输出。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">编排模式对比</h3><div class="tw"><table><thead><tr><th>模式</th><th>控制权</th><th>可预测性</th><th>适合</th></tr></thead><tbody><tr><td data-h="模式">单次提示</td><td data-h="控制权">无编排</td><td data-h="可预测性">中</td><td data-h="适合">简单任务</td></tr><tr><td data-h="模式">提示链</td><td data-h="控制权">代码固定顺序</td><td data-h="可预测性">高</td><td data-h="适合">可拆成固定步骤的任务</td></tr><tr><td data-h="模式">路由 + 专用链</td><td data-h="控制权">代码按分类分支</td><td data-h="可预测性">高</td><td data-h="适合">输入类型差异大</td></tr><tr><td data-h="模式">自主 Agent</td><td data-h="控制权">模型决定下一步</td><td data-h="可预测性">较低</td><td data-h="适合">步骤无法预先确定</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>单次大提示</h4><p><b class="k-p">优点</b>延迟低、实现简单</p><p><b class="k-c">代价</b>易遗漏要求，出错难定位</p><p><b class="k-w">适用</b>任务短小且一步可完成</p></div><div class="trd"><h4>提示链</h4><p><b class="k-p">优点</b>每步更准、可校验、可单独优化</p><p><b class="k-c">代价</b>多次调用增加延迟与成本</p><p><b class="k-w">适用</b>多阶段、质量要求高</p></div><div class="trd"><h4>Agent 自主规划</h4><p><b class="k-p">优点</b>能处理开放式任务</p><p><b class="k-c">代价</b>成本与行为不确定性高</p><p><b class="k-w">适用</b>路径无法事先固定</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>步骤之间直接传自由文本，格式漂移后下游崩溃</p><p class="fix"><b>✓</b>用 JSON/结构化输出传递，并在关卡处校验</p></li><li><p class="bad"><b>✗</b>把全部上下文传给每一步</p><p class="fix"><b>✓</b>每步只传必要字段，减少噪声与费用</p></li><li><p class="bad"><b>✗</b>拆得过细，延迟与成本失控</p><p class="fix"><b>✓</b>以可独立校验为拆分粒度，合并无需检查的相邻步</p></li><li><p class="bad"><b>✗</b>某一步失败后继续执行下游</p><p class="fix"><b>✓</b>关卡失败时重试或中止，并记录该步输入输出</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每步有明确的输入输出格式</span></label></li><li><label><input type="checkbox"><span>步骤间有程序化校验</span></label></li><li><label><input type="checkbox"><span>失败有重试与中止策略</span></label></li><li><label><input type="checkbox"><span>每步输入输出都记录日志</span></label></li><li><label><input type="checkbox"><span>每步提示可单独评测与版本化</span></label></li><li><label><input type="checkbox"><span>已评估总延迟与成本</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>提示链和 Agent 的边界在哪里？</summary><p>提示链的执行路径由代码预先定义，模型只负责每步内容，行为可预测；Agent 由模型根据环境反馈动态决定调用哪些工具、走哪一步。能用固定流程解决时优先工作流，确有开放性才上 Agent。</p></details><details class="iv"><summary>如何决定拆分粒度？</summary><p>看每步是否有独立可校验的输出、是否需要不同的提示或模型、是否会因同时处理多个目标而降低质量。拆到每步单一职责且可测试即可，避免为拆而拆导致延迟和成本上升。</p></details><details class="iv"><summary>提示链如何做评测？</summary><p>既做端到端评测，也对每步建立小型数据集单独打分；记录中间结果，定位质量下降出在哪一步；修改某一步提示后做回归测试，确保下游不受格式变化影响。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.anthropic.com/engineering/building-effective-agents" target="_blank" rel="noopener"><b>Anthropic：Building effective agents</b><small>anthropic.com ↗</small></a></li><li><a href="https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/chain-prompts" target="_blank" rel="noopener"><b>Anthropic 文档：Chain complex prompts</b><small>docs.anthropic.com ↗</small></a></li><li><a href="https://www.promptingguide.ai/techniques/prompt_chaining" target="_blank" rel="noopener"><b>Prompt Engineering Guide：Prompt Chaining</b><small>promptingguide.ai ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="sampling-top-p-top-k.pro.html" rel="prev"><small>‹ 上一个</small><b>🎲 采样策略 (Top-p / Top-k)</b></a><a class="pn next" href="jailbreak.pro.html" rel="next"><small>下一个 ›</small><b>🔓 越狱攻击 (Jailbreak)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

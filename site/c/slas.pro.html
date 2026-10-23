@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="服务等级协议 专业模式：服务等级协议（Service Level Agreement, SLA）是服务提供方与客户之间关于可用性、性能等指标的书面承诺，通常附带未达标时的赔偿条款（如服">
+<title>🎓 服务等级协议 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="slas" data-answer="0" data-prev="health-checks.pro.html" data-next="structured-logging.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#sre">🌊 中级 · 🩺 高可用 SRE</a><span>›</span><a href="slas.html">服务等级协议</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.145 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="health-checks.pro.html" rel="prev"><small>‹ 上一个</small><b>🩺 健康检查机制</b></a><a class="pn next" href="structured-logging.pro.html" rel="next"><small>下一个 ›</small><b>🧾 结构化日志</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📜</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>服务等级协议</h1><p class="en">SLAs</p>
+    <div class="hbtns"><a class="prosw back" href="slas.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">服务等级协议（Service Level Agreement, SLA）是服务提供方与客户之间关于可用性、性能等指标的书面承诺，通常附带未达标时的赔偿条款（如服务抵扣）。它建立在内部的 SLI（指标）与 SLO（目标）之上，属于可靠性工程与商务契约的交界层，决定了系统需要投入多少冗余与运维成本。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>定义 SLI：可量化的服务指标，如成功请求比例、P99 延迟，并明确统计口径。</p></li><li><span class="sn">2</span><p>设定 SLO：内部目标值，如 30 天内 99.9% 请求成功，通常比 SLA 更严格。</p></li><li><span class="sn">3</span><p>对外签订 SLA：承诺值、统计周期、排除项（计划维护、客户原因）与赔偿梯度。</p></li><li><span class="sn">4</span><p>用 SLO 推出错误预算（Error Budget），预算消耗过快时冻结发布、优先修可靠性。</p></li><li><span class="sn">5</span><p>持续监控并出具报表，违约时按条款计算服务抵扣，通常需客户主动申请。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>SLI (Service Level Indicator)</dt><dd>衡量服务水平的具体指标，如可用率、延迟。</dd></div><div class="term"><dt>SLO (Service Level Objective)</dt><dd>团队为 SLI 设定的内部目标值。</dd></div><div class="term"><dt>错误预算 (Error Budget)</dt><dd>1 减 SLO，即周期内允许的不可靠额度。</dd></div><div class="term"><dt>服务抵扣 (Service Credit)</dt><dd>未达 SLA 时按比例返还的费用额度。</dd></div><div class="term"><dt>复合可用性 (Composite Availability)</dt><dd>串联依赖的可用性相乘，整体低于任一组件。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>可用性与错误预算计算</span><em>python</em><button class="ccopy">复制</button></div><pre><code>def downtime_budget(slo: float, days: int = 30) -&gt; float:
+    &quot;&quot;&quot;返回周期内允许的停机分钟数&quot;&quot;&quot;
+    return (1 - slo) * days * 24 * 60
+
+for slo in (0.99, 0.999, 0.9995, 0.9999):
+    print(f&quot;{slo:.2%}  -&gt;  {downtime_budget(slo):7.1f} 分钟/30天&quot;)
+# 99.00% -&gt;   432.0
+# 99.90% -&gt;    43.2
+# 99.95% -&gt;    21.6
+# 99.99% -&gt;     4.3
+
+# 串联依赖：整体可用性 = 各组件相乘
+deps = {&quot;负载均衡&quot;: 0.9999, &quot;应用&quot;: 0.999, &quot;数据库&quot;: 0.9995}
+total = 1.0
+for a in deps.values():
+    total *= a
+print(f&quot;整体约 {total:.4%}&quot;)  # 约 99.84%，低于任一组件
+
+# 错误预算消耗：30 天内已失败请求占比 / 允许占比
+failed, total_req, slo = 12_000, 20_000_000, 0.999
+print(f&quot;预算已用 {failed / total_req / (1 - slo):.0%}&quot;)  # 60%</code></pre></div><p class="cnote">每多一个 9，停机预算缩小十倍；串联依赖会拉低整体可用性。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">SLI、SLO、SLA 区别</h3><div class="tw"><table><thead><tr><th>概念</th><th>面向</th><th>示例</th><th>未达成后果</th></tr></thead><tbody><tr><td data-h="概念">SLI</td><td data-h="面向">工程团队</td><td data-h="示例">成功请求比例</td><td data-h="未达成后果">无，仅是度量</td></tr><tr><td data-h="概念">SLO</td><td data-h="面向">内部</td><td data-h="示例">30 天 99.9% 成功</td><td data-h="未达成后果">冻结发布、复盘</td></tr><tr><td data-h="概念">SLA</td><td data-h="面向">客户与法务</td><td data-h="示例">月可用性 99.9%</td><td data-h="未达成后果">服务抵扣或违约</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>提高 SLA 承诺</h4><p><b class="k-p">优点</b>商务竞争力强</p><p><b class="k-c">代价</b>冗余、值班、跨区成本陡增</p><p><b class="k-w">适用</b>企业客户、核心业务</p></div><div class="trd"><h4>SLA 低于 SLO 留余量</h4><p><b class="k-p">优点</b>内部问题不直接触发赔偿</p><p><b class="k-c">代价</b>对外承诺显得保守</p><p><b class="k-w">适用</b>绝大多数服务的推荐做法</p></div><div class="trd"><h4>不提供 SLA</h4><p><b class="k-p">优点</b>无违约风险</p><p><b class="k-c">代价</b>难以进入企业采购</p><p><b class="k-w">适用</b>Beta、免费或早期产品</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>SLA 和 SLO 设成同一个值</p><p class="fix"><b>✓</b>SLO 比 SLA 更严格，留出缓冲</p></li><li><p class="bad"><b>✗</b>用服务器存活时间衡量可用性</p><p class="fix"><b>✓</b>以用户可感知的成功请求比例或合成探测为 SLI</p></li><li><p class="bad"><b>✗</b>承诺 99.99% 却依赖单一可用区的数据库</p><p class="fix"><b>✓</b>按依赖链计算复合可用性，补足冗余后再承诺</p></li><li><p class="bad"><b>✗</b>SLA 未写清统计口径与排除项</p><p class="fix"><b>✓</b>明确周期、计算方式、维护窗口与申请赔偿流程</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>SLI 口径书面明确</span></label></li><li><label><input type="checkbox"><span>SLO 严于 SLA</span></label></li><li><label><input type="checkbox"><span>依赖链复合可用性已核算</span></label></li><li><label><input type="checkbox"><span>错误预算有消耗告警</span></label></li><li><label><input type="checkbox"><span>排除项与赔偿流程写入合同</span></label></li><li><label><input type="checkbox"><span>上游供应商 SLA 已纳入评估</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么不追求 100% 可用？</summary><p>成本随 9 的个数指数增长，且用户侧网络、终端本身也不是 100% 可靠，超过某点用户无感知。留出错误预算可用于发布新功能与实验，在速度与稳定间取得平衡。</p></details><details class="iv"><summary>错误预算耗尽后怎么办？</summary><p>按事先约定的策略执行：暂停非紧急发布、把工程资源转向可靠性修复与复盘，直到预算恢复；关键在于策略由产品和工程提前共同认可，而不是事后争论。</p></details><details class="iv"><summary>如何为一个 API 选择 SLI？</summary><p>从用户体验出发：可用性用非 5xx 且未超时的请求占比；延迟用 P95/P99 低于阈值的比例；在负载均衡或网关处统一采集，排除健康检查与客户端错误，口径保持稳定。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://sre.google/sre-book/service-level-objectives/" target="_blank" rel="noopener"><b>Google SRE Book：Service Level Objectives</b><small>sre.google ↗</small></a></li><li><a href="https://sre.google/workbook/implementing-slos/" target="_blank" rel="noopener"><b>Google SRE Workbook：Implementing SLOs</b><small>sre.google ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Service-level_agreement" target="_blank" rel="noopener"><b>Wikipedia: Service-level agreement</b><small>en.wikipedia.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="health-checks.pro.html" rel="prev"><small>‹ 上一个</small><b>🩺 健康检查机制</b></a><a class="pn next" href="structured-logging.pro.html" rel="next"><small>下一个 ›</small><b>🧾 结构化日志</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

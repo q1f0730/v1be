@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="单点故障 (SPOF) 专业模式：单点故障（Single Point of Failure, SPOF）是系统中一旦失效就会导致整体不可用、且没有冗余替代的组件。它可能是硬件、软件进程、网络链路">
+<title>🎓 单点故障 (SPOF) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="single-points-of-failure" data-answer="0" data-prev="availability-zones.pro.html" data-next="disaster-recovery.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sre">🔮 高级 · 🩺 高可用 SRE</a><span>›</span><a href="single-points-of-failure.html">单点故障 (SPOF)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.298 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="availability-zones.pro.html" rel="prev"><small>‹ 上一个</small><b>🏢 可用区 (AZ)</b></a><a class="pn next" href="disaster-recovery.pro.html" rel="next"><small>下一个 ›</small><b>🆘 灾难恢复体系 (DR)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🎯</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>单点故障 (SPOF)</h1><p class="en">Single Points of Failure</p>
+    <div class="hbtns"><a class="prosw back" href="single-points-of-failure.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">单点故障（Single Point of Failure, SPOF）是系统中一旦失效就会导致整体不可用、且没有冗余替代的组件。它可能是硬件、软件进程、网络链路、第三方服务、配置系统，甚至是唯一掌握某项操作的人。识别和消除 SPOF 是可靠性设计和架构评审的基本功，手段包括冗余、隔离、降级和去除不必要的依赖。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>画出请求从用户到数据的完整路径，列出途经的每个组件、外部依赖和运维流程。</p></li><li><span class="sn">2</span><p>对每个组件问：它挂了，服务还能工作吗？没有替代的就是 SPOF。</p></li><li><span class="sn">3</span><p>消除方式是冗余（多副本、多可用区）、自动故障转移，或让依赖变成可选的。</p></li><li><span class="sn">4</span><p>确实无法消除的单点，通过功能降级、缓存兜底和快速恢复手册来降低故障影响。</p></li><li><span class="sn">5</span><p>定期复查单点清单，因为新功能、新依赖和运维流程变更都可能引入新的单点。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>冗余 (Redundancy)</dt><dd>为关键组件准备多个副本，任一失效时其他可接替。</dd></div><div class="term"><dt>N+1 冗余</dt><dd>在满足负载所需的 N 个单元外再多一个备用单元。</dd></div><div class="term"><dt>共享命运 (Shared Fate)</dt><dd>看似冗余的组件依赖同一底层资源，会一起失效。</dd></div><div class="term"><dt>Pod 中断预算 (PodDisruptionBudget)</dt><dd>限制自愿中断时同时不可用的 Pod 数量。</dd></div><div class="term"><dt>巴士因子 (Bus Factor)</dt><dd>多少人离开就会让项目无法维护，人员层面的单点。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>多副本加中断预算</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code>apiVersion: apps/v1
+kind: Deployment
+metadata: { name: api }
+spec:
+  replicas: 3                     # 不止一个副本
+  selector: { matchLabels: { app: api } }
+  template:
+    metadata: { labels: { app: api } }
+    spec:
+      containers:
+        - { name: api, image: example/api:1.0 }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: { name: api-pdb }
+spec:
+  minAvailable: 2                 # 节点维护时至少保留 2 个可用
+  selector: { matchLabels: { app: api } }</code></pre></div><p class="cnote">多副本消除进程单点，PDB 防止节点维护时副本被同时驱逐。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">容易被忽略的单点</h3><div class="tw"><table><thead><tr><th>类别</th><th>例子</th><th>消除思路</th></tr></thead><tbody><tr><td data-h="类别">基础设施</td><td data-h="例子">单个 NAT 网关、单个数据库主库</td><td data-h="消除思路">多可用区、托管高可用</td></tr><tr><td data-h="类别">配置与密钥</td><td data-h="例子">唯一的配置中心、过期的证书</td><td data-h="消除思路">多副本、自动续期与监控</td></tr><tr><td data-h="类别">第三方</td><td data-h="例子">唯一的支付或短信供应商</td><td data-h="消除思路">降级、备用供应商</td></tr><tr><td data-h="类别">人员流程</td><td data-h="例子">只有一人会发布或有权限</td><td data-h="消除思路">文档化、交叉培训、多人授权</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>全面冗余</h4><p><b class="k-p">优点</b>可用性高</p><p><b class="k-c">代价</b>成本与复杂度上升</p><p><b class="k-w">适用</b>核心路径组件</p></div><div class="trd"><h4>接受单点但快速恢复</h4><p><b class="k-p">优点</b>成本低</p><p><b class="k-c">代价</b>故障期间不可用</p><p><b class="k-w">适用</b>非核心、恢复时间可接受</p></div><div class="trd"><h4>去掉依赖</h4><p><b class="k-p">优点</b>从根本上消除风险</p><p><b class="k-c">代价</b>需要重新设计</p><p><b class="k-w">适用</b>依赖价值低于风险</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>多台数据库实例放在同一物理机或同一可用区。</p><p class="fix"><b>✓</b>检查底层共享资源，分散到不同故障域。</p></li><li><p class="bad"><b>✗</b>DNS 只用一家服务商。</p><p class="fix"><b>✓</b>关键域名评估多 DNS 服务商或确认服务商 SLA。</p></li><li><p class="bad"><b>✗</b>证书、域名到期没人知道，成为时间型单点。</p><p class="fix"><b>✓</b>自动续期并对到期时间设告警。</p></li><li><p class="bad"><b>✗</b>冗余组件从未验证，备份节点其实无法工作。</p><p class="fix"><b>✓</b>定期做故障注入或切换演练。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>核心链路每个组件都有冗余或降级方案</span></label></li><li><label><input type="checkbox"><span>冗余副本不共享同一故障域</span></label></li><li><label><input type="checkbox"><span>第三方依赖有超时与降级</span></label></li><li><label><input type="checkbox"><span>证书、域名、密钥有到期监控</span></label></li><li><label><input type="checkbox"><span>关键操作不依赖单个人</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>在架构评审中如何系统地找单点？</summary><p>画出完整请求链路和依赖图，包括 DNS、证书、网关、配置中心和第三方服务，逐一做假设失效分析；再检查冗余组件是否共享底层资源；最后看人和流程，例如谁有权限、谁会操作。</p></details><details class="iv"><summary>多副本就一定没有单点吗？</summary><p>不一定。副本可能在同一主机、可用区或依赖同一配置服务，属于共享命运；也可能使用同一份错误配置同时发布而一起崩溃。冗余需要故障独立性，并配合分批发布。</p></details><details class="iv"><summary>负载均衡器本身是单点吗？</summary><p>自建单台负载均衡器是单点，需用主备加虚拟 IP 或多实例加 DNS；云托管负载均衡通常由厂商在多可用区内冗余实现，但仍应确认其跨可用区配置和配额限制。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://en.wikipedia.org/wiki/Single_point_of_failure" target="_blank" rel="noopener"><b>Wikipedia：Single point of failure</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://kubernetes.io/docs/tasks/run-application/configure-pdb/" target="_blank" rel="noopener"><b>Kubernetes：为应用配置 PodDisruptionBudget</b><small>kubernetes.io ↗</small></a></li><li><a href="https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/welcome.html" target="_blank" rel="noopener"><b>AWS Well-Architected：Reliability Pillar</b><small>docs.aws.amazon.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="availability-zones.pro.html" rel="prev"><small>‹ 上一个</small><b>🏢 可用区 (AZ)</b></a><a class="pn next" href="disaster-recovery.pro.html" rel="next"><small>下一个 ›</small><b>🆘 灾难恢复体系 (DR)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

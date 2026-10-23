@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="HTTP方法安全性与幂等性 专业模式：HTTP 方法语义由 RFC 9110 定义，核心是两个属性：安全（Safe，不改变服务器状态，如 GET、HEAD）和幂等（Idempotent，执行一次与多">
+<title>🎓 HTTP方法安全性与幂等性 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="http-method-semantics" data-answer="0" data-prev="rate-limiting.pro.html" data-next="api-versioning.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#net">🌊 中级 · 🌐 网络与 API</a><span>›</span><a href="http-method-semantics.html">HTTP方法安全性与幂等性</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.136 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="rate-limiting.pro.html" rel="prev"><small>‹ 上一个</small><b>🚦 限流</b></a><a class="pn next" href="api-versioning.pro.html" rel="next"><small>下一个 ›</small><b>🪟 API版本控制策略</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🚥</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>HTTP方法安全性与幂等性</h1><p class="en">HTTP Method Semantics</p>
+    <div class="hbtns"><a class="prosw back" href="http-method-semantics.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">HTTP 方法语义由 RFC 9110 定义，核心是两个属性：安全（Safe，不改变服务器状态，如 GET、HEAD）和幂等（Idempotent，执行一次与多次的预期效果相同，如 PUT、DELETE）。它属于协议语义层，决定缓存、预取、代理与客户端是否可以自动重试，是设计可靠 API 的基础契约。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>安全方法只读：GET、HEAD、OPTIONS、TRACE；浏览器、爬虫、预取可随意发起。</p></li><li><span class="sn">2</span><p>幂等方法包含全部安全方法，再加 PUT 和 DELETE，网络失败时可安全重试。</p></li><li><span class="sn">3</span><p>POST 和 PATCH 不保证幂等，重复发送可能创建多条记录或重复应用修改。</p></li><li><span class="sn">4</span><p>缓存层通常只缓存 GET/HEAD 响应；非安全方法成功后会使相关缓存失效。</p></li><li><span class="sn">5</span><p>非幂等操作可借助 Idempotency-Key 请求头，由服务端记录结果实现重复请求去重。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>安全方法 (Safe Method)</dt><dd>语义上只读，客户端不请求状态变更。</dd></div><div class="term"><dt>幂等 (Idempotent)</dt><dd>多次相同请求对服务器的预期效果与一次相同。</dd></div><div class="term"><dt>可缓存 (Cacheable)</dt><dd>响应允许被存储并复用，GET、HEAD 默认可缓存。</dd></div><div class="term"><dt>幂等键 (Idempotency-Key)</dt><dd>客户端生成的唯一键，让服务端对重复 POST 去重。</dd></div><div class="term"><dt>预检请求 (Preflight)</dt><dd>跨域非简单请求前浏览器自动发出的 OPTIONS 请求。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>用幂等键让 POST 可重试</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import json
+import redis
+from flask import Flask, request
+
+app = Flask(__name__)
+r = redis.Redis()
+
+@app.post(&quot;/v1/payments&quot;)
+def create_payment():
+    key = request.headers.get(&quot;Idempotency-Key&quot;)
+    if not key:
+        return {&quot;error&quot;: &quot;Idempotency-Key required&quot;}, 400
+    cache_key = f&quot;idem:{key}&quot;
+    # 占位：只有第一个请求能 SET 成功，24 小时过期
+    if not r.set(cache_key, &quot;processing&quot;, nx=True, ex=86400):
+        saved = r.get(cache_key)
+        if saved == b&quot;processing&quot;:
+            return {&quot;error&quot;: &quot;in progress&quot;}, 409
+        return json.loads(saved), 200        # 重放首次结果
+    result = {&quot;id&quot;: &quot;pay_1&quot;, &quot;amount&quot;: request.json[&quot;amount&quot;]}
+    # charge(...)  真实扣款逻辑
+    r.set(cache_key, json.dumps(result), ex=86400)
+    return result, 201</code></pre></div><p class="cnote">同一幂等键重复提交返回首次结果；生产中还应校验请求体与首次一致。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">方法属性一览</h3><div class="tw"><table><thead><tr><th>方法</th><th>安全</th><th>幂等</th><th>常见用途</th></tr></thead><tbody><tr><td data-h="方法">GET / HEAD</td><td data-h="安全">是</td><td data-h="幂等">是</td><td data-h="常见用途">读取资源 / 只取头</td></tr><tr><td data-h="方法">PUT</td><td data-h="安全">否</td><td data-h="幂等">是</td><td data-h="常见用途">整体替换或按 ID 创建</td></tr><tr><td data-h="方法">DELETE</td><td data-h="安全">否</td><td data-h="幂等">是</td><td data-h="常见用途">删除资源</td></tr><tr><td data-h="方法">POST</td><td data-h="安全">否</td><td data-h="幂等">否</td><td data-h="常见用途">创建、触发动作</td></tr><tr><td data-h="方法">PATCH</td><td data-h="安全">否</td><td data-h="幂等">不保证</td><td data-h="常见用途">部分更新</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>PUT 按客户端 ID 创建</h4><p><b class="k-p">优点</b>天然幂等，重试安全</p><p><b class="k-c">代价</b>客户端需生成 ID</p><p><b class="k-w">适用</b>离线优先、客户端可生成 UUID</p></div><div class="trd"><h4>POST + 幂等键</h4><p><b class="k-p">优点</b>保留 POST 语义，可安全重试</p><p><b class="k-c">代价</b>服务端需存储键与结果</p><p><b class="k-w">适用</b>支付、下单等关键写操作</p></div><div class="trd"><h4>POST 不做处理</h4><p><b class="k-p">优点</b>实现最简单</p><p><b class="k-c">代价</b>超时重试导致重复数据</p><p><b class="k-w">适用</b>重复无害的操作，如日志上报</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>用 GET 执行删除或状态变更，如 /delete?id=1</p><p class="fix"><b>✓</b>改为 DELETE/POST，并加 CSRF 防护</p></li><li><p class="bad"><b>✗</b>以为幂等等于每次响应相同</p><p class="fix"><b>✓</b>幂等指服务器状态效果相同，响应码可以不同（如第二次 DELETE 返回 404）</p></li><li><p class="bad"><b>✗</b>PATCH 用增量语义 {&quot;count&quot;: &quot;+1&quot;} 却允许自动重试</p><p class="fix"><b>✓</b>非幂等 PATCH 不自动重试，或改为设定绝对值</p></li><li><p class="bad"><b>✗</b>GET 请求带 body 传参</p><p class="fix"><b>✓</b>GET body 无定义语义，参数放 query；复杂查询用 POST</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>GET 接口无任何副作用</span></label></li><li><label><input type="checkbox"><span>PUT/DELETE 实现真正幂等</span></label></li><li><label><input type="checkbox"><span>关键 POST 支持 Idempotency-Key</span></label></li><li><label><input type="checkbox"><span>客户端只对幂等请求自动重试</span></label></li><li><label><input type="checkbox"><span>状态变更接口有 CSRF 防护</span></label></li><li><label><input type="checkbox"><span>AI 生成的路由方法语义已复核</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>DELETE 第二次返回 404，还算幂等吗？</summary><p>算。幂等关注的是对服务器状态的效果：第一次删除后资源已不存在，第二次请求不会产生新的副作用。响应状态码不同不影响幂等性。</p></details><details class="iv"><summary>为什么客户端和代理只自动重试幂等请求？</summary><p>网络超时时无法判断请求是否已在服务端执行。幂等请求重发不会造成额外效果，可安全重试；非幂等请求重发可能导致重复创建或扣款，因此需要幂等键等机制。</p></details><details class="iv"><summary>幂等键服务端怎么实现才可靠？</summary><p>用原子操作（唯一约束或 SET NX）占位，处理中再次请求返回冲突；完成后存储响应并设置过期；校验同一键的请求参数一致，不一致返回错误。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.rfc-editor.org/rfc/rfc9110#section-9.2" target="_blank" rel="noopener"><b>RFC 9110 §9.2: Common Method Properties</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://developer.mozilla.org/en-US/docs/Glossary/Idempotent" target="_blank" rel="noopener"><b>MDN：Idempotent</b><small>developer.mozilla.org ↗</small></a></li><li><a href="https://docs.stripe.com/api/idempotent_requests" target="_blank" rel="noopener"><b>Stripe API：Idempotent requests</b><small>docs.stripe.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="rate-limiting.pro.html" rel="prev"><small>‹ 上一个</small><b>🚦 限流</b></a><a class="pn next" href="api-versioning.pro.html" rel="next"><small>下一个 ›</small><b>🪟 API版本控制策略</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

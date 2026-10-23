@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="OpenAI 兼容接口 专业模式：OpenAI 兼容接口指第三方模型服务或本地推理引擎，按 OpenAI REST API 的路径、请求体与响应结构（最常见是 /v1/chat/completi">
+<title>🎓 OpenAI 兼容接口 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="openai-compatible-api" data-answer="0" data-prev="model-file-formats.pro.html" data-next="batch-inference-api.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#llmops">🌊 中级 · 🧠 模型工程与推理部署</a><span>›</span><a href="openai-compatible-api.html">OpenAI 兼容接口</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.188 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="model-file-formats.pro.html" rel="prev"><small>‹ 上一个</small><b>📦 模型文件格式 (GGUF / safetensors)</b></a><a class="pn next" href="batch-inference-api.pro.html" rel="next"><small>下一个 ›</small><b>📮 批量推理接口 (Batch API)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔌</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🧠 模型工程与推理部署</span><span>⏱ 约 10 分钟</span></div>
+    <h1>OpenAI 兼容接口</h1><p class="en">OpenAI-Compatible API</p>
+    <div class="hbtns"><a class="prosw back" href="openai-compatible-api.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">OpenAI 兼容接口指第三方模型服务或本地推理引擎，按 OpenAI REST API 的路径、请求体与响应结构（最常见是 /v1/chat/completions）提供服务。客户端只需替换 base_url、API Key 和模型名，即可复用 OpenAI SDK 和现有代码，是多模型切换与本地部署的事实标准；兼容通常只覆盖核心字段。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>服务端实现与 OpenAI 相同的路径，如 POST /v1/chat/completions、/v1/embeddings、GET /v1/models。</p></li><li><span class="sn">2</span><p>鉴权沿用 Authorization: Bearer &lt;key&gt; 请求头；本地服务往往不校验，但 SDK 仍要求传入一个非空字符串。</p></li><li><span class="sn">3</span><p>请求体使用 messages 数组、model、temperature、max_tokens、stream 等字段；服务端忽略或报错其不支持的字段。</p></li><li><span class="sn">4</span><p>流式响应采用 SSE（Server-Sent Events），逐行返回 data: {...} 的 chunk，最后以 data: [DONE] 结束。</p></li><li><span class="sn">5</span><p>LLM 网关可在兼容层之上做路由、重试、限流与计费，把多家模型统一成一个入口。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>base_url</dt><dd>SDK 请求的根地址，替换它即可指向其他兼容服务。</dd></div><div class="term"><dt>Chat Completions</dt><dd>OpenAI 的对话补全接口，兼容生态最广泛的格式。</dd></div><div class="term"><dt>SSE (Server-Sent Events)</dt><dd>基于 HTTP 的单向流协议，用于流式返回 token。</dd></div><div class="term"><dt>工具调用 (Tool Calling)</dt><dd>tools / tool_calls 字段，各兼容实现支持程度不一。</dd></div><div class="term"><dt>LLM 网关 (LLM Gateway)</dt><dd>统一多家模型接口、做路由与观测的代理层。</dd></div><div class="term"><dt>Responses API</dt><dd>OpenAI 较新的接口，第三方兼容程度通常低于 Chat Completions。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>同一份代码切换多家服务</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import os
+from openai import OpenAI
+
+# 示例：.env 中按需切换（地址与模型名以各家官方文档为准）
+# OpenAI:  LLM_BASE_URL=https://api.openai.com/v1
+# Ollama:  LLM_BASE_URL=http://localhost:11434/v1
+# vLLM:    LLM_BASE_URL=http://localhost:8000/v1
+client = OpenAI(
+    base_url=os.environ[&quot;LLM_BASE_URL&quot;],
+    api_key=os.environ.get(&quot;LLM_API_KEY&quot;, &quot;not-needed&quot;),  # 本地服务也需非空
+)
+
+resp = client.chat.completions.create(
+    model=os.environ[&quot;LLM_MODEL&quot;],
+    messages=[
+        {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: &quot;你是简洁的助手&quot;},
+        {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;一句话解释 DNS&quot;},
+    ],
+    temperature=0.2,
+)
+print(resp.choices[0].message.content)
+print(resp.usage)  # 部分实现可能不返回 usage</code></pre></div><p class="cnote">配置外置到环境变量，代码零修改即可在云端与本地兼容服务间切换。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">兼容性需逐项核对的点</h3><div class="tw"><table><thead><tr><th>能力</th><th>常见差异</th><th>验证方法</th></tr></thead><tbody><tr><td data-h="能力">工具调用</td><td data-h="常见差异">不支持、并行调用不支持或格式略有出入</td><td data-h="验证方法">用固定用例测 tool_calls</td></tr><tr><td data-h="能力">结构化输出</td><td data-h="常见差异">json_schema 严格模式支持不一</td><td data-h="验证方法">检查是否返回合法 JSON</td></tr><tr><td data-h="能力">流式 usage</td><td data-h="常见差异">可能不返回 token 统计</td><td data-h="验证方法">检查最后一个 chunk</td></tr><tr><td data-h="能力">多模态输入</td><td data-h="常见差异">图片字段支持不一</td><td data-h="验证方法">发送图片测试</td></tr><tr><td data-h="能力">错误码与限流</td><td data-h="常见差异">429 / Retry-After 行为不同</td><td data-h="验证方法">模拟超限请求</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>直接用兼容接口 + 官方 SDK</h4><p><b class="k-p">优点</b>代码简单，切换成本低</p><p><b class="k-c">代价</b>只能用到各家公共子集</p><p><b class="k-w">适用</b>原型、单一主力模型</p></div><div class="trd"><h4>经过 LLM 网关</h4><p><b class="k-p">优点</b>统一路由、重试、观测与成本</p><p><b class="k-c">代价</b>多一跳延迟与一个组件</p><p><b class="k-w">适用</b>多模型生产环境</p></div><div class="trd"><h4>使用各家原生 SDK</h4><p><b class="k-p">优点</b>可用全部专有特性</p><p><b class="k-c">代价</b>切换成本高</p><p><b class="k-w">适用</b>深度依赖某家特性时</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>假设兼容就等于行为一致</p><p class="fix"><b>✓</b>对工具调用、JSON 输出、流式结束信号做契约测试</p></li><li><p class="bad"><b>✗</b>把各家 API Key 写死在代码里</p><p class="fix"><b>✓</b>放环境变量或密钥管理服务，按环境注入</p></li><li><p class="bad"><b>✗</b>切换模型后不重跑评测</p><p class="fix"><b>✓</b>不同模型对同一提示表现不同，切换前跑回归评测集</p></li><li><p class="bad"><b>✗</b>本地服务直接暴露到公网且不鉴权</p><p class="fix"><b>✓</b>加反向代理鉴权或仅监听内网地址</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>base_url、密钥、模型名全部可配置</span></label></li><li><label><input type="checkbox"><span>对关键能力做兼容性测试</span></label></li><li><label><input type="checkbox"><span>超时、重试与 429 处理已实现</span></label></li><li><label><input type="checkbox"><span>切换模型前跑评测集</span></label></li><li><label><input type="checkbox"><span>本地推理服务未暴露公网</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么 OpenAI 格式成了事实标准？</summary><p>Chat Completions 较早普及，SDK 与周边工具（LangChain、各类 IDE 插件）大量基于它构建。新厂商和开源推理引擎提供兼容层，就能让用户零改造接入，降低迁移阻力。这是生态网络效应，而非正式标准。</p></details><details class="iv"><summary>兼容接口如何处理工具调用差异？</summary><p>先查目标服务文档确认是否支持 tools 以及 tool_choice、并行调用等细节。然后用固定用例做契约测试，比较返回的 tool_calls 结构。差异大时在网关或适配层做转换，或针对该模型调整提示与解析逻辑。</p></details><details class="iv"><summary>如何设计可平滑切换模型的应用？</summary><p>把模型访问封装成内部接口，配置外置；记录每次请求的模型、token 与延迟；建立黄金评测集，切换前对比质量；在网关层实现回退策略，主模型失败时降级到备用模型。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://github.com/openai/openai-python" target="_blank" rel="noopener"><b>OpenAI Python SDK (GitHub)</b><small>github.com ↗</small></a></li><li><a href="https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html" target="_blank" rel="noopener"><b>vLLM：OpenAI-Compatible Server</b><small>docs.vllm.ai ↗</small></a></li><li><a href="https://docs.ollama.com/api/openai-compatibility" target="_blank" rel="noopener"><b>Ollama OpenAI 兼容说明</b><small>docs.ollama.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="model-file-formats.pro.html" rel="prev"><small>‹ 上一个</small><b>📦 模型文件格式 (GGUF / safetensors)</b></a><a class="pn next" href="batch-inference-api.pro.html" rel="next"><small>下一个 ›</small><b>📮 批量推理接口 (Batch API)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

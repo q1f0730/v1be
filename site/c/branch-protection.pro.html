@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="版本库分支保护规则 专业模式：分支保护（Branch Protection）是代码托管平台对指定分支（通常是 main 或 release/*）施加的写入规则，如必须通过 Pull Requ">
+<title>🎓 版本库分支保护规则 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="branch-protection" data-answer="0" data-prev="lockfiles.pro.html" data-next="tokenizer.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#devops">🌊 中级 · 🔭 可观测与交付</a><span>›</span><a href="branch-protection.html">版本库分支保护规则</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.152 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="lockfiles.pro.html" rel="prev"><small>‹ 上一个</small><b>🔒 依赖版本锁文件</b></a><a class="pn next" href="tokenizer.pro.html" rel="next"><small>下一个 ›</small><b>🔪 分词器 (Tokenizer / BPE)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🛡️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>版本库分支保护规则</h1><p class="en">Branch Protection</p>
+    <div class="hbtns"><a class="prosw back" href="branch-protection.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">分支保护（Branch Protection）是代码托管平台对指定分支（通常是 main 或 release/*）施加的写入规则，如必须通过 Pull Request、必须有审批、必须通过 CI 状态检查、禁止强制推送和删除。它属于代码治理与软件供应链层，保证进入主干的每次变更都经过审查与验证。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>管理员为匹配模式的分支配置规则，GitHub 中可用经典分支保护或更新的规则集（Rulesets）。</p></li><li><span class="sn">2</span><p>直接 push 到受保护分支被拒绝，变更必须通过 Pull Request 合并。</p></li><li><span class="sn">3</span><p>合并前需满足条件：指定数量的批准、CODEOWNERS 审查、所需 CI 检查全部通过。</p></li><li><span class="sn">4</span><p>可要求分支与目标保持最新、线性历史、签名提交，并在新提交后撤销旧批准。</p></li><li><span class="sn">5</span><p>规则可选择是否对管理员生效，并可为自动化账号或应急场景设置受控的绕过名单。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>必需状态检查 (Required Status Checks)</dt><dd>合并前必须通过的 CI 检查项。</dd></div><div class="term"><dt>CODEOWNERS</dt><dd>按路径指定负责人，相关改动需其审批。</dd></div><div class="term"><dt>规则集 (Rulesets)</dt><dd>GitHub 新一代分支/标签保护机制，可多层叠加。</dd></div><div class="term"><dt>合并队列 (Merge Queue)</dt><dd>按序在最新主干上验证并合并 PR，避免语义冲突。</dd></div><div class="term"><dt>强制推送 (Force Push)</dt><dd>改写远端历史的推送，受保护分支通常禁止。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>用 GitHub API 设置保护</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 需要仓库管理员权限；OWNER/REPO 替换为实际值
+gh api -X PUT repos/OWNER/REPO/branches/main/protection \
+  -H &quot;Accept: application/vnd.github+json&quot; \
+  --input - &lt;&lt;&#x27;JSON&#x27;
+{
+  &quot;required_status_checks&quot;: {
+    &quot;strict&quot;: true,
+    &quot;contexts&quot;: [&quot;ci/test&quot;, &quot;ci/lint&quot;]
+  },
+  &quot;enforce_admins&quot;: true,
+  &quot;required_pull_request_reviews&quot;: {
+    &quot;required_approving_review_count&quot;: 1,
+    &quot;dismiss_stale_reviews&quot;: true,
+    &quot;require_code_owner_reviews&quot;: true
+  },
+  &quot;restrictions&quot;: null,
+  &quot;allow_force_pushes&quot;: false,
+  &quot;allow_deletions&quot;: false
+}
+JSON</code></pre></div><p class="cnote">要求 CI 通过、至少一人批准与代码所有者审查，管理员同样受约束，禁止强推与删除。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常用保护规则</h3><div class="tw"><table><thead><tr><th>规则</th><th>防止什么</th><th>注意点</th></tr></thead><tbody><tr><td data-h="规则">必须经 PR 合并</td><td data-h="防止什么">未审查的直接推送</td><td data-h="注意点">自动化账号需单独授权</td></tr><tr><td data-h="规则">必需审批 + 撤销过期批准</td><td data-h="防止什么">批准后偷偷追加改动</td><td data-h="注意点">小团队审批人数要现实</td></tr><tr><td data-h="规则">必需状态检查</td><td data-h="防止什么">测试失败的代码进主干</td><td data-h="注意点">检查名变更需同步更新</td></tr><tr><td data-h="规则">禁止强推与删除</td><td data-h="防止什么">历史被改写或分支丢失</td><td data-h="注意点">应急恢复需管理员流程</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>规则对管理员生效</h4><p><b class="k-p">优点</b>没有人能绕过审查</p><p><b class="k-c">代价</b>紧急修复流程变慢</p><p><b class="k-w">适用</b>生产代码、合规要求高</p></div><div class="trd"><h4>允许指定账号绕过</h4><p><b class="k-p">优点</b>发布机器人可自动推送</p><p><b class="k-c">代价</b>绕过账号成为攻击目标</p><p><b class="k-w">适用</b>自动化发布，需最小权限</p></div><div class="trd"><h4>启用合并队列</h4><p><b class="k-p">优点</b>保证主干始终可构建</p><p><b class="k-c">代价</b>合并有排队延迟</p><p><b class="k-w">适用</b>PR 多、主干频繁变动</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>设置了必需检查但检查名写错，规则形同虚设或永远卡住</p><p class="fix"><b>✓</b>从最近一次 CI 运行中复制确切检查名，并验证生效</p></li><li><p class="bad"><b>✗</b>批准后作者继续推送未审代码</p><p class="fix"><b>✓</b>开启新提交时撤销过期批准</p></li><li><p class="bad"><b>✗</b>只保护 main，release 分支可随意推送</p><p class="fix"><b>✓</b>用通配模式覆盖所有发布分支</p></li><li><p class="bad"><b>✗</b>让 AI Agent 拥有绕过保护的 token</p><p class="fix"><b>✓</b>Agent 只能开 PR，合并由人或受控流程完成</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>main 与发布分支均受保护</span></label></li><li><label><input type="checkbox"><span>必需检查名称与 CI 一致</span></label></li><li><label><input type="checkbox"><span>至少一人审批且撤销过期批准</span></label></li><li><label><input type="checkbox"><span>禁止强推与删除</span></label></li><li><label><input type="checkbox"><span>绕过名单最小化并定期审计</span></label></li><li><label><input type="checkbox"><span>关键路径配置 CODEOWNERS</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>strict 状态检查（要求分支最新）有什么作用？</summary><p>保证 CI 是在合并了最新主干后的代码上通过的，避免两个各自通过的 PR 合在一起后出错。代价是需要频繁更新分支，PR 多时可用合并队列代替。</p></details><details class="iv"><summary>分支保护和 CODEOWNERS 如何配合？</summary><p>CODEOWNERS 按路径声明负责人；开启「要求代码所有者审查」后，改动这些路径的 PR 必须有对应负责人批准，适合保护基础设施、支付、权限等敏感目录。</p></details><details class="iv"><summary>AI 编码 Agent 接入仓库时如何设计权限？</summary><p>给 Agent 使用最小权限的令牌，只允许推送到自己的分支并创建 PR；主干保护规则强制人工审查与 CI 通过；禁止其修改 CI 配置与保护规则，敏感路径加 CODEOWNERS。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches" target="_blank" rel="noopener"><b>GitHub Docs：About protected branches</b><small>docs.github.com ↗</small></a></li><li><a href="https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets" target="_blank" rel="noopener"><b>GitHub Docs：About rulesets</b><small>docs.github.com ↗</small></a></li><li><a href="https://docs.github.com/en/rest/branches/branch-protection" target="_blank" rel="noopener"><b>GitHub REST API：Branch protection</b><small>docs.github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="lockfiles.pro.html" rel="prev"><small>‹ 上一个</small><b>🔒 依赖版本锁文件</b></a><a class="pn next" href="tokenizer.pro.html" rel="next"><small>下一个 ›</small><b>🔪 分词器 (Tokenizer / BPE)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

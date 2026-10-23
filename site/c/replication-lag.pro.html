@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="主从复制延迟 专业模式：复制延迟（Replication Lag）是副本落后于主库的程度，可用时间或日志位置差衡量。异步复制下延迟始终存在，通常很小，但在写入突增、副本上的长查询、网络">
+<title>🎓 主从复制延迟 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="replication-lag" data-answer="0" data-prev="read-replicas.pro.html" data-next="materialized-views.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#db">🔮 高级 · 🗄️ 数据库</a><span>›</span><a href="replication-lag.html">主从复制延迟</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.249 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="read-replicas.pro.html" rel="prev"><small>‹ 上一个</small><b>🖼️ 只读副本</b></a><a class="pn next" href="materialized-views.pro.html" rel="next"><small>下一个 ›</small><b>🧮 物化视图</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📠</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>主从复制延迟</h1><p class="en">Replication Lag</p>
+    <div class="hbtns"><a class="prosw back" href="replication-lag.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">复制延迟（Replication Lag）是副本落后于主库的程度，可用时间或日志位置差衡量。异步复制下延迟始终存在，通常很小，但在写入突增、副本上的长查询、网络或资源不足时会显著放大，导致读到旧数据、故障切换丢数据等问题。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>主库提交事务并生成日志；异步模式下不等待副本即返回成功。</p></li><li><span class="sn">2</span><p>日志经网络传输到副本，副本写入本地后再按顺序重放到数据页。</p></li><li><span class="sn">3</span><p>延迟可拆为传输、落盘、重放三段，PostgreSQL 分别报告 write/flush/replay lag。</p></li><li><span class="sn">4</span><p>重放若较慢（单线程应用、与查询冲突、IO 不足），延迟就会持续累积。</p></li><li><span class="sn">5</span><p>应用需监控延迟，并按业务容忍度决定读主库、等待追上或摘除副本。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>LSN</dt><dd>PostgreSQL 日志序列号，标识 WAL 中的位置。</dd></div><div class="term"><dt>replay_lag</dt><dd>主库提交到副本重放完成之间的时间。</dd></div><div class="term"><dt>Seconds_Behind_Source</dt><dd>MySQL 副本落后主库的估算秒数。</dd></div><div class="term"><dt>写后读一致 (Read-your-writes)</dt><dd>用户总能读到自己刚写入的数据。</dd></div><div class="term"><dt>并行复制 (Parallel Replication)</dt><dd>副本多线程应用日志以加快重放。</dd></div><div class="term"><dt>同步复制 (Synchronous Replication)</dt><dd>提交需等待副本确认，消除丢失但增加写延迟。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>PostgreSQL 监测复制延迟</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- 在主库：查看各副本的传输、落盘、重放延迟（PostgreSQL 10+）
+SELECT application_name, client_addr, state,
+       write_lag, flush_lag, replay_lag,
+       pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn) AS replay_bytes_behind
+FROM pg_stat_replication;
+
+-- 在副本：距最后一次重放的事务已过去多久
+-- 注意：主库空闲时该值也会增大，不一定代表真的落后
+SELECT now() - pg_last_xact_replay_timestamp() AS replay_delay;
+
+-- 写后读：写入后在主库记下位置
+SELECT pg_current_wal_lsn();          -- 例如 0/3A2B1C8
+
+-- 读之前在副本检查是否已重放到该位置
+SELECT pg_last_wal_replay_lsn() &gt;= &#x27;0/3A2B1C8&#x27;::pg_lsn AS caught_up;
+-- caught_up 为 false 时，改读主库或稍后重试
+
+-- MySQL 8.0.22+ 对应命令：SHOW REPLICA STATUS（看 Seconds_Behind_Source）</code></pre></div><p class="cnote">主库视角看三段延迟，副本视角看重放时间；LSN 比较实现精确的写后读。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">延迟成因与对策</h3><div class="tw"><table><thead><tr><th>成因</th><th>表现</th><th>对策</th></tr></thead><tbody><tr><td data-h="成因">写入突增/大批量更新</td><td data-h="表现">延迟随批次飙升</td><td data-h="对策">分批写入、限速</td></tr><tr><td data-h="成因">副本长查询冲突</td><td data-h="表现">重放暂停或查询被取消</td><td data-h="对策">分析查询走专用副本</td></tr><tr><td data-h="成因">副本资源不足</td><td data-h="表现">延迟持续增长</td><td data-h="对策">规格对齐主库、提升 IO</td></tr><tr><td data-h="成因">单线程重放</td><td data-h="表现">MySQL 高并发写时落后</td><td data-h="对策">开启并行复制</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>异步复制</h4><p><b class="k-p">优点</b>写入延迟最低</p><p><b class="k-c">代价</b>存在延迟，切换可能丢数据</p><p><b class="k-w">适用</b>多数读扩展场景</p></div><div class="trd"><h4>同步复制</h4><p><b class="k-p">优点</b>已提交事务不丢</p><p><b class="k-c">代价</b>写延迟增加，副本故障可能阻塞写</p><p><b class="k-w">适用</b>金融等零丢失要求</p></div><div class="trd"><h4>半同步/仲裁提交</h4><p><b class="k-p">优点</b>兼顾可靠与可用</p><p><b class="k-c">代价</b>配置复杂，仍有边界情况</p><p><b class="k-w">适用</b>多副本高可用集群</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>只监控平均延迟，忽略突刺</p><p class="fix"><b>✓</b>监控最大值与 P99，并按副本分别告警</p></li><li><p class="bad"><b>✗</b>用“距上次重放时间”判断延迟，空闲时误报</p><p class="fix"><b>✓</b>结合主库 pg_stat_replication 或心跳表</p></li><li><p class="bad"><b>✗</b>大事务一次性更新千万行</p><p class="fix"><b>✓</b>拆成小批次，控制每批行数与间隔</p></li><li><p class="bad"><b>✗</b>延迟很大时副本仍在负载均衡池中</p><p class="fix"><b>✓</b>超过阈值自动摘除，恢复后再加入</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个副本的延迟都有监控与告警</span></label></li><li><label><input type="checkbox"><span>定义了业务可接受的最大延迟</span></label></li><li><label><input type="checkbox"><span>超阈值副本会被摘除</span></label></li><li><label><input type="checkbox"><span>写后读场景有一致性策略</span></label></li><li><label><input type="checkbox"><span>批量任务做了分批与限速</span></label></li><li><label><input type="checkbox"><span>切换预案评估了可能丢失的数据量</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>怎样准确测量复制延迟？</summary><p>PostgreSQL 在主库查 pg_stat_replication 的 replay_lag 与 LSN 差值；也可用心跳表：主库定期写时间戳，副本读出与当前时间比较。MySQL 的 Seconds_Behind_Source 有时不准，可用 pt-heartbeat。</p></details><details class="iv"><summary>复制延迟对故障切换有什么影响？</summary><p>异步复制下，主库宕机时未传到副本的事务会丢失，丢失量约等于当时的延迟。切换前应选择最新的副本，并评估 RPO；要求零丢失需同步复制或仲裁提交。</p></details><details class="iv"><summary>如何在用户层面屏蔽延迟？</summary><p>写后对该用户会话读主库一段时间；使用 LSN/GTID 令牌等待副本追上；前端乐观更新界面，先展示本地结果；对延迟敏感页面直接走主库。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.postgresql.org/docs/current/monitoring-stats.html" target="_blank" rel="noopener"><b>PostgreSQL: Monitoring Statistics (pg_stat_replication)</b><small>postgresql.org ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/hot-standby.html" target="_blank" rel="noopener"><b>PostgreSQL: Hot Standby</b><small>postgresql.org ↗</small></a></li><li><a href="https://dev.mysql.com/doc/refman/8.0/en/show-replica-status.html" target="_blank" rel="noopener"><b>MySQL: SHOW REPLICA STATUS</b><small>dev.mysql.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="read-replicas.pro.html" rel="prev"><small>‹ 上一个</small><b>🖼️ 只读副本</b></a><a class="pn next" href="materialized-views.pro.html" rel="next"><small>下一个 ›</small><b>🧮 物化视图</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

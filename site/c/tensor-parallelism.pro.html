@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="张量并行 专业模式：张量并行（Tensor Parallelism，TP）是把单个层内部的权重矩阵切分到多张 GPU 上协同计算的模型并行方式，由 Megatron-LM（2019">
+<title>🎓 张量并行 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="tensor-parallelism" data-answer="0" data-prev="constrained-decoding.pro.html" data-next="dpo.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#llmops">🔥 进阶 · 🧠 模型工程与推理部署</a><span>›</span><a href="tensor-parallelism.html">张量并行</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.484 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="constrained-decoding.pro.html" rel="prev"><small>‹ 上一个</small><b>🚧 约束解码 (Grammar / JSON Schema)</b></a><a class="pn next" href="dpo.pro.html" rel="next"><small>下一个 ›</small><b>👍 直接偏好优化 (DPO)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🧮</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🧠 模型工程与推理部署</span><span>⏱ 约 10 分钟</span></div>
+    <h1>张量并行</h1><p class="en">Tensor Parallelism</p>
+    <div class="hbtns"><a class="prosw back" href="tensor-parallelism.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">张量并行（Tensor Parallelism，TP）是把单个层内部的权重矩阵切分到多张 GPU 上协同计算的模型并行方式，由 Megatron-LM（2019）推广。每张卡只保存和计算一部分权重，通过集合通信（如 All-Reduce）拼出完整结果。它用于模型单卡放不下或需要降低单请求延迟的训练与推理，通常限于 NVLink 等高带宽互联的单机多卡内。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>MLP 层第一层线性按列切分：每卡持有部分输出列，各自独立计算并施加激活函数，无需通信。</p></li><li><span class="sn">2</span><p>MLP 第二层线性按行切分：每卡用自己那份中间结果算出部分和，再通过一次 All-Reduce 求和得到完整输出。</p></li><li><span class="sn">3</span><p>注意力层按注意力头切分：每卡计算若干个头，输出投影按行切分，同样以一次 All-Reduce 汇总。</p></li><li><span class="sn">4</span><p>因此每个 Transformer 层前向大约需要两次 All-Reduce，通信量与批大小和隐藏维度成正比，频繁且同步。</p></li><li><span class="sn">5</span><p>TP 常与流水线并行（按层分段，跨机）和数据并行（复制模型）组合；推理时 TP 规模通常需整除注意力头数。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>列并行/行并行 (Column/Row Parallel)</dt><dd>按输出维度或输入维度切分权重矩阵的两种方式，成对使用可减少通信。</dd></div><div class="term"><dt>All-Reduce</dt><dd>所有设备的张量求和后结果分发给每个设备的集合通信操作。</dd></div><div class="term"><dt>流水线并行 (Pipeline Parallelism)</dt><dd>按层把模型分段放到不同设备，适合跨节点，存在流水线气泡。</dd></div><div class="term"><dt>NVLink</dt><dd>NVIDIA GPU 之间的高带宽互联，显著优于 PCIe，是 TP 的常见前提。</dd></div><div class="term"><dt>序列并行 (Sequence Parallelism)</dt><dd>在 TP 基础上把 LayerNorm、Dropout 等沿序列维切分，进一步省显存。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>用 NumPy 验证列/行切分等价</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import numpy as np
+
+rng = np.random.default_rng(0)
+x  = rng.standard_normal((4, 8))     # 批 4，隐藏维 8
+W1 = rng.standard_normal((8, 16))    # MLP 上投影
+W2 = rng.standard_normal((16, 8))    # MLP 下投影
+relu = lambda t: np.maximum(t, 0)
+
+full = relu(x @ W1) @ W2             # 单卡结果
+
+tp = 2                               # 模拟 2 张卡
+W1_parts = np.split(W1, tp, axis=1)  # 列切分：每卡 8x8
+W2_parts = np.split(W2, tp, axis=0)  # 行切分：每卡 8x8
+
+# 每卡独立计算部分和；激活函数逐元素，可在本卡完成
+partials = [relu(x @ a) @ b for a, b in zip(W1_parts, W2_parts)]
+out = sum(partials)                  # 相当于一次 All-Reduce
+
+print(np.allclose(full, out))        # True
+
+# 推理引擎中通常一个参数即可，例如：
+# vllm serve &lt;model&gt; --tensor-parallel-size 4</code></pre></div><p class="cnote">列切分加行切分的组合让每个 MLP 只需一次求和通信；实际框架用 NCCL 在 GPU 间完成 All-Reduce。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">三种并行方式对比</h3><div class="tw"><table><thead><tr><th>方式</th><th>切分对象</th><th>通信特点</th><th>典型范围</th></tr></thead><tbody><tr><td data-h="方式">张量并行</td><td data-h="切分对象">层内权重矩阵</td><td data-h="通信特点">每层多次同步 All-Reduce</td><td data-h="典型范围">单机内多卡</td></tr><tr><td data-h="方式">流水线并行</td><td data-h="切分对象">按层分段</td><td data-h="通信特点">相邻阶段点对点传激活</td><td data-h="典型范围">可跨机</td></tr><tr><td data-h="方式">数据并行</td><td data-h="切分对象">数据批次，模型复制</td><td data-h="通信特点">训练时梯度同步</td><td data-h="典型范围">任意规模</td></tr><tr><td data-h="方式">专家并行</td><td data-h="切分对象">MoE 的专家</td><td data-h="通信特点">All-to-All 路由 Token</td><td data-h="典型范围">MoE 模型</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>增大 TP 规模</h4><p><b class="k-p">优点</b>单卡显存需求下降，单请求延迟降低</p><p><b class="k-c">代价</b>通信占比上升，扩展效率递减</p><p><b class="k-w">适用</b>模型单卡放不下且有 NVLink</p></div><div class="trd"><h4>TP + 流水线并行</h4><p><b class="k-p">优点</b>可跨多机部署超大模型</p><p><b class="k-c">代价</b>流水线气泡与调度更复杂</p><p><b class="k-w">适用</b>单机显存不足以容纳模型</p></div><div class="trd"><h4>量化后单卡部署</h4><p><b class="k-p">优点</b>无卡间通信，部署简单</p><p><b class="k-c">代价</b>可能有精度损失</p><p><b class="k-w">适用</b>量化后能放进单卡且质量可接受</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>跨节点做张量并行，网络成为瓶颈</p><p class="fix"><b>✓</b>TP 限制在机内高速互联范围，跨机用流水线并行</p></li><li><p class="bad"><b>✗</b>TP 规模不能整除注意力头数导致启动失败</p><p class="fix"><b>✓</b>按模型头数与 KV 头数选择 TP 规模</p></li><li><p class="bad"><b>✗</b>以为卡数翻倍吞吐也翻倍</p><p class="fix"><b>✓</b>实测扩展效率，有时多个单卡或小 TP 副本吞吐更高</p></li><li><p class="bad"><b>✗</b>忽略 PCIe 拓扑，卡间走跨 CPU 通道</p><p class="fix"><b>✓</b>用 nvidia-smi topo -m 检查拓扑，选择互联最好的卡组</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>先估算权重加 KV 缓存所需显存</span></label></li><li><label><input type="checkbox"><span>TP 规模可整除注意力头数</span></label></li><li><label><input type="checkbox"><span>确认卡间为 NVLink 或同交换机拓扑</span></label></li><li><label><input type="checkbox"><span>对比多副本小 TP 与单副本大 TP 的吞吐</span></label></li><li><label><input type="checkbox"><span>监控通信耗时占比</span></label></li><li><label><input type="checkbox"><span>引擎版本与并行配置以官方文档为准</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么 MLP 要先列切再行切？</summary><p>第一层按列切，每卡得到中间激活的一部分，而激活函数逐元素，可在本卡直接计算无需通信；第二层按行切，每卡用本地中间结果算出完整形状的部分和，最后一次 All-Reduce 求和。若顺序相反，中间就需要额外的同步。</p></details><details class="iv"><summary>张量并行为什么一般不跨节点？</summary><p>每层前向都有同步 All-Reduce，通信频繁且在关键路径上，跨节点网络带宽通常远低于机内 NVLink，延迟也更高，会让 GPU 大部分时间在等通信。跨节点更适合通信量小、只传激活的流水线并行。</p></details><details class="iv"><summary>推理时如何在 TP 和多副本之间选择？</summary><p>若模型单卡放得下，多个独立副本没有卡间通信，总吞吐通常更高；TP 能降低单请求延迟并为 KV 缓存腾出空间。模型放不下时必须用 TP 或流水线。最终应在目标 SLO 下实测两种方案的吞吐与延迟。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://arxiv.org/abs/1909.08053" target="_blank" rel="noopener"><b>Shoeybi et al.: Megatron-LM (arXiv:1909.08053)</b><small>arxiv.org ↗</small></a></li><li><a href="https://pytorch.org/tutorials/intermediate/TP_tutorial.html" target="_blank" rel="noopener"><b>PyTorch: Large Scale Transformer Training with Tensor Parallel</b><small>pytorch.org ↗</small></a></li><li><a href="https://docs.vllm.ai/en/latest/serving/parallelism_scaling.html" target="_blank" rel="noopener"><b>vLLM: Parallelism and Scaling</b><small>docs.vllm.ai ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="constrained-decoding.pro.html" rel="prev"><small>‹ 上一个</small><b>🚧 约束解码 (Grammar / JSON Schema)</b></a><a class="pn next" href="dpo.pro.html" rel="next"><small>下一个 ›</small><b>👍 直接偏好优化 (DPO)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

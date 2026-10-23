@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="表连接 (JOIN) 专业模式：JOIN 是 SQL 中按连接条件组合多张表行的操作，包括 INNER、LEFT/RIGHT/FULL OUTER、CROSS 以及自连接，配合 EXISTS ">
+<title>🎓 表连接 (JOIN) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="sql-joins" data-answer="0" data-prev="nosql-document-databases.pro.html" data-next="docker-compose.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#db">🌊 中级 · 🗄️ 数据库</a><span>›</span><a href="sql-joins.html">表连接 (JOIN)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.169 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="nosql-document-databases.pro.html" rel="prev"><small>‹ 上一个</small><b>📁 文档型数据库 (NoSQL / MongoDB)</b></a><a class="pn next" href="docker-compose.pro.html" rel="next"><small>下一个 ›</small><b>🐙 Docker Compose 多容器编排</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔗</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>表连接 (JOIN)</h1><p class="en">SQL Joins</p>
+    <div class="hbtns"><a class="prosw back" href="sql-joins.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">JOIN 是 SQL 中按连接条件组合多张表行的操作，包括 INNER、LEFT/RIGHT/FULL OUTER、CROSS 以及自连接，配合 EXISTS 可表达半连接与反连接。它是关系模型「规范化存储、查询时组合」的核心机制。正确性陷阱（行数扇出、NULL、条件位置）与性能（连接算法、索引）是评审重点。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>逻辑上，JOIN 先形成两表行的组合，再按 ON 条件筛选；OUTER JOIN 会为未匹配的一侧补 NULL 行。</p></li><li><span class="sn">2</span><p>ON 条件在连接时生效，WHERE 在连接后过滤；对 LEFT JOIN 右表列写 WHERE 条件会过滤掉补出的 NULL 行。</p></li><li><span class="sn">3</span><p>一对多连接会使左表行重复（扇出），在其上直接 SUM/COUNT 会重复计数。</p></li><li><span class="sn">4</span><p>优化器为每对连接选择算法：嵌套循环（小表驱动 + 索引）、哈希连接（大表等值）、归并连接（已排序输入）。</p></li><li><span class="sn">5</span><p>连接列上的索引和统计信息决定了连接顺序与算法选择，可用 EXPLAIN 查看。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>外连接 (Outer Join)</dt><dd>保留一侧或两侧未匹配的行，缺失列以 NULL 填充。</dd></div><div class="term"><dt>半连接 (Semi Join)</dt><dd>只判断是否存在匹配，常用 EXISTS 表达，不产生重复行。</dd></div><div class="term"><dt>反连接 (Anti Join)</dt><dd>找出没有匹配的行，推荐 NOT EXISTS。</dd></div><div class="term"><dt>扇出 (Fan-out)</dt><dd>一对多连接导致左侧行被复制多份的现象。</dd></div><div class="term"><dt>哈希连接 (Hash Join)</dt><dd>对较小输入建哈希表，再扫描另一侧探测匹配。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>LEFT JOIN 与常见陷阱</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- 每个用户的已支付订单数，没订单的显示 0
+SELECT u.id, u.name, COUNT(o.id) AS paid_orders   -- COUNT(列) 不计 NULL
+FROM users u
+LEFT JOIN orders o
+  ON o.user_id = u.id
+ AND o.status = &#x27;paid&#x27;          -- 右表条件放 ON：保留无订单用户
+GROUP BY u.id, u.name;
+
+-- 错误写法：放到 WHERE 会过滤掉补出的 NULL 行，变成 INNER JOIN
+-- ... LEFT JOIN orders o ON o.user_id = u.id WHERE o.status = &#x27;paid&#x27;
+
+-- 反连接：从未下单的用户（NOT IN 遇到 NULL 会得到空结果）
+SELECT u.id FROM users u
+WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id);
+
+-- 扇出陷阱：同时连两张一对多表再求和会重复计数，应先分别聚合
+SELECT u.id, o.total_amount, p.total_paid
+FROM users u
+LEFT JOIN (SELECT user_id, SUM(amount) AS total_amount FROM orders GROUP BY user_id) o ON o.user_id = u.id
+LEFT JOIN (SELECT user_id, SUM(paid) AS total_paid FROM payments GROUP BY user_id) p ON p.user_id = u.id;</code></pre></div><p class="cnote">外连接右表条件放 ON；反连接用 NOT EXISTS；多个一对多关系先聚合再连接。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">连接算法对比</h3><div class="tw"><table><thead><tr><th>算法</th><th>适合</th><th>依赖</th></tr></thead><tbody><tr><td data-h="算法">嵌套循环</td><td data-h="适合">外表小、内表连接列有索引</td><td data-h="依赖">内表索引</td></tr><tr><td data-h="算法">哈希连接</td><td data-h="适合">大表等值连接</td><td data-h="依赖">足够的工作内存</td></tr><tr><td data-h="算法">归并连接</td><td data-h="适合">两侧已按连接键排序</td><td data-h="依赖">排序或有序索引</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>数据库内 JOIN</h4><p><b class="k-p">优点</b>一次往返，优化器选算法</p><p><b class="k-c">代价</b>复杂多表连接难读、难调优</p><p><b class="k-w">适用</b>关系型数据的常规查询</p></div><div class="trd"><h4>应用层分次查询再组装</h4><p><b class="k-p">优点</b>可分别缓存，适合跨服务数据</p><p><b class="k-c">代价</b>易出现 N+1，往返多</p><p><b class="k-w">适用</b>数据分布在不同服务或库</p></div><div class="trd"><h4>反规范化冗余字段</h4><p><b class="k-p">优点</b>读取无需连接，快</p><p><b class="k-c">代价</b>写入需同步，存在不一致风险</p><p><b class="k-w">适用</b>读远多于写的热点查询</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>LEFT JOIN 后在 WHERE 中过滤右表列</p><p class="fix"><b>✓</b>把右表条件移到 ON，或明确改用 INNER JOIN</p></li><li><p class="bad"><b>✗</b>连接多个一对多表后直接 SUM，金额翻倍</p><p class="fix"><b>✓</b>先在子查询中分别聚合，再连接</p></li><li><p class="bad"><b>✗</b>用 NOT IN 做反连接，子查询含 NULL 时结果为空</p><p class="fix"><b>✓</b>使用 NOT EXISTS</p></li><li><p class="bad"><b>✗</b>连接列缺少索引或类型不一致</p><p class="fix"><b>✓</b>外键列建索引，保持两侧类型与排序规则一致</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>连接类型与业务语义一致</span></label></li><li><label><input type="checkbox"><span>外连接条件位置正确</span></label></li><li><label><input type="checkbox"><span>无一对多扇出导致的重复计数</span></label></li><li><label><input type="checkbox"><span>反连接使用 NOT EXISTS</span></label></li><li><label><input type="checkbox"><span>连接列有索引且类型一致</span></label></li><li><label><input type="checkbox"><span>关键查询已 EXPLAIN 并核对行数</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>COUNT(*) 和 COUNT(o.id) 在 LEFT JOIN 中有何区别？</summary><p>COUNT(*) 统计行数，未匹配的左表行因被补了一行 NULL 也会计为 1；COUNT(o.id) 只统计非 NULL 值，未匹配时为 0。统计「每个用户订单数」应使用 COUNT(右表主键)。</p></details><details class="iv"><summary>为什么 NOT IN 遇到 NULL 会返回空结果？</summary><p>x NOT IN (a, NULL) 等价于 x&lt;&gt;a AND x&lt;&gt;NULL，后者结果为 UNKNOWN，整个条件不可能为 TRUE，因此不返回任何行。NOT EXISTS 只判断是否存在匹配行，不受 NULL 影响。</p></details><details class="iv"><summary>优化器如何选择连接顺序？</summary><p>基于统计信息估算各表过滤后的行数与连接选择性，枚举连接顺序与算法组合，选总代价最低的计划；表很多时使用启发式或遗传算法限制搜索空间。统计信息过期会导致严重误判。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.postgresql.org/docs/current/tutorial-join.html" target="_blank" rel="noopener"><b>PostgreSQL 文档：Joins Between Tables</b><small>postgresql.org ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/queries-table-expressions.html" target="_blank" rel="noopener"><b>PostgreSQL 文档：Table Expressions</b><small>postgresql.org ↗</small></a></li><li><a href="https://use-the-index-luke.com/sql/join" target="_blank" rel="noopener"><b>Use The Index, Luke：The Join Operation</b><small>use-the-index-luke.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="nosql-document-databases.pro.html" rel="prev"><small>‹ 上一个</small><b>📁 文档型数据库 (NoSQL / MongoDB)</b></a><a class="pn next" href="docker-compose.pro.html" rel="next"><small>下一个 ›</small><b>🐙 Docker Compose 多容器编排</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

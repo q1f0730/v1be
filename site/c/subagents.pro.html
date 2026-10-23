@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="子代理 专业模式：子代理（Subagent）是主智能体在运行中派生出的专用智能体实例，拥有独立的上下文窗口、系统提示词和受限工具集，完成指定子任务后只把结果返回给主智能体。它是多">
+<title>🎓 子代理 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="subagents" data-answer="0" data-prev="multi-agent-systems.pro.html" data-next="evals.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#ai">🔮 高级 · 🤖 AI 与提示词</a><span>›</span><a href="subagents.html">子代理</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.204 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="multi-agent-systems.pro.html" rel="prev"><small>‹ 上一个</small><b>👥 多智能体协作</b></a><a class="pn next" href="evals.pro.html" rel="next"><small>下一个 ›</small><b>📝 AI 评测 (Evals)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🧑‍🔧</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>子代理</h1><p class="en">Subagents</p>
+    <div class="hbtns"><a class="prosw back" href="subagents.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">子代理（Subagent）是主智能体在运行中派生出的专用智能体实例，拥有独立的上下文窗口、系统提示词和受限工具集，完成指定子任务后只把结果返回给主智能体。它是多智能体模式在编码 Agent（如 Claude Code）中的具体落地，主要用于隔离上下文、并行探索与职责专精。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>预先定义子代理：名称、何时使用的描述、系统提示词、允许的工具和可选模型。</p></li><li><span class="sn">2</span><p>主智能体根据描述自动判断或由用户显式指定，把子任务连同必要上下文委派出去。</p></li><li><span class="sn">3</span><p>子代理在全新上下文中工作，读文件、搜索、运行命令，不污染主对话。</p></li><li><span class="sn">4</span><p>完成后返回精简结论（如相关文件路径与发现），中间过程留在子代理上下文中。</p></li><li><span class="sn">5</span><p>主智能体基于结果继续推进，可同时派出多个子代理并行处理互不依赖的任务。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>上下文隔离 (Context Isolation)</dt><dd>子代理的探索过程不进入主对话上下文。</dd></div><div class="term"><dt>工具白名单 (Tool Allowlist)</dt><dd>限定子代理可用的工具，降低风险。</dd></div><div class="term"><dt>委派 (Delegation)</dt><dd>主智能体把子任务和所需上下文交给子代理。</dd></div><div class="term"><dt>上下文腐化 (Context Rot)</dt><dd>上下文越长，模型对早期信息利用越差的现象。</dd></div><div class="term"><dt>项目级/用户级定义</dt><dd>Claude Code 中子代理可放在项目或用户目录下共享或私用。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Claude Code 子代理定义</span><em>text</em><button class="ccopy">复制</button></div><pre><code># 文件：.claude/agents/code-reviewer.md（项目级，随仓库共享）
+---
+name: code-reviewer
+description: 代码审查专家。在完成代码修改后主动使用，
+  检查正确性、安全性与可维护性。
+tools: Read, Grep, Glob, Bash
+model: inherit
+---
+你是资深代码审查者。被调用时：
+1. 运行 git diff 查看最近改动
+2. 只关注被修改的文件
+3. 按「必须修复 / 建议修改 / 可选优化」分级输出
+4. 每个问题给出文件路径、行号和修复示例
+
+不要修改任何文件，只输出审查意见。</code></pre></div><p class="cnote">YAML 头部声明名称、使用时机与工具，正文是系统提示词；只读工具降低误改风险。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">子代理与主对话分工</h3><div class="tw"><table><thead><tr><th>维度</th><th>主对话</th><th>子代理</th></tr></thead><tbody><tr><td data-h="维度">上下文</td><td data-h="主对话">累积整个会话</td><td data-h="子代理">每次任务全新开始</td></tr><tr><td data-h="维度">职责</td><td data-h="主对话">规划、决策、与用户沟通</td><td data-h="子代理">检索、审查、测试等专项</td></tr><tr><td data-h="维度">工具</td><td data-h="主对话">通常完整</td><td data-h="子代理">按任务最小化</td></tr><tr><td data-h="维度">产出</td><td data-h="主对话">最终修改与答复</td><td data-h="子代理">压缩后的结论</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>主对话直接处理</h4><p><b class="k-p">优点</b>信息完整，无交接损失</p><p><b class="k-c">代价</b>大量探索内容挤占上下文</p><p><b class="k-w">适用</b>小任务、需要连续推理</p></div><div class="trd"><h4>委派子代理</h4><p><b class="k-p">优点</b>保护主上下文，可并行</p><p><b class="k-c">代价</b>交接可能丢失细节，额外 token</p><p><b class="k-w">适用</b>大范围搜索、独立审查</p></div><div class="trd"><h4>专精子代理库</h4><p><b class="k-p">优点</b>提示词可复用，行为稳定</p><p><b class="k-c">代价</b>定义需要维护</p><p><b class="k-w">适用</b>团队常见重复任务</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>description 写得含糊，主智能体从不调用或乱调用</p><p class="fix"><b>✓</b>写清触发场景与能力边界，必要时显式点名调用</p></li><li><p class="bad"><b>✗</b>审查类子代理拥有写权限，直接改了代码</p><p class="fix"><b>✓</b>只读任务只给 Read/Grep/Glob 等工具</p></li><li><p class="bad"><b>✗</b>委派时只给一句话，子代理缺少关键上下文</p><p class="fix"><b>✓</b>交代目标、相关文件、约束与期望输出格式</p></li><li><p class="bad"><b>✗</b>让多个子代理并行修改同一批文件</p><p class="fix"><b>✓</b>写操作集中在一处，子代理负责调研与产出建议</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个子代理职责单一</span></label></li><li><label><input type="checkbox"><span>description 明确触发时机</span></label></li><li><label><input type="checkbox"><span>工具权限按最小化原则</span></label></li><li><label><input type="checkbox"><span>输出格式简短且结构化</span></label></li><li><label><input type="checkbox"><span>项目级定义纳入版本控制</span></label></li><li><label><input type="checkbox"><span>定期复盘子代理的命中与效果</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>子代理解决的核心问题是什么？</summary><p>上下文管理。大量文件读取、搜索结果和日志若都进入主对话，会挤占窗口并降低后续推理质量。子代理在独立上下文中消化这些信息，只返回结论，主对话保持干净聚焦。</p></details><details class="iv"><summary>子代理和 Skills 有什么区别？</summary><p>子代理是独立运行的智能体实例，有自己的上下文与工具；Skills 是按需加载到当前智能体上下文中的指令与资源包，不另起上下文。前者解决隔离与并行，后者解决专业知识复用。</p></details><details class="iv"><summary>什么时候不该用子代理？</summary><p>任务很小、需要与主对话频繁来回、或需要用到主对话中大量已有细节时，委派的交接成本和信息损失会超过收益；强依赖的连续编码改动也更适合在主对话完成。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.claude.com/en/docs/claude-code/sub-agents" target="_blank" rel="noopener"><b>Claude Code 文档：Subagents</b><small>docs.claude.com ↗</small></a></li><li><a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents" target="_blank" rel="noopener"><b>Anthropic：Effective context engineering for AI agents</b><small>anthropic.com ↗</small></a></li><li><a href="https://www.anthropic.com/engineering/multi-agent-research-system" target="_blank" rel="noopener"><b>Anthropic：How we built our multi-agent research system</b><small>anthropic.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="multi-agent-systems.pro.html" rel="prev"><small>‹ 上一个</small><b>👥 多智能体协作</b></a><a class="pn next" href="evals.pro.html" rel="next"><small>下一个 ›</small><b>📝 AI 评测 (Evals)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

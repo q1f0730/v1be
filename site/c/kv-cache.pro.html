@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="KV 缓存 (KV Cache) 专业模式：KV 缓存（KV Cache）是 Transformer 自回归推理中的优化：把已处理 token 在每层注意力中计算出的 Key 与 Value 张量保存在显">
+<title>🎓 KV 缓存 (KV Cache) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="kv-cache" data-answer="0" data-prev="trunk-based-development.pro.html" data-next="mixture-of-experts.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#llmops">🔮 高级 · 🧠 模型工程与推理部署</a><span>›</span><a href="kv-cache.html">KV 缓存 (KV Cache)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.383 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="trunk-based-development.pro.html" rel="prev"><small>‹ 上一个</small><b>🌲 主干开发 (Trunk-Based)</b></a><a class="pn next" href="mixture-of-experts.pro.html" rel="next"><small>下一个 ›</small><b>👥 混合专家模型 (MoE)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🗄️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🧠 模型工程与推理部署</span><span>⏱ 约 10 分钟</span></div>
+    <h1>KV 缓存 (KV Cache)</h1><p class="en">KV Cache</p>
+    <div class="hbtns"><a class="prosw back" href="kv-cache.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">KV 缓存（KV Cache）是 Transformer 自回归推理中的优化：把已处理 token 在每层注意力中计算出的 Key 与 Value 张量保存在显存里，生成新 token 时只为新 token 计算 Q/K/V 并与缓存做注意力，避免对整个前缀重复计算。它属于模型推理层，是解码速度、显存占用与并发能力的核心约束。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>预填充（Prefill）阶段：并行处理整段输入提示，为每层生成并缓存所有 token 的 K、V。</p></li><li><span class="sn">2</span><p>解码（Decode）阶段：每步只为最新 token 计算 Q、K、V，把新 K、V 追加进缓存。</p></li><li><span class="sn">3</span><p>新 token 的 Q 与缓存中全部 K 做点积得到注意力权重，再加权 V，复杂度从重算前缀降为与长度线性相关。</p></li><li><span class="sn">4</span><p>缓存大小约为 2 × 层数 × KV 头数 × 头维度 × 序列长度 × 批大小 × 每元素字节数，随上下文与并发线性增长。</p></li><li><span class="sn">5</span><p>推理引擎通过分页管理（PagedAttention）、前缀共享、KV 量化与 GQA 等结构降低缓存占用。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>预填充 (Prefill)</dt><dd>一次性处理输入提示并建立 KV 缓存的阶段，偏计算密集。</dd></div><div class="term"><dt>解码 (Decode)</dt><dd>逐 token 生成的阶段，通常受显存带宽限制。</dd></div><div class="term"><dt>分组查询注意力 (GQA)</dt><dd>多个查询头共享一组 K/V 头，按比例减小 KV 缓存。</dd></div><div class="term"><dt>PagedAttention</dt><dd>vLLM 提出的按块分页管理 KV 缓存的方法，减少显存碎片。</dd></div><div class="term"><dt>前缀缓存 (Prefix Caching)</dt><dd>相同提示前缀的 KV 缓存在请求间复用，降低 TTFT。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>估算 KV 缓存显存占用</span><em>python</em><button class="ccopy">复制</button></div><pre><code>def kv_cache_bytes(layers, kv_heads, head_dim, seq_len, batch=1, bytes_per_elem=2):
+    &quot;&quot;&quot;2 代表 K 和 V 两份；bytes_per_elem=2 对应 FP16/BF16&quot;&quot;&quot;
+    return 2 * layers * kv_heads * head_dim * seq_len * batch * bytes_per_elem
+
+# 以 Llama-3-8B 的公开配置为例：32 层、8 个 KV 头（GQA）、头维度 128
+cfg = dict(layers=32, kv_heads=8, head_dim=128)
+
+for seq in (4_096, 32_768, 131_072):
+    gib = kv_cache_bytes(**cfg, seq_len=seq) / 1024**3
+    print(f&quot;单请求 {seq:&gt;7} tokens: {gib:.2f} GiB&quot;)
+
+# 若不用 GQA（32 个 KV 头），缓存会是上面的 4 倍
+# 并发 batch 个请求时再乘以 batch
+</code></pre></div><p class="cnote">按公式可见：上下文和并发都会线性放大 KV 缓存，GQA 通过减少 KV 头来压缩。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">降低 KV 缓存占用的手段</h3><div class="tw"><table><thead><tr><th>手段</th><th>原理</th><th>代价</th></tr></thead><tbody><tr><td data-h="手段">GQA / MQA</td><td data-h="原理">多个查询头共享 K/V 头</td><td data-h="代价">需在模型架构阶段决定</td></tr><tr><td data-h="手段">PagedAttention</td><td data-h="原理">按块分配，减少碎片浪费</td><td data-h="代价">需引擎支持</td></tr><tr><td data-h="手段">KV 缓存量化（如 FP8）</td><td data-h="原理">降低每元素字节数</td><td data-h="代价">可能轻微影响质量</td></tr><tr><td data-h="手段">前缀缓存</td><td data-h="原理">相同前缀只存一份</td><td data-h="代价">仅对重复前缀有效</td></tr><tr><td data-h="手段">限制最大上下文</td><td data-h="原理">直接限制序列长度</td><td data-h="代价">长文档能力受限</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>为长上下文预留大量 KV 显存</h4><p><b class="k-p">优点</b>支持长文档与长对话</p><p><b class="k-c">代价</b>并发数下降，单卡吞吐降低</p><p><b class="k-w">适用</b>长文档问答、代码库分析</p></div><div class="trd"><h4>限制上下文、提高并发</h4><p><b class="k-p">优点</b>吞吐高、成本低</p><p><b class="k-c">代价</b>长输入需截断或分段</p><p><b class="k-w">适用</b>短对话客服、分类任务</p></div><div class="trd"><h4>KV 缓存量化</h4><p><b class="k-p">优点</b>同显存下容纳更多 token</p><p><b class="k-c">代价</b>需验证质量影响</p><p><b class="k-w">适用</b>显存紧张的自部署</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>只按模型权重大小估算显存，忘了 KV 缓存</p><p class="fix"><b>✓</b>按目标上下文长度与并发数计算 KV 缓存并预留余量</p></li><li><p class="bad"><b>✗</b>把 max-model-len 设到模型上限却无需求</p><p class="fix"><b>✓</b>按实际业务长度设置，释放显存给并发</p></li><li><p class="bad"><b>✗</b>动态内容放在提示开头，前缀缓存始终失效</p><p class="fix"><b>✓</b>固定内容（系统提示、工具定义）放前面，变化部分放后面</p></li><li><p class="bad"><b>✗</b>以为 KV 缓存能跨会话长期记忆</p><p class="fix"><b>✓</b>它只服务于单次推理序列，持久记忆需另行存储</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>按上下文×并发估算 KV 显存</span></label></li><li><label><input type="checkbox"><span>推理引擎已开启前缀缓存（如支持）</span></label></li><li><label><input type="checkbox"><span>提示结构固定部分在前</span></label></li><li><label><input type="checkbox"><span>监控 KV 缓存使用率与抢占次数</span></label></li><li><label><input type="checkbox"><span>最大上下文按业务需求设定</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么解码阶段通常受显存带宽限制？</summary><p>每生成一个 token 都要读取全部模型权重和该序列的 KV 缓存，而计算量相对较小，算术强度低，瓶颈在从显存搬运数据的速度，而不是算力。</p></details><details class="iv"><summary>GQA 如何减少 KV 缓存？</summary><p>标准多头注意力每个查询头都有独立 K/V；GQA 让一组查询头共享一对 K/V 头，KV 头数减少为原来的若干分之一，缓存按相同比例缩小，质量通常接近多头注意力。</p></details><details class="iv"><summary>提示缓存（Prompt Caching）和 KV 缓存什么关系？</summary><p>API 厂商的提示缓存本质是在请求之间复用相同前缀的 KV 缓存，跳过这部分预填充，从而降低延迟和输入费用。前缀必须完全一致才能命中。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://arxiv.org/abs/2309.06180" target="_blank" rel="noopener"><b>vLLM 论文：Efficient Memory Management for LLM Serving with PagedAttention</b><small>arxiv.org ↗</small></a></li><li><a href="https://huggingface.co/docs/transformers/kv_cache" target="_blank" rel="noopener"><b>Hugging Face 文档：KV cache strategies</b><small>huggingface.co ↗</small></a></li><li><a href="https://arxiv.org/abs/2305.13245" target="_blank" rel="noopener"><b>GQA 论文 (arXiv 2305.13245)</b><small>arxiv.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="trunk-based-development.pro.html" rel="prev"><small>‹ 上一个</small><b>🌲 主干开发 (Trunk-Based)</b></a><a class="pn next" href="mixture-of-experts.pro.html" rel="next"><small>下一个 ›</small><b>👥 混合专家模型 (MoE)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

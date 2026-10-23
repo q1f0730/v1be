@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="部署上线 专业模式：部署（Deployment）是把通过测试的构建产物发布到目标运行环境并对外提供服务的过程，属于交付与运维层。它涵盖构建、配置注入、发布、健康检查、流量切换和回滚">
+<title>🎓 部署上线 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="deployment" data-answer="0" data-prev="typescript-and-types.pro.html" data-next="static-hosting.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#ship">🌊 中级 · 🚀 上线与测试</a><span>›</span><a href="deployment.html">部署上线</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.91 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="typescript-and-types.pro.html" rel="prev"><small>‹ 上一个</small><b>🔷 TypeScript 与类型</b></a><a class="pn next" href="static-hosting.pro.html" rel="next"><small>下一个 ›</small><b>🪧 静态网站托管</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🚀</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🚀 上线与测试</span><span>⏱ 约 10 分钟</span></div>
+    <h1>部署上线</h1><p class="en">Deployment</p>
+    <div class="hbtns"><a class="prosw back" href="deployment.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">部署（Deployment）是把通过测试的构建产物发布到目标运行环境并对外提供服务的过程，属于交付与运维层。它涵盖构建、配置注入、发布、健康检查、流量切换和回滚，目标是可重复、可观测、可回退。现代部署通常由 CI/CD 流水线自动完成，并采用滚动、蓝绿或金丝雀等策略降低风险。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>代码合并后 CI 执行安装、测试和构建，产出不可变制品，如镜像或静态文件包，并打上版本标识。</p></li><li><span class="sn">2</span><p>按环境注入配置和密钥，同一制品通过不同配置部署到测试、预发和生产环境。</p></li><li><span class="sn">3</span><p>按策略发布新版本：滚动替换实例、蓝绿整体切换，或金丝雀先放少量流量。</p></li><li><span class="sn">4</span><p>通过健康检查和监控指标（错误率、延迟）判断新版本是否正常，异常时自动或手动回滚。</p></li><li><span class="sn">5</span><p>数据库迁移需与代码发布协调，通常采用先兼容扩展、后清理的两阶段方式。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>CI/CD</dt><dd>持续集成与持续交付/部署，自动化构建、测试和发布。</dd></div><div class="term"><dt>不可变制品 (Immutable Artifact)</dt><dd>构建一次、各环境复用的产物，避免环境间差异。</dd></div><div class="term"><dt>蓝绿部署 (Blue-Green)</dt><dd>准备完整新环境，验证后一次性切换流量。</dd></div><div class="term"><dt>金丝雀发布 (Canary)</dt><dd>先把小比例流量导给新版本，观察后逐步扩大。</dd></div><div class="term"><dt>健康检查 (Health Check)</dt><dd>平台定期探测实例是否可用，决定是否接收流量。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>GitHub Actions 测试后部署</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code># .github/workflows/deploy.yml
+name: deploy
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production        # 可配置审批与环境级密钥
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test             # 测试不过则不会部署
+      - run: npm run build
+      - name: Deploy
+        run: ./scripts/deploy.sh  # 替换为平台 CLI，如 vercel/wrangler
+        env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}</code></pre></div><p class="cnote">合并到 main 即测试、构建、部署；密钥来自仓库 Secrets，不写入代码。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">发布策略对比</h3><div class="tw"><table><thead><tr><th>策略</th><th>风险</th><th>资源成本</th><th>回滚速度</th></tr></thead><tbody><tr><td data-h="策略">直接替换</td><td data-h="风险">高，可能停机</td><td data-h="资源成本">低</td><td data-h="回滚速度">慢，需重新部署</td></tr><tr><td data-h="策略">滚动发布</td><td data-h="风险">中，新旧版本并存</td><td data-h="资源成本">低</td><td data-h="回滚速度">中</td></tr><tr><td data-h="策略">蓝绿部署</td><td data-h="风险">低</td><td data-h="资源成本">高，需双份环境</td><td data-h="回滚速度">快，切回流量</td></tr><tr><td data-h="策略">金丝雀</td><td data-h="风险">最低，影响面小</td><td data-h="资源成本">中</td><td data-h="回滚速度">快</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>PaaS 一键部署</h4><p><b class="k-p">优点</b>上手快，自动 HTTPS 与扩缩</p><p><b class="k-c">代价</b>平台限制与锁定</p><p><b class="k-w">适用</b>个人项目、初创产品</p></div><div class="trd"><h4>容器 + 编排平台</h4><p><b class="k-p">优点</b>灵活、可移植</p><p><b class="k-c">代价</b>运维复杂度高</p><p><b class="k-w">适用</b>多服务、团队规模较大</p></div><div class="trd"><h4>手动上传服务器</h4><p><b class="k-p">优点</b>无需学习新工具</p><p><b class="k-c">代价</b>不可重复，易出错</p><p><b class="k-w">适用</b>仅限临时实验</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>在服务器上直接改代码热修</p><p class="fix"><b>✓</b>所有变更走代码仓库和流水线，保证可追溯</p></li><li><p class="bad"><b>✗</b>代码与破坏性数据库迁移同时发布</p><p class="fix"><b>✓</b>拆为扩展-迁移-收缩多步，保证新旧代码都能运行</p></li><li><p class="bad"><b>✗</b>没有回滚预案，出问题临时想办法</p><p class="fix"><b>✓</b>保留上一版本制品，演练一键回滚</p></li><li><p class="bad"><b>✗</b>让 AI Agent 直接持有生产部署凭证</p><p class="fix"><b>✓</b>部署经流水线和人工审批，Agent 只提交代码</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>部署全部由流水线完成</span></label></li><li><label><input type="checkbox"><span>制品带版本号且可追溯到提交</span></label></li><li><label><input type="checkbox"><span>密钥通过平台注入</span></label></li><li><label><input type="checkbox"><span>有健康检查和发布后监控</span></label></li><li><label><input type="checkbox"><span>回滚步骤已演练</span></label></li><li><label><input type="checkbox"><span>数据库迁移向后兼容</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>蓝绿部署和金丝雀发布怎么选？</summary><p>蓝绿切换简单、回滚快，但需要双份资源，且切换瞬间全部用户都用上新版本。金丝雀先让小部分流量试用，通过指标逐步放量，风险最小但需要流量控制和完善监控。核心服务、监控完善时更适合金丝雀。</p></details><details class="iv"><summary>为什么强调“构建一次，多处部署”？</summary><p>如果每个环境重新构建，依赖版本、构建环境的差异可能导致测试通过的版本与生产版本不同。使用同一不可变制品，只通过配置区分环境，才能确保测试验证的正是要上线的东西，回滚也只需切换制品版本。</p></details><details class="iv"><summary>如何做零停机的数据库迁移？</summary><p>采用扩展-收缩模式：先加新列或新表且保持兼容，发布同时读写新旧结构的代码；回填数据；再发布只用新结构的代码；最后删除旧结构。每一步都能单独回滚，任何时刻新旧代码都能正常运行。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.github.com/en/actions/use-cases-and-examples/deploying/deploying-with-github-actions" target="_blank" rel="noopener"><b>GitHub Docs: Deploying with GitHub Actions</b><small>docs.github.com ↗</small></a></li><li><a href="https://12factor.net/" target="_blank" rel="noopener"><b>The Twelve-Factor App</b><small>12factor.net ↗</small></a></li><li><a href="https://martinfowler.com/bliki/BlueGreenDeployment.html" target="_blank" rel="noopener"><b>Martin Fowler: Blue Green Deployment</b><small>martinfowler.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="typescript-and-types.pro.html" rel="prev"><small>‹ 上一个</small><b>🔷 TypeScript 与类型</b></a><a class="pn next" href="static-hosting.pro.html" rel="next"><small>下一个 ›</small><b>🪧 静态网站托管</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

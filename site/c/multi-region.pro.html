@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="跨地域多活/容灾 专业模式：跨地域多活/容灾（Multi-Region）指把应用和数据部署在多个地理区域，以抵御整个区域级故障并降低就近用户延迟。按模式分为主备（一个区域服务、另一个待命）">
+<title>🎓 跨地域多活/容灾 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="multi-region" data-answer="0" data-prev="event-sourcing.pro.html" data-next="chaos-engineering.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#sre">🔥 进阶 · 🩺 高可用 SRE</a><span>›</span><a href="multi-region.html">跨地域多活/容灾</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.442 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="event-sourcing.pro.html" rel="prev"><small>‹ 上一个</small><b>📜 事件溯源</b></a><a class="pn next" href="chaos-engineering.pro.html" rel="next"><small>下一个 ›</small><b>🐒 混沌工程</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🌏</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>跨地域多活/容灾</h1><p class="en">Multi-Region</p>
+    <div class="hbtns"><a class="prosw back" href="multi-region.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">跨地域多活/容灾（Multi-Region）指把应用和数据部署在多个地理区域，以抵御整个区域级故障并降低就近用户延迟。按模式分为主备（一个区域服务、另一个待命）与多活（多个区域同时服务）。核心难点在于跨地域数据复制的延迟、一致性取舍，以及故障切换的可靠性。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>定目标：按业务确定 RTO（可容忍的恢复时间）与 RPO（可容忍的数据丢失量）。</p></li><li><span class="sn">2</span><p>选模式：备份恢复、温备、热备或多活，成本与恢复速度随级别依次升高。</p></li><li><span class="sn">3</span><p>数据复制：跨区域异步复制常见，切换时可能丢失尚未复制的写入，即 RPO 大于零。</p></li><li><span class="sn">4</span><p>流量调度：DNS 故障转移、全局负载均衡或 Anycast 按健康检查把流量导向健康区域。</p></li><li><span class="sn">5</span><p>演练验证：定期进行真实切换演练，验证容量、数据完整性与运维手册是否有效。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>RTO (Recovery Time Objective)</dt><dd>从故障发生到服务恢复的目标时长。</dd></div><div class="term"><dt>RPO (Recovery Point Objective)</dt><dd>可接受丢失的最大数据时间窗口。</dd></div><div class="term"><dt>主备 (Active-Passive)</dt><dd>只有主区域处理流量，备区域在故障时接管。</dd></div><div class="term"><dt>多活 (Active-Active)</dt><dd>多个区域同时处理读写，需解决数据冲突。</dd></div><div class="term"><dt>单元化 (Cell-based)</dt><dd>按用户或租户划分归属区域，每个单元独立闭环。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Route 53 主备故障转移</span><em>json</em><button class="ccopy">复制</button></div><pre><code>{
+  &quot;Comment&quot;: &quot;api 主备：主区域健康检查失败时自动切到备区域&quot;,
+  &quot;Changes&quot;: [
+    {&quot;Action&quot;: &quot;UPSERT&quot;,
+     &quot;ResourceRecordSet&quot;: {
+       &quot;Name&quot;: &quot;api.example.com&quot;, &quot;Type&quot;: &quot;A&quot;, &quot;TTL&quot;: 60,
+       &quot;SetIdentifier&quot;: &quot;primary-us-east-1&quot;, &quot;Failover&quot;: &quot;PRIMARY&quot;,
+       &quot;HealthCheckId&quot;: &quot;11111111-2222-3333-4444-555555555555&quot;,
+       &quot;ResourceRecords&quot;: [{&quot;Value&quot;: &quot;203.0.113.10&quot;}]}},
+    {&quot;Action&quot;: &quot;UPSERT&quot;,
+     &quot;ResourceRecordSet&quot;: {
+       &quot;Name&quot;: &quot;api.example.com&quot;, &quot;Type&quot;: &quot;A&quot;, &quot;TTL&quot;: 60,
+       &quot;SetIdentifier&quot;: &quot;secondary-eu-west-1&quot;, &quot;Failover&quot;: &quot;SECONDARY&quot;,
+       &quot;ResourceRecords&quot;: [{&quot;Value&quot;: &quot;198.51.100.20&quot;}]}}
+  ]
+}</code></pre></div><p class="cnote">经 change-resource-record-sets 提交；TTL 影响切换速度，ID 与 IP 为示例。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">容灾等级对比</h3><div class="tw"><table><thead><tr><th>模式</th><th>RTO / RPO</th><th>成本</th></tr></thead><tbody><tr><td data-h="模式">备份恢复</td><td data-h="RTO / RPO">小时级 / 取决于备份周期</td><td data-h="成本">最低</td></tr><tr><td data-h="模式">温备 (Pilot Light/Warm)</td><td data-h="RTO / RPO">分钟到小时 / 分钟级</td><td data-h="成本">中</td></tr><tr><td data-h="模式">热备</td><td data-h="RTO / RPO">分钟级 / 秒级</td><td data-h="成本">高</td></tr><tr><td data-h="模式">多活</td><td data-h="RTO / RPO">近乎零 / 取决于复制方式</td><td data-h="成本">最高</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>主备</h4><p><b class="k-p">优点</b>数据模型简单，无写冲突</p><p><b class="k-c">代价</b>备区域闲置，切换有中断</p><p><b class="k-w">适用</b>多数业务的区域级容灾</p></div><div class="trd"><h4>多活（按用户单元化）</h4><p><b class="k-p">优点</b>区域故障影响小，就近低延迟</p><p><b class="k-c">代价</b>路由与数据归属设计复杂</p><p><b class="k-w">适用</b>全球用户、高可用要求</p></div><div class="trd"><h4>多活（任意区域可写）</h4><p><b class="k-p">优点</b>写入可用性最高</p><p><b class="k-c">代价</b>需处理并发写冲突</p><p><b class="k-w">适用</b>可接受最终一致的数据</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>备区域容量不足，切换后立即被流量压垮</p><p class="fix"><b>✓</b>按全量流量规划备区域容量或预留快速扩容能力</p></li><li><p class="bad"><b>✗</b>共享依赖（认证、配置、DNS）只在主区域，切换后依然不可用</p><p class="fix"><b>✓</b>梳理全部依赖，确保关键依赖同样跨区域</p></li><li><p class="bad"><b>✗</b>从未真实切换演练，故障时手册失效</p><p class="fix"><b>✓</b>定期在生产进行受控切换演练并更新手册</p></li><li><p class="bad"><b>✗</b>以为异步复制 RPO 为零</p><p class="fix"><b>✓</b>测量复制延迟，按实际延迟评估 RPO</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>RTO/RPO 已与业务确认</span></label></li><li><label><input type="checkbox"><span>关键依赖均跨区域</span></label></li><li><label><input type="checkbox"><span>备区域容量可承接</span></label></li><li><label><input type="checkbox"><span>复制延迟有监控</span></label></li><li><label><input type="checkbox"><span>切换与回切有演练</span></label></li><li><label><input type="checkbox"><span>DNS TTL 与切换目标匹配</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>多活最难的部分是什么？</summary><p>数据。跨地域同步复制延迟太高，异步复制又会产生冲突和数据丢失。常见做法是单元化：按用户或租户确定归属区域，同一用户的写入只在一个区域进行，避免冲突；全局数据则单独用强一致存储。</p></details><details class="iv"><summary>DNS 故障转移有什么局限？</summary><p>客户端和中间解析器会缓存记录，即使 TTL 很短，部分客户端仍会在一段时间内访问旧地址；健康检查判定也需要时间。对切换速度要求高时可用全局负载均衡或 Anycast，并让客户端具备重试能力。</p></details><details class="iv"><summary>怎么证明容灾方案真的有效？</summary><p>定期演练：在生产或等价环境中真实切断主区域，测量实际 RTO 和数据丢失，验证容量、依赖和手册；把演练结果与目标对比并整改。没有演练过的容灾方案应视为不可用。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/disaster-recovery-options-in-the-cloud.html" target="_blank" rel="noopener"><b>AWS: Disaster recovery options in the cloud</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-failover-configuring.html" target="_blank" rel="noopener"><b>Route 53: Configuring DNS failover</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://learn.microsoft.com/en-us/azure/well-architected/reliability/disaster-recovery" target="_blank" rel="noopener"><b>Azure Well-Architected: Disaster recovery</b><small>learn.microsoft.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="event-sourcing.pro.html" rel="prev"><small>‹ 上一个</small><b>📜 事件溯源</b></a><a class="pn next" href="chaos-engineering.pro.html" rel="next"><small>下一个 ›</small><b>🐒 混沌工程</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

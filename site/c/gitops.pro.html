@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="基于Git的持续交付 专业模式：GitOps 是一种以 Git 仓库作为系统期望状态唯一可信来源的持续交付与运维方式：基础设施和应用以声明式配置存放在 Git 中，集群内的代理（如 Argo ">
+<title>🎓 基于Git的持续交付 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="gitops" data-answer="0" data-prev="terraform-state.pro.html" data-next="resource-requests-and-limits.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#devops">🔥 进阶 · 🔭 可观测与交付</a><span>›</span><a href="gitops.html">基于Git的持续交付</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.448 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="terraform-state.pro.html" rel="prev"><small>‹ 上一个</small><b>📒 Terraform状态文件</b></a><a class="pn next" href="resource-requests-and-limits.pro.html" rel="next"><small>下一个 ›</small><b>📦 K8s资源请求与硬限制</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🌡️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>基于Git的持续交付</h1><p class="en">GitOps</p>
+    <div class="hbtns"><a class="prosw back" href="gitops.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">GitOps 是一种以 Git 仓库作为系统期望状态唯一可信来源的持续交付与运维方式：基础设施和应用以声明式配置存放在 Git 中，集群内的代理（如 Argo CD、Flux）持续拉取并把实际状态调和到与 Git 一致。变更通过 PR 完成，天然具备审计、评审和回滚能力。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>声明期望状态：用 Kubernetes 清单、Helm 或 Kustomize 描述应用与环境的目标状态。</p></li><li><span class="sn">2</span><p>版本化：所有配置存于 Git，通过 PR 评审合并，每次变更都有提交记录可追溯。</p></li><li><span class="sn">3</span><p>拉取同步：集群内的 GitOps 控制器监听仓库，发现新提交后自动拉取。</p></li><li><span class="sn">4</span><p>持续调和：控制器对比实际状态与期望状态，自动修正差异，包括手工改动产生的漂移。</p></li><li><span class="sn">5</span><p>回滚：回滚即 git revert 到旧提交，控制器自动把集群同步回该版本。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>期望状态 (Desired State)</dt><dd>Git 中声明的系统应有状态。</dd></div><div class="term"><dt>调和 (Reconciliation)</dt><dd>持续对比并消除实际状态与期望状态差异的循环。</dd></div><div class="term"><dt>拉取模式 (Pull-based)</dt><dd>集群内代理主动拉取配置，无需对外暴露集群凭证。</dd></div><div class="term"><dt>自愈 (Self-heal)</dt><dd>自动撤销绕过 Git 的手工修改。</dd></div><div class="term"><dt>配置仓库 (Config Repo)</dt><dd>与应用代码分离、专门存放部署清单的仓库。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Argo CD Application</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code>apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: shop-api
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/example/shop-deploy.git
+    targetRevision: main
+    path: apps/shop-api/overlays/prod     # Kustomize 目录
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: shop
+  syncPolicy:
+    automated:
+      prune: true        # Git 中删除的资源也从集群删除
+      selfHeal: true     # 集群被手工修改时自动改回
+    syncOptions:
+      - CreateNamespace=true</code></pre></div><p class="cnote">CI 只负责构建镜像并更新配置仓库中的镜像标签，部署由 Argo CD 拉取完成。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">推送式 CD 与 GitOps</h3><div class="tw"><table><thead><tr><th>维度</th><th>推送式 CI/CD</th><th>GitOps 拉取式</th></tr></thead><tbody><tr><td data-h="维度">谁执行部署</td><td data-h="推送式 CI/CD">CI 流水线调用 kubectl/helm</td><td data-h="GitOps 拉取式">集群内控制器</td></tr><tr><td data-h="维度">集群凭证</td><td data-h="推送式 CI/CD">CI 持有，暴露面大</td><td data-h="GitOps 拉取式">留在集群内</td></tr><tr><td data-h="维度">漂移处理</td><td data-h="推送式 CI/CD">不感知</td><td data-h="GitOps 拉取式">持续检测并自愈</td></tr><tr><td data-h="维度">回滚</td><td data-h="推送式 CI/CD">重跑旧流水线</td><td data-h="GitOps 拉取式">git revert</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>GitOps（Argo CD/Flux）</h4><p><b class="k-p">优点</b>可审计、自愈、凭证不出集群</p><p><b class="k-c">代价</b>密钥管理与多环境结构需设计</p><p><b class="k-w">适用</b>Kubernetes 上的持续交付</p></div><div class="trd"><h4>流水线推送部署</h4><p><b class="k-p">优点</b>简单直观，适用非 K8s 目标</p><p><b class="k-c">代价</b>凭证外放，漂移不可见</p><p><b class="k-w">适用</b>虚拟机、Serverless 或小团队</p></div><div class="trd"><h4>混合</h4><p><b class="k-p">优点</b>基础设施用 Terraform，应用用 GitOps</p><p><b class="k-c">代价</b>两套工具链</p><p><b class="k-w">适用</b>同时管理云资源与集群</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>把明文 Secret 提交到配置仓库</p><p class="fix"><b>✓</b>使用 Sealed Secrets、SOPS 或外部密钥管理器同步</p></li><li><p class="bad"><b>✗</b>仍有人直接 kubectl 改生产，被自愈覆盖后引发困惑</p><p class="fix"><b>✓</b>收紧集群写权限，所有变更走 PR</p></li><li><p class="bad"><b>✗</b>镜像标签用 latest，Git 中看不出实际部署版本</p><p class="fix"><b>✓</b>使用不可变标签或摘要，由 CI 提交更新</p></li><li><p class="bad"><b>✗</b>一个仓库目录结构混乱，多环境配置大量复制</p><p class="fix"><b>✓</b>用 Kustomize overlays 或 Helm values 分层管理环境</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>期望状态全部在 Git</span></label></li><li><label><input type="checkbox"><span>生产变更必须经 PR</span></label></li><li><label><input type="checkbox"><span>密钥不以明文入库</span></label></li><li><label><input type="checkbox"><span>镜像使用不可变标签</span></label></li><li><label><input type="checkbox"><span>启用漂移检测与告警</span></label></li><li><label><input type="checkbox"><span>回滚流程已演练</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>GitOps 和普通 CI/CD 的核心区别？</summary><p>核心是拉取与持续调和：普通 CD 由流水线一次性推送变更，之后不再关心集群状态；GitOps 控制器持续把集群对齐到 Git，能发现并修正漂移，且部署凭证不必交给外部 CI 系统。</p></details><details class="iv"><summary>GitOps 中如何管理密钥？</summary><p>不在 Git 中存明文：可存加密后的 Secret（Sealed Secrets、SOPS），由集群内私钥解密；或在 Git 中只声明引用，由 External Secrets 等从云密钥管理服务同步。重点是密钥轮换和访问控制。</p></details><details class="iv"><summary>紧急故障时还要走 PR 吗？</summary><p>原则上要，可设快速通道：精简评审、预先批准的回滚 PR。若必须手工干预，可临时暂停自动同步，修复后立即把改动补回 Git 并恢复同步，否则自愈会覆盖手工修改或留下漂移。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://opengitops.dev/" target="_blank" rel="noopener"><b>OpenGitOps Principles</b><small>opengitops.dev ↗</small></a></li><li><a href="https://argo-cd.readthedocs.io/en/stable/" target="_blank" rel="noopener"><b>Argo CD 文档</b><small>argo-cd.readthedocs.io ↗</small></a></li><li><a href="https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/" target="_blank" rel="noopener"><b>Argo CD: Automated Sync Policy</b><small>argo-cd.readthedocs.io ↗</small></a></li><li><a href="https://fluxcd.io/flux/" target="_blank" rel="noopener"><b>Flux 文档</b><small>fluxcd.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="terraform-state.pro.html" rel="prev"><small>‹ 上一个</small><b>📒 Terraform状态文件</b></a><a class="pn next" href="resource-requests-and-limits.pro.html" rel="next"><small>下一个 ›</small><b>📦 K8s资源请求与硬限制</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,3621 @@
+[
+ {
+  "slug": "dead-letter-queues",
+  "def": "死信队列（Dead Letter Queue, DLQ）是消息系统中的旁路队列，用来收纳超过最大重试次数、过期或被显式拒绝的消息。它属于消息中间件的可靠性层，目的是把失败消息从主流程隔离出来：主队列不被阻塞，失败数据也不丢失，可在排查后重放（redrive）。",
+  "how": [
+   "消费者拉取消息并处理，失败时不确认（nack）或可见性超时到期，消息回到队列等待再次投递。",
+   "中间件为每条消息累计投递次数，例如 SQS 的 ApproximateReceiveCount、RabbitMQ 的 x-delivery-count。",
+   "投递次数超过 redrive 策略中的阈值（SQS 叫 maxReceiveCount）后，消息被转移到配置好的 DLQ。",
+   "RabbitMQ 中消息被 reject 且 requeue=false、TTL 过期或队列超长时，会按死信交换机（DLX）规则路由。",
+   "运维对 DLQ 深度设告警，排查根因、修复代码后，把消息重放回源队列或人工处理后丢弃。"
+  ],
+  "terms": [
+   {
+    "t": "重驱策略 (Redrive Policy)",
+    "d": "SQS 中把源队列与 DLQ 关联，并设定最大接收次数的配置。"
+   },
+   {
+    "t": "死信交换机 (DLX)",
+    "d": "RabbitMQ 中接收死信并按路由键转发到死信队列的交换机。"
+   },
+   {
+    "t": "可见性超时 (Visibility Timeout)",
+    "d": "消息被取走后对其他消费者隐藏的时长，超时未删除就会再次可见。"
+   },
+   {
+    "t": "消息重放 (Redrive / Replay)",
+    "d": "把 DLQ 中的消息移回源队列重新处理的操作。"
+   },
+   {
+    "t": "消息保留期 (Retention Period)",
+    "d": "消息在队列中保存的最长时间，过期即被删除，DLQ 也受其约束。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "SQS 绑定死信队列",
+   "src": "import json\nimport boto3\n\nsqs = boto3.client(\"sqs\")\n\n# 1. 创建死信队列并取得它的 ARN\ndlq_url = sqs.create_queue(QueueName=\"orders-dlq\")[\"QueueUrl\"]\ndlq_arn = sqs.get_queue_attributes(\n    QueueUrl=dlq_url, AttributeNames=[\"QueueArn\"]\n)[\"Attributes\"][\"QueueArn\"]\n\n# 2. 源队列：同一条消息被接收 5 次仍未删除，就转入 DLQ\nsqs.create_queue(\n    QueueName=\"orders\",\n    Attributes={\n        \"RedrivePolicy\": json.dumps({\n            \"deadLetterTargetArn\": dlq_arn,\n            \"maxReceiveCount\": \"5\",\n        })\n    },\n)",
+   "note": "用 boto3 为 SQS 标准队列配置 redrive 策略，超过 5 次接收即转入 DLQ。"
+  },
+  "table": {
+   "title": "主流中间件的死信实现",
+   "head": [
+    "系统",
+    "触发条件",
+    "关键配置"
+   ],
+   "rows": [
+    [
+     "Amazon SQS",
+     "接收次数超过阈值",
+     "RedrivePolicy.maxReceiveCount"
+    ],
+    [
+     "RabbitMQ",
+     "reject 不重入队、TTL 过期、超长",
+     "x-dead-letter-exchange"
+    ],
+    [
+     "Azure Service Bus",
+     "超过最大投递次数、过期等",
+     "MaxDeliveryCount（默认 10）"
+    ],
+    [
+     "Kafka",
+     "无内置，由消费框架实现",
+     "如 Kafka Connect 的 errors.deadletterqueue.topic.name"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "重试 N 次后进 DLQ",
+    "pros": "主队列不阻塞，失败可追溯",
+    "cons": "需要额外的告警和重放流程",
+    "when": "绝大多数异步业务消息"
+   },
+   {
+    "opt": "失败直接丢弃",
+    "pros": "实现最简单，无积压",
+    "cons": "数据静默丢失，难以排查",
+    "when": "可丢的遥测、心跳类消息"
+   },
+   {
+    "opt": "无限重试",
+    "pros": "不需要人工介入",
+    "cons": "坏消息会反复占用消费者",
+    "when": "几乎不推荐，仅限确定会自愈的依赖"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只配了 DLQ 却没有监控，几个月后才发现里面堆了上万条消息。",
+    "fix": "对 DLQ 可见消息数设告警阈值，大于 0 即通知负责人。"
+   },
+   {
+    "bad": "DLQ 保留期和源队列一样短，排查时消息已过期删除。",
+    "fix": "DLQ 保留期设得比源队列长，SQS 最长可设 14 天。"
+   },
+   {
+    "bad": "maxReceiveCount 设为 1，一次瞬时网络抖动就进死信。",
+    "fix": "给瞬时故障留余量，常见取 3–10 次并配合退避。"
+   },
+   {
+    "bad": "修完 bug 一次性重放全部死信，打爆下游。",
+    "fix": "分批、限速重放，并先用少量消息验证修复。"
+   }
+  ],
+  "checklist": [
+   "每个业务队列都配置了 DLQ 和最大重试次数",
+   "DLQ 深度有告警并指定了负责人",
+   "DLQ 保留期长于源队列",
+   "消息里带足排查所需的上下文和错误原因",
+   "有文档化、可限速的重放流程",
+   "FIFO 源队列对应的 DLQ 也是 FIFO 类型"
+  ],
+  "interview": [
+   {
+    "q": "DLQ 和重试的关系是什么？",
+    "a": "重试处理瞬时故障，DLQ 兜住重试也救不回来的消息。两者配合：先有限次数重试并退避，超过阈值转入 DLQ，避免坏消息无限占用消费者，同时保留数据用于排查和重放。"
+   },
+   {
+    "q": "消息进了 DLQ 之后应该怎么处理？",
+    "a": "先告警通知；按错误类型分组定位根因；区分代码 bug、脏数据和下游故障；修复后小批量重放验证，再限速全量重放；无法修复的记录原因后归档或丢弃。"
+   },
+   {
+    "q": "Kafka 没有内置 DLQ，怎么实现？",
+    "a": "在消费端捕获异常，超过重试次数后把原消息及错误信息写入单独的死信 topic，再提交位移继续消费。Kafka Connect、Spring Kafka 等框架提供了现成的死信配置。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Amazon SQS 死信队列",
+    "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html"
+   },
+   {
+    "title": "Wikipedia：Dead letter queue",
+    "url": "https://en.wikipedia.org/wiki/Dead_letter_queue"
+   },
+   {
+    "title": "Azure Service Bus 死信队列概述",
+    "url": "https://learn.microsoft.com/en-us/azure/service-bus-messaging/service-bus-dead-letter-queues"
+   }
+  ]
+ },
+ {
+  "slug": "poison-messages",
+  "def": "毒丸消息（Poison Message）指无论重试多少次都会处理失败、甚至让消费者崩溃的消息，常见原因是格式错误、字段缺失、版本不兼容或触发代码缺陷。它是消息消费层的典型故障源：若不识别隔离，会在队列中反复投递，阻塞有序队列并持续消耗资源。",
+  "how": [
+   "消费者取到消息，反序列化或业务校验时抛出异常，或者直接导致进程崩溃。",
+   "消息未被确认，中间件在可见性超时或连接断开后重新投递，同一条消息开始循环。",
+   "在有序队列或单分区中，这条消息挡在队头，后面的正常消息全部无法前进。",
+   "中间件或消费端统计投递次数，超过上限后把它转入 DLQ，或由代码直接判定为不可重试。",
+   "工程师按 DLQ 中的报错分类定位，修复解析逻辑或数据后决定重放还是丢弃。"
+  ],
+  "terms": [
+   {
+    "t": "队头阻塞 (Head-of-Line Blocking)",
+    "d": "队首消息处理不了，导致其后所有消息都被卡住。"
+   },
+   {
+    "t": "投递计数 (Delivery Count)",
+    "d": "同一消息被投递给消费者的累计次数，是识别毒丸的主要依据。"
+   },
+   {
+    "t": "不可重试错误 (Non-retryable Error)",
+    "d": "重试也不会成功的错误，如反序列化失败、校验不通过。"
+   },
+   {
+    "t": "模式演进 (Schema Evolution)",
+    "d": "消息结构随版本变化，新旧生产者和消费者需保持兼容。"
+   },
+   {
+    "t": "投递上限 (Delivery Limit)",
+    "d": "RabbitMQ 仲裁队列中消息最多被投递的次数，超过即丢弃或死信。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "区分可重试与毒丸",
+   "src": "import json\n\nclass RetryableError(Exception):\n    \"\"\"下游超时等瞬时故障，值得重试\"\"\"\n\ndef handle(raw: bytes, send_to_dlq, process):\n    try:\n        msg = json.loads(raw)           # 格式错误 -> 毒丸\n        order_id = msg[\"order_id\"]       # 缺字段 -> 毒丸\n    except (json.JSONDecodeError, KeyError) as e:\n        send_to_dlq(raw, reason=repr(e))  # 立即隔离，不浪费重试\n        return \"ack\"                      # 确认掉，避免堵队列\n\n    try:\n        process(order_id, msg)\n        return \"ack\"\n    except RetryableError:\n        return \"nack\"                     # 交给中间件按策略重投\n",
+   "note": "把解析和校验失败直接送进 DLQ，只对瞬时故障返回 nack 走重试。"
+  },
+  "table": {
+   "title": "毒丸的常见来源",
+   "head": [
+    "来源",
+    "表现",
+    "防护"
+   ],
+   "rows": [
+    [
+     "格式/编码错误",
+     "反序列化抛异常",
+     "入口校验，失败直接死信"
+    ],
+    [
+     "模式不兼容",
+     "新字段缺失或类型变化",
+     "Schema Registry、兼容性检查"
+    ],
+    [
+     "超大消息",
+     "内存暴涨或超时",
+     "生产端限制大小，大对象存外部"
+    ],
+    [
+     "触发代码 bug",
+     "特定数据导致崩溃",
+     "捕获异常，记录样本便于复现"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "依赖中间件投递上限",
+    "pros": "无需改代码，配置即生效",
+    "cons": "毒丸仍要白白重试 N 次",
+    "when": "错误类型难以在代码里区分时"
+   },
+   {
+    "opt": "代码识别后立即死信",
+    "pros": "不浪费重试，队列恢复快",
+    "cons": "需要准确划分可重试与不可重试",
+    "when": "解析、校验类错误明确时"
+   },
+   {
+    "opt": "跳过并只记日志",
+    "pros": "最快恢复吞吐",
+    "cons": "数据丢失风险高，难以审计",
+    "when": "仅限可丢失的低价值消息"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "消费者崩溃前没确认也没记录，重启后又取到同一条，进入崩溃循环。",
+    "fix": "用投递计数兜底，并在处理前记录消息 ID 便于定位。"
+   },
+   {
+    "bad": "把所有异常都当可重试，格式错误的消息也重试 10 次。",
+    "fix": "按异常类型分类，解析和校验错误直接进 DLQ。"
+   },
+   {
+    "bad": "生产者升级改了字段名，消费者全部报错。",
+    "fix": "先发兼容版本的消费者，再上线生产者，配合 schema 兼容检查。"
+   }
+  ],
+  "checklist": [
+   "消费者区分了可重试和不可重试错误",
+   "队列配置了投递上限或 DLQ",
+   "死信中保留了原始消息和错误原因",
+   "消息有 schema 并在 CI 中做兼容性检查",
+   "生产端限制了单条消息大小",
+   "有按 DLQ 样本复现问题的流程"
+  ],
+  "interview": [
+   {
+    "q": "如何判断一条失败消息是不是毒丸？",
+    "a": "看两点：错误类型和投递次数。反序列化失败、必填字段缺失、业务校验不通过属于确定性错误，重试无意义；若同一消息投递次数持续增长且每次报同样的错，也应视为毒丸，转入 DLQ。"
+   },
+   {
+    "q": "有序队列里出现毒丸会怎样？",
+    "a": "会造成队头阻塞：为了保证顺序，后续消息必须等它处理完，整个分区或消息组停滞。处理方式是尽快把它移出到 DLQ，并评估跳过它是否破坏业务顺序约束。"
+   },
+   {
+    "q": "怎样从源头减少毒丸？",
+    "a": "生产端做 schema 校验和大小限制；使用 Schema Registry 和兼容性规则管理演进；消费者容忍未知字段；上线顺序遵循先消费者后生产者；对 AI 生成的消息处理代码补齐异常分类测试。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Microsoft Learn：Poison Message Handling",
+    "url": "https://learn.microsoft.com/en-us/dotnet/framework/wcf/feature-details/poison-message-handling"
+   },
+   {
+    "title": "Azure Service Bus 死信队列",
+    "url": "https://learn.microsoft.com/en-us/azure/service-bus-messaging/service-bus-dead-letter-queues"
+   },
+   {
+    "title": "Amazon SQS 死信队列",
+    "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html"
+   }
+  ]
+ },
+ {
+  "slug": "at-least-once-delivery",
+  "def": "至少一次投递（At-Least-Once Delivery）是消息传递语义的一种：系统保证每条消息最终至少被处理一次，但在超时、重试或消费者崩溃时可能重复投递。它位于消息系统与消费者的契约层，用重复换取不丢失，要求消费端实现幂等（Idempotency）来消化重复。",
+  "how": [
+   "生产者发送消息后等待中间件确认，超时未收到确认就重发，此时可能产生重复写入。",
+   "消费者取到消息先执行业务逻辑，成功后再确认（ack）或提交位移。",
+   "若处理完成但确认前崩溃，中间件认为未处理，会把同一条消息重新投递。",
+   "消费者用消息 ID 或业务唯一键去重，已处理过的直接确认跳过，从而得到有效一次的结果。",
+   "与之对比，先确认后处理是至多一次（At-Most-Once），崩溃会丢消息但不会重复。"
+  ],
+  "terms": [
+   {
+    "t": "至多一次 (At-Most-Once)",
+    "d": "消息最多处理一次，可能丢失但不会重复。"
+   },
+   {
+    "t": "恰好一次 (Exactly-Once)",
+    "d": "每条消息效果只生效一次，通常靠幂等加事务在特定范围内实现。"
+   },
+   {
+    "t": "幂等消费者 (Idempotent Consumer)",
+    "d": "重复处理同一消息结果不变的消费者，常用去重表实现。"
+   },
+   {
+    "t": "确认 (Acknowledgement)",
+    "d": "消费者告诉中间件消息已处理完成、可以删除的信号。"
+   },
+   {
+    "t": "事务性发件箱 (Transactional Outbox)",
+    "d": "业务数据与待发消息同库同事务写入，再异步投递，避免双写不一致。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "去重表实现幂等消费",
+   "src": "-- 记录已处理过的消息 ID（PostgreSQL）\nCREATE TABLE processed_messages (\n  message_id   TEXT PRIMARY KEY,\n  processed_at TIMESTAMPTZ NOT NULL DEFAULT now()\n);\n\n-- 在同一事务里：先占位去重，再执行业务\nBEGIN;\nINSERT INTO processed_messages (message_id)\nVALUES ('msg-7f3a')\nON CONFLICT (message_id) DO NOTHING;\n-- 应用代码检查受影响行数：\n--   0 行 = 重复消息，ROLLBACK 后直接 ack\n--   1 行 = 首次处理，继续执行下面的业务 SQL\nUPDATE accounts SET balance = balance - 100 WHERE id = 42;\nCOMMIT;",
+   "note": "去重记录与业务更新同事务提交，重复投递时插入失败即可安全跳过。"
+  },
+  "table": {
+   "title": "三种投递语义对比",
+   "head": [
+    "语义",
+    "确认时机",
+    "风险",
+    "典型场景"
+   ],
+   "rows": [
+    [
+     "至多一次",
+     "处理前确认",
+     "崩溃时丢消息",
+     "指标采样、日志"
+    ],
+    [
+     "至少一次",
+     "处理后确认",
+     "重复处理",
+     "订单、支付通知等主流业务"
+    ],
+    [
+     "恰好一次（效果）",
+     "幂等/事务配合",
+     "实现复杂、范围受限",
+     "Kafka 流处理、对账"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "至少一次 + 幂等",
+    "pros": "不丢数据，实现成熟",
+    "cons": "每个消费者都要做去重",
+    "when": "大多数业务消息的默认选择"
+   },
+   {
+    "opt": "至多一次",
+    "pros": "无重复，吞吐高",
+    "cons": "故障时会丢消息",
+    "when": "丢一些也无所谓的数据"
+   },
+   {
+    "opt": "中间件事务（如 Kafka EOS）",
+    "pros": "读-处理-写闭环内效果一次",
+    "cons": "仅限同一系统内，外部副作用仍需幂等",
+    "when": "Kafka 到 Kafka 的流处理"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "以为用了 SQS 标准队列就不会重复，没做去重。",
+    "fix": "按官方说明，标准队列可能重复投递，消费端必须幂等。"
+   },
+   {
+    "bad": "用时间戳加随机数当去重键，重发时生成了新键。",
+    "fix": "去重键由生产者在首次创建消息时生成并随消息传递。"
+   },
+   {
+    "bad": "去重记录和业务写入不在一个事务里。",
+    "fix": "放进同一数据库事务，或使用带条件的原子更新。"
+   },
+   {
+    "bad": "去重表无限增长，拖慢查询。",
+    "fix": "按重投窗口设置过期清理，例如保留数天到数周。"
+   }
+  ],
+  "checklist": [
+   "明确每条链路的投递语义并写进设计文档",
+   "消息携带稳定的唯一 ID",
+   "消费者处理成功后才确认",
+   "去重与业务写入原子化",
+   "去重记录有清理策略",
+   "有重复投递的集成测试"
+  ],
+  "interview": [
+   {
+    "q": "为什么分布式系统很难做到真正的恰好一次？",
+    "a": "网络无法区分对方没收到和确认丢了，发送方只能重试或放弃。所以端到端只能在至少一次基础上，用幂等或事务让效果只生效一次；一旦涉及发邮件、调第三方等外部副作用，就必须靠幂等键。"
+   },
+   {
+    "q": "Kafka 的幂等生产者解决了什么？",
+    "a": "它为生产者分配 ID 并给每条消息编序号，broker 丢弃重复序号，从而消除生产者重试导致的分区内重复。Kafka 3.0 起 enable.idempotence 默认开启。它不解决消费端重复处理的问题。"
+   },
+   {
+    "q": "Outbox 模式和至少一次有什么关系？",
+    "a": "业务数据和待发消息写进同一事务的 outbox 表，再由中继进程投递。中继可能重复发送，所以下游仍是至少一次，但它保证了不会出现数据已提交而消息没发出去的不一致。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Apache Kafka 文档：消息投递语义",
+    "url": "https://kafka.apache.org/documentation/#semantics"
+   },
+   {
+    "title": "Amazon SQS 标准队列的至少一次投递",
+    "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/standard-queues-at-least-once-delivery.html"
+   },
+   {
+    "title": "microservices.io：Idempotent Consumer",
+    "url": "https://microservices.io/patterns/communication-style/idempotent-consumer.html"
+   }
+  ]
+ },
+ {
+  "slug": "webhook-retries",
+  "def": "Webhook 重试（Webhook Retries）是事件提供方在 HTTP 回调失败时自动重新发送的机制。它属于跨系统集成的可靠性层：接收方返回非 2xx、超时或连接失败时，提供方按退避策略在一段时间内多次重投。由此接收方面对的是至少一次投递，必须做签名校验、快速响应和按事件 ID 去重。",
+  "how": [
+   "业务事件发生后，提供方向接收方登记的 URL 发起 HTTPS POST，带上事件体和签名头。",
+   "接收方应在数秒内返回 2xx；超时、5xx 或连接错误会被提供方视为失败。",
+   "提供方按指数退避加抖动安排下一次投递，持续数小时到数天，具体周期由各平台决定。",
+   "多次失败后，部分平台会告警、禁用端点或标记失败，并提供手动重发入口。",
+   "接收方验证签名，按事件 ID 去重，入队后立即返回 200，耗时处理放到后台。"
+  ],
+  "terms": [
+   {
+    "t": "签名校验 (Signature Verification)",
+    "d": "用共享密钥对请求体做 HMAC，确认请求来自真实提供方且未被篡改。"
+   },
+   {
+    "t": "事件 ID (Event ID)",
+    "d": "提供方给每个事件的唯一标识，重试时保持不变，是去重依据。"
+   },
+   {
+    "t": "重放攻击 (Replay Attack)",
+    "d": "攻击者重发截获的合法请求，常用时间戳容差加去重防御。"
+   },
+   {
+    "t": "指数退避 (Exponential Backoff)",
+    "d": "每次重试间隔按倍数增长，避免持续冲击故障端点。"
+   },
+   {
+    "t": "Standard Webhooks",
+    "d": "一份开放的 webhook 签名与投递规范，统一了头字段和签名格式。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Stripe Webhook 接收端",
+   "src": "import stripe\nfrom flask import Flask, request\n\napp = Flask(__name__)\nENDPOINT_SECRET = \"whsec_...\"  # 从 Stripe 控制台获取\nseen = set()  # 示意；生产中用数据库唯一约束\n\n@app.post(\"/webhooks/stripe\")\ndef stripe_webhook():\n    payload = request.get_data()\n    sig = request.headers.get(\"Stripe-Signature\")\n    try:\n        event = stripe.Webhook.construct_event(payload, sig, ENDPOINT_SECRET)\n    except (ValueError, stripe.error.SignatureVerificationError):\n        return \"bad signature\", 400   # 4xx：不要让对方重试伪造请求\n\n    if event[\"id\"] in seen:          # 重试带来的重复事件\n        return \"\", 200\n    seen.add(event[\"id\"])\n    enqueue_job(event)               # 耗时逻辑丢给后台队列\n    return \"\", 200                    # 尽快返回 2xx",
+   "note": "先验签、再按 event.id 去重、入队后立刻返回 200，适配提供方的重试。"
+  },
+  "table": {
+   "title": "主流平台的重试行为",
+   "head": [
+    "平台",
+    "失败判定",
+    "重试方式（以官方文档为准）"
+   ],
+   "rows": [
+    [
+     "Stripe",
+     "非 2xx 或超时",
+     "线上模式最长约 3 天指数退避"
+    ],
+    [
+     "GitHub",
+     "非 2xx 或超时",
+     "不自动重试，可手动重发"
+    ],
+    [
+     "自建发送端",
+     "自定义",
+     "指数退避加抖动，设总时限并记录日志"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "同步处理后返回",
+    "pros": "实现简单，失败可直接让对方重试",
+    "cons": "易超时，引发重复投递",
+    "when": "处理极快且幂等的轻量事件"
+   },
+   {
+    "opt": "入队后立即 200",
+    "pros": "响应快，削峰，失败可内部重试",
+    "cons": "需要队列和后台任务",
+    "when": "多数生产环境的推荐做法"
+   },
+   {
+    "opt": "轮询对方 API 补偿",
+    "pros": "不依赖回调可达性",
+    "cons": "有延迟，消耗 API 配额",
+    "when": "作为 webhook 丢失时的对账兜底"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在 webhook 里同步调用多个外部服务，超时后被重复投递。",
+    "fix": "只做验签和入队，几秒内返回 2xx。"
+   },
+   {
+    "bad": "用解析后的 JSON 重新序列化去验签，签名总对不上。",
+    "fix": "用原始请求体字节验签，框架里读 raw body。"
+   },
+   {
+    "bad": "验签失败返回 500，伪造请求被提供方反复重试。",
+    "fix": "签名或格式错误返回 4xx，只有临时故障才返回 5xx。"
+   },
+   {
+    "bad": "假设事件按发生顺序到达。",
+    "fix": "以事件内时间戳或重新查询资源最新状态为准。"
+   }
+  ],
+  "checklist": [
+   "使用原始请求体校验签名",
+   "按事件 ID 去重并持久化",
+   "响应时间控制在提供方超时之内",
+   "错误码区分 4xx 与 5xx",
+   "有失败事件的告警与对账补偿",
+   "签名密钥可轮换且不进代码库"
+  ],
+  "interview": [
+   {
+    "q": "Webhook 接收端应该返回什么状态码？",
+    "a": "成功入队就返回 2xx；签名错误、请求格式不对返回 4xx，表示重试无意义；依赖暂时不可用才返回 5xx，让提供方重试。注意部分平台对 4xx 也会重试，需看各自文档。"
+   },
+   {
+    "q": "如何设计一个可靠的 webhook 发送端？",
+    "a": "事件先持久化到 outbox；按指数退避加抖动重试并设总时限；每次带相同事件 ID 和签名；记录投递日志供用户查看；连续失败告警并可禁用端点；提供手动重发和事件查询 API 作补偿。"
+   },
+   {
+    "q": "怎样防止 webhook 重放攻击？",
+    "a": "签名中包含时间戳，接收端拒绝超过容差窗口（如几分钟）的请求；同时按事件 ID 去重，窗口内重复的直接忽略；全程 HTTPS，密钥定期轮换。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Stripe 文档：Webhooks",
+    "url": "https://docs.stripe.com/webhooks"
+   },
+   {
+    "title": "GitHub 文档：Webhooks 最佳实践",
+    "url": "https://docs.github.com/en/webhooks/using-webhooks/best-practices-for-using-webhooks"
+   },
+   {
+    "title": "Standard Webhooks 规范",
+    "url": "https://www.standardwebhooks.com/"
+   }
+  ]
+ },
+ {
+  "slug": "monolith-vs-microservices",
+  "def": "单体与微服务（Monolith vs Microservices）是两种系统架构风格。单体把全部功能构建、部署为一个进程；微服务按业务能力拆成多个独立部署、通过网络通信、各自拥有数据的小服务。这是架构层的取舍：微服务换来独立发布和按需扩展，代价是分布式系统的复杂度和运维成本。",
+  "how": [
+   "单体中模块之间是进程内函数调用，共享一个数据库和事务，一次构建一次部署。",
+   "模块化单体（Modular Monolith）在单体内按领域划清边界，限制跨模块直接访问数据。",
+   "微服务按限界上下文（Bounded Context）拆分，每个服务独立代码库或目录、独立部署、独占数据存储。",
+   "服务间通过 HTTP/gRPC 同步调用或消息异步通信，引入超时、重试、版本兼容等问题。",
+   "拆分常用绞杀者模式（Strangler Fig）：逐步把功能从单体迁到新服务，路由层分流。"
+  ],
+  "terms": [
+   {
+    "t": "限界上下文 (Bounded Context)",
+    "d": "领域驱动设计中模型含义一致的边界，常作为服务拆分单位。"
+   },
+   {
+    "t": "模块化单体 (Modular Monolith)",
+    "d": "单一部署单元，但内部按领域严格分模块、控制依赖。"
+   },
+   {
+    "t": "绞杀者模式 (Strangler Fig)",
+    "d": "在旧系统外围逐步用新服务替换功能，直至旧系统可下线。"
+   },
+   {
+    "t": "分布式单体 (Distributed Monolith)",
+    "d": "拆成多个服务却高度耦合、必须一起发布，兼具两者缺点。"
+   },
+   {
+    "t": "康威定律 (Conway's Law)",
+    "d": "系统结构倾向于复制组织的沟通结构。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "微服务各自拥有数据",
+   "src": "# docker-compose.yml：两个服务、两个独立数据库\nservices:\n  orders:\n    build: ./orders\n    environment:\n      DATABASE_URL: postgres://app:pw@orders-db:5432/orders\n      INVENTORY_URL: http://inventory:8080   # 通过 API 访问，不直连对方库\n    depends_on: [orders-db]\n  inventory:\n    build: ./inventory\n    environment:\n      DATABASE_URL: postgres://app:pw@inventory-db:5432/inventory\n    depends_on: [inventory-db]\n  orders-db:\n    image: postgres:16\n    environment: { POSTGRES_USER: app, POSTGRES_PASSWORD: pw, POSTGRES_DB: orders }\n  inventory-db:\n    image: postgres:16\n    environment: { POSTGRES_USER: app, POSTGRES_PASSWORD: pw, POSTGRES_DB: inventory }",
+   "note": "每个服务独占数据库，跨服务只能走接口，这是微服务与分布式单体的分界。"
+  },
+  "table": {
+   "title": "架构选型对照",
+   "head": [
+    "维度",
+    "单体",
+    "模块化单体",
+    "微服务"
+   ],
+   "rows": [
+    [
+     "部署",
+     "一个单元",
+     "一个单元",
+     "每服务独立"
+    ],
+    [
+     "数据一致性",
+     "本地事务",
+     "本地事务",
+     "最终一致，需 Saga 等"
+    ],
+    [
+     "团队规模适配",
+     "小团队",
+     "小到中型",
+     "多个自治团队"
+    ],
+    [
+     "运维复杂度",
+     "低",
+     "低",
+     "高：服务发现、追踪、网关"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "单体优先",
+    "pros": "开发调试快，事务简单",
+    "cons": "规模变大后耦合重、发布互相牵制",
+    "when": "新产品、需求快速变化、团队小"
+   },
+   {
+    "opt": "模块化单体",
+    "pros": "边界清晰，日后易拆",
+    "cons": "需持续约束依赖纪律",
+    "when": "预期会增长但还没到多团队"
+   },
+   {
+    "opt": "微服务",
+    "pros": "独立发布与扩展，故障隔离",
+    "cons": "网络、一致性、可观测性成本高",
+    "when": "多团队并行、各部分负载差异大"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "多个服务共用一个数据库表，改字段要所有服务一起发布。",
+    "fix": "每个服务独占数据，跨域数据通过 API 或事件同步。"
+   },
+   {
+    "bad": "按技术层拆服务（前端服务、DB 服务），每个需求都改多个服务。",
+    "fix": "按业务能力或限界上下文拆分。"
+   },
+   {
+    "bad": "服务链路同步调用过深，一个慢全链路慢。",
+    "fix": "控制调用深度，非关键路径改为异步事件。"
+   },
+   {
+    "bad": "没有追踪和集中日志就拆了几十个服务。",
+    "fix": "先建好 CI/CD、分布式追踪、集中日志再拆。"
+   }
+  ],
+  "checklist": [
+   "拆分理由是团队或扩展需求，而非流行",
+   "每个服务独占数据存储",
+   "服务间接口有版本与兼容策略",
+   "具备分布式追踪和集中日志",
+   "跨服务流程有一致性方案（Saga/补偿）",
+   "每个服务可独立构建、测试和部署"
+  ],
+  "interview": [
+   {
+    "q": "什么时候不应该上微服务？",
+    "a": "团队小、领域边界还不稳定、缺乏自动化部署和可观测性时。此时拆分会把需求变更变成跨服务协调，并引入网络故障和一致性问题。Fowler 提出的单体优先就是先做好模块边界再拆。"
+   },
+   {
+    "q": "微服务下如何处理跨服务事务？",
+    "a": "避免分布式两阶段提交，常用 Saga：把大事务拆为一系列本地事务，每步发布事件触发下一步，失败时执行补偿操作。配合 outbox 保证事件可靠发出，消费端幂等。"
+   },
+   {
+    "q": "怎么识别分布式单体？",
+    "a": "信号包括：多个服务必须同时发布；共享数据库表；一个请求同步串联很多服务；改一个功能要改多个仓库。解决方向是重新划边界、拆数据、改异步。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Martin Fowler：Microservices",
+    "url": "https://martinfowler.com/articles/microservices.html"
+   },
+   {
+    "title": "Martin Fowler：MonolithFirst",
+    "url": "https://martinfowler.com/bliki/MonolithFirst.html"
+   },
+   {
+    "title": "microservices.io：Saga 模式",
+    "url": "https://microservices.io/patterns/data/saga.html"
+   }
+  ]
+ },
+ {
+  "slug": "race-conditions",
+  "def": "竞态条件（Race Condition）指程序结果依赖于多个并发执行单元的时序，当它们无同步地访问共享状态且至少一方在写时，会出现不确定的错误结果。它存在于线程、进程、分布式服务乃至数据库事务各层，典型形态是读-改-写和先检查后执行（TOCTOU），解决手段是原子操作、锁、事务隔离或乐观并发控制。",
+  "how": [
+   "两个执行单元几乎同时读取同一个共享值，例如两个请求读到的库存都是 1。",
+   "各自基于旧值计算新结果并写回，后写的覆盖先写的，出现丢失更新（Lost Update）。",
+   "先检查后执行时，检查与执行之间状态被别人改变，导致检查结论失效。",
+   "问题只在特定交错时序下出现，本地测试难复现，高并发或线上负载下才暴露。",
+   "修复思路是让读-改-写成为原子操作：加锁、数据库条件更新、版本号比较（CAS）或唯一约束。"
+  ],
+  "terms": [
+   {
+    "t": "临界区 (Critical Section)",
+    "d": "访问共享资源、同一时刻只允许一个执行单元进入的代码段。"
+   },
+   {
+    "t": "丢失更新 (Lost Update)",
+    "d": "并发读-改-写中一方的修改被另一方覆盖。"
+   },
+   {
+    "t": "TOCTOU",
+    "d": "检查时刻与使用时刻之间状态被改变导致的竞态。"
+   },
+   {
+    "t": "比较并交换 (CAS)",
+    "d": "仅当当前值等于预期值时才写入的原子操作，乐观并发的基础。"
+   },
+   {
+    "t": "数据竞争 (Data Race)",
+    "d": "多线程无同步地访问同一内存且至少一个是写，是竞态的一种。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "读改写竞态与加锁",
+   "src": "import threading, time\n\nstock = 100\nlock = threading.Lock()\n\ndef buy_unsafe():\n    global stock\n    current = stock          # 读\n    time.sleep(0)            # 让出 CPU，放大交错概率\n    stock = current - 1      # 写：可能覆盖别人的结果\n\ndef buy_safe():\n    global stock\n    with lock:               # 临界区：读改写整体原子化\n        stock -= 1\n\nfor fn in (buy_unsafe, buy_safe):\n    stock = 100\n    ts = [threading.Thread(target=fn) for _ in range(100)]\n    [t.start() for t in ts]; [t.join() for t in ts]\n    print(fn.__name__, stock)  # unsafe 往往 > 0，safe 稳定为 0",
+   "note": "演示读-改-写在多线程下丢失更新，以及用锁保护临界区后结果确定。"
+  },
+  "table": {
+   "title": "不同层级的防护手段",
+   "head": [
+    "层级",
+    "典型竞态",
+    "常用手段"
+   ],
+   "rows": [
+    [
+     "进程内多线程",
+     "共享变量读改写",
+     "Mutex、原子类型、不可变数据"
+    ],
+    [
+     "数据库",
+     "超卖、重复创建",
+     "条件 UPDATE、唯一约束、SELECT FOR UPDATE"
+    ],
+    [
+     "分布式服务",
+     "多实例同时处理同一任务",
+     "乐观锁版本号、带租约的分布式锁"
+    ],
+    [
+     "文件系统",
+     "TOCTOU 检查后写",
+     "原子 rename、O_EXCL 创建"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "悲观锁",
+    "pros": "语义直观，冲突时不需重试",
+    "cons": "吞吐低，易死锁",
+    "when": "冲突频繁、临界区短"
+   },
+   {
+    "opt": "乐观并发（版本号/CAS）",
+    "pros": "无锁等待，读多写少时高效",
+    "cons": "冲突时要重试，热点下浪费",
+    "when": "冲突少的更新"
+   },
+   {
+    "opt": "数据库原子语句",
+    "pros": "简单可靠，无需额外组件",
+    "cons": "只适合能用单条语句表达的逻辑",
+    "when": "扣库存、计数器等"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "先 SELECT 查库存够不够，再 UPDATE 扣减，两步之间被并发穿透。",
+    "fix": "用 UPDATE … SET stock=stock-1 WHERE id=? AND stock>0 并检查影响行数。"
+   },
+   {
+    "bad": "用 Redis SETNX 做分布式锁但不设过期，持有者崩溃后永久死锁。",
+    "fix": "用 SET key val NX PX 设租约，释放时校验持有者标识。"
+   },
+   {
+    "bad": "认为有 GIL 的 Python 不会有竞态。",
+    "fix": "GIL 只保证字节码级别，复合操作仍需加锁。"
+   },
+   {
+    "bad": "只在单机测试并发，没覆盖多实例部署。",
+    "fix": "在多副本和压测场景下验证，借助竞态检测工具。"
+   }
+  ],
+  "checklist": [
+   "列出所有共享可变状态及其保护方式",
+   "读改写操作已原子化或加锁",
+   "业务唯一性由数据库约束兜底",
+   "分布式锁有租约和持有者校验",
+   "并发路径有压测或竞态检测覆盖",
+   "锁的获取顺序一致以避免死锁"
+  ],
+  "interview": [
+   {
+    "q": "如何防止秒杀超卖？",
+    "a": "核心是把检查和扣减合成一个原子操作：数据库条件更新并检查影响行数，或 Redis Lua 脚本原子扣减；订单表加唯一约束防重复下单；高峰时前置队列削峰。不要在应用层先查后改。"
+   },
+   {
+    "q": "乐观锁和悲观锁怎么选？",
+    "a": "看冲突概率和临界区长度。冲突少、读多写少用乐观锁，用版本号比较更新，失败重试；冲突多或重试代价高用悲观锁如 SELECT FOR UPDATE，但要控制持锁时间和加锁顺序。"
+   },
+   {
+    "q": "怎样发现代码中的竞态？",
+    "a": "代码审查关注共享状态和先查后改模式；使用工具，如 Go 的 -race、C/C++ 的 ThreadSanitizer；在压测中构造高并发；对 AI 生成的并发代码要求写出并发测试用例。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Wikipedia：Race condition",
+    "url": "https://en.wikipedia.org/wiki/Race_condition"
+   },
+   {
+    "title": "Go Data Race Detector",
+    "url": "https://go.dev/doc/articles/race_detector"
+   },
+   {
+    "title": "PostgreSQL 文档：显式锁",
+    "url": "https://www.postgresql.org/docs/current/explicit-locking.html"
+   }
+  ]
+ },
+ {
+  "slug": "backpressure",
+  "def": "反压（Backpressure）是数据流系统中下游把自身处理能力反馈给上游、迫使上游减速或暂停的流量控制机制。它出现在流处理库、消息系统、网络协议和服务调用链中，目的是避免生产快于消费时无界缓冲导致内存耗尽和延迟失控，把过载显式地传递回源头处理。",
+  "how": [
+   "生产者与消费者之间放置有界缓冲区，容量就是系统愿意承受的积压上限。",
+   "缓冲区满时，写入方被阻塞、收到 false 返回值或拒绝信号，而不是继续堆积。",
+   "拉模式中消费者按需请求数据，如 Reactive Streams 的 request(n)，上游只发许可数量。",
+   "压力沿链路逐级向上传递，最终到达可以减速、丢弃或拒绝的源头。",
+   "TCP 滑动窗口是网络层的同类机制：接收窗口缩小，发送方自动放慢。"
+  ],
+  "terms": [
+   {
+    "t": "有界队列 (Bounded Queue)",
+    "d": "容量固定的缓冲区，满了就阻塞或拒绝写入。"
+   },
+   {
+    "t": "需求信号 (Demand / request(n))",
+    "d": "Reactive Streams 中下游声明还能接收多少元素的信号。"
+   },
+   {
+    "t": "高水位线 (highWaterMark)",
+    "d": "Node.js 流内部缓冲阈值，超过后 write() 返回 false。"
+   },
+   {
+    "t": "流量控制 (Flow Control)",
+    "d": "接收方控制发送方速率的机制，如 TCP 窗口、HTTP/2 流控。"
+   },
+   {
+    "t": "无界缓冲 (Unbounded Buffer)",
+    "d": "不设上限的队列，会把过载转化为内存增长和延迟。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "asyncio 有界队列反压",
+   "src": "import asyncio\n\nasync def producer(q: asyncio.Queue):\n    for i in range(1000):\n        await q.put(i)        # 队列满时在这里等待 = 反压生效\n    await q.put(None)        # 结束标记\n\nasync def consumer(q: asyncio.Queue):\n    while (item := await q.get()) is not None:\n        await asyncio.sleep(0.01)  # 模拟慢消费者\n        q.task_done()\n\nasync def main():\n    q = asyncio.Queue(maxsize=100)  # 有界：最多积压 100 条\n    await asyncio.gather(producer(q), consumer(q))\n\nasyncio.run(main())",
+   "note": "maxsize 让生产者在队列满时挂起，速度被动对齐消费者，内存不会无限增长。"
+  },
+  "table": {
+   "title": "过载时的三种应对",
+   "head": [
+    "策略",
+    "行为",
+    "代价"
+   ],
+   "rows": [
+    [
+     "反压（阻塞/减速）",
+     "让上游等待",
+     "上游延迟增加，可能级联"
+    ],
+    [
+     "丢弃（drop）",
+     "超出部分直接丢",
+     "数据丢失"
+    ],
+    [
+     "缓冲（buffer）",
+     "暂存积压",
+     "内存与延迟上升，需设上限"
+    ],
+    [
+     "拒绝（load shedding）",
+     "返回错误如 503",
+     "部分请求失败"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "阻塞式反压",
+    "pros": "不丢数据，实现简单",
+    "cons": "上游被拖慢，可能占满线程",
+    "when": "批处理、管道内部"
+   },
+   {
+    "opt": "拉模式按需请求",
+    "pros": "消费者精确控制节奏",
+    "cons": "协议和实现更复杂",
+    "when": "流式处理框架、跨服务数据流"
+   },
+   {
+    "opt": "缓冲加丢弃",
+    "pros": "上游不受影响",
+    "cons": "丢失数据，需可观测",
+    "when": "指标、日志等可容忍丢失的流"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "Node.js 中忽略 write() 返回 false，持续写入导致内存暴涨。",
+    "fix": "返回 false 时暂停，等 'drain' 事件再写，或用 pipeline()。"
+   },
+   {
+    "bad": "服务间用无界内存队列转发请求。",
+    "fix": "所有队列设上限，满时反压或拒绝。"
+   },
+   {
+    "bad": "反压一路传到用户请求线程，所有请求都卡住。",
+    "fix": "在边界处配合超时和负载卸载，快速失败。"
+   }
+  ],
+  "checklist": [
+   "所有缓冲区和队列都有容量上限",
+   "写入方正确处理满或 false 信号",
+   "队列深度和等待时间有监控",
+   "链路边界处有超时与拒绝策略",
+   "明确每类数据过载时是等、丢还是拒"
+  ],
+  "interview": [
+   {
+    "q": "反压和负载卸载有什么区别？",
+    "a": "反压是让上游慢下来，压力被传递而非丢弃；负载卸载是主动拒绝部分请求以保护自身。数据管道内部倾向反压，面向外部请求的入口更适合卸载，因为无法让用户等无限久。"
+   },
+   {
+    "q": "为什么无界队列是危险的？",
+    "a": "它把吞吐不足转化为排队延迟和内存增长，系统看似正常实际越来越慢，最终 OOM。并且排队的请求可能早已超时，处理它们纯属浪费。有界队列让过载尽早显性化。"
+   },
+   {
+    "q": "Node.js 流怎样处理反压？",
+    "a": "可写流内部缓冲超过 highWaterMark 时 write() 返回 false，生产方应暂停直到 'drain' 事件；使用 stream.pipeline() 或 pipe() 会自动处理暂停与恢复，并统一传播错误。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Node.js：Backpressuring in Streams",
+    "url": "https://nodejs.org/en/learn/modules/backpressuring-in-streams"
+   },
+   {
+    "title": "Reactive Streams 规范",
+    "url": "https://www.reactive-streams.org/"
+   },
+   {
+    "title": "Python 文档：asyncio.Queue",
+    "url": "https://docs.python.org/3/library/asyncio-queue.html"
+   }
+  ]
+ },
+ {
+  "slug": "load-shedding",
+  "def": "负载卸载（Load Shedding）是服务在接近容量极限时主动拒绝一部分请求，以保证其余请求仍能在延迟目标内完成的过载保护手段。它位于服务入口或中间件层，核心思想是快速失败优于全部变慢：拒绝的成本远低于处理一个最终会超时的请求，从而避免吞吐崩塌（goodput 下降）。",
+  "how": [
+   "服务持续度量负载信号，如在途请求数、队列长度、排队时间或 CPU 使用率。",
+   "信号超过阈值时，新请求在最早阶段被拒绝，通常返回 503 或 429 并可带 Retry-After。",
+   "可按优先级卸载：健康检查、付费用户、关键写操作保留，批处理和低优先级先丢。",
+   "对已在队列中等待过久、客户端大概率已超时的请求直接丢弃，不再浪费算力。",
+   "客户端收到拒绝后配合退避重试，或降级显示，形成端到端的过载控制。"
+  ],
+  "terms": [
+   {
+    "t": "有效吞吐 (Goodput)",
+    "d": "在时限内成功完成、对用户有价值的请求吞吐量。"
+   },
+   {
+    "t": "并发限制 (Concurrency Limit)",
+    "d": "同时处理的请求数上限，超出即排队或拒绝。"
+   },
+   {
+    "t": "请求优先级 (Criticality)",
+    "d": "给请求打的重要程度标签，过载时决定先丢谁。"
+   },
+   {
+    "t": "截止时间传播 (Deadline Propagation)",
+    "d": "把客户端剩余超时随请求传下去，过期即放弃处理。"
+   },
+   {
+    "t": "Retry-After",
+    "d": "HTTP 响应头，告诉客户端多久后再重试。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "ASGI 并发限制卸载",
+   "src": "import asyncio\n\nclass ShedMiddleware:\n    \"\"\"在途请求超过上限时直接返回 503\"\"\"\n    def __init__(self, app, max_inflight: int = 200):\n        self.app = app\n        self.sem = asyncio.Semaphore(max_inflight)\n\n    async def __call__(self, scope, receive, send):\n        if scope[\"type\"] != \"http\" or scope[\"path\"] == \"/healthz\":\n            return await self.app(scope, receive, send)  # 探针不卸载\n        if self.sem.locked():                           # 已满，快速失败\n            await send({\"type\": \"http.response.start\", \"status\": 503,\n                        \"headers\": [(b\"retry-after\", b\"1\")]})\n            await send({\"type\": \"http.response.body\", \"body\": b\"overloaded\"})\n            return\n        async with self.sem:\n            await self.app(scope, receive, send)",
+   "note": "一个可套在 FastAPI/Starlette 外层的纯 ASGI 中间件，超并发时立刻返回 503。"
+  },
+  "table": {
+   "title": "常见卸载信号",
+   "head": [
+    "信号",
+    "优点",
+    "注意点"
+   ],
+   "rows": [
+    [
+     "在途请求数",
+     "简单、反应快",
+     "上限需压测确定"
+    ],
+    [
+     "排队等待时间",
+     "直接反映延迟",
+     "需在入队时打时间戳"
+    ],
+    [
+     "CPU 使用率",
+     "通用",
+     "对 I/O 密集服务不敏感"
+    ],
+    [
+     "自适应限流（如梯度算法）",
+     "自动找容量",
+     "实现复杂，需调参"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "固定并发上限",
+    "pros": "实现简单，行为可预测",
+    "cons": "容量变化时需手动调整",
+    "when": "负载形态稳定的服务"
+   },
+   {
+    "opt": "自适应并发限制",
+    "pros": "随延迟变化自动调整",
+    "cons": "算法复杂，可能振荡",
+    "when": "依赖多变、容量难估"
+   },
+   {
+    "opt": "按优先级卸载",
+    "pros": "保护核心业务",
+    "cons": "需全链路传递优先级",
+    "when": "有明确关键与非关键流量"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "卸载逻辑放在请求处理很深的位置，拒绝前已花掉大量资源。",
+    "fix": "在入口最早阶段判断并拒绝。"
+   },
+   {
+    "bad": "连健康检查一起拒绝，编排系统误判实例死亡并重启，雪上加霜。",
+    "fix": "探针请求绕过卸载，或单独端口处理。"
+   },
+   {
+    "bad": "返回 503 但客户端立即无退避重试，负载反而翻倍。",
+    "fix": "带 Retry-After，客户端使用退避和重试预算。"
+   }
+  ],
+  "checklist": [
+   "阈值来自压测得到的容量拐点",
+   "卸载发生在请求处理最早阶段",
+   "健康检查与关键流量不被卸载",
+   "被拒请求有指标和告警",
+   "客户端对 503/429 有退避逻辑"
+  ],
+  "interview": [
+   {
+    "q": "为什么过载时拒绝请求反而提高可用性？",
+    "a": "超过容量后所有请求共享资源，排队延迟飙升，大部分请求都超时，有效吞吐趋近于零。卸载把一部分请求快速拒掉，剩余请求在时限内完成，goodput 保持在接近容量的水平。"
+   },
+   {
+    "q": "负载卸载和限流有何不同？",
+    "a": "限流通常按调用方配额控制，即使服务空闲也会拒绝超额者，偏公平与防滥用；负载卸载依据服务自身健康信号，只在过载时触发，偏自我保护。两者常一起使用。"
+   },
+   {
+    "q": "如何为卸载设置阈值？",
+    "a": "通过压测找出延迟开始急剧上升的并发拐点，留出余量设上限；结合排队时间信号；上线后用指标观察拒绝率与延迟，逐步调整，或采用自适应并发算法。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "AWS Builders' Library：Using load shedding to avoid overload",
+    "url": "https://aws.amazon.com/builders-library/using-load-shedding-to-avoid-overload/"
+   },
+   {
+    "title": "Google SRE Book：Handling Overload",
+    "url": "https://sre.google/sre-book/handling-overload/"
+   }
+  ]
+ },
+ {
+  "slug": "bulkheads",
+  "def": "舱壁隔离（Bulkhead）是一种弹性设计模式，借鉴船体分舱：把线程池、连接池、实例或配额按依赖、租户或功能划分为互相独立的资源池，使某一部分耗尽或故障时，其他部分仍有资源可用。它作用于服务的资源管理层，目标是限制故障的爆炸半径，防止一个慢依赖拖垮整个服务。",
+  "how": [
+   "识别共享资源：线程池、数据库连接、HTTP 客户端连接、内存、实例。",
+   "按依赖或流量类型切分资源池，例如支付调用和推荐调用各用独立线程池与并发上限。",
+   "某个依赖变慢时，只会占满它自己的池，新请求在该池上快速失败或排队。",
+   "其他资源池的请求不受影响，核心功能继续正常服务，用户只会看到局部降级。",
+   "更大粒度上，可按租户或单元（Cell）部署独立实例组，实现基础设施级隔离。"
+  ],
+  "terms": [
+   {
+    "t": "爆炸半径 (Blast Radius)",
+    "d": "一次故障能波及的用户或功能范围。"
+   },
+   {
+    "t": "线程池隔离 (Thread Pool Isolation)",
+    "d": "每个依赖用独立线程池执行调用，互不抢占。"
+   },
+   {
+    "t": "信号量隔离 (Semaphore Isolation)",
+    "d": "用计数信号量限制并发数，开销比线程池小。"
+   },
+   {
+    "t": "单元化架构 (Cell-based Architecture)",
+    "d": "把系统复制成多个独立单元，每个单元只服务部分用户。"
+   },
+   {
+    "t": "噪声邻居 (Noisy Neighbor)",
+    "d": "共享资源中某个租户占用过多，影响其他租户。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "按依赖拆分线程池",
+   "src": "from concurrent.futures import ThreadPoolExecutor, TimeoutError\nimport requests\n\n# 每个下游一个独立的小池子，互不抢线程\npools = {\n    \"payment\": ThreadPoolExecutor(max_workers=20),\n    \"recommend\": ThreadPoolExecutor(max_workers=5),\n}\n\ndef call(dep: str, url: str, timeout: float = 2.0):\n    fut = pools[dep].submit(requests.get, url, timeout=timeout)\n    try:\n        return fut.result(timeout=timeout)\n    except TimeoutError:\n        return None  # 只影响这个依赖，调用方可降级\n\n# 推荐服务变慢时，最多占住 5 个线程，支付调用不受影响\nresp = call(\"payment\", \"https://httpbin.org/get\")\nprint(resp.status_code if resp else \"degraded\")",
+   "note": "为支付和推荐分配独立线程池，慢依赖只会耗尽自己的池而不拖累核心调用。"
+  },
+  "table": {
+   "title": "隔离粒度对比",
+   "head": [
+    "粒度",
+    "实现方式",
+    "隔离强度"
+   ],
+   "rows": [
+    [
+     "并发数",
+     "信号量",
+     "弱：仍共享线程和内存"
+    ],
+    [
+     "线程/连接池",
+     "独立池",
+     "中：资源池互不抢占"
+    ],
+    [
+     "进程/容器",
+     "独立部署与资源配额",
+     "强：CPU 内存隔离"
+    ],
+    [
+     "单元（Cell）",
+     "独立实例组与数据",
+     "最强：故障限在单元内"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "信号量隔离",
+    "pros": "开销小，实现简单",
+    "cons": "无法中断阻塞调用",
+    "when": "异步或非阻塞调用"
+   },
+   {
+    "opt": "线程池隔离",
+    "pros": "可设超时，隔离更彻底",
+    "cons": "线程多、上下文切换开销",
+    "when": "阻塞式同步调用"
+   },
+   {
+    "opt": "单元化部署",
+    "pros": "爆炸半径最小",
+    "cons": "成本高，路由与运维复杂",
+    "when": "大规模多租户系统"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "所有下游共用一个 HTTP 连接池，一个慢依赖占满连接。",
+    "fix": "按下游拆分连接池并设置各自上限和超时。"
+   },
+   {
+    "bad": "池划得过多过小，正常峰值也触发拒绝。",
+    "fix": "按各依赖的峰值并发和延迟估算池大小，压测验证。"
+   },
+   {
+    "bad": "隔离了线程但没设超时，池内线程永久挂起。",
+    "fix": "每个调用都配超时，并与熔断器配合。"
+   }
+  ],
+  "checklist": [
+   "关键与非关键依赖使用不同资源池",
+   "每个池有容量上限和监控",
+   "池满时有明确的降级行为",
+   "所有远程调用设置超时",
+   "多租户场景有每租户配额"
+  ],
+  "interview": [
+   {
+    "q": "舱壁和熔断器有什么区别？",
+    "a": "舱壁限制资源占用范围，保证一个依赖出问题时最多耗掉自己那份资源；熔断器检测失败率，在依赖持续故障时直接短路请求。前者控制影响面，后者减少无效调用，通常组合使用。"
+   },
+   {
+    "q": "如何确定每个舱壁的大小？",
+    "a": "依据利特尔定律：所需并发约等于目标吞吐乘以平均延迟，再加峰值余量。结合压测和线上指标调整，关键依赖给足，非关键依赖从严，满载时触发降级而不是排队。"
+   },
+   {
+    "q": "单元化架构解决了什么问题？",
+    "a": "把系统复制成多个独立单元，每个单元服务一部分用户，部署、配置变更和故障都限制在单元内。它是基础设施层面的舱壁，代价是路由层复杂和资源冗余。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Azure 架构中心：Bulkhead 模式",
+    "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/bulkhead"
+   },
+   {
+    "title": "Resilience4j：Bulkhead",
+    "url": "https://resilience4j.readme.io/docs/bulkhead"
+   }
+  ]
+ },
+ {
+  "slug": "jitter",
+  "def": "抖动（Jitter）是在重试退避或定时任务的等待时间中加入随机量的技术。纯指数退避会让同时失败的大量客户端在相同时间点再次重试，形成同步尖峰；加入随机性可以把重试分散到时间窗口内，降低对恢复中服务的冲击。它是客户端重试策略中与超时、退避、重试上限配套的一环。",
+  "how": [
+   "客户端请求失败后，先计算指数退避上界：base × 2^attempt，并用 cap 封顶。",
+   "在 0 到上界之间随机取值（Full Jitter），或在一半到上界之间取值（Equal Jitter）。",
+   "大量客户端的重试时刻由此均匀散开，服务端看到的是平滑负载而非周期性尖峰。",
+   "同理，定时任务、缓存过期时间、连接重建也加随机偏移，避免同时触发。",
+   "同时配合最大重试次数和重试预算，防止随机化之后重试总量仍然过大。"
+  ],
+  "terms": [
+   {
+    "t": "全抖动 (Full Jitter)",
+    "d": "等待时间在 0 到退避上界间均匀随机。"
+   },
+   {
+    "t": "等值抖动 (Equal Jitter)",
+    "d": "保留一半退避时间，另一半随机，保证最小等待。"
+   },
+   {
+    "t": "去相关抖动 (Decorrelated Jitter)",
+    "d": "基于上次等待时间随机增长下一次等待的变体。"
+   },
+   {
+    "t": "退避上限 (Cap)",
+    "d": "单次等待时间的最大值，防止指数增长过长。"
+   },
+   {
+    "t": "同步化 (Synchronization)",
+    "d": "多个客户端行为在时间上对齐，导致负载尖峰。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "指数退避加全抖动",
+   "src": "import random, time\nimport requests\n\ndef get_with_retry(url, max_attempts=5, base=0.1, cap=10.0):\n    for attempt in range(max_attempts):\n        try:\n            r = requests.get(url, timeout=3)\n            if r.status_code < 500:\n                return r              # 成功或 4xx 都不再重试\n        except requests.RequestException:\n            pass                       # 网络错误，进入重试\n        if attempt == max_attempts - 1:\n            break\n        # Full Jitter：在 [0, min(cap, base*2^n)] 内随机等待\n        sleep = random.uniform(0, min(cap, base * 2 ** attempt))\n        time.sleep(sleep)\n    raise RuntimeError(\"retries exhausted\")",
+   "note": "按 AWS 架构博客的 Full Jitter 公式实现，有重试上限并跳过 4xx。"
+  },
+  "table": {
+   "title": "退避策略对比",
+   "head": [
+    "策略",
+    "等待公式（概念）",
+    "特点"
+   ],
+   "rows": [
+    [
+     "固定间隔",
+     "sleep = c",
+     "最易同步，易打爆服务"
+    ],
+    [
+     "指数退避",
+     "min(cap, base·2^n)",
+     "总量下降，但仍同步"
+    ],
+    [
+     "Full Jitter",
+     "random(0, 指数上界)",
+     "分散最好，平均等待短"
+    ],
+    [
+     "Equal Jitter",
+     "上界/2 + random(0, 上界/2)",
+     "保证最小间隔"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Full Jitter",
+    "pros": "分散效果好，总调用少",
+    "cons": "个别请求可能几乎不等待",
+    "when": "大量客户端的默认选择"
+   },
+   {
+    "opt": "Equal Jitter",
+    "pros": "保证最小退避",
+    "cons": "平均等待更长",
+    "when": "需要强制冷却时间"
+   },
+   {
+    "opt": "不加抖动",
+    "pros": "行为可预测",
+    "cons": "多客户端时形成同步尖峰",
+    "when": "只有单个客户端的脚本"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "所有实例用同一随机种子或启动即同时开始，抖动失效。",
+    "fix": "使用系统随机源，不手动固定种子。"
+   },
+   {
+    "bad": "只给重试加抖动，定时任务全部整点触发。",
+    "fix": "cron 和缓存 TTL 同样加入随机偏移。"
+   },
+   {
+    "bad": "抖动后没有上限，退避时间无限增长。",
+    "fix": "设置 cap 与最大重试次数。"
+   }
+  ],
+  "checklist": [
+   "所有重试都使用指数退避加抖动",
+   "退避有上限，重试有次数限制",
+   "仅对可重试错误重试",
+   "定时任务和 TTL 加随机偏移",
+   "SDK 默认重试策略已确认并统一"
+  ],
+  "interview": [
+   {
+    "q": "为什么有了指数退避还需要抖动？",
+    "a": "指数退避减少了重试次数，但同一时刻失败的客户端仍按相同序列重试，请求在 1、2、4 秒处成簇到达。抖动把每个客户端的等待随机化，打散这些簇，让服务恢复期的负载平滑。"
+   },
+   {
+    "q": "Full Jitter 和 Equal Jitter 如何选？",
+    "a": "AWS 的模拟显示 Full Jitter 在总调用次数和完成时间上表现好，适合作为默认；若业务需要保证两次重试间至少间隔一段时间，选 Equal Jitter。"
+   },
+   {
+    "q": "抖动还能用在哪些地方？",
+    "a": "缓存 TTL 加随机偏移避免同时过期；定时任务错峰执行；客户端重连、心跳和轮询间隔；滚动发布中批次间隔。本质都是打破多实例的时间同步。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "AWS 架构博客：Exponential Backoff And Jitter",
+    "url": "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/"
+   },
+   {
+    "title": "AWS Builders' Library：Timeouts, retries and backoff with jitter",
+    "url": "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/"
+   }
+  ]
+ },
+ {
+  "slug": "retry-storms",
+  "def": "重试风暴（Retry Storm）是指下游出现故障或变慢时，各层客户端同时、反复重试，使请求量成倍放大，把原本可恢复的局部问题变成持续过载的现象。它属于分布式系统的过载与级联故障范畴，多层调用链中每层都重试 N 次时，最底层可能承受 N 的层数次方倍流量。",
+  "how": [
+   "下游因发布变更、容量不足或自身依赖问题，出现部分请求失败或延迟明显升高。",
+   "上游客户端超时后重试，请求量增加，下游负载进一步升高、失败率上升。",
+   "多层链路中每层独立重试，放大效应相乘，例如三层各重试 3 次最多 27 倍。",
+   "即使原始故障消除，积压的重试流量仍让服务无法恢复，形成亚稳态故障。",
+   "防护依赖重试预算、只在单层重试、退避抖动、熔断和服务端卸载共同作用。"
+  ],
+  "terms": [
+   {
+    "t": "重试放大 (Retry Amplification)",
+    "d": "多层重试叠加使底层请求量成倍增长。"
+   },
+   {
+    "t": "重试预算 (Retry Budget)",
+    "d": "限制重试请求占总请求的比例，例如不超过 10%。"
+   },
+   {
+    "t": "亚稳态故障 (Metastable Failure)",
+    "d": "触发因素消失后，系统仍被自身反馈环困在故障态。"
+   },
+   {
+    "t": "熔断器 (Circuit Breaker)",
+    "d": "失败率超阈值时暂停调用下游，一段时间后试探恢复。"
+   },
+   {
+    "t": "重试节流 (Retry Throttling)",
+    "d": "gRPC 中基于令牌桶，失败多时自动停止重试的机制。"
+   }
+  ],
+  "code": {
+   "lang": "json",
+   "title": "gRPC 重试与节流配置",
+   "src": "{\n  \"methodConfig\": [{\n    \"name\": [{ \"service\": \"orders.OrderService\" }],\n    \"retryPolicy\": {\n      \"maxAttempts\": 3,\n      \"initialBackoff\": \"0.2s\",\n      \"maxBackoff\": \"2s\",\n      \"backoffMultiplier\": 2,\n      \"retryableStatusCodes\": [\"UNAVAILABLE\"]\n    }\n  }],\n  \"retryThrottling\": {\n    \"maxTokens\": 10,\n    \"tokenRatio\": 0.1\n  }\n}",
+   "note": "gRPC 服务配置：限定重试次数和可重试状态码，retryThrottling 在失败率高时自动停止重试。"
+  },
+  "table": {
+   "title": "多层重试的放大效应",
+   "head": [
+    "调用层数",
+    "每层尝试次数",
+    "底层最大请求倍数"
+   ],
+   "rows": [
+    [
+     "1",
+     "3",
+     "3"
+    ],
+    [
+     "2",
+     "3",
+     "9"
+    ],
+    [
+     "3",
+     "3",
+     "27"
+    ],
+    [
+     "3（仅一层重试）",
+     "3 / 1 / 1",
+     "3"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "只在最外层或最靠近故障的一层重试",
+    "pros": "放大可控",
+    "cons": "需跨团队约定",
+    "when": "多层同步调用链"
+   },
+   {
+    "opt": "重试预算",
+    "pros": "故障时自动收敛重试量",
+    "cons": "需维护计数状态",
+    "when": "高 QPS 客户端"
+   },
+   {
+    "opt": "熔断",
+    "pros": "快速失败，给下游喘息",
+    "cons": "阈值不当会误熔断",
+    "when": "依赖可能长时间不可用"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "SDK、网关、业务代码各自默认重试，叠加后远超预期。",
+    "fix": "梳理全链路重试点，只保留一处。"
+   },
+   {
+    "bad": "对超时也无脑重试，而下游其实已在处理原请求。",
+    "fix": "确认操作幂等，超时重试配合幂等键与预算。"
+   },
+   {
+    "bad": "故障恢复时所有客户端同时重连。",
+    "fix": "重连加退避抖动，服务端配合负载卸载。"
+   },
+   {
+    "bad": "服务返回过载错误仍被当作可重试。",
+    "fix": "约定过载信号不重试，或尊重 Retry-After。"
+   }
+  ],
+  "checklist": [
+   "全链路列出重试点并只保留必要一层",
+   "重试次数有上限并配退避抖动",
+   "有重试预算或节流机制",
+   "仅对幂等操作或带幂等键的请求重试",
+   "监控重试率并设告警",
+   "关键依赖配熔断器"
+  ],
+  "interview": [
+   {
+    "q": "如何量化并控制重试放大？",
+    "a": "放大倍数约为各层尝试次数的乘积。控制方法：只在一层重试；设置重试预算，例如 Google SRE 书中建议重试占比低于 10%；下游返回过载信号时上游不再重试；监控重试与原始请求的比例。"
+   },
+   {
+    "q": "什么是亚稳态故障，和重试有何关系？",
+    "a": "系统被触发进入故障后，即使触发原因消失，也因正反馈环无法自愈。重试就是典型反馈环：失败引发重试，重试加剧过载。打破它要减载，例如关闭重试、卸载流量或临时扩容。"
+   },
+   {
+    "q": "重试和熔断应怎么配合？",
+    "a": "重试处理偶发瞬时错误，熔断处理持续故障。熔断打开后请求直接失败、不再重试；半开状态放少量请求试探。顺序上一般是先过熔断器再决定是否重试。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Google SRE Book：Addressing Cascading Failures",
+    "url": "https://sre.google/sre-book/addressing-cascading-failures/"
+   },
+   {
+    "title": "gRPC 文档：Retry",
+    "url": "https://grpc.io/docs/guides/retry/"
+   },
+   {
+    "title": "AWS Builders' Library：Timeouts, retries and backoff with jitter",
+    "url": "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/"
+   }
+  ]
+ },
+ {
+  "slug": "cascading-failures",
+  "def": "级联故障（Cascading Failure）是指一个组件的故障或过载通过依赖关系、共享资源和正反馈传播到其他组件，最终导致大范围服务不可用。它是分布式系统可靠性的核心风险，常见诱因是过载、资源耗尽和重试放大；防护重点在于限制传播路径：超时、熔断、舱壁、负载卸载和降级。",
+  "how": [
+   "某个实例或依赖变慢或宕机，原本由它承担的流量转移到剩余实例上。",
+   "剩余实例负载升高，延迟上升，线程、连接、内存等资源逐渐被占满。",
+   "上游调用方因等待而堆积请求并开始重试，自身资源也被耗尽，故障沿调用链向上蔓延。",
+   "健康检查失败触发实例重启或摘除，可用容量进一步减少，形成正反馈循环。",
+   "阻断手段是快速失败：超时、熔断、舱壁隔离、卸载与降级，必要时人工减流。"
+  ],
+  "terms": [
+   {
+    "t": "正反馈环 (Positive Feedback Loop)",
+    "d": "故障结果反过来加剧故障原因，如过载导致重试再加重过载。"
+   },
+   {
+    "t": "熔断器 (Circuit Breaker)",
+    "d": "依赖失败率过高时暂停调用、快速失败，定期试探恢复。"
+   },
+   {
+    "t": "资源耗尽 (Resource Exhaustion)",
+    "d": "CPU、内存、线程、文件描述符等被占满导致服务失效。"
+   },
+   {
+    "t": "故障域 (Failure Domain)",
+    "d": "会因同一原因一起失效的组件集合。"
+   },
+   {
+    "t": "容量余量 (Headroom)",
+    "d": "在峰值之外预留的处理能力，用于吸收故障转移流量。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "最小熔断器实现",
+   "src": "import time\n\nclass CircuitBreaker:\n    def __init__(self, threshold=5, reset_after=30.0):\n        self.threshold, self.reset_after = threshold, reset_after\n        self.failures, self.opened_at = 0, None\n\n    def call(self, fn, *args, **kwargs):\n        if self.opened_at is not None:\n            if time.monotonic() - self.opened_at < self.reset_after:\n                raise RuntimeError(\"circuit open\")  # 快速失败，不打下游\n            self.opened_at = None                    # 半开：放行一次试探\n        try:\n            result = fn(*args, **kwargs)\n        except Exception:\n            self.failures += 1\n            if self.failures >= self.threshold:\n                self.opened_at = time.monotonic()    # 打开熔断\n            raise\n        self.failures = 0                            # 成功则复位\n        return result",
+   "note": "连续失败达到阈值后熔断，冷却期内直接拒绝，之后放行请求试探恢复。"
+  },
+  "table": {
+   "title": "传播路径与阻断手段",
+   "head": [
+    "传播路径",
+    "表现",
+    "阻断手段"
+   ],
+   "rows": [
+    [
+     "流量转移",
+     "剩余实例过载",
+     "容量余量、负载卸载"
+    ],
+    [
+     "调用链等待",
+     "上游线程被占满",
+     "超时、熔断、舱壁"
+    ],
+    [
+     "重试放大",
+     "请求量倍增",
+     "重试预算、退避抖动"
+    ],
+    [
+     "健康检查误杀",
+     "实例被反复重启",
+     "存活探针只查进程自身"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "熔断快速失败",
+    "pros": "保护上游资源，给下游恢复时间",
+    "cons": "阈值不当会误伤正常流量",
+    "when": "依赖可能持续故障"
+   },
+   {
+    "opt": "降级返回兜底数据",
+    "pros": "用户体验平滑",
+    "cons": "数据可能过期或不完整",
+    "when": "非核心功能依赖"
+   },
+   {
+    "opt": "预留容量余量",
+    "pros": "吸收单点故障的流量转移",
+    "cons": "平时资源利用率低",
+    "when": "关键服务的 N+1/N+2 规划"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "存活探针检查数据库连通性，数据库一抖所有 Pod 被重启。",
+    "fix": "存活探针只反映进程自身是否卡死，依赖状态放就绪探针或不检查。"
+   },
+   {
+    "bad": "超时设得比上游还长，上游先放弃了下游还在算。",
+    "fix": "超时自外向内递减，并传播截止时间。"
+   },
+   {
+    "bad": "故障时自动扩容，但新实例启动要预热，反而加重数据库负担。",
+    "fix": "扩容配合限流，冷启动实例逐步接流。"
+   },
+   {
+    "bad": "容量规划按平均负载，没考虑一个可用区宕机。",
+    "fix": "按失去一个故障域后的剩余容量规划。"
+   }
+  ],
+  "checklist": [
+   "所有远程调用有超时且自外向内递减",
+   "关键依赖配置熔断与降级方案",
+   "重试有上限、退避与预算",
+   "容量规划覆盖失去一个故障域",
+   "健康检查不会因依赖故障误杀实例",
+   "有紧急减流开关"
+  ],
+  "interview": [
+   {
+    "q": "举例说明一次典型的级联故障。",
+    "a": "缓存集群故障使请求直达数据库，数据库延迟升高，应用线程等待耗尽，上游超时重试使流量翻倍，健康检查失败导致实例被重启，剩余实例负载更高，最终全站不可用。每一步都是前一步的放大。"
+   },
+   {
+    "q": "为什么说超时是最基础的防线？",
+    "a": "没有超时，慢依赖会无限期占用线程和连接，故障直接转化为资源耗尽并向上蔓延。合理超时让调用方及时释放资源，是熔断、降级、重试能够生效的前提。"
+   },
+   {
+    "q": "如何从级联故障中恢复？",
+    "a": "先减负载：关闭非关键功能、卸载流量、暂停重试或批任务；再恢复容量：扩容并逐步放量，避免新实例被瞬间打垮；最后复盘反馈环，加熔断、预算和余量。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Google SRE Book：Addressing Cascading Failures",
+    "url": "https://sre.google/sre-book/addressing-cascading-failures/"
+   },
+   {
+    "title": "Azure 架构中心：Circuit Breaker 模式",
+    "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/circuit-breaker"
+   },
+   {
+    "title": "Wikipedia：Cascading failure",
+    "url": "https://en.wikipedia.org/wiki/Cascading_failure"
+   }
+  ]
+ },
+ {
+  "slug": "thundering-herd",
+  "def": "惊群效应（Thundering Herd）指大量等待者因同一事件被同时唤醒或同时行动，争抢有限资源，造成瞬时负载尖峰。在缓存场景中表现为热点键失效瞬间大量请求同时回源数据库，常称缓存击穿（Cache Stampede）；在操作系统、连接重建和定时任务中也存在。解决思路是合并请求、错峰和提前刷新。",
+  "how": [
+   "大量请求依赖同一共享资源，例如一个热点缓存键或一个监听套接字。",
+   "触发事件发生，例如缓存键到期、服务批量重启、整点定时器触发或网络恢复。",
+   "所有等待者在同一时刻发现资源不可用并同时发起昂贵操作，如查询数据库。",
+   "下游被尖峰压垮，延迟上升导致更多请求未命中，可能演变为级联故障。",
+   "防护：单飞合并（single-flight）、分布式互斥锁、TTL 随机化、提前异步刷新、过期数据兜底。"
+  ],
+  "terms": [
+   {
+    "t": "缓存击穿 (Cache Stampede)",
+    "d": "热点键失效时大量并发请求同时回源。"
+   },
+   {
+    "t": "请求合并 (Single-flight)",
+    "d": "同一键的并发请求只放一个去加载，其余等待共享结果。"
+   },
+   {
+    "t": "概率提前过期 (Probabilistic Early Expiration)",
+    "d": "临近过期时按概率提前刷新，避免集中失效。"
+   },
+   {
+    "t": "过期可用 (Stale-While-Revalidate)",
+    "d": "先返回旧值，同时后台刷新缓存。"
+   },
+   {
+    "t": "缓存雪崩 (Cache Avalanche)",
+    "d": "大量键同时过期或缓存整体故障导致回源激增。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Redis 互斥锁防击穿",
+   "src": "import json, random, time\nimport redis\n\nr = redis.Redis()\n\ndef get_product(pid, load_from_db):\n    key, lock = f\"product:{pid}\", f\"lock:product:{pid}\"\n    for _ in range(50):\n        cached = r.get(key)\n        if cached is not None:\n            return json.loads(cached)\n        # 只有抢到锁的请求去查库，锁 10 秒自动过期防死锁\n        if r.set(lock, \"1\", nx=True, ex=10):\n            try:\n                data = load_from_db(pid)\n                ttl = 300 + random.randint(0, 60)   # TTL 加抖动，错开过期\n                r.set(key, json.dumps(data), ex=ttl)\n                return data\n            finally:\n                r.delete(lock)\n        time.sleep(0.05)                           # 没抢到锁：稍等再读缓存\n    return load_from_db(pid)                       # 兜底",
+   "note": "未命中时只放一个请求回源，其余短暂等待读缓存；TTL 加随机量防集中过期。"
+  },
+  "table": {
+   "title": "缓存三类问题区分",
+   "head": [
+    "问题",
+    "原因",
+    "典型对策"
+   ],
+   "rows": [
+    [
+     "缓存击穿",
+     "单个热点键过期",
+     "互斥锁、single-flight、永不过期加异步刷新"
+    ],
+    [
+     "缓存雪崩",
+     "大量键同时过期或缓存宕机",
+     "TTL 随机化、多级缓存、限流"
+    ],
+    [
+     "缓存穿透",
+     "查询不存在的数据",
+     "缓存空值、布隆过滤器"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "互斥锁回源",
+    "pros": "保证只有一次回源",
+    "cons": "等待者延迟增加，锁实现要小心",
+    "when": "热点键回源代价高"
+   },
+   {
+    "opt": "返回旧值后台刷新",
+    "pros": "用户无感知延迟",
+    "cons": "短时间读到旧数据",
+    "when": "可容忍短暂不一致"
+   },
+   {
+    "opt": "TTL 随机化",
+    "pros": "实现极简",
+    "cons": "无法处理单个超热键",
+    "when": "大批键同时写入的场景"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "批量预热缓存时所有键 TTL 相同，到点一起失效。",
+    "fix": "TTL 叠加随机偏移。"
+   },
+   {
+    "bad": "分布式锁不设过期，持锁进程挂掉后键永远无法重建。",
+    "fix": "锁带过期时间，释放时校验持有者。"
+   },
+   {
+    "bad": "等待者忙等轮询缓存，把 Redis 打满。",
+    "fix": "限制轮询次数与间隔，或进程内 single-flight 合并。"
+   }
+  ],
+  "checklist": [
+   "识别热点键并单独设计刷新策略",
+   "缓存 TTL 带随机偏移",
+   "回源路径有请求合并或互斥",
+   "服务重启和缓存清空后有预热方案",
+   "数据库前有限流保护"
+  ],
+  "interview": [
+   {
+    "q": "如何解决热点键过期导致的击穿？",
+    "a": "三种思路：同键请求合并，进程内用 single-flight、跨进程用分布式锁，只放一个回源；逻辑过期，键不真正过期，读到过期标记时异步刷新并先返回旧值；对超热键提前定时刷新。"
+   },
+   {
+    "q": "惊群在操作系统层面指什么？",
+    "a": "多个进程或线程阻塞在同一事件上，如 accept 同一监听套接字，事件到来时全部被唤醒但只有一个能处理，其余白白切换上下文。Linux 通过 EPOLLEXCLUSIVE、SO_REUSEPORT 等机制缓解。"
+   },
+   {
+    "q": "服务大规模重启后为什么会出现尖峰？",
+    "a": "所有实例同时冷启动：缓存为空、连接池重建、客户端同时重连，请求集中回源。应对方法是滚动重启、连接重试加抖动、启动预热以及就绪探针延后接流。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Wikipedia：Thundering herd problem",
+    "url": "https://en.wikipedia.org/wiki/Thundering_herd_problem"
+   },
+   {
+    "title": "Wikipedia：Cache stampede",
+    "url": "https://en.wikipedia.org/wiki/Cache_stampede"
+   },
+   {
+    "title": "Go 包文档：singleflight",
+    "url": "https://pkg.go.dev/golang.org/x/sync/singleflight"
+   }
+  ]
+ },
+ {
+  "slug": "liveness-vs-readiness-probes",
+  "def": "存活探针（Liveness Probe）与就绪探针（Readiness Probe）是 Kubernetes 的两类健康检查。存活探针回答进程是否卡死、需要重启；就绪探针回答此刻能否接收流量、是否应在 Service 端点中。二者属编排层，配合启动探针（Startup Probe）区分启动慢与已挂掉，决定重启与摘流。",
+  "how": [
+   "kubelet 按 periodSeconds 周期执行探针，方式可以是 HTTP GET、TCP 连接、gRPC 或 exec 命令。",
+   "启动探针存在时，在其成功之前存活和就绪探针都不执行，给慢启动应用留时间。",
+   "存活探针连续失败达到 failureThreshold，kubelet 杀掉并按重启策略重启容器。",
+   "就绪探针失败时容器不被重启，但其 Pod 从 Service 的端点列表中移除，不再接收流量。",
+   "就绪恢复后重新加入端点；滚动发布也依赖就绪状态决定推进节奏。"
+  ],
+  "terms": [
+   {
+    "t": "启动探针 (Startup Probe)",
+    "d": "启动阶段专用探针，成功前屏蔽存活与就绪探针。"
+   },
+   {
+    "t": "端点 (EndpointSlice)",
+    "d": "Service 后端可接流量的 Pod 地址集合。"
+   },
+   {
+    "t": "失败阈值 (failureThreshold)",
+    "d": "连续失败多少次判定探针失败，默认 3。"
+   },
+   {
+    "t": "初始延迟 (initialDelaySeconds)",
+    "d": "容器启动后多久开始首次探测。"
+   },
+   {
+    "t": "CrashLoopBackOff",
+    "d": "容器反复崩溃或被杀后，重启间隔递增的状态。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "三种探针配置",
+   "src": "containers:\n  - name: api\n    image: example/api:1.0\n    ports: [{ containerPort: 8080 }]\n    startupProbe:            # 启动最多 30×10=300 秒\n      httpGet: { path: /livez, port: 8080 }\n      failureThreshold: 30\n      periodSeconds: 10\n    livenessProbe:           # 只查进程自身，失败则重启\n      httpGet: { path: /livez, port: 8080 }\n      periodSeconds: 10\n      timeoutSeconds: 2\n      failureThreshold: 3\n    readinessProbe:          # 能否接流量，失败则摘流不重启\n      httpGet: { path: /readyz, port: 8080 }\n      periodSeconds: 5\n      failureThreshold: 2",
+   "note": "启动探针兜住慢启动，存活探针管重启，就绪探针管是否进入负载均衡。"
+  },
+  "table": {
+   "title": "三类探针对照",
+   "head": [
+    "探针",
+    "回答的问题",
+    "失败后果"
+   ],
+   "rows": [
+    [
+     "Startup",
+     "启动完成了吗",
+     "超过阈值后重启容器"
+    ],
+    [
+     "Liveness",
+     "进程卡死了吗",
+     "重启容器"
+    ],
+    [
+     "Readiness",
+     "现在能接流量吗",
+     "从 Service 端点移除，不重启"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "就绪探针检查关键依赖",
+    "pros": "依赖不可用时自动摘流",
+    "cons": "共享依赖故障会让所有 Pod 同时摘流",
+    "when": "依赖是实例私有的，如本地缓存加载"
+   },
+   {
+    "opt": "存活探针只检查进程",
+    "pros": "避免依赖抖动引发重启风暴",
+    "cons": "无法发现依赖导致的不可用",
+    "when": "几乎总是推荐"
+   },
+   {
+    "opt": "不配存活探针",
+    "pros": "零误杀风险",
+    "cons": "死锁进程不会被自动恢复",
+    "when": "进程卡死后会自行退出的应用"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "存活探针检查数据库，数据库抖动导致全部 Pod 被重启。",
+    "fix": "存活探针只检查进程能否响应，不调用外部依赖。"
+   },
+   {
+    "bad": "存活和就绪用同一个端点同一参数。",
+    "fix": "分开端点，存活阈值更宽松，就绪更敏感。"
+   },
+   {
+    "bad": "慢启动应用用很大的 initialDelaySeconds 硬撑。",
+    "fix": "改用启动探针，启动完成后再启用存活探针。"
+   },
+   {
+    "bad": "探针超时用默认 1 秒，GC 停顿时误判失败。",
+    "fix": "根据实际延迟设置 timeoutSeconds 和阈值。"
+   }
+  ],
+  "checklist": [
+   "存活与就绪探针使用不同端点",
+   "存活探针不依赖外部服务",
+   "慢启动应用配置了启动探针",
+   "超时与阈值按真实延迟调整",
+   "停机时就绪先失败以便摘流"
+  ],
+  "interview": [
+   {
+    "q": "就绪探针应不应该检查数据库？",
+    "a": "要看依赖是否共享。若所有 Pod 共用一个数据库，它故障时全部 Pod 都变成未就绪，Service 无后端，用户反而拿不到友好错误。通常就绪只检查实例自身准备状态，依赖故障交给熔断和降级处理。"
+   },
+   {
+    "q": "为什么需要启动探针？",
+    "a": "有些应用启动需要较长时间加载。只用存活探针时，要么初始延迟设很长导致真挂掉也发现得慢，要么启动中就被误杀陷入 CrashLoopBackOff。启动探针把启动期单独处理，成功后再交给存活探针。"
+   },
+   {
+    "q": "探针失败后流量多久会停止？",
+    "a": "大约是 periodSeconds 乘以 failureThreshold，再加上端点更新传播到 kube-proxy 或负载均衡器的时间。因此停机时应先让就绪失败或在 preStop 中等待，避免请求打到正在退出的 Pod。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Kubernetes：配置存活、就绪和启动探针",
+    "url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/"
+   },
+   {
+    "title": "Kubernetes：Liveness, Readiness, and Startup Probes",
+    "url": "https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/"
+   }
+  ]
+ },
+ {
+  "slug": "graceful-shutdown",
+  "def": "优雅停机（Graceful Shutdown）是进程收到终止信号后，停止接收新工作、完成或妥善移交在途工作、释放资源再退出的过程。它位于应用与编排平台的生命周期契约层：Kubernetes、systemd、容器运行时先发 SIGTERM，等待宽限期后才发 SIGKILL。做好它是零停机发布和自动扩缩容不丢请求的前提。",
+  "how": [
+   "平台决定终止实例，向主进程发送 SIGTERM，并开始计时宽限期，Kubernetes 默认 30 秒。",
+   "应用捕获信号后先把自身标记为未就绪，让负载均衡器停止发来新请求。",
+   "停止接受新连接和新任务，消费者停止拉取消息，定时任务不再调度。",
+   "等待在途请求和任务处理完成，或在超时之前把未完成的任务退回队列。",
+   "关闭数据库连接池、刷新日志和指标缓冲后退出；超时未退出将被 SIGKILL 强杀。"
+  ],
+  "terms": [
+   {
+    "t": "SIGTERM",
+    "d": "请求进程终止的可捕获信号，优雅停机的起点。"
+   },
+   {
+    "t": "SIGKILL",
+    "d": "不可捕获的强制终止信号，宽限期到后发送。"
+   },
+   {
+    "t": "宽限期 (terminationGracePeriodSeconds)",
+    "d": "Kubernetes 从发 SIGTERM 到强杀的时间，默认 30 秒。"
+   },
+   {
+    "t": "preStop 钩子 (preStop Hook)",
+    "d": "容器终止前执行的命令或请求，常用于等待摘流。"
+   },
+   {
+    "t": "PID 1 问题",
+    "d": "容器中 PID 1 进程不转发信号或无默认处理，导致应用收不到 SIGTERM。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "Node.js 处理 SIGTERM",
+   "src": "const http = require(\"node:http\");\n\nlet shuttingDown = false;\nconst server = http.createServer((req, res) => {\n  if (req.url === \"/readyz\") {\n    res.writeHead(shuttingDown ? 503 : 200).end();  // 停机时就绪失败\n    return;\n  }\n  setTimeout(() => res.end(\"ok\"), 200);             // 模拟业务处理\n});\nserver.listen(8080);\n\nprocess.on(\"SIGTERM\", () => {\n  shuttingDown = true;\n  // 停止接新连接，等在途请求结束后回调\n  server.close(() => process.exit(0));\n  server.closeIdleConnections();                    // 关闭空闲 keep-alive 连接\n  // 兜底：宽限期前强制退出\n  setTimeout(() => process.exit(1), 25_000).unref();\n});",
+   "note": "收到 SIGTERM 后就绪失败、停止接新连接，在途请求完成再退出，并设兜底超时。"
+  },
+  "table": {
+   "title": "常见运行环境的终止流程",
+   "head": [
+    "环境",
+    "终止信号",
+    "默认宽限"
+   ],
+   "rows": [
+    [
+     "Kubernetes",
+     "SIGTERM，超时后 SIGKILL",
+     "30 秒"
+    ],
+    [
+     "docker stop",
+     "SIGTERM，超时后 SIGKILL",
+     "10 秒"
+    ],
+    [
+     "systemd",
+     "默认 SIGTERM，超时后 SIGKILL",
+     "TimeoutStopSec，常见默认 90 秒"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "等待全部在途工作完成",
+    "pros": "不丢请求",
+    "cons": "长任务会拖长停机甚至被强杀",
+    "when": "请求短、可预期"
+   },
+   {
+    "opt": "中断并退回队列",
+    "pros": "停机快",
+    "cons": "任务需幂等可重做",
+    "when": "长任务、批处理"
+   },
+   {
+    "opt": "preStop 先等待再处理信号",
+    "pros": "覆盖摘流传播延迟",
+    "cons": "占用宽限期时间",
+    "when": "Kubernetes 后面挂负载均衡"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "Dockerfile 用 shell 形式 CMD，SIGTERM 发给 sh，应用收不到。",
+    "fix": "用 exec 形式 CMD 或加 tini 等 init 进程转发信号。"
+   },
+   {
+    "bad": "收到 SIGTERM 立即退出，正在处理的请求全部 502。",
+    "fix": "先摘流、再关监听、等在途完成后退出。"
+   },
+   {
+    "bad": "应用清理时间比宽限期还长，总被 SIGKILL。",
+    "fix": "让应用超时小于宽限期，或调大 terminationGracePeriodSeconds。"
+   },
+   {
+    "bad": "消息消费者停机时没归还未确认消息。",
+    "fix": "停止拉取，处理完或 nack 后再关闭连接。"
+   }
+  ],
+  "checklist": [
+   "应用作为 PID 1 或经 init 正确接收 SIGTERM",
+   "停机时就绪探针先失败",
+   "在途请求与任务有完成或退回逻辑",
+   "应用内超时小于平台宽限期",
+   "关闭连接池并刷新日志指标",
+   "发布时验证无 5xx 尖峰"
+  ],
+  "interview": [
+   {
+    "q": "Kubernetes 删除 Pod 时发生了什么？",
+    "a": "Pod 标记为 Terminating，同时并行地从端点中移除并执行 preStop，之后发 SIGTERM；宽限期到仍未退出则 SIGKILL。由于摘流传播与 SIGTERM 并行，常在 preStop 里等几秒，避免新请求打到正在关闭的进程。"
+   },
+   {
+    "q": "为什么容器里经常收不到 SIGTERM？",
+    "a": "shell 形式的 CMD 会让 /bin/sh 成为 PID 1，它默认不转发信号；PID 1 对未注册处理器的信号也不执行默认终止。解决方法是 exec 形式启动、使用 tini 或 docker run --init。"
+   },
+   {
+    "q": "长时间任务如何优雅停机？",
+    "a": "设计成可中断：分段提交进度或保存检查点；收到信号后停止领取新任务，当前任务在宽限期内完成，否则退回队列由其他实例接手，要求任务幂等。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Kubernetes：Pod 生命周期 - Pod 终止",
+    "url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination"
+   },
+   {
+    "title": "Node.js 文档：server.close()",
+    "url": "https://nodejs.org/api/http.html#serverclosecallback"
+   },
+   {
+    "title": "The Twelve-Factor App：Disposability",
+    "url": "https://12factor.net/disposability"
+   }
+  ]
+ },
+ {
+  "slug": "connection-draining",
+  "def": "连接排空（Connection Draining）是负载均衡器在后端实例下线时，停止向其分配新连接或请求，同时让已建立连接在时限内自然结束的机制。AWS ALB/NLB 中称为注销延迟（Deregistration Delay），Google Cloud 称连接排空。它位于流量接入层，与优雅停机配合实现发布缩容不断连。",
+  "how": [
+   "实例被标记下线，原因可能是发布替换旧版本、自动缩容、手动注销或健康检查连续失败。",
+   "负载均衡器将其状态置为 draining，不再路由新的请求或连接给它。",
+   "已有连接和在途请求继续在该实例上完成，长连接需要应用主动收尾。",
+   "排空超时到达或在途连接数归零后，负载均衡器才把该实例从目标组中彻底移除。",
+   "应用端同步执行优雅停机，在排空窗口内关闭空闲 keep-alive 连接后退出。"
+  ],
+  "terms": [
+   {
+    "t": "注销延迟 (Deregistration Delay)",
+    "d": "AWS 目标组中目标从 draining 到移除的最长等待，默认 300 秒。"
+   },
+   {
+    "t": "Keep-Alive 连接",
+    "d": "HTTP 复用的长连接，排空时需要服务端关闭或发 Connection: close。"
+   },
+   {
+    "t": "GOAWAY 帧",
+    "d": "HTTP/2 中通知对端不再接受新流、让其换连接的控制帧。"
+   },
+   {
+    "t": "长连接 (WebSocket / gRPC Stream)",
+    "d": "可能持续数小时，排空窗口内往往结束不了，需应用层迁移。"
+   },
+   {
+    "t": "粘性会话 (Sticky Session)",
+    "d": "把同一用户固定到同一实例，排空时会话需迁移或失效。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "AWS 目标组排空操作",
+   "src": "TG_ARN=\"arn:aws:elasticloadbalancing:...:targetgroup/api/abc123\"\n\n# 1. 把注销延迟从默认 300 秒调到 60 秒（请求都很短时）\naws elbv2 modify-target-group-attributes \\\n  --target-group-arn \"$TG_ARN\" \\\n  --attributes Key=deregistration_delay.timeout_seconds,Value=60\n\n# 2. 注销实例：进入 draining，不再接新请求\naws elbv2 deregister-targets \\\n  --target-group-arn \"$TG_ARN\" \\\n  --targets Id=i-0123456789abcdef0\n\n# 3. 等待排空完成后再停机\naws elbv2 wait target-deregistered \\\n  --target-group-arn \"$TG_ARN\" \\\n  --targets Id=i-0123456789abcdef0",
+   "note": "用 AWS CLI 调整排空时长、注销目标并等待排空完成，再安全停机。"
+  },
+  "table": {
+   "title": "排空时长怎么定",
+   "head": [
+    "流量类型",
+    "建议思路",
+    "风险"
+   ],
+   "rows": [
+    [
+     "短 HTTP 请求",
+     "略大于 p99.9 请求耗时",
+     "过长会拖慢发布"
+    ],
+    [
+     "文件上传/下载",
+     "按最大传输时间估算",
+     "过短会中断传输"
+    ],
+    [
+     "WebSocket/长流",
+     "应用层通知客户端重连",
+     "仅靠排空无法覆盖"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "较长排空时间",
+    "pros": "慢请求也能完成",
+    "cons": "发布和缩容变慢，成本增加",
+    "when": "存在长请求或大文件传输"
+   },
+   {
+    "opt": "较短排空时间",
+    "pros": "发布快",
+    "cons": "慢请求可能被中断",
+    "when": "请求普遍很短且可重试"
+   },
+   {
+    "opt": "应用层主动迁移",
+    "pros": "可处理长连接",
+    "cons": "需客户端支持重连",
+    "when": "WebSocket、gRPC 流"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "负载均衡排空 300 秒，但 Pod 宽限期只有 30 秒，进程先被杀。",
+    "fix": "让应用停机时长与排空窗口匹配，必要时调大宽限期。"
+   },
+   {
+    "bad": "服务端不关闭空闲 keep-alive，客户端继续复用到已摘除实例。",
+    "fix": "停机时关闭空闲连接，HTTP/2 发送 GOAWAY。"
+   },
+   {
+    "bad": "以为排空能保住 WebSocket 会话。",
+    "fix": "服务端主动通知并让客户端带退避重连。"
+   }
+  ],
+  "checklist": [
+   "排空时长依据真实请求耗时设定",
+   "应用宽限期不短于排空需要的时间",
+   "停机时关闭空闲连接",
+   "长连接有重连与会话恢复机制",
+   "发布过程中监控 5xx 与连接重置"
+  ],
+  "interview": [
+   {
+    "q": "连接排空和优雅停机是什么关系？",
+    "a": "排空是负载均衡侧动作：不给实例发新流量、给旧连接时间结束；优雅停机是应用侧动作：停止接新工作、完成在途工作再退出。两者时间窗口要对齐，排空先开始，应用在窗口内完成退出。"
+   },
+   {
+    "q": "HTTP/2 和 gRPC 长连接如何排空？",
+    "a": "一个连接承载很多请求，单纯等待连接结束可能很久。服务端应发送 GOAWAY，告知客户端不要在该连接上开新流，客户端会建立新连接到其他实例，已在途的流继续完成。"
+   },
+   {
+    "q": "注销延迟设得越长越好吗？",
+    "a": "不是。过长会让每次发布和缩容都等待很久，滚动发布总时长成倍增加。应按 p99.9 请求时长加余量设定，长连接场景交给应用层迁移。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "AWS ALB 文档：Deregistration delay",
+    "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-target-groups.html#deregistration-delay"
+   },
+   {
+    "title": "Google Cloud：Connection draining",
+    "url": "https://cloud.google.com/load-balancing/docs/enabling-connection-draining"
+   }
+  ]
+ },
+ {
+  "slug": "stateless-services",
+  "def": "无状态服务（Stateless Service）指服务实例不在本地内存或磁盘中保存跨请求的业务状态，每个请求携带或从外部存储取得所需上下文，因此任意实例都能处理任意请求。它是云原生应用层的基础设计原则，使水平扩展、滚动发布、故障替换和自动扩缩容变得简单；状态被下沉到数据库、缓存、对象存储等专门的有状态组件。",
+  "how": [
+   "会话、购物车、上传中的文件等状态从进程内存移到 Redis、数据库或对象存储。",
+   "身份信息由请求携带，例如签名的 Cookie、JWT，或会话 ID 指向外部会话存储。",
+   "负载均衡器可以把请求发给任意一个健康实例，不需要粘性会话，负载分配更均匀。",
+   "实例可随时被创建、销毁和替换，扩缩容只需修改副本数，故障实例直接丢弃重建。",
+   "真正有状态的组件单独管理，用 StatefulSet、托管数据库等承担持久化与复制。"
+  ],
+  "terms": [
+   {
+    "t": "粘性会话 (Session Affinity)",
+    "d": "负载均衡把同一客户端固定到同一实例，是有状态的信号。"
+   },
+   {
+    "t": "外部化会话 (Externalized Session)",
+    "d": "把会话数据存到共享存储，任意实例都可读取。"
+   },
+   {
+    "t": "StatefulSet",
+    "d": "Kubernetes 中为有状态应用提供稳定标识和持久卷的控制器。"
+   },
+   {
+    "t": "可丢弃性 (Disposability)",
+    "d": "进程可快速启动和停止，十二要素原则之一。"
+   },
+   {
+    "t": "JWT (JSON Web Token)",
+    "d": "自包含的签名令牌，服务端无需存储即可校验身份声明。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "购物车状态外置到 Redis",
+   "src": "from flask import Flask, request, jsonify\nimport redis\n\napp = Flask(__name__)\nstore = redis.Redis(host=\"redis\", decode_responses=True)\n# 反例：carts = {}  放在进程内存，换个实例就丢\n\n@app.post(\"/cart/<user_id>/items\")\ndef add_item(user_id):\n    sku = request.json[\"sku\"]\n    key = f\"cart:{user_id}\"\n    store.hincrby(key, sku, 1)       # 状态写到共享存储\n    store.expire(key, 7 * 24 * 3600) # 购物车保留 7 天\n    return jsonify(store.hgetall(key))\n\n@app.get(\"/cart/<user_id>\")\ndef get_cart(user_id):\n    return jsonify(store.hgetall(f\"cart:{user_id}\"))",
+   "note": "购物车写入 Redis 而非进程字典，任何实例都能读写，实例可随意扩缩。"
+  },
+  "table": {
+   "title": "状态放在哪里",
+   "head": [
+    "状态类型",
+    "推荐位置",
+    "说明"
+   ],
+   "rows": [
+    [
+     "登录会话",
+     "Redis 或签名 Cookie/JWT",
+     "JWT 需考虑吊销"
+    ],
+    [
+     "用户上传文件",
+     "对象存储（如 S3）",
+     "不要写本地磁盘"
+    ],
+    [
+     "业务数据",
+     "数据库",
+     "持久化与事务"
+    ],
+    [
+     "进程内缓存",
+     "本地内存（可丢）",
+     "只存可重建的数据"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "外部会话存储",
+    "pros": "实例完全可替换",
+    "cons": "多一次网络访问，存储需高可用",
+    "when": "大多数 Web 服务"
+   },
+   {
+    "opt": "自包含令牌（JWT）",
+    "pros": "无需服务端查询",
+    "cons": "吊销困难，令牌体积大",
+    "when": "跨服务认证、短有效期"
+   },
+   {
+    "opt": "粘性会话",
+    "pros": "改造成本低",
+    "cons": "负载不均，实例下线丢会话",
+    "when": "遗留系统过渡期"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "上传文件先存本地磁盘，后续请求落到其他实例找不到文件。",
+    "fix": "直接上传到对象存储，或用预签名 URL。"
+   },
+   {
+    "bad": "进程内定时任务在每个副本都跑一遍。",
+    "fix": "定时任务独立部署或使用分布式锁/调度器。"
+   },
+   {
+    "bad": "进程内缓存被当作唯一数据源。",
+    "fix": "本地缓存只存可从外部重建的数据，并设过期。"
+   }
+  ],
+  "checklist": [
+   "实例重启后不丢任何用户可见状态",
+   "不依赖粘性会话",
+   "文件写入对象存储而非本地盘",
+   "定时任务不会在多副本重复执行",
+   "任意副本被杀，请求可在其他副本重试成功"
+  ],
+  "interview": [
+   {
+    "q": "无状态服务是不是就完全没有状态？",
+    "a": "不是。它指实例不持有跨请求的业务状态，状态被外置到数据库、缓存等专门组件。系统整体仍有状态，只是集中到少数可专门做复制和备份的地方，计算层因此可以随意扩缩替换。"
+   },
+   {
+    "q": "JWT 和服务端会话怎么选？",
+    "a": "服务端会话可随时吊销、令牌小，但需要共享存储；JWT 无需查询，适合跨服务，但吊销难，只能靠短有效期加刷新令牌或黑名单。高敏感场景偏向服务端会话。"
+   },
+   {
+    "q": "如何验证一个服务真的是无状态的？",
+    "a": "部署多个副本并关闭粘性会话，压测过程中随机杀副本，观察请求是否全部成功、用户会话是否保持；检查代码中的全局变量、本地文件写入和进程内定时任务。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "The Twelve-Factor App：Processes",
+    "url": "https://12factor.net/processes"
+   },
+   {
+    "title": "Kubernetes：StatefulSets",
+    "url": "https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/"
+   }
+  ]
+ },
+ {
+  "slug": "failover",
+  "def": "故障转移（Failover）是主组件失效时，由备用组件接管其工作负载的过程，可以自动或手动触发。它是高可用架构的核心机制，常见于数据库主从、负载均衡后端、DNS 和多区域部署。关键问题包括如何可靠地检测故障、如何避免两个节点同时认为自己是主（脑裂），以及切换期间数据是否会丢失。",
+  "how": [
+   "主节点与备节点之间进行数据复制，同步复制保证不丢数据，异步复制有延迟但性能好。",
+   "监控组件通过心跳或健康检查探测主节点，连续失败超过阈值即判定故障。",
+   "多个观察者投票或借助共识系统决定是否切换，减少因网络分区导致的误判。",
+   "选出新主并提升，隔离旧主（Fencing），防止它恢复后继续接受写入。",
+   "更新路由：修改 DNS、虚拟 IP、服务发现或客户端配置，让流量指向新主。"
+  ],
+  "terms": [
+   {
+    "t": "脑裂 (Split-Brain)",
+    "d": "网络分区下两个节点都认为自己是主，各自接受写入导致数据冲突。"
+   },
+   {
+    "t": "隔离 (Fencing)",
+    "d": "确保旧主无法继续写入，如断电、撤销存储访问或递增任期号。"
+   },
+   {
+    "t": "法定人数 (Quorum)",
+    "d": "做出决策所需的最少投票节点数，通常为多数。"
+   },
+   {
+    "t": "复制延迟 (Replication Lag)",
+    "d": "备节点落后主节点的数据量或时间，决定切换时可能丢失的数据。"
+   },
+   {
+    "t": "故障回切 (Failback)",
+    "d": "原主节点修复后把服务切回的过程。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "通过 Sentinel 自动找主",
+   "src": "from redis.sentinel import Sentinel\n\n# 连接 3 个哨兵（奇数个，便于形成多数派）\nsentinel = Sentinel(\n    [(\"sentinel-1\", 26379), (\"sentinel-2\", 26379), (\"sentinel-3\", 26379)],\n    socket_timeout=0.5,\n)\n\n# 客户端不写死主节点地址，而是向哨兵询问当前主\nprint(sentinel.discover_master(\"mymaster\"))\n\nmaster = sentinel.master_for(\"mymaster\", socket_timeout=0.5)\nreplica = sentinel.slave_for(\"mymaster\", socket_timeout=0.5)\n\nmaster.set(\"greeting\", \"hello\")   # 写走主\nprint(replica.get(\"greeting\"))      # 读可走从，可能有复制延迟\n# 主宕机后，哨兵选出新主，master_for 返回的连接会自动指向新主",
+   "note": "redis-py 通过 Sentinel 发现主节点，故障转移后客户端自动跟随新主。"
+  },
+  "table": {
+   "title": "故障转移方式对比",
+   "head": [
+    "方式",
+    "切换速度",
+    "主要风险"
+   ],
+   "rows": [
+    [
+     "DNS 切换",
+     "受 TTL 与客户端缓存影响",
+     "客户端缓存旧解析"
+    ],
+    [
+     "虚拟 IP / 负载均衡",
+     "秒级到数十秒",
+     "需健康检查准确"
+    ],
+    [
+     "哨兵/共识选主",
+     "秒级到数十秒",
+     "配置不当导致脑裂"
+    ],
+    [
+     "手动切换",
+     "分钟级以上",
+     "依赖值班人员和手册"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "自动故障转移",
+    "pros": "恢复快，不依赖人工",
+    "cons": "误判时可能引发不必要切换或脑裂",
+    "when": "检测可靠、有法定人数机制"
+   },
+   {
+    "opt": "手动故障转移",
+    "pros": "人可判断数据一致性",
+    "cons": "恢复慢",
+    "when": "切换代价高、数据一致性要求极严"
+   },
+   {
+    "opt": "同步复制",
+    "pros": "切换不丢已确认数据",
+    "cons": "写延迟高，备库故障影响写入",
+    "when": "金融等不允许丢数据场景"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只有两个节点互相探测，网络分区时双方都升为主。",
+    "fix": "使用奇数个观察者或共识系统，并实施 fencing。"
+   },
+   {
+    "bad": "应用缓存了数据库 IP，切换后仍连旧主。",
+    "fix": "通过服务发现或哨兵获取地址，连接失败时重新解析。"
+   },
+   {
+    "bad": "从未演练过故障转移，真出事时才发现脚本失效。",
+    "fix": "定期演练，记录切换耗时与数据损失。"
+   },
+   {
+    "bad": "故障检测阈值过于敏感，网络抖动就切换。",
+    "fix": "多次连续失败才判定，并结合多个观察点。"
+   }
+  ],
+  "checklist": [
+   "故障检测有法定人数，避免单点误判",
+   "有防脑裂的隔离机制",
+   "客户端能自动发现新主",
+   "复制延迟有监控与告警",
+   "定期演练并记录切换耗时",
+   "回切流程已文档化"
+  ],
+  "interview": [
+   {
+    "q": "如何防止故障转移中的脑裂？",
+    "a": "用奇数个节点做多数派决策，少数派一侧不能选主；实施 fencing，例如递增任期号让旧主写入被拒、或撤销其存储访问；客户端只认可最新任期的主。"
+   },
+   {
+    "q": "异步复制下故障转移会丢数据吗？",
+    "a": "会。主节点已确认但尚未复制到备节点的写入，在切换后会丢失或产生冲突，丢失量取决于复制延迟。可用半同步或同步复制降低风险，代价是写延迟增加。"
+   },
+   {
+    "q": "为什么 DNS 故障转移常常比预期慢？",
+    "a": "切换时间受记录 TTL、递归解析器缓存以及客户端自身缓存影响，有的运行时会长时间缓存解析结果。因此要设较短 TTL，并确保客户端遵守 TTL 或在连接失败时重新解析。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Wikipedia：Failover",
+    "url": "https://en.wikipedia.org/wiki/Failover"
+   },
+   {
+    "title": "Redis 文档：High availability with Redis Sentinel",
+    "url": "https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/"
+   },
+   {
+    "title": "PostgreSQL 文档：High Availability, Load Balancing, and Replication",
+    "url": "https://www.postgresql.org/docs/current/high-availability.html"
+   }
+  ]
+ },
+ {
+  "slug": "availability-zones",
+  "def": "可用区（Availability Zone, AZ）是云厂商在同一地理区域（Region）内划分的、拥有独立供电、制冷和网络的一个或多个数据中心集合。可用区之间通过低延迟专线互联，但故障相互隔离。它是云基础设施的故障域单位：把实例和数据分布到多个可用区，可以在单个机房级故障时保持服务可用。",
+  "how": [
+   "一个区域包含多个可用区，各可用区物理隔离，降低火灾、断电等同时影响多个可用区的概率。",
+   "可用区之间有高带宽、低延迟网络，适合同步复制和跨区负载均衡。",
+   "应用把副本分布在多个可用区，负载均衡器跨区分发流量并剔除故障区的后端。",
+   "托管数据库的多可用区部署在另一可用区维护备库，主库故障时自动切换。",
+   "容量规划按失去任意一个可用区后，剩余可用区仍能承载峰值流量来确定副本数。"
+  ],
+  "terms": [
+   {
+    "t": "区域 (Region)",
+    "d": "云厂商的独立地理区域，包含多个可用区。"
+   },
+   {
+    "t": "多可用区部署 (Multi-AZ)",
+    "d": "把同一服务的副本放到多个可用区以容忍单区故障。"
+   },
+   {
+    "t": "拓扑分布约束 (Topology Spread Constraints)",
+    "d": "Kubernetes 中让 Pod 按区域等拓扑均匀分布的调度规则。"
+   },
+   {
+    "t": "跨区流量费 (Inter-AZ Data Transfer)",
+    "d": "部分云厂商对可用区之间的数据传输计费。"
+   },
+   {
+    "t": "静态稳定性 (Static Stability)",
+    "d": "某个可用区故障时，无需临时扩容或变更也能继续工作。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "Pod 跨可用区均匀分布",
+   "src": "apiVersion: apps/v1\nkind: Deployment\nmetadata: { name: api }\nspec:\n  replicas: 6\n  selector: { matchLabels: { app: api } }\n  template:\n    metadata: { labels: { app: api } }\n    spec:\n      topologySpreadConstraints:\n        - maxSkew: 1                               # 各区副本数最多差 1\n          topologyKey: topology.kubernetes.io/zone # 按可用区分布\n          whenUnsatisfiable: DoNotSchedule\n          labelSelector: { matchLabels: { app: api } }\n      containers:\n        - name: api\n          image: example/api:1.0",
+   "note": "用拓扑分布约束把 6 个副本均匀放到各可用区，单区故障时仍有其余副本。"
+  },
+  "table": {
+   "title": "故障域层级",
+   "head": [
+    "层级",
+    "典型故障",
+    "容错手段"
+   ],
+   "rows": [
+    [
+     "单台主机",
+     "硬件故障、内核崩溃",
+     "多副本、反亲和"
+    ],
+    [
+     "可用区",
+     "机房断电、网络中断",
+     "多可用区部署"
+    ],
+    [
+     "区域",
+     "大范围灾害、区域级服务故障",
+     "多区域部署与灾备"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "单可用区",
+    "pros": "延迟最低，无跨区费用",
+    "cons": "机房级故障即全停",
+    "when": "开发测试、可中断的批处理"
+   },
+   {
+    "opt": "多可用区",
+    "pros": "容忍单区故障，成本适中",
+    "cons": "跨区流量费、部署更复杂",
+    "when": "生产服务的基本要求"
+   },
+   {
+    "opt": "多区域",
+    "pros": "容忍区域级故障",
+    "cons": "成本高，数据一致性难",
+    "when": "关键业务或合规要求"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "副本数为 3 但调度后全在一个可用区。",
+    "fix": "配置拓扑分布约束或反亲和，并在部署后核查。"
+   },
+   {
+    "bad": "应用多可用区，但数据库或 NAT 网关只在一个可用区。",
+    "fix": "逐个检查依赖组件的可用区分布。"
+   },
+   {
+    "bad": "两个区各承载 50% 峰值，一个区故障后另一个被压垮。",
+    "fix": "按 N-1 可用区仍能承载峰值来规划容量。"
+   }
+  ],
+  "checklist": [
+   "计算、数据库、网关都跨至少两个可用区",
+   "副本调度受拓扑约束保障",
+   "失去一个可用区后容量足够",
+   "做过单可用区故障演练",
+   "评估过跨可用区流量成本"
+  ],
+  "interview": [
+   {
+    "q": "为什么多可用区不等于高可用？",
+    "a": "还要看所有依赖是否同样跨区、容量是否足以承载失去一个区后的流量、故障检测与切换是否自动可靠，以及是否存在共享的控制面依赖。任何一环单区部署都会成为单点。"
+   },
+   {
+    "q": "什么是静态稳定性？",
+    "a": "系统在某个可用区故障时，不需要依赖控制面去临时启动新资源或修改配置就能继续服务，例如提前在每个区预置足够容量。因为故障期间控制面本身也可能不可用。"
+   },
+   {
+    "q": "跨可用区同步复制有什么代价？",
+    "a": "每次写入都要等待另一个区确认，增加写延迟；还会产生跨区数据传输费用；备区故障时可能影响主库写入，需要设计降级为异步的策略。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "AWS EC2 文档：区域与可用区",
+    "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html"
+   },
+   {
+    "title": "Azure：What are availability zones?",
+    "url": "https://learn.microsoft.com/en-us/azure/reliability/availability-zones-overview"
+   },
+   {
+    "title": "Kubernetes：Pod Topology Spread Constraints",
+    "url": "https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/"
+   }
+  ]
+ },
+ {
+  "slug": "single-points-of-failure",
+  "def": "单点故障（Single Point of Failure, SPOF）是系统中一旦失效就会导致整体不可用、且没有冗余替代的组件。它可能是硬件、软件进程、网络链路、第三方服务、配置系统，甚至是唯一掌握某项操作的人。识别和消除 SPOF 是可靠性设计和架构评审的基本功，手段包括冗余、隔离、降级和去除不必要的依赖。",
+  "how": [
+   "画出请求从用户到数据的完整路径，列出途经的每个组件、外部依赖和运维流程。",
+   "对每个组件问：它挂了，服务还能工作吗？没有替代的就是 SPOF。",
+   "消除方式是冗余（多副本、多可用区）、自动故障转移，或让依赖变成可选的。",
+   "确实无法消除的单点，通过功能降级、缓存兜底和快速恢复手册来降低故障影响。",
+   "定期复查单点清单，因为新功能、新依赖和运维流程变更都可能引入新的单点。"
+  ],
+  "terms": [
+   {
+    "t": "冗余 (Redundancy)",
+    "d": "为关键组件准备多个副本，任一失效时其他可接替。"
+   },
+   {
+    "t": "N+1 冗余",
+    "d": "在满足负载所需的 N 个单元外再多一个备用单元。"
+   },
+   {
+    "t": "共享命运 (Shared Fate)",
+    "d": "看似冗余的组件依赖同一底层资源，会一起失效。"
+   },
+   {
+    "t": "Pod 中断预算 (PodDisruptionBudget)",
+    "d": "限制自愿中断时同时不可用的 Pod 数量。"
+   },
+   {
+    "t": "巴士因子 (Bus Factor)",
+    "d": "多少人离开就会让项目无法维护，人员层面的单点。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "多副本加中断预算",
+   "src": "apiVersion: apps/v1\nkind: Deployment\nmetadata: { name: api }\nspec:\n  replicas: 3                     # 不止一个副本\n  selector: { matchLabels: { app: api } }\n  template:\n    metadata: { labels: { app: api } }\n    spec:\n      containers:\n        - { name: api, image: example/api:1.0 }\n---\napiVersion: policy/v1\nkind: PodDisruptionBudget\nmetadata: { name: api-pdb }\nspec:\n  minAvailable: 2                 # 节点维护时至少保留 2 个可用\n  selector: { matchLabels: { app: api } }",
+   "note": "多副本消除进程单点，PDB 防止节点维护时副本被同时驱逐。"
+  },
+  "table": {
+   "title": "容易被忽略的单点",
+   "head": [
+    "类别",
+    "例子",
+    "消除思路"
+   ],
+   "rows": [
+    [
+     "基础设施",
+     "单个 NAT 网关、单个数据库主库",
+     "多可用区、托管高可用"
+    ],
+    [
+     "配置与密钥",
+     "唯一的配置中心、过期的证书",
+     "多副本、自动续期与监控"
+    ],
+    [
+     "第三方",
+     "唯一的支付或短信供应商",
+     "降级、备用供应商"
+    ],
+    [
+     "人员流程",
+     "只有一人会发布或有权限",
+     "文档化、交叉培训、多人授权"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "全面冗余",
+    "pros": "可用性高",
+    "cons": "成本与复杂度上升",
+    "when": "核心路径组件"
+   },
+   {
+    "opt": "接受单点但快速恢复",
+    "pros": "成本低",
+    "cons": "故障期间不可用",
+    "when": "非核心、恢复时间可接受"
+   },
+   {
+    "opt": "去掉依赖",
+    "pros": "从根本上消除风险",
+    "cons": "需要重新设计",
+    "when": "依赖价值低于风险"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "多台数据库实例放在同一物理机或同一可用区。",
+    "fix": "检查底层共享资源，分散到不同故障域。"
+   },
+   {
+    "bad": "DNS 只用一家服务商。",
+    "fix": "关键域名评估多 DNS 服务商或确认服务商 SLA。"
+   },
+   {
+    "bad": "证书、域名到期没人知道，成为时间型单点。",
+    "fix": "自动续期并对到期时间设告警。"
+   },
+   {
+    "bad": "冗余组件从未验证，备份节点其实无法工作。",
+    "fix": "定期做故障注入或切换演练。"
+   }
+  ],
+  "checklist": [
+   "核心链路每个组件都有冗余或降级方案",
+   "冗余副本不共享同一故障域",
+   "第三方依赖有超时与降级",
+   "证书、域名、密钥有到期监控",
+   "关键操作不依赖单个人"
+  ],
+  "interview": [
+   {
+    "q": "在架构评审中如何系统地找单点？",
+    "a": "画出完整请求链路和依赖图，包括 DNS、证书、网关、配置中心和第三方服务，逐一做假设失效分析；再检查冗余组件是否共享底层资源；最后看人和流程，例如谁有权限、谁会操作。"
+   },
+   {
+    "q": "多副本就一定没有单点吗？",
+    "a": "不一定。副本可能在同一主机、可用区或依赖同一配置服务，属于共享命运；也可能使用同一份错误配置同时发布而一起崩溃。冗余需要故障独立性，并配合分批发布。"
+   },
+   {
+    "q": "负载均衡器本身是单点吗？",
+    "a": "自建单台负载均衡器是单点，需用主备加虚拟 IP 或多实例加 DNS；云托管负载均衡通常由厂商在多可用区内冗余实现，但仍应确认其跨可用区配置和配额限制。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Wikipedia：Single point of failure",
+    "url": "https://en.wikipedia.org/wiki/Single_point_of_failure"
+   },
+   {
+    "title": "Kubernetes：为应用配置 PodDisruptionBudget",
+    "url": "https://kubernetes.io/docs/tasks/run-application/configure-pdb/"
+   },
+   {
+    "title": "AWS Well-Architected：Reliability Pillar",
+    "url": "https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/welcome.html"
+   }
+  ]
+ },
+ {
+  "slug": "disaster-recovery",
+  "def": "灾难恢复（Disaster Recovery, DR）是在区域级故障、数据损坏、勒索软件或误删除等严重事件后，按预定目标恢复系统和数据的策略、技术与流程总和。它比日常高可用覆盖更极端的场景，以 RTO 和 RPO 为核心指标，常见方案从备份恢复、指示灯、温备到多活，成本与恢复速度依次上升。",
+  "how": [
+   "业务影响分析：按系统重要性确定每个系统的 RTO 与 RPO 目标。",
+   "选择 DR 策略：备份恢复、指示灯（Pilot Light）、温备（Warm Standby）或多活。",
+   "数据保护：定期备份并复制到异地，启用时间点恢复，关键备份设为不可变。",
+   "基础设施用 IaC 描述，保证能在另一区域快速重建同样的环境。",
+   "编写并定期演练恢复手册，测量实际恢复时间与数据损失，与目标对比改进。"
+  ],
+  "terms": [
+   {
+    "t": "备份恢复 (Backup & Restore)",
+    "d": "只保留备份，灾时重建环境并恢复数据，成本最低、最慢。"
+   },
+   {
+    "t": "指示灯 (Pilot Light)",
+    "d": "异地只运行核心数据复制，灾时再拉起其余组件。"
+   },
+   {
+    "t": "温备 (Warm Standby)",
+    "d": "异地运行缩小规模的完整环境，灾时扩容接管。"
+   },
+   {
+    "t": "时间点恢复 (PITR)",
+    "d": "利用备份加日志把数据库恢复到任意指定时刻。"
+   },
+   {
+    "t": "不可变备份 (Immutable Backup)",
+    "d": "写入后在保留期内无法修改或删除的备份，防勒索与误删。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "PostgreSQL 异地备份与演练",
+   "src": "#!/usr/bin/env bash\nset -euo pipefail\nTS=$(date -u +%Y%m%dT%H%M%SZ)\nFILE=\"orders-$TS.dump\"\n\n# 1. 自定义格式导出，便于选择性恢复\npg_dump --format=custom --file=\"$FILE\" \"$DATABASE_URL\"\n\n# 2. 复制到另一区域的存储桶（桶已开启版本控制/对象锁）\naws s3 cp \"$FILE\" \"s3://dr-backups-eu/orders/$FILE\" --region eu-west-1\n\n# 3. 定期演练：恢复到临时库并做冒烟校验\ncreatedb restore_test\npg_restore --dbname=restore_test --no-owner \"$FILE\"\npsql -d restore_test -c \"SELECT count(*) FROM orders;\"\ndropdb restore_test",
+   "note": "备份写到异地存储并定期恢复验证；只有能恢复的备份才算备份。"
+  },
+  "table": {
+   "title": "DR 策略梯度",
+   "head": [
+    "策略",
+    "相对成本",
+    "RTO/RPO 量级",
+    "异地常驻资源"
+   ],
+   "rows": [
+    [
+     "备份恢复",
+     "最低",
+     "小时级",
+     "仅备份数据"
+    ],
+    [
+     "指示灯",
+     "低",
+     "十分钟到小时级",
+     "核心数据复制"
+    ],
+    [
+     "温备",
+     "中",
+     "分钟级",
+     "缩小规模的完整环境"
+    ],
+    [
+     "多活",
+     "最高",
+     "接近零",
+     "满规模运行"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "备份恢复",
+    "pros": "成本低、实现简单",
+    "cons": "恢复慢，重建易出错",
+    "when": "非核心系统、可容忍长时间中断"
+   },
+   {
+    "opt": "温备",
+    "pros": "恢复较快，环境已验证",
+    "cons": "持续运行成本",
+    "when": "重要业务、分钟级 RTO"
+   },
+   {
+    "opt": "多活",
+    "pros": "几乎无中断",
+    "cons": "数据一致性与成本挑战大",
+    "when": "核心交易、全球业务"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "备份和生产在同一账号同一区域，一次误操作或入侵全部丢失。",
+    "fix": "备份跨区域、跨账号存放，并启用不可变保护。"
+   },
+   {
+    "bad": "只备份不演练，灾难时才发现备份损坏或缺表。",
+    "fix": "定期做恢复演练并自动校验数据完整性。"
+   },
+   {
+    "bad": "只恢复数据库，忘了密钥、配置、DNS 和第三方白名单。",
+    "fix": "DR 手册覆盖全部依赖，并用 IaC 管理环境。"
+   },
+   {
+    "bad": "高可用复制把误删除也同步到了备库。",
+    "fix": "保留时间点恢复和延迟副本，用于逻辑错误恢复。"
+   }
+  ],
+  "checklist": [
+   "每个系统定义了 RTO 与 RPO",
+   "备份跨区域跨账号且不可变",
+   "恢复演练定期执行并记录用时",
+   "环境可通过 IaC 在异地重建",
+   "DR 手册覆盖密钥、DNS、配置",
+   "有明确的灾难宣告与决策人"
+  ],
+  "interview": [
+   {
+    "q": "高可用和灾难恢复有什么区别？",
+    "a": "高可用处理日常组件故障，追求自动、无感切换，通常在区域内；灾难恢复处理区域级故障、数据损坏、勒索等极端事件，往往需要人工决策，按 RTO/RPO 目标恢复。复制能提供高可用，但会同步误删除，所以 DR 还需要时间点备份。"
+   },
+   {
+    "q": "如何为不同系统选择 DR 策略？",
+    "a": "先做业务影响分析，明确每个系统停机一小时和丢一小时数据的代价，得出 RTO/RPO；再选成本最低且能满足目标的策略；核心交易用温备或多活，内部工具用备份恢复。"
+   },
+   {
+    "q": "为什么说不演练的备份等于没有备份？",
+    "a": "备份可能损坏、不完整、依赖已丢失的密钥，或恢复耗时远超 RTO。只有定期恢复到隔离环境并校验数据完整性，才能确认备份可用，并测出真实恢复时间。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "AWS 白皮书：Disaster Recovery Options in the Cloud",
+    "url": "https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/disaster-recovery-options-in-the-cloud.html"
+   },
+   {
+    "title": "Google Cloud：Disaster recovery planning guide",
+    "url": "https://cloud.google.com/architecture/dr-scenarios-planning-guide"
+   },
+   {
+    "title": "PostgreSQL 文档：pg_dump",
+    "url": "https://www.postgresql.org/docs/current/app-pgdump.html"
+   }
+  ]
+ },
+ {
+  "slug": "rto-and-rpo",
+  "def": "RTO（Recovery Time Objective，恢复时间目标）是故障后到服务恢复的最长可接受时间；RPO（Recovery Point Objective，恢复点目标）是以时间衡量的最大可接受数据丢失，即可回退到多久之前的状态。二者是业务连续性与灾难恢复规划的核心指标，决定备份频率、复制方式和 DR 成本。",
+  "how": [
+   "业务方评估停机与丢数据的代价，为每个系统给出可接受的 RTO 与 RPO。",
+   "RPO 决定数据保护方式：每日备份对应约一天，日志归档或持续复制可缩到分钟或秒级。",
+   "RTO 决定恢复方式：从备份重建需小时级，温备或自动故障转移可到分钟级。",
+   "架构与手册按目标设计，例如 WAL 归档间隔、跨区复制、IaC 重建时间。",
+   "通过演练测出实际恢复时间（RTA）与实际数据损失（RPA），与目标比较并改进。"
+  ],
+  "terms": [
+   {
+    "t": "恢复时间实际值 (RTA)",
+    "d": "演练或真实事件中测得的实际恢复耗时。"
+   },
+   {
+    "t": "最大可容忍停机 (MTPD)",
+    "d": "业务能承受的最长中断，RTO 必须小于它。"
+   },
+   {
+    "t": "WAL 归档 (WAL Archiving)",
+    "d": "PostgreSQL 持续保存预写日志，用于时间点恢复。"
+   },
+   {
+    "t": "业务影响分析 (BIA)",
+    "d": "评估各业务中断造成损失的过程，是设定 RTO/RPO 的依据。"
+   },
+   {
+    "t": "MTTR (Mean Time To Recovery)",
+    "d": "平均恢复时间，是对历史表现的统计，不同于目标值 RTO。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "用 WAL 归档压缩 RPO",
+   "src": "# postgresql.conf：持续归档 WAL，配合基础备份做时间点恢复\nwal_level = replica\narchive_mode = on\n\n# 每个写满的 WAL 段都复制到归档位置（示例：本地挂载的备份盘）\narchive_command = 'test ! -f /mnt/wal_archive/%f && cp %p /mnt/wal_archive/%f'\n\n# 即使写入很少，也最多每 60 秒切换一次 WAL 段\n# 这让最坏情况下的数据丢失大致限制在约 1 分钟量级\narchive_timeout = 60\n\n# 恢复时在新实例中设置：\n# restore_command = 'cp /mnt/wal_archive/%f %p'\n# recovery_target_time = '2026-10-20 10:00:00+08'",
+   "note": "archive_timeout 限定 WAL 段切换间隔，从配置层面约束 RPO；示例取自官方文档写法。"
+  },
+  "table": {
+   "title": "手段与可达的目标量级",
+   "head": [
+    "数据保护手段",
+    "RPO 量级",
+    "恢复手段",
+    "RTO 量级"
+   ],
+   "rows": [
+    [
+     "每日全量备份",
+     "约 24 小时",
+     "从备份重建",
+     "小时级"
+    ],
+    [
+     "备份 + 日志归档",
+     "分钟级",
+     "PITR 恢复",
+     "小时级"
+    ],
+    [
+     "异步复制备库",
+     "秒级",
+     "提升备库",
+     "分钟级"
+    ],
+    [
+     "同步复制",
+     "接近 0",
+     "自动故障转移",
+     "秒到分钟级"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "宽松目标（小时级）",
+    "pros": "成本低，架构简单",
+    "cons": "故障时业务中断长、丢数据多",
+    "when": "内部工具、可补录的数据"
+   },
+   {
+    "opt": "严格目标（分钟级）",
+    "pros": "业务影响小",
+    "cons": "需复制、温备、自动化，成本高",
+    "when": "在线交易、核心用户功能"
+   },
+   {
+    "opt": "RPO 接近零",
+    "pros": "几乎不丢数据",
+    "cons": "同步复制增加写延迟",
+    "when": "资金、账务类数据"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "所有系统统一定一个 RTO/RPO，核心系统不够，边缘系统浪费。",
+    "fix": "按业务影响分级设定。"
+   },
+   {
+    "bad": "RPO 只看备份频率，忽略备份本身上传失败。",
+    "fix": "监控备份成功与归档延迟，失败即告警。"
+   },
+   {
+    "bad": "RTO 只算数据恢复时间，没算发现、决策和 DNS 切换。",
+    "fix": "RTO 从故障发生算到用户可用，端到端演练测量。"
+   }
+  ],
+  "checklist": [
+   "每个系统有书面 RTO/RPO 并经业务确认",
+   "备份与复制方案能达成 RPO",
+   "演练测得的 RTA 小于 RTO",
+   "备份与归档延迟有监控",
+   "RTO 计算包含检测与决策时间"
+  ],
+  "interview": [
+   {
+    "q": "RTO 和 MTTR 有什么区别？",
+    "a": "RTO 是事先设定的目标，即最长可接受的恢复时间；MTTR 是事后统计的历史平均恢复时间。评审时用 MTTR 及演练数据验证能否满足 RTO，并关注最坏情况而不只是平均值。"
+   },
+   {
+    "q": "RPO 为零可以只靠备份实现吗？",
+    "a": "不行。备份总有间隔，备份点之后的写入会丢失。接近零的 RPO 需要同步复制，让写入在确认前已到达另一副本；但复制会同步误删除，所以仍需时间点恢复来应对逻辑错误。"
+   },
+   {
+    "q": "如何说服业务方接受合理的 RTO/RPO？",
+    "a": "把目标和成本放在一起：给出不同档位所需架构、月成本和演练要求，对应停机每小时与丢数据的损失估算，让业务方在代价与风险间做选择，而不是一律要求零。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "AWS Well-Architected：Disaster recovery objectives",
+    "url": "https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/disaster-recovery-dr-objectives.html"
+   },
+   {
+    "title": "AWS 白皮书：Business Continuity Plan",
+    "url": "https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/business-continuity-plan-bcp.html"
+   },
+   {
+    "title": "PostgreSQL 文档：持续归档与时间点恢复",
+    "url": "https://www.postgresql.org/docs/current/continuous-archiving.html"
+   }
+  ]
+ },
+ {
+  "slug": "slos",
+  "def": "服务等级目标（Service Level Objective, SLO）是团队为某项服务等级指标（SLI）设定的目标值，例如 30 天滚动窗口内 99.9% 的请求成功。三层体系中，SLI 是度量，SLO 是内部目标，SLA 是对外带赔偿的承诺。SLO 让可靠性成为可量化的决策依据，并派生错误预算。",
+  "how": [
+   "从用户视角选择关键旅程，定义 SLI，例如成功请求占比、低于阈值的延迟占比。",
+   "确定度量位置：负载均衡日志、服务端指标或合成探测，越接近用户越真实。",
+   "设定目标值和时间窗口，如 28 或 30 天滚动窗口内 99.9%。",
+   "由 SLO 计算错误预算，即窗口内允许失败的比例，并据此配置燃烧率告警。",
+   "定期复盘目标是否真实反映用户感受，过严或过松都需要和产品方一起调整。"
+  ],
+  "terms": [
+   {
+    "t": "服务等级指标 (SLI)",
+    "d": "可量化的服务质量度量，通常是好事件数除以总事件数。"
+   },
+   {
+    "t": "服务等级协议 (SLA)",
+    "d": "对客户的正式承诺，违约有赔偿，通常比 SLO 宽松。"
+   },
+   {
+    "t": "滚动窗口 (Rolling Window)",
+    "d": "以当前时间回看固定天数的统计窗口。"
+   },
+   {
+    "t": "关键用户旅程 (Critical User Journey)",
+    "d": "用户完成核心目标的操作路径，用于选取 SLI。"
+   },
+   {
+    "t": "几个 9 (Nines)",
+    "d": "可用性百分比的口语说法，99.9% 即三个 9。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "Prometheus 可用性 SLI",
+   "src": "# 记录规则：计算不同窗口下的请求错误率\ngroups:\n  - name: slo-api\n    rules:\n      - record: job:slo_errors_per_request:ratio_rate5m\n        expr: |\n          sum(rate(http_requests_total{job=\"api\",code=~\"5..\"}[5m]))\n          /\n          sum(rate(http_requests_total{job=\"api\"}[5m]))\n      - record: job:slo_errors_per_request:ratio_rate1h\n        expr: |\n          sum(rate(http_requests_total{job=\"api\",code=~\"5..\"}[1h]))\n          /\n          sum(rate(http_requests_total{job=\"api\"}[1h]))\n# SLO：30 天窗口内错误率 ≤ 0.1%（即 99.9% 成功）",
+   "note": "把 5xx 占比作为可用性 SLI 的记录规则，指标名需按实际埋点调整。"
+  },
+  "table": {
+   "title": "可用性目标与允许停机",
+   "head": [
+    "SLO",
+    "30 天允许不可用",
+    "一年允许不可用"
+   ],
+   "rows": [
+    [
+     "99%",
+     "约 7.2 小时",
+     "约 3.65 天"
+    ],
+    [
+     "99.9%",
+     "约 43.2 分钟",
+     "约 8.8 小时"
+    ],
+    [
+     "99.95%",
+     "约 21.6 分钟",
+     "约 4.4 小时"
+    ],
+    [
+     "99.99%",
+     "约 4.3 分钟",
+     "约 53 分钟"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "基于请求比例的 SLO",
+    "pros": "贴近用户体验，适合高流量",
+    "cons": "低流量时少量失败波动大",
+    "when": "API、Web 服务"
+   },
+   {
+    "opt": "基于时间窗口的 SLO",
+    "pros": "直观，便于对外沟通",
+    "cons": "无法区分部分失败",
+    "when": "低流量或批处理系统"
+   },
+   {
+    "opt": "更高的目标",
+    "pros": "更可靠",
+    "cons": "成本陡增，限制发布速度",
+    "when": "依赖方确实需要"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把 SLO 设成 100%。",
+    "fix": "任何系统都会失败，100% 会冻结所有变更，应留出预算。"
+   },
+   {
+    "bad": "SLI 取自服务内部 CPU 等指标，与用户感受无关。",
+    "fix": "以用户可感知的成功率和延迟为 SLI。"
+   },
+   {
+    "bad": "SLO 比依赖的下游 SLO 还高。",
+    "fix": "考虑依赖链的组合可用性，或通过冗余降低依赖影响。"
+   },
+   {
+    "bad": "定了 SLO 但没人看，也不影响决策。",
+    "fix": "配套错误预算政策和燃烧率告警。"
+   }
+  ],
+  "checklist": [
+   "SLI 覆盖关键用户旅程",
+   "SLI 定义写明好事件与总事件",
+   "目标值与窗口经产品方认可",
+   "有燃烧率告警而非阈值告警",
+   "SLO 定期复审"
+  ],
+  "interview": [
+   {
+    "q": "SLI、SLO、SLA 三者关系是什么？",
+    "a": "SLI 是度量，例如成功请求比例；SLO 是对 SLI 的内部目标，例如 30 天 99.9%；SLA 是对外合同承诺，未达成有赔偿。通常 SLA 比 SLO 宽松，留出缓冲，确保内部先发现并处理问题。"
+   },
+   {
+    "q": "如何选择一个好的 SLI？",
+    "a": "从关键用户旅程出发，选用户能感知的结果：可用性、延迟、正确性、新鲜度。用好事件除以总事件表达，度量点尽量靠近用户，如负载均衡日志或客户端探测，排除健康检查等非用户流量。"
+   },
+   {
+    "q": "为什么不追求越高越好？",
+    "a": "每多一个 9，允许的故障时间缩小十倍，成本和复杂度大幅增加，发布速度被压缩；而用户受网络、终端等因素影响，可能感受不到差异。SLO 应设在用户满意且业务可承受的水平。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Google SRE Book：Service Level Objectives",
+    "url": "https://sre.google/sre-book/service-level-objectives/"
+   },
+   {
+    "title": "Google SRE Workbook：Implementing SLOs",
+    "url": "https://sre.google/workbook/implementing-slos/"
+   },
+   {
+    "title": "Prometheus 文档：Recording rules",
+    "url": "https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/"
+   }
+  ]
+ },
+ {
+  "slug": "error-budgets",
+  "def": "错误预算（Error Budget）等于 1 减去 SLO，是一个时间窗口内允许服务不可靠的额度。例如 30 天 99.9% 的 SLO 对应 0.1% 的请求可以失败。它把可靠性与发布速度之间的矛盾变成可度量的共同约束：预算充足时可以快速发布和试验，预算耗尽时按事先约定的政策冻结非紧急变更、优先投入稳定性。",
+  "how": [
+   "由 SLO 计算预算，99.9% 窗口为 30 天时，约等于 43.2 分钟全量不可用的等价量。",
+   "持续统计实际失败消耗了多少预算，以及消耗速度，即燃烧率（Burn Rate）。",
+   "燃烧率 1 表示正好在窗口结束时用完；按多窗口燃烧率设置分级告警。",
+   "事先由工程与产品负责人共同签署错误预算政策，规定预算耗尽时的动作。",
+   "预算耗尽触发政策：冻结功能发布、修复可靠性问题，直到预算恢复。"
+  ],
+  "terms": [
+   {
+    "t": "燃烧率 (Burn Rate)",
+    "d": "预算消耗速度相对于恰好在窗口末用完的倍数。"
+   },
+   {
+    "t": "错误预算政策 (Error Budget Policy)",
+    "d": "事先约定的预算耗尽后的处置规则和决策人。"
+   },
+   {
+    "t": "多窗口告警 (Multiwindow Alert)",
+    "d": "同时满足长窗口和短窗口燃烧率条件才告警，兼顾灵敏与精准。"
+   },
+   {
+    "t": "发布冻结 (Release Freeze)",
+    "d": "预算耗尽后暂停非紧急变更的措施。"
+   },
+   {
+    "t": "预算剩余 (Budget Remaining)",
+    "d": "窗口内尚未消耗的错误预算比例。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "多窗口燃烧率告警",
+   "src": "# 参考 Google SRE Workbook：SLO 99.9%，预算 0.1%\n# 燃烧率 14.4 持续 1 小时 ≈ 消耗 30 天预算的 2%\ngroups:\n  - name: slo-burn\n    rules:\n      - alert: ErrorBudgetFastBurn\n        expr: |\n          job:slo_errors_per_request:ratio_rate1h{job=\"api\"} > (14.4 * 0.001)\n          and\n          job:slo_errors_per_request:ratio_rate5m{job=\"api\"} > (14.4 * 0.001)\n        labels:\n          severity: page          # 快速燃烧：呼叫值班\n        annotations:\n          summary: \"API 正在快速消耗错误预算\"\n      # 慢燃烧（如 6 小时窗口、燃烧率 6）可设为工单级告警",
+   "note": "长窗口保证显著，短窗口保证问题仍在持续，减少误报与恢复后的残留告警。"
+  },
+  "table": {
+   "title": "燃烧率与告警分级",
+   "head": [
+    "燃烧率",
+    "长窗口",
+    "消耗预算",
+    "建议动作"
+   ],
+   "rows": [
+    [
+     "14.4",
+     "1 小时",
+     "2%",
+     "立即呼叫值班"
+    ],
+    [
+     "6",
+     "6 小时",
+     "5%",
+     "立即呼叫值班"
+    ],
+    [
+     "1",
+     "3 天",
+     "10%",
+     "创建工单"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "严格执行冻结",
+    "pros": "可靠性有硬约束",
+    "cons": "可能阻塞重要业务功能",
+    "when": "可靠性问题反复出现"
+   },
+   {
+    "opt": "预算作为参考",
+    "pros": "灵活",
+    "cons": "容易流于形式",
+    "when": "团队刚开始实践 SLO"
+   },
+   {
+    "opt": "按燃烧率告警",
+    "pros": "告警与用户影响挂钩，误报少",
+    "cons": "需要较完善的指标",
+    "when": "取代固定错误率阈值告警"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "预算政策没人签字，耗尽时产品要求照常发布。",
+    "fix": "事先由工程和产品负责人共同签署政策。"
+   },
+   {
+    "bad": "用单一短窗口错误率告警，噪声大。",
+    "fix": "采用多窗口多燃烧率告警。"
+   },
+   {
+    "bad": "依赖方故障消耗的预算也触发冻结，团队无能为力。",
+    "fix": "政策中区分自身与外部原因，并推动冗余或降级。"
+   }
+  ],
+  "checklist": [
+   "每个 SLO 都有对应错误预算",
+   "错误预算政策已书面签署",
+   "燃烧率告警分页与工单两级",
+   "预算剩余在看板上可见",
+   "预算耗尽时的决策人明确"
+  ],
+  "interview": [
+   {
+    "q": "错误预算如何平衡发布速度和稳定性？",
+    "a": "它把可靠性目标转化为一个可花的额度：发布带来的风险会消耗预算，预算充足时团队可以更快迭代，耗尽时按政策转向稳定性工作。双方用同一个数字决策，减少主观争论。"
+   },
+   {
+    "q": "为什么用燃烧率告警而不是错误率阈值？",
+    "a": "固定阈值无法体现对预算的实际影响：短暂尖峰可能无关紧要，长期小幅升高却会耗尽预算。燃烧率直接度量消耗速度，再用多窗口组合兼顾检测速度、精确度和恢复后告警停止的速度。"
+   },
+   {
+    "q": "预算没用完是否说明 SLO 设松了？",
+    "a": "可能是。长期大量剩余意味着可以承担更多风险，例如加快发布或减少过度冗余，也可能说明 SLO 低于用户期望。要结合用户反馈判断是收紧目标还是加快迭代。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Google SRE Workbook：Error Budget Policy",
+    "url": "https://sre.google/workbook/error-budget-policy/"
+   },
+   {
+    "title": "Google SRE Workbook：Alerting on SLOs",
+    "url": "https://sre.google/workbook/alerting-on-slos/"
+   },
+   {
+    "title": "Google SRE Book：Embracing Risk",
+    "url": "https://sre.google/sre-book/embracing-risk/"
+   }
+  ]
+ },
+ {
+  "slug": "incident-response",
+  "def": "事件响应（Incident Response）是在线上故障或安全事件发生时，按预定角色、流程和沟通机制进行检测、分级、处置、恢复与复盘的体系。它属于运维与组织流程层，目标是缩短影响时长并降低混乱：明确谁指挥、谁操作、谁对外沟通，优先止血恢复服务，再追查根因。安全事件另有 NIST 等框架规范。",
+  "how": [
+   "检测：告警、用户反馈或监控发现异常，值班人员确认并宣告事件。",
+   "分级：按影响范围和严重度定级，决定召集哪些人、通报频率与对外沟通。",
+   "组织：指定事件指挥官（IC）、操作负责人、沟通负责人，开专用频道并记录时间线。",
+   "缓解：优先止血，如回滚、切流、扩容、关闭功能开关，而非当场查清根因。",
+   "收尾：确认恢复后宣布结束，保留时间线，安排无指责复盘与改进项。"
+  ],
+  "terms": [
+   {
+    "t": "事件指挥官 (Incident Commander)",
+    "d": "负责整体协调和决策的人，通常不亲自动手修复。"
+   },
+   {
+    "t": "严重级别 (Severity / SEV)",
+    "d": "按影响划分的事件等级，决定响应规模与时限。"
+   },
+   {
+    "t": "缓解 (Mitigation)",
+    "d": "先降低或消除用户影响的措施，与根因修复分开。"
+   },
+   {
+    "t": "状态页 (Status Page)",
+    "d": "对外公布服务状态和事件进展的页面。"
+   },
+   {
+    "t": "MTTD / MTTR",
+    "d": "平均检测时间与平均恢复时间，衡量响应效率。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "事件宣告模板",
+   "src": "[事件宣告] SEV-2 | 2026-10-20 14:05 CST\n影响：部分用户下单失败，错误率约为平时数倍（以看板为准）\n范围：订单服务，华东区域；支付与登录正常\n开始时间：约 13:52（首个告警）\n角色：\n  IC（指挥）      ：@alice\n  Ops（操作）     ：@bob\n  Comms（对外沟通）：@carol\n当前假设：13:45 的订单服务发布引入问题\n当前动作：回滚到上一版本（进行中）\n下次更新：14:20 或有重大进展时\n协作频道：#inc-20261020-orders\n时间线文档：<链接>",
+   "note": "宣告时说清影响、角色、动作与下次更新时间，让所有人在同一页面上。"
+  },
+  "table": {
+   "title": "一种常见的分级示例",
+   "head": [
+    "级别",
+    "典型影响",
+    "响应要求"
+   ],
+   "rows": [
+    [
+     "SEV-1",
+     "核心功能大面积不可用或数据泄露",
+     "立即全员响应，高层知会，对外通告"
+    ],
+    [
+     "SEV-2",
+     "核心功能部分受损",
+     "值班加相关团队，定时更新"
+    ],
+    [
+     "SEV-3",
+     "非核心功能受损，有绕行方案",
+     "工作时间处理"
+    ],
+    [
+     "SEV-4",
+     "轻微问题，无用户影响",
+     "进入常规工单"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "先回滚再排查",
+    "pros": "恢复最快",
+    "cons": "可能丢失现场证据",
+    "when": "故障与最近变更相关"
+   },
+   {
+    "opt": "在线排查修复",
+    "pros": "保留现场，可能找到真因",
+    "cons": "影响持续时间长",
+    "when": "无法回滚或原因明显"
+   },
+   {
+    "opt": "宁可高定级",
+    "pros": "资源到位快",
+    "cons": "偶尔打扰多余人员",
+    "when": "影响不明时"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "多人同时在生产环境各自操作，互相干扰。",
+    "fix": "由 IC 统一分派，操作前在频道里说明。"
+   },
+   {
+    "bad": "把时间花在找根因，用户持续受影响。",
+    "fix": "先缓解止血，根因留到复盘。"
+   },
+   {
+    "bad": "对内对外长时间没有更新，支持团队和用户焦虑。",
+    "fix": "设定固定更新节奏，由沟通负责人发布。"
+   },
+   {
+    "bad": "事件结束没记录时间线，复盘全凭回忆。",
+    "fix": "响应过程中专人实时记录关键时间点和动作。"
+   }
+  ],
+  "checklist": [
+   "有清晰的分级标准与宣告方式",
+   "IC、操作、沟通角色定义明确",
+   "回滚、切流、功能开关可快速执行",
+   "对内对外通报模板与节奏已约定",
+   "事件后必有复盘与跟进项"
+  ],
+  "interview": [
+   {
+    "q": "为什么事件指挥官通常不亲自修复？",
+    "a": "修复需要专注，指挥需要全局视角。IC 负责判断优先级、分派任务、协调资源和沟通节奏，避免多人重复操作或遗漏；一旦 IC 埋头调试，就没人掌握全局，响应容易失控。"
+   },
+   {
+    "q": "缓解和根因修复为什么要分开？",
+    "a": "用户关心的是尽快恢复。回滚、切流、降级往往几分钟就能止血，而找到根因可能要几小时甚至几天。先缓解缩短影响时长，再在复盘中彻底解决。"
+   },
+   {
+    "q": "AI 编程工具在事件响应中能做什么？",
+    "a": "可以帮助快速检索日志与最近变更、生成回滚命令、整理时间线和起草通告；但生产操作应由人确认，Agent 的权限需最小化，所有操作要在事件频道留痕。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Google SRE Book：Managing Incidents",
+    "url": "https://sre.google/sre-book/managing-incidents/"
+   },
+   {
+    "title": "PagerDuty Incident Response 文档",
+    "url": "https://response.pagerduty.com/"
+   },
+   {
+    "title": "NIST SP 800-61 Rev. 3",
+    "url": "https://csrc.nist.gov/pubs/sp/800/61/r3/final"
+   }
+  ]
+ },
+ {
+  "slug": "on-call",
+  "def": "值班（On-Call）是工程师按轮值表在规定时段内负责响应生产告警和事件的制度。它连接监控告警系统与事件响应流程，核心要素包括轮值排班、升级策略、告警质量、响应时限和交接，以及对值班负担的控制与补偿。健康的值班依赖可执行的告警和完善的手册，否则会导致疲劳和人员流失。",
+  "how": [
+   "按轮值表排定主值班和备值班，常见周期为一周，通过工具自动路由告警。",
+   "高严重度告警即时呼叫，未在规定时间内确认则自动升级给备值班或上级。",
+   "值班人员确认告警、按手册排查与缓解，必要时宣告事件拉人协助。",
+   "轮班结束时向下一位交接未决问题和观察到的异常，并记录值班日志。",
+   "定期回顾告警数量与质量，清理噪声告警，度量值班负担并据此调整排班。"
+  ],
+  "terms": [
+   {
+    "t": "升级策略 (Escalation Policy)",
+    "d": "告警未确认时按顺序通知下一层人员的规则。"
+   },
+   {
+    "t": "主/备值班 (Primary / Secondary)",
+    "d": "主值班先响应，备值班兜底或协助。"
+   },
+   {
+    "t": "确认时限 (Ack Timeout)",
+    "d": "告警需要被确认的最长时间，超时触发升级。"
+   },
+   {
+    "t": "跟随太阳 (Follow-the-Sun)",
+    "d": "多时区团队按各自工作时间接力值班，减少夜间呼叫。"
+   },
+   {
+    "t": "值班负担 (On-call Load)",
+    "d": "每班事件数和夜间呼叫次数等，用于评估可持续性。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "Alertmanager 分级路由",
+   "src": "route:\n  receiver: ticket-queue           # 默认：进工单，不叫醒人\n  group_by: [alertname, service]\n  group_wait: 30s\n  group_interval: 5m\n  repeat_interval: 4h\n  routes:\n    - matchers: ['severity=\"page\"']\n      receiver: oncall-pager        # 只有需要人立即处理的才呼叫\nreceivers:\n  - name: oncall-pager\n    pagerduty_configs:\n      - routing_key: <pagerduty-integration-key>\n  - name: ticket-queue\n    webhook_configs:\n      - url: https://tickets.example.com/hooks/alertmanager",
+   "note": "按 severity 分流：可等的进工单，紧急的才呼叫值班，减少夜间打扰。"
+  },
+  "table": {
+   "title": "值班健康度指标",
+   "head": [
+    "指标",
+    "含义",
+    "关注点"
+   ],
+   "rows": [
+    [
+     "每班呼叫次数",
+     "被叫醒或打断的频次",
+     "持续偏高说明告警或系统需治理"
+    ],
+    [
+     "可执行告警占比",
+     "需要人工动作的告警比例",
+     "低于多数即存在大量噪声"
+    ],
+    [
+     "确认时间",
+     "从呼叫到确认",
+     "过长说明排班或通知有问题"
+    ],
+    [
+     "夜间呼叫次数",
+     "非工作时间打扰",
+     "影响健康与留存"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "开发团队自己值班",
+    "pros": "谁写谁负责，修复快，激励写稳代码",
+    "cons": "开发者负担增加",
+    "when": "服务由单一团队拥有"
+   },
+   {
+    "opt": "专职 SRE/运维值班",
+    "pros": "响应专业",
+    "cons": "与代码作者脱节",
+    "when": "平台型共享基础设施"
+   },
+   {
+    "opt": "跟随太阳",
+    "pros": "减少夜间值班",
+    "cons": "需要多时区团队与良好交接",
+    "when": "团队分布全球"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "所有告警都呼叫值班，包括自愈的瞬时抖动。",
+    "fix": "只有需要立即人工动作的才呼叫，其余进工单或看板。"
+   },
+   {
+    "bad": "告警没有对应手册，值班人员半夜从零排查。",
+    "fix": "每条呼叫级告警链接到手册。"
+   },
+   {
+    "bad": "轮值人数过少，每人频繁值班导致倦怠。",
+    "fix": "保证轮值人数，控制每人值班频率并给予补偿。"
+   },
+   {
+    "bad": "值班时还要求完成满负荷的开发任务。",
+    "fix": "值班期间减少计划工作，用于处理告警和改进。"
+   }
+  ],
+  "checklist": [
+   "每个生产服务有明确的值班轮值",
+   "升级策略与确认时限已配置",
+   "呼叫级告警都有手册链接",
+   "定期回顾告警噪声并清理",
+   "值班交接有记录",
+   "值班负担有度量与补偿"
+  ],
+  "interview": [
+   {
+    "q": "如何判断一条告警该不该呼叫值班？",
+    "a": "问三个问题：是否正在或即将影响用户；是否需要人立刻采取动作；动作是否明确。三者都满足才呼叫。否则降为工单或仪表盘，或者用自动化处理。基于 SLO 燃烧率的告警通常比基于原因的告警更符合这个标准。"
+   },
+   {
+    "q": "Google SRE 对值班负担有什么建议？",
+    "a": "SRE 书中建议 SRE 花在值班上的时间不超过约 25%，运维类工作总量不超过 50%；每个值班班次的事件数要有限，留出时间做事件处理与复盘。目的是让值班可持续，并保留工程改进时间。"
+   },
+   {
+    "q": "AI 工具能如何减轻值班负担？",
+    "a": "可以聚合相关告警、检索相似历史事件和手册、生成初步诊断摘要和查询命令，缩短上下文收集时间；但处置决策仍应由人确认，并审计 Agent 执行的操作。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Google SRE Book：Being On-Call",
+    "url": "https://sre.google/sre-book/being-on-call/"
+   },
+   {
+    "title": "Google SRE Workbook：On-Call",
+    "url": "https://sre.google/workbook/on-call/"
+   },
+   {
+    "title": "Prometheus Alertmanager 配置文档",
+    "url": "https://prometheus.io/docs/alerting/latest/configuration/"
+   }
+  ]
+ }
+]

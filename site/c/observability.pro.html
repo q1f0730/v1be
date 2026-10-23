@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="可观测性三支柱 (指标 / 日志 / 链路) 专业模式：可观测性（Observability）指仅凭系统对外输出的遥测数据，就能推断其内部状态、回答事先没预料到的问题的能力。业界常用三类信号：指标（Metrics）、">
+<title>🎓 可观测性三支柱 (指标 / 日志 / 链路) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="observability" data-answer="0" data-prev="object-storage.pro.html" data-next="uptime-monitoring.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#sre">🌊 中级 · 🩺 高可用 SRE</a><span>›</span><a href="observability.html">可观测性三支柱 (指标 / 日志 / 链路)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.201 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="object-storage.pro.html" rel="prev"><small>‹ 上一个</small><b>🗃️ 对象存储 (S3 / R2 / OSS)</b></a><a class="pn next" href="uptime-monitoring.pro.html" rel="next"><small>下一个 ›</small><b>🚨 可用性监控 (拨测)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔭</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>可观测性三支柱 (指标 / 日志 / 链路)</h1><p class="en">Observability</p>
+    <div class="hbtns"><a class="prosw back" href="observability.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">可观测性（Observability）指仅凭系统对外输出的遥测数据，就能推断其内部状态、回答事先没预料到的问题的能力。业界常用三类信号：指标（Metrics）、日志（Logs）和链路追踪（Traces），并通过 trace ID 等上下文相互关联。OpenTelemetry 是采集与传输这三类信号的开放标准。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>应用通过 SDK 或自动插桩产生遥测：计数器、直方图等指标，结构化日志，以及描述每个操作耗时的 span。</p></li><li><span class="sn">2</span><p>链路上下文（trace ID、span ID）通过 HTTP 头（W3C traceparent）在服务间传播，把分散的 span 串成一条 trace。</p></li><li><span class="sn">3</span><p>日志中写入当前 trace ID，使得从指标告警跳转到相关 trace，再定位到具体日志行成为可能。</p></li><li><span class="sn">4</span><p>遥测经 Collector 等代理处理（采样、脱敏、批量），发送到 Prometheus、Loki、Jaeger 或商业平台存储。</p></li><li><span class="sn">5</span><p>基于指标设置 SLO 告警，基于 trace 与日志做根因分析，形成“发现—定位—修复”闭环。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>Span</dt><dd>链路中的单个操作单元，含名称、起止时间、属性和父子关系。</dd></div><div class="term"><dt>上下文传播 (Context Propagation)</dt><dd>在进程与服务间传递 trace 信息，常用 W3C Trace Context。</dd></div><div class="term"><dt>采样 (Sampling)</dt><dd>只保留部分 trace 以控制成本，分头部采样和尾部采样。</dd></div><div class="term"><dt>基数 (Cardinality)</dt><dd>指标标签取值组合数，过高会导致存储和查询成本爆炸。</dd></div><div class="term"><dt>OTLP</dt><dd>OpenTelemetry 协议，用于传输指标、日志和 trace。</dd></div><div class="term"><dt>Collector</dt><dd>OpenTelemetry 的独立代理，负责接收、处理和导出遥测数据。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>OpenTelemetry 手动埋点</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import logging
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+
+# 生产环境把 ConsoleSpanExporter 换成 OTLP 导出器
+provider = TracerProvider()
+provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
+trace.set_tracer_provider(provider)
+tracer = trace.get_tracer(&quot;checkout-service&quot;)
+logging.basicConfig(level=logging.INFO)
+
+def checkout(order_id: str):
+    with tracer.start_as_current_span(&quot;checkout&quot;) as span:
+        span.set_attribute(&quot;order.id&quot;, order_id)
+        trace_id = format(span.get_span_context().trace_id, &quot;032x&quot;)
+        logging.info(&quot;checkout start trace_id=%s&quot;, trace_id)  # 日志关联 trace
+        with tracer.start_as_current_span(&quot;charge_card&quot;):
+            pass  # 调用支付服务
+        with tracer.start_as_current_span(&quot;write_db&quot;):
+            pass  # 写订单
+
+checkout(&quot;o-123&quot;)</code></pre></div><p class="cnote">父 span 下嵌套子 span 记录每一步耗时，并把 trace ID 写进日志，实现信号关联。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">三类信号对比</h3><div class="tw"><table><thead><tr><th>信号</th><th>数据形态</th><th>擅长回答</th><th>成本特点</th></tr></thead><tbody><tr><td data-h="信号">指标</td><td data-h="数据形态">聚合数值时序</td><td data-h="擅长回答">是否异常、趋势如何</td><td data-h="成本特点">低，但受标签基数影响</td></tr><tr><td data-h="信号">日志</td><td data-h="数据形态">离散事件文本/JSON</td><td data-h="擅长回答">具体发生了什么</td><td data-h="成本特点">随流量线性增长</td></tr><tr><td data-h="信号">链路追踪</td><td data-h="数据形态">带因果关系的 span 树</td><td data-h="擅长回答">慢在哪、错在哪个服务</td><td data-h="成本特点">高，通常需要采样</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>全量 trace</h4><p><b class="k-p">优点</b>不漏任何异常请求</p><p><b class="k-c">代价</b>存储成本高</p><p><b class="k-w">适用</b>流量小或关键交易链路</p></div><div class="trd"><h4>头部采样（固定比例）</h4><p><b class="k-p">优点</b>实现简单、成本可控</p><p><b class="k-c">代价</b>可能漏掉罕见错误</p><p><b class="k-w">适用</b>大流量常规服务</p></div><div class="trd"><h4>尾部采样（Collector 端）</h4><p><b class="k-p">优点</b>优先保留错误与慢请求</p><p><b class="k-c">代价</b>需缓冲完整 trace，资源消耗高</p><p><b class="k-w">适用</b>需要精准排障的生产系统</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>指标标签使用用户 ID、URL 全路径</p><p class="fix"><b>✓</b>只用低基数标签，高基数信息放日志或 trace 属性</p></li><li><p class="bad"><b>✗</b>日志无结构、不带 trace ID</p><p class="fix"><b>✓</b>使用结构化日志并自动注入 trace 上下文</p></li><li><p class="bad"><b>✗</b>各服务传播头不一致，trace 断裂</p><p class="fix"><b>✓</b>统一采用 W3C Trace Context，网关与消息队列也传播</p></li><li><p class="bad"><b>✗</b>遥测中包含密码、Token 等敏感数据</p><p class="fix"><b>✓</b>在 SDK 或 Collector 层做脱敏与字段过滤</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>核心服务暴露延迟、流量、错误、饱和度指标</span></label></li><li><label><input type="checkbox"><span>日志结构化且带 trace ID</span></label></li><li><label><input type="checkbox"><span>跨服务上下文传播完整</span></label></li><li><label><input type="checkbox"><span>采样策略与成本已评估</span></label></li><li><label><input type="checkbox"><span>遥测数据已脱敏</span></label></li><li><label><input type="checkbox"><span>关键 SLO 配置告警</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>监控和可观测性有什么区别？</summary><p>监控针对已知问题，预先定义指标和阈值来判断“是否出问题”；可观测性强调能通过丰富、可关联的遥测数据回答事先没想到的问题，即“为什么出问题”。监控是可观测性的子集。</p></details><details class="iv"><summary>为什么指标标签基数需要控制？</summary><p>时序数据库为每个标签组合存一条时间序列。若把用户 ID 等高基数字段作为标签，序列数会呈乘积增长，导致内存、存储和查询成本暴涨甚至服务崩溃。高基数维度应放在日志或 trace 中。</p></details><details class="iv"><summary>如何在 Agent 或 LLM 应用中做可观测性？</summary><p>为每次模型调用、工具调用和检索步骤创建 span，记录模型名、token 用量、延迟和错误；用 trace 串起一次完整 Agent 运行。注意对提示和输出中的个人信息做脱敏，并控制大文本存储成本。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://opentelemetry.io/docs/" target="_blank" rel="noopener"><b>OpenTelemetry 文档</b><small>opentelemetry.io ↗</small></a></li><li><a href="https://opentelemetry.io/docs/languages/python/" target="_blank" rel="noopener"><b>OpenTelemetry Python</b><small>opentelemetry.io ↗</small></a></li><li><a href="https://www.w3.org/TR/trace-context/" target="_blank" rel="noopener"><b>W3C Trace Context</b><small>w3.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="object-storage.pro.html" rel="prev"><small>‹ 上一个</small><b>🗃️ 对象存储 (S3 / R2 / OSS)</b></a><a class="pn next" href="uptime-monitoring.pro.html" rel="next"><small>下一个 ›</small><b>🚨 可用性监控 (拨测)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

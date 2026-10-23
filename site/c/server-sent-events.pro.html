@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="服务端发送事件 (SSE) 专业模式：服务端发送事件（Server-Sent Events，SSE）是 HTML 标准定义的服务端到浏览器单向推送机制：客户端发起一个普通 HTTP 请求，服务端以 ">
+<title>🎓 服务端发送事件 (SSE) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="server-sent-events" data-answer="0" data-prev="websockets.pro.html" data-next="long-polling.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#net">🔮 高级 · 🌐 网络与 API</a><span>›</span><a href="server-sent-events.html">服务端发送事件 (SSE)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.260 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="websockets.pro.html" rel="prev"><small>‹ 上一个</small><b>📻 全双工长连接协议</b></a><a class="pn next" href="long-polling.pro.html" rel="next"><small>下一个 ›</small><b>☎️ HTTP长轮询</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📡</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>服务端发送事件 (SSE)</h1><p class="en">Server-Sent Events</p>
+    <div class="hbtns"><a class="prosw back" href="server-sent-events.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">服务端发送事件（Server-Sent Events，SSE）是 HTML 标准定义的服务端到浏览器单向推送机制：客户端发起一个普通 HTTP 请求，服务端以 text/event-stream 格式持续写出事件，连接保持打开。EventSource 内置自动重连与续传，是通知流与大模型流式输出的常用传输方式。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>客户端发起 GET 请求（EventSource）或用 fetch 读取流式响应体。</p></li><li><span class="sn">2</span><p>服务端返回 Content-Type: text/event-stream，并且不结束响应。</p></li><li><span class="sn">3</span><p>每个事件由若干行组成：data、event、id、retry 字段，以空行结束一个事件。</p></li><li><span class="sn">4</span><p>以冒号开头的注释行会被客户端忽略，可用作心跳，防止代理因空闲断开连接。</p></li><li><span class="sn">5</span><p>断线后 EventSource 按 retry 间隔自动重连，并通过 Last-Event-ID 头告知最后收到的 id。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>text/event-stream</dt><dd>SSE 的 MIME 类型，UTF-8 文本、按行解析。</dd></div><div class="term"><dt>EventSource</dt><dd>浏览器内置的 SSE 客户端 API，只支持 GET。</dd></div><div class="term"><dt>Last-Event-ID</dt><dd>重连时浏览器自动携带的请求头，用于续传。</dd></div><div class="term"><dt>retry 字段</dt><dd>服务端指定的重连等待毫秒数。</dd></div><div class="term"><dt>命名事件 (Named Event)</dt><dd>用 event 字段区分类型，客户端按名监听。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Express SSE 与断点续传</span><em>javascript</em><button class="ccopy">复制</button></div><pre><code>app.get(&#x27;/events&#x27;, (req, res) =&gt; {
+  res.writeHead(200, {
+    &#x27;Content-Type&#x27;: &#x27;text/event-stream&#x27;,
+    &#x27;Cache-Control&#x27;: &#x27;no-cache&#x27;,
+    &#x27;X-Accel-Buffering&#x27;: &#x27;no&#x27;,          // 告诉 Nginx 不要缓冲
+  });
+  let id = Number(req.headers[&#x27;last-event-id&#x27;] ?? 0);  // 断线重连时续传
+  res.write(&#x27;retry: 5000\n\n&#x27;);         // 建议浏览器 5 秒后重连
+
+  const tick = setInterval(() =&gt; {
+    id += 1;
+    res.write(`id: ${id}\nevent: tick\ndata: ${JSON.stringify({ t: Date.now() })}\n\n`);
+  }, 1000);
+  const heartbeat = setInterval(() =&gt; res.write(&#x27;: ping\n\n&#x27;), 15000);
+
+  req.on(&#x27;close&#x27;, () =&gt; { clearInterval(tick); clearInterval(heartbeat); });
+});
+
+// 浏览器端
+const es = new EventSource(&#x27;/events&#x27;);
+es.addEventListener(&#x27;tick&#x27;, (e) =&gt; console.log(e.lastEventId, JSON.parse(e.data)));
+es.onerror = () =&gt; console.warn(&#x27;断开，浏览器会自动重连&#x27;);</code></pre></div><p class="cnote">id 加 Last-Event-ID 实现续传；注释行心跳保活；客户端断开时清理定时器。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">事件流字段</h3><div class="tw"><table><thead><tr><th>字段</th><th>作用</th><th>示例</th></tr></thead><tbody><tr><td data-h="字段">data</td><td data-h="作用">事件数据，可多行拼接</td><td data-h="示例">data: {&quot;delta&quot;:&quot;你&quot;}</td></tr><tr><td data-h="字段">event</td><td data-h="作用">事件类型名</td><td data-h="示例">event: message_stop</td></tr><tr><td data-h="字段">id</td><td data-h="作用">事件 ID，用于续传</td><td data-h="示例">id: 42</td></tr><tr><td data-h="字段">retry</td><td data-h="作用">重连间隔（毫秒）</td><td data-h="示例">retry: 5000</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>EventSource</h4><p><b class="k-p">优点</b>自动重连与续传，零依赖</p><p><b class="k-c">代价</b>只能 GET，不能自定义请求头</p><p><b class="k-w">适用</b>通知、行情等订阅推送</p></div><div class="trd"><h4>fetch + 流式读取</h4><p><b class="k-p">优点</b>可 POST、带 Authorization 头</p><p><b class="k-c">代价</b>重连与解析需自己实现</p><p><b class="k-w">适用</b>调用大模型流式接口</p></div><div class="trd"><h4>WebSocket</h4><p><b class="k-p">优点</b>双向实时</p><p><b class="k-c">代价</b>协议与运维更复杂</p><p><b class="k-w">适用</b>客户端也要频繁上行消息</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>经过 Nginx/CDN 后事件被攒成一大块</p><p class="fix"><b>✓</b>关闭代理缓冲与压缩，或返回 X-Accel-Buffering: no</p></li><li><p class="bad"><b>✗</b>HTTP/1.1 下开多个标签页，连接数耗尽</p><p class="fix"><b>✓</b>启用 HTTP/2，或多标签共享一个连接</p></li><li><p class="bad"><b>✗</b>客户端断开后服务端仍在生成内容</p><p class="fix"><b>✓</b>监听 close 事件，中止上游生成并清理资源</p></li><li><p class="bad"><b>✗</b>data 中直接写含换行的文本，解析错位</p><p class="fix"><b>✓</b>数据用 JSON 编码，或每行分别加 data: 前缀</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>响应头为 text/event-stream 且禁缓存</span></label></li><li><label><input type="checkbox"><span>代理与 CDN 不缓冲该路径</span></label></li><li><label><input type="checkbox"><span>有心跳且间隔小于各层空闲超时</span></label></li><li><label><input type="checkbox"><span>事件带 id，服务端支持续传</span></label></li><li><label><input type="checkbox"><span>客户端断开时停止上游任务</span></label></li><li><label><input type="checkbox"><span>生产环境启用 HTTP/2</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么大模型 API 普遍用 SSE 而不是 WebSocket？</summary><p>生成过程是一次请求对应服务端单向连续输出，SSE 正好匹配：基于普通 HTTP，复用现有鉴权、网关、日志与负载均衡，实现简单。客户端通常用 fetch 读取流，以便 POST 请求体和设置鉴权头。</p></details><details class="iv"><summary>SSE 如何做到断线不丢消息？</summary><p>服务端为每个事件分配递增 id；浏览器重连时自动带 Last-Event-ID；服务端从该 id 之后补发。需要服务端保留一段事件历史（内存环形缓冲或 Redis Stream），超出范围时让客户端全量刷新。</p></details><details class="iv"><summary>SSE 的连接数限制是怎么回事？</summary><p>HTTP/1.1 下浏览器对同一域名的并发连接数有限（通常 6 个），每个 SSE 占用一个，多标签页时容易耗尽导致其他请求排队。HTTP/2 多路复用可解决，或用 BroadcastChannel 让多标签共享。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://html.spec.whatwg.org/multipage/server-sent-events.html" target="_blank" rel="noopener"><b>HTML Standard: Server-sent events</b><small>html.spec.whatwg.org ↗</small></a></li><li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events" target="_blank" rel="noopener"><b>MDN: Using server-sent events</b><small>developer.mozilla.org ↗</small></a></li><li><a href="https://developer.mozilla.org/en-US/docs/Web/API/EventSource" target="_blank" rel="noopener"><b>MDN: EventSource</b><small>developer.mozilla.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="websockets.pro.html" rel="prev"><small>‹ 上一个</small><b>📻 全双工长连接协议</b></a><a class="pn next" href="long-polling.pro.html" rel="next"><small>下一个 ›</small><b>☎️ HTTP长轮询</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

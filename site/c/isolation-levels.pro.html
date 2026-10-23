@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="事务隔离级别 专业模式：事务隔离级别定义了并发事务之间能“看见”彼此多少未完成或新提交的修改。SQL 标准按允许的异常现象划分为读未提交、读已提交、可重复读、可串行化四级。级别越高越接">
+<title>🎓 事务隔离级别 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="isolation-levels" data-answer="0" data-prev="acid.pro.html" data-next="deadlocks.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#db">🔮 高级 · 🗄️ 数据库</a><span>›</span><a href="isolation-levels.html">事务隔离级别</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.240 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="acid.pro.html" rel="prev"><small>‹ 上一个</small><b>🏛️ 事务四大基石特性</b></a><a class="pn next" href="deadlocks.pro.html" rel="next"><small>下一个 ›</small><b>🚗 数据库死锁</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🚧</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>事务隔离级别</h1><p class="en">Isolation Levels</p>
+    <div class="hbtns"><a class="prosw back" href="isolation-levels.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">事务隔离级别定义了并发事务之间能“看见”彼此多少未完成或新提交的修改。SQL 标准按允许的异常现象划分为读未提交、读已提交、可重复读、可串行化四级。级别越高越接近串行执行的正确性，但并发度、阻塞或重试成本也越高。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>数据库用锁或 MVCC 快照实现隔离：MVCC 下每个事务读取某一时刻的数据版本。</p></li><li><span class="sn">2</span><p>读已提交：每条语句取新快照，只能看到已提交数据，但同一事务两次读可能不同。</p></li><li><span class="sn">3</span><p>可重复读：整个事务使用同一快照，重复读取结果一致；具体能否防幻读因引擎而异。</p></li><li><span class="sn">4</span><p>可串行化：保证结果等价于某种串行顺序；PostgreSQL 用 SSI 检测冲突并让事务失败。</p></li><li><span class="sn">5</span><p>被判定冲突的事务会收到序列化失败错误（SQLSTATE 40001），应用需整体重试该事务。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>脏读 (Dirty Read)</dt><dd>读到其他事务尚未提交的修改。</dd></div><div class="term"><dt>不可重复读 (Non-repeatable Read)</dt><dd>同一事务内两次读同一行，结果不同。</dd></div><div class="term"><dt>幻读 (Phantom Read)</dt><dd>同一条件两次查询，返回的行集合变化。</dd></div><div class="term"><dt>写偏斜 (Write Skew)</dt><dd>两事务基于同一快照各自写不同行，合起来破坏约束。</dd></div><div class="term"><dt>快照隔离 (Snapshot Isolation)</dt><dd>事务读固定快照，写冲突时后提交者失败。</dd></div><div class="term"><dt>SSI</dt><dd>可串行化快照隔离，PostgreSQL 可串行化级别的实现。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>写偏斜与可串行化</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- 规则：至少要有一名医生值班
+CREATE TABLE doctors (name text PRIMARY KEY, on_call boolean);
+INSERT INTO doctors VALUES (&#x27;alice&#x27;, true), (&#x27;bob&#x27;, true);
+
+-- 会话 A                                  -- 会话 B
+BEGIN ISOLATION LEVEL REPEATABLE READ;     -- BEGIN ISOLATION LEVEL REPEATABLE READ;
+SELECT count(*) FROM doctors               -- SELECT count(*) FROM doctors
+  WHERE on_call;  -- 2                     --   WHERE on_call;  -- 2
+UPDATE doctors SET on_call = false         -- UPDATE doctors SET on_call = false
+  WHERE name = &#x27;alice&#x27;;                    --   WHERE name = &#x27;bob&#x27;;
+COMMIT;                                    -- COMMIT;
+-- 结果：两人都不值班，规则被破坏（写偏斜）
+
+-- 改为 SERIALIZABLE 后，后提交的一方会失败：
+-- ERROR: could not serialize access due to read/write dependencies
+-- SQLSTATE 40001 → 应用捕获后重试整个事务
+SHOW default_transaction_isolation;  -- PostgreSQL 默认 read committed</code></pre></div><p class="cnote">可重复读挡不住写偏斜；PostgreSQL 可串行化会让其中一个事务失败，需重试。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">隔离级别与异常（标准定义）</h3><div class="tw"><table><thead><tr><th>级别</th><th>脏读</th><th>不可重复读</th><th>幻读</th></tr></thead><tbody><tr><td data-h="级别">读未提交</td><td data-h="脏读">可能</td><td data-h="不可重复读">可能</td><td data-h="幻读">可能</td></tr><tr><td data-h="级别">读已提交</td><td data-h="脏读">不会</td><td data-h="不可重复读">可能</td><td data-h="幻读">可能</td></tr><tr><td data-h="级别">可重复读</td><td data-h="脏读">不会</td><td data-h="不可重复读">不会</td><td data-h="幻读">可能（PG 实际不会）</td></tr><tr><td data-h="级别">可串行化</td><td data-h="脏读">不会</td><td data-h="不可重复读">不会</td><td data-h="幻读">不会</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>读已提交（PG 默认）</h4><p><b class="k-p">优点</b>冲突少，吞吐高</p><p><b class="k-c">代价</b>需自行处理丢失更新与写偏斜</p><p><b class="k-w">适用</b>大多数 OLTP 业务</p></div><div class="trd"><h4>可重复读（MySQL 默认）</h4><p><b class="k-p">优点</b>事务内读一致，适合报表</p><p><b class="k-c">代价</b>仍可能写偏斜，语义因库而异</p><p><b class="k-w">适用</b>需一致快照的读多事务</p></div><div class="trd"><h4>可串行化</h4><p><b class="k-p">优点</b>正确性推理最简单</p><p><b class="k-c">代价</b>失败重试增多，需幂等设计</p><p><b class="k-w">适用</b>资金、配额等强约束逻辑</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>以为各数据库同名级别行为一致</p><p class="fix"><b>✓</b>查阅所用引擎文档，MySQL 与 PG 的可重复读差异很大</p></li><li><p class="bad"><b>✗</b>开了可串行化但没写重试逻辑</p><p class="fix"><b>✓</b>捕获 40001 并重试整个事务，限制次数</p></li><li><p class="bad"><b>✗</b>读后改写（读余额再写回）未防丢失更新</p><p class="fix"><b>✓</b>用原子 UPDATE、SELECT FOR UPDATE 或版本号</p></li><li><p class="bad"><b>✗</b>全局调高隔离级别解决个别问题</p><p class="fix"><b>✓</b>只对需要的事务单独设置级别</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>已确认数据库与驱动的默认隔离级别</span></label></li><li><label><input type="checkbox"><span>识别出读后写类的关键路径</span></label></li><li><label><input type="checkbox"><span>关键路径有锁、版本号或高隔离级别</span></label></li><li><label><input type="checkbox"><span>序列化失败与死锁错误可自动重试</span></label></li><li><label><input type="checkbox"><span>重试的事务是幂等的</span></label></li><li><label><input type="checkbox"><span>并发场景有压测或集成测试覆盖</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>快照隔离为什么不等于可串行化？</summary><p>快照隔离只检测两个事务写同一行的冲突。写偏斜中两事务读同一集合、写不同的行，没有写写冲突，各自提交后组合结果违反约束。可串行化需额外追踪读写依赖，如 PostgreSQL 的 SSI。</p></details><details class="iv"><summary>MySQL InnoDB 的可重复读如何处理幻读？</summary><p>普通一致性读用快照，看不到新插入行；加锁读（FOR UPDATE）和更新使用 next-key 锁（记录锁加间隙锁）阻止范围内插入。但快照读与当前读混用时仍可能出现与直觉不符的结果。</p></details><details class="iv"><summary>如何选择业务的隔离级别？</summary><p>默认用读已提交，识别出需要强一致的少数路径：能用原子 UPDATE 或唯一约束解决的优先；其次用行锁或乐观锁；逻辑涉及多行约束、难以手工加锁时，对该事务使用可串行化并配重试。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.postgresql.org/docs/current/transaction-iso.html" target="_blank" rel="noopener"><b>PostgreSQL: Transaction Isolation</b><small>postgresql.org ↗</small></a></li><li><a href="https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html" target="_blank" rel="noopener"><b>MySQL: InnoDB Transaction Isolation Levels</b><small>dev.mysql.com ↗</small></a></li><li><a href="https://www.microsoft.com/en-us/research/publication/a-critique-of-ansi-sql-isolation-levels/" target="_blank" rel="noopener"><b>A Critique of ANSI SQL Isolation Levels</b><small>microsoft.com ↗</small></a></li><li><a href="https://jepsen.io/consistency" target="_blank" rel="noopener"><b>Jepsen: Consistency Models</b><small>jepsen.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="acid.pro.html" rel="prev"><small>‹ 上一个</small><b>🏛️ 事务四大基石特性</b></a><a class="pn next" href="deadlocks.pro.html" rel="next"><small>下一个 ›</small><b>🚗 数据库死锁</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

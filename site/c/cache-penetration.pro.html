@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="缓存穿透 专业模式：缓存穿透（Cache Penetration）指请求查询的数据在缓存和数据库中都不存在，因此每次都无法命中缓存而直接打到数据库。在恶意构造随机 ID 或爬虫遍历">
+<title>🎓 缓存穿透 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="cache-penetration" data-answer="0" data-prev="cache-aside.pro.html" data-next="stale-while-revalidate.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#cache">🔮 高级 · ⚡ 缓存与队列</a><span>›</span><a href="cache-penetration.html">缓存穿透</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.353 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="cache-aside.pro.html" rel="prev"><small>‹ 上一个</small><b>🗄️ 旁路缓存 (Cache-Aside)</b></a><a class="pn next" href="stale-while-revalidate.pro.html" rel="next"><small>下一个 ›</small><b>🔄 过期仍用后台刷新 (SWR)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🕳️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>⚡ 缓存与队列</span><span>⏱ 约 10 分钟</span></div>
+    <h1>缓存穿透</h1><p class="en">Cache Penetration</p>
+    <div class="hbtns"><a class="prosw back" href="cache-penetration.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">缓存穿透（Cache Penetration）指请求查询的数据在缓存和数据库中都不存在，因此每次都无法命中缓存而直接打到数据库。在恶意构造随机 ID 或爬虫遍历时，大量此类请求会压垮数据库。常见防护是参数校验、缓存空结果（负缓存）和布隆过滤器。它常与缓存击穿（热点键过期）和缓存雪崩（大量键同时过期或缓存宕机）一起讨论。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>正常的旁路缓存只在数据库返回结果时写缓存，查询结果为空时不写，导致同一不存在的键每次都回源。</p></li><li><span class="sn">2</span><p>攻击者或缺陷代码用大量不存在的键（如负数 ID、随机 UUID）发起请求，缓存命中率趋近于零。</p></li><li><span class="sn">3</span><p>第一道防线是接口层参数校验：格式、范围、权限不合法的请求直接拒绝，不访问缓存或数据库。</p></li><li><span class="sn">4</span><p>负缓存：把“不存在”也写入缓存（如特殊空值），设置较短 TTL，防止同一键反复回源。</p></li><li><span class="sn">5</span><p>布隆过滤器：预先把所有合法键加入过滤器，查询前判断，若“肯定不存在”则直接返回；它有误判率但无漏判。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>负缓存 (Negative Caching)</dt><dd>缓存“查无结果”，用较短 TTL 防止重复回源。</dd></div><div class="term"><dt>布隆过滤器 (Bloom Filter)</dt><dd>概率型集合结构，能确定“一定不存在”，存在判断有误判率。</dd></div><div class="term"><dt>缓存击穿 (Cache Breakdown)</dt><dd>热点键过期瞬间大量并发请求同时回源。</dd></div><div class="term"><dt>缓存雪崩 (Cache Avalanche)</dt><dd>大量键同时过期或缓存整体故障，流量涌向数据库。</dd></div><div class="term"><dt>误判率 (False Positive Rate)</dt><dd>布隆过滤器把不存在的元素判为存在的概率。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>空值缓存 + 布隆过滤器防穿透</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import json
+import redis
+
+r = redis.Redis(decode_responses=True)
+NULL = &quot;__NULL__&quot;
+
+def get_user(uid: str, db) -&gt; dict | None:
+    if not uid.isdigit() or len(uid) &gt; 12:              # 1. 参数校验
+        return None
+    # 2. 布隆过滤器（需 Redis 8 或 RedisBloom 模块）：0 表示一定不存在
+    if r.execute_command(&quot;BF.EXISTS&quot;, &quot;bf:users&quot;, uid) == 0:
+        return None
+    key = f&quot;user:{uid}&quot;
+    cached = r.get(key)
+    if cached == NULL:                                   # 3. 命中空值缓存
+        return None
+    if cached is not None:
+        return json.loads(cached)
+    row = db.find_user(uid)
+    if row is None:
+        r.set(key, NULL, ex=120)                         # 不存在：短 TTL
+    else:
+        r.set(key, json.dumps(row), ex=3600)
+    return row
+
+# 新增用户时同步写入过滤器：r.execute_command(&quot;BF.ADD&quot;, &quot;bf:users&quot;, uid)</code></pre></div><p class="cnote">三层防护依次拦截非法参数、肯定不存在的键与重复的空查询；db 为示意对象。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">穿透、击穿、雪崩对比</h3><div class="tw"><table><thead><tr><th>问题</th><th>触发条件</th><th>主要对策</th></tr></thead><tbody><tr><td data-h="问题">穿透</td><td data-h="触发条件">查询不存在的数据</td><td data-h="主要对策">参数校验、负缓存、布隆过滤器</td></tr><tr><td data-h="问题">击穿</td><td data-h="触发条件">单个热点键过期瞬间高并发</td><td data-h="主要对策">互斥锁重建、逻辑过期、提前刷新</td></tr><tr><td data-h="问题">雪崩</td><td data-h="触发条件">大量键同时过期或缓存宕机</td><td data-h="主要对策">TTL 随机抖动、多级缓存、限流降级、缓存高可用</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>负缓存</h4><p><b class="k-p">优点</b>实现简单，对重复键有效</p><p><b class="k-c">代价</b>随机键攻击下仍会占满缓存空间</p><p><b class="k-w">适用</b>少量不存在键被反复查询</p></div><div class="trd"><h4>布隆过滤器</h4><p><b class="k-p">优点</b>内存占用小，挡住海量随机键</p><p><b class="k-c">代价</b>需维护键集合，删除困难，有误判</p><p><b class="k-w">适用</b>合法键集合可预知、攻击面大</p></div><div class="trd"><h4>限流与风控</h4><p><b class="k-p">优点</b>直接遏制恶意来源</p><p><b class="k-c">代价</b>无法区分合法的偶发空查询</p><p><b class="k-w">适用</b>叠加使用，应对恶意流量</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>空值缓存使用与正常数据相同的长 TTL</p><p class="fix"><b>✓</b>空值使用较短 TTL，数据新增时主动删除空值缓存</p></li><li><p class="bad"><b>✗</b>布隆过滤器建好后不随数据新增更新</p><p class="fix"><b>✓</b>写入数据时同步加入过滤器，并定期重建</p></li><li><p class="bad"><b>✗</b>用普通布隆过滤器处理需要删除的键</p><p class="fix"><b>✓</b>选择支持删除的变体（如计数布隆、Cuckoo 过滤器）或定期重建</p></li><li><p class="bad"><b>✗</b>只做缓存防护，不做参数校验和限流</p><p class="fix"><b>✓</b>在网关和接口层先校验参数并按来源限流</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>接口有参数格式与范围校验</span></label></li><li><label><input type="checkbox"><span>空结果缓存且 TTL 较短</span></label></li><li><label><input type="checkbox"><span>数据新增时清除对应空值缓存</span></label></li><li><label><input type="checkbox"><span>合法键集合大时评估布隆过滤器</span></label></li><li><label><input type="checkbox"><span>按 IP/用户限流并监控缓存命中率</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>布隆过滤器为什么能防穿透，又有什么局限？</summary><p>它用多个哈希函数把元素映射到位数组；查询时若任一位为 0，元素一定不存在，可直接拒绝。局限是存在误判（少量不存在的键被判为可能存在，仍会回源），标准实现不支持删除，且需要随数据变化维护。</p></details><details class="iv"><summary>负缓存会带来什么一致性问题？</summary><p>如果某键先被缓存为“不存在”，随后数据被创建，在空值 TTL 到期前读请求仍返回不存在。解决办法是空值 TTL 设短，并在创建数据时主动删除对应的空值缓存。</p></details><details class="iv"><summary>如何区分穿透、击穿和雪崩？</summary><p>穿透是数据根本不存在，缓存永远命中不了；击穿是某个存在的热点键恰好过期，瞬间并发回源；雪崩是大量键集中过期或缓存服务整体不可用。三者对策不同，监控上可分别观察空结果比例、单键回源并发和整体命中率。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://redis.io/docs/latest/develop/data-types/probabilistic/bloom-filter/" target="_blank" rel="noopener"><b>Redis：Bloom filter</b><small>redis.io ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Bloom_filter" target="_blank" rel="noopener"><b>Wikipedia: Bloom filter</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://learn.microsoft.com/en-us/azure/architecture/patterns/cache-aside" target="_blank" rel="noopener"><b>Azure：Cache-Aside pattern</b><small>learn.microsoft.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="cache-aside.pro.html" rel="prev"><small>‹ 上一个</small><b>🗄️ 旁路缓存 (Cache-Aside)</b></a><a class="pn next" href="stale-while-revalidate.pro.html" rel="next"><small>下一个 ›</small><b>🔄 过期仍用后台刷新 (SWR)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

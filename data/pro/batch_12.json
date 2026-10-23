@@ -1,0 +1,3424 @@
+[
+ {
+  "slug": "partition-keys",
+  "def": "消息分区路由键（Partition Key）是生产者为每条消息指定的键，消息系统据此计算哈希并决定写入哪个分区（或分片）。它同时决定了三件事：同一键内的消息顺序、各分区间的负载均衡程度，以及消费并行度的上限分布，是 Kafka、Kinesis 等流系统设计中最关键的选择之一。",
+  "how": [
+   "生产者为消息设置键，通常是业务实体 ID，如订单号或用户 ID。",
+   "分区器对键做哈希再对分区数取模；Kafka Java 客户端默认使用 murmur2。",
+   "键为空时，Kafka 新版客户端用粘性分区器批量写入某分区，再轮换以均衡负载。",
+   "保序：同一键总落在同一分区，因而同一实体的消息保持写入顺序。",
+   "分区数变化会改变取模结果，同一键可能映射到新分区，破坏原有顺序与局部性。"
+  ],
+  "terms": [
+   {
+    "t": "分区器 (Partitioner)",
+    "d": "根据键计算目标分区的生产者组件，可自定义。"
+   },
+   {
+    "t": "murmur2",
+    "d": "Kafka Java 客户端默认用于键哈希的非加密哈希算法。"
+   },
+   {
+    "t": "粘性分区器 (Sticky Partitioner)",
+    "d": "无键消息先填满一个批次再换分区，提升批量效率。"
+   },
+   {
+    "t": "键倾斜 (Key Skew)",
+    "d": "少数键消息量极大，导致对应分区成为热点。"
+   },
+   {
+    "t": "复合键 (Composite Key)",
+    "d": "由多个字段拼接的键，用于提高基数或控制共置。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "按订单号设置分区键",
+   "src": "from confluent_kafka import Producer\n\np = Producer({\n    \"bootstrap.servers\": \"kafka:9092\",\n    \"enable.idempotence\": True,\n    # librdkafka 默认分区器是 consistent_random（CRC32）；\n    # 若需与 Java 生产者对同一键落到相同分区，显式改用 murmur2_random\n    \"partitioner\": \"murmur2_random\",\n})\n\ndef send(order_id: str, event: bytes):\n    # 同一 order_id → 同一分区 → 该订单事件保持顺序\n    p.produce(\"order-events\", key=order_id.encode(), value=event)\n\nsend(\"order-1001\", b'{\"type\":\"Created\"}')\nsend(\"order-1001\", b'{\"type\":\"Paid\"}')\np.flush()",
+   "note": "跨语言生产者混用时，分区器不一致会让同一键落到不同分区，导致乱序。"
+  },
+  "table": {
+   "title": "分区键选择对比",
+   "head": [
+    "键",
+    "顺序保证",
+    "负载风险"
+   ],
+   "rows": [
+    [
+     "无键 (null)",
+     "无",
+     "分布均匀"
+    ],
+    [
+     "用户/订单 ID",
+     "同一实体内有序",
+     "头部用户可能成热点"
+    ],
+    [
+     "租户 ID",
+     "同一租户内有序",
+     "大租户倾斜明显"
+    ],
+    [
+     "租户+实体复合键",
+     "同一实体内有序",
+     "分布较均匀"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "按实体 ID 作键",
+    "pros": "实体内有序，便于状态处理",
+    "cons": "热点实体导致分区倾斜",
+    "when": "需要按实体有序的事件流"
+   },
+   {
+    "opt": "不设键",
+    "pros": "负载最均匀，吞吐最高",
+    "cons": "不保证任何顺序",
+    "when": "日志、指标等无序数据"
+   },
+   {
+    "opt": "自定义分区器",
+    "pros": "可隔离大客户、控制共置",
+    "cons": "增加维护成本，易出错",
+    "when": "有明确倾斜且需特殊路由"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "Python 与 Java 生产者混写同一主题，同键落不同分区",
+    "fix": "统一分区器，librdkafka 设置 partitioner=murmur2_random"
+   },
+   {
+    "bad": "上线后随意增加分区数，同键映射改变导致短期乱序",
+    "fix": "初始预留足够分区，扩容前评估对顺序与状态的影响"
+   },
+   {
+    "bad": "用国家、状态等低基数字段作键，少数分区过载",
+    "fix": "选高基数键或使用复合键打散"
+   },
+   {
+    "bad": "大量消息带空字符串键，全部落入同一分区",
+    "fix": "区分空串与 null，无业务键时显式不设键"
+   }
+  ],
+  "checklist": [
+   "键与有序需求一致",
+   "键基数足够高",
+   "各语言客户端分区器一致",
+   "分区数预留了扩展空间",
+   "监控各分区流量分布",
+   "有热点键的处理预案"
+  ],
+  "interview": [
+   {
+    "q": "分区键如何影响消费并行度？",
+    "a": "并行度上限是分区数，但实际负载取决于键的分布：若流量集中在少数键，对应分区的消费者忙而其他空闲，加消费者也无效。因此键需高基数且分布均匀，热点键需单独处理。"
+   },
+   {
+    "q": "为什么扩分区会破坏顺序？",
+    "a": "默认分区算法是哈希对分区数取模，分区数改变后同一键可能映射到新分区；新分区的新消息可能先于旧分区里尚未消费的旧消息被处理，造成同一实体的事件乱序。"
+   },
+   {
+    "q": "大客户占了一半流量，怎么设计键？",
+    "a": "可把大客户键拆为复合键（客户 ID+子实体 ID）分散到多个分区，只保证子实体内有序；或为大客户设独立主题；也可自定义分区器给其分配专用分区。前提是业务能接受更细粒度的顺序。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Apache Kafka Documentation",
+    "url": "https://kafka.apache.org/documentation/"
+   },
+   {
+    "title": "KIP-480: Sticky Partitioner",
+    "url": "https://cwiki.apache.org/confluence/display/KAFKA/KIP-480%3A+Sticky+Partitioner"
+   },
+   {
+    "title": "librdkafka CONFIGURATION.md",
+    "url": "https://github.com/confluentinc/librdkafka/blob/master/CONFIGURATION.md"
+   },
+   {
+    "title": "Amazon Kinesis Data Streams key concepts",
+    "url": "https://docs.aws.amazon.com/streams/latest/dev/key-concepts.html"
+   }
+  ]
+ },
+ {
+  "slug": "cap-theorem",
+  "def": "CAP 定理指出：分布式数据系统在发生网络分区（P）时，无法同时保证一致性（C，此处指线性一致性）和可用性（A，每个非故障节点都要返回响应），只能二选一。它由 Brewer 提出、Gilbert 与 Lynch 于 2002 年形式化证明，是分析分布式存储取舍的基础框架。",
+  "how": [
+   "前提：网络分区在分布式系统中不可避免，因此 P 不是可选项。",
+   "冲突：分区发生时两侧节点无法通信，却可能各自继续收到读写请求。",
+   "选 C（CP）：少数派一侧拒绝请求或返回错误，保证读到的总是最新值。",
+   "选 A（AP）：两侧都继续服务，可能读到旧值或产生写冲突，分区恢复后再合并。",
+   "无分区时可同时兼顾 C 与 A，此时取舍转为延迟与一致性之间（PACELC）。"
+  ],
+  "terms": [
+   {
+    "t": "网络分区 (Network Partition)",
+    "d": "节点间消息丢失或无限延迟，集群被分割成互不相通的部分。"
+   },
+   {
+    "t": "线性一致性 (Linearizability)",
+    "d": "CAP 中 C 的定义：所有操作看起来按实时顺序原子执行。"
+   },
+   {
+    "t": "CAP 可用性",
+    "d": "每个非故障节点收到的请求最终都必须返回非错误响应。"
+   },
+   {
+    "t": "PACELC",
+    "d": "分区时在 A 与 C 间选择，否则在延迟 L 与一致性 C 间选择。"
+   },
+   {
+    "t": "多数派 (Majority Quorum)",
+    "d": "超过半数节点，CP 系统常以此决定哪一侧继续服务。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "MongoDB 的一致性旋钮",
+   "src": "// mongosh：同一数据库可按操作选择偏 C 还是偏 A\n\n// 偏一致：写入需多数节点确认，读线性一致（只能读主）\ndb.accounts.updateOne(\n  { _id: 42 }, { $inc: { balance: -100 } },\n  { writeConcern: { w: \"majority\", wtimeout: 5000 } }\n);\ndb.accounts.find({ _id: 42 })\n  .readConcern(\"linearizable\")\n  .maxTimeMS(5000);\n\n// 偏可用/低延迟：从最近的节点读，可能读到旧数据\ndb.products.find({ category: \"book\" })\n  .readPref(\"nearest\")\n  .readConcern(\"local\");",
+   "note": "CAP 不是整库的标签，很多系统允许按操作在一致性与可用性之间调节。"
+  },
+  "table": {
+   "title": "典型系统的默认倾向",
+   "head": [
+    "系统",
+    "倾向",
+    "说明"
+   ],
+   "rows": [
+    [
+     "etcd / ZooKeeper",
+     "CP",
+     "少数派分区不可写，保证一致"
+    ],
+    [
+     "Cassandra / DynamoDB（默认读）",
+     "AP",
+     "可调一致性级别，默认偏可用"
+    ],
+    [
+     "MongoDB（多数写+多数读）",
+     "偏 CP",
+     "主节点在少数派时会降级"
+    ],
+    [
+     "单机 PostgreSQL",
+     "不适用",
+     "非分布式，不涉及分区取舍"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "CP 设计",
+    "pros": "数据始终正确，推理简单",
+    "cons": "分区时部分请求失败",
+    "when": "余额、库存、配置与锁"
+   },
+   {
+    "opt": "AP 设计",
+    "pros": "始终可写可读，延迟低",
+    "cons": "需处理旧数据和冲突合并",
+    "when": "购物车、社交动态、计数"
+   },
+   {
+    "opt": "按操作可调",
+    "pros": "关键路径强一致，其余高可用",
+    "cons": "开发者需理解每个选项含义",
+    "when": "业务混合多种一致性需求"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把系统简单标为 CA，忽视分区必然发生",
+    "fix": "分布式系统必须设计分区行为，CA 只适用于单机"
+   },
+   {
+    "bad": "把 CAP 的 C 与 ACID 的 C 混为一谈",
+    "fix": "CAP 的 C 指线性一致性，ACID 的 C 指满足约束"
+   },
+   {
+    "bad": "以为选了 AP 就不会有一致性问题需要处理",
+    "fix": "为冲突设计合并策略，如版本向量、CRDT 或业务规则"
+   }
+  ],
+  "checklist": [
+   "明确每类数据的一致性需求",
+   "定义分区时的系统行为",
+   "客户端能处理不可用错误",
+   "AP 数据有冲突合并策略",
+   "用故障注入验证分区行为",
+   "文档写清读写一致性选项"
+  ],
+  "interview": [
+   {
+    "q": "为什么说 CAP 中 P 不能放弃？",
+    "a": "跨机器通信总可能丢包、延迟或断网，分区是会发生的事实而非可选特性。系统真正的选择只是分区发生时牺牲一致性还是可用性；声称 CA 的分布式系统，实际是在分区时未定义行为。"
+   },
+   {
+    "q": "CAP 有哪些常被批评的局限？",
+    "a": "定义很窄：C 仅指线性一致性，A 要求所有非故障节点响应；只讨论分区时的情况，忽略了正常运行下的延迟取舍；现实系统多是部分可用、可调一致性的光谱。PACELC 等模型对此做了补充。"
+   },
+   {
+    "q": "设计库存系统你会选 CP 还是 AP？",
+    "a": "扣减库存需要防超卖，核心扣减走 CP（单主或共识存储，分区时拒绝写入）；商品浏览展示的库存数可用 AP 缓存，允许短暂不准。即按操作区分，而不是整个系统一刀切。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Gilbert & Lynch: Brewer's Conjecture and the Feasibility of CAP",
+    "url": "https://users.ece.cmu.edu/~adrian/731-sp04/readings/GL-cap.pdf"
+   },
+   {
+    "title": "CAP Twelve Years Later (Brewer, InfoQ)",
+    "url": "https://www.infoq.com/articles/cap-twelve-years-later-how-the-rules-have-changed/"
+   },
+   {
+    "title": "CAP theorem (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/CAP_theorem"
+   },
+   {
+    "title": "PACELC (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/PACELC_design_principle"
+   }
+  ]
+ },
+ {
+  "slug": "eventual-consistency",
+  "def": "最终一致性（Eventual Consistency）是一种弱一致性模型：如果不再有新的更新，所有副本最终会收敛到相同的值，但在收敛前不同副本、不同读请求可能看到不同版本。它以放宽读到最新值的保证为代价，换取更高可用性、更低延迟和跨地域扩展能力。",
+  "how": [
+   "写入：先在一个或部分副本成功即返回，不等待其余所有副本确认。",
+   "后台异步复制：通过复制日志、gossip 协议等把更新传播到其他副本。",
+   "陈旧读：传播期间读请求可能落到尚未更新的副本，读到更新前的旧值。",
+   "冲突处理：并发写同一数据时，用最后写入胜出、版本向量或 CRDT 决定合并结果。",
+   "修复机制：读修复、反熵（Merkle 树比对）等手段持续纠正副本差异。"
+  ],
+  "terms": [
+   {
+    "t": "复制延迟 (Replication Lag)",
+    "d": "写入到所有副本可见之间的时间差。"
+   },
+   {
+    "t": "读己之写 (Read-your-writes)",
+    "d": "会话保证：用户总能读到自己刚写入的数据。"
+   },
+   {
+    "t": "最后写入胜出 (LWW)",
+    "d": "按时间戳保留最新写入的冲突解决策略，可能丢更新。"
+   },
+   {
+    "t": "CRDT",
+    "d": "可无协调合并且保证收敛的复制数据类型。"
+   },
+   {
+    "t": "反熵 (Anti-entropy)",
+    "d": "副本间后台比对并同步差异数据的过程。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "DynamoDB 两种读",
+   "src": "import boto3\n\ntable = boto3.resource(\"dynamodb\").Table(\"orders\")\n\ntable.put_item(Item={\"order_id\": \"1001\", \"status\": \"PAID\"})\n\n# 默认：最终一致读，成本低，可能读到写入前的旧值\nr1 = table.get_item(Key={\"order_id\": \"1001\"})\n\n# 强一致读：返回读取前所有成功写入的结果\n# 读容量消耗更高，且不支持全局二级索引\nr2 = table.get_item(Key={\"order_id\": \"1001\"}, ConsistentRead=True)\n\nprint(r1.get(\"Item\"), r2.get(\"Item\"))",
+   "note": "同一张表可按请求选择一致性；支付后立刻展示状态的页面适合用强一致读。"
+  },
+  "table": {
+   "title": "常见会话一致性保证",
+   "head": [
+    "保证",
+    "含义",
+    "常见实现"
+   ],
+   "rows": [
+    [
+     "读己之写",
+     "自己写的数据自己能读到",
+     "写后短期读主或粘性会话"
+    ],
+    [
+     "单调读",
+     "不会先读到新值再读到旧值",
+     "会话固定到同一副本"
+    ],
+    [
+     "单调写",
+     "同一客户端写入按顺序生效",
+     "客户端序号"
+    ],
+    [
+     "因果一致",
+     "有因果关系的操作顺序一致",
+     "版本向量、混合逻辑时钟"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "最终一致",
+    "pros": "高可用、低延迟、易跨地域",
+    "cons": "需处理陈旧读与冲突",
+    "when": "点赞数、动态、商品浏览"
+   },
+   {
+    "opt": "强一致",
+    "pros": "语义简单，不会读到旧值",
+    "cons": "延迟高，分区时可能不可用",
+    "when": "余额、库存扣减、唯一性约束"
+   },
+   {
+    "opt": "会话一致",
+    "pros": "兼顾用户体验与性能",
+    "cons": "跨用户仍可能不一致",
+    "when": "用户编辑自己的资料"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用户提交后立即刷新列表，看不到刚写的数据",
+    "fix": "写后读走主库/强一致读，或前端乐观更新"
+   },
+   {
+    "bad": "用 LWW 合并并发更新，依赖不同步的时钟丢数据",
+    "fix": "使用版本号或 CRDT，关键数据避免 LWW"
+   },
+   {
+    "bad": "把最终一致当成很快就一致，未监控复制延迟",
+    "fix": "监控复制延迟并设定告警阈值与降级策略"
+   }
+  ],
+  "checklist": [
+   "区分了需强一致的操作",
+   "关键页面实现读己之写",
+   "监控复制延迟",
+   "并发冲突有明确合并策略",
+   "消费者容忍乱序与重复",
+   "业务方理解可能的陈旧窗口"
+  ],
+  "interview": [
+   {
+    "q": "最终一致有多「最终」？",
+    "a": "模型本身不承诺时限，只保证停止写入后会收敛。实际收敛时间取决于复制延迟、网络和故障恢复，正常多在毫秒到秒级，故障时可能更久。工程上要测量并监控，而不是假设立即一致。"
+   },
+   {
+    "q": "如何在最终一致系统里保证用户体验？",
+    "a": "提供会话级保证：写后读主或强一致读实现读己之写；会话粘到同一副本保证单调读；前端乐观更新；关键操作用条件写或版本号防覆盖。"
+   },
+   {
+    "q": "CRDT 为什么能无冲突合并？",
+    "a": "CRDT 把合并定义为满足交换律、结合律和幂等律的操作（如取最大值、集合并），因此无论更新以何种顺序、重复多少次到达，各副本最终状态一致，不需要中心协调。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Eventually Consistent (Werner Vogels)",
+    "url": "https://www.allthingsdistributed.com/2008/12/eventually_consistent.html"
+   },
+   {
+    "title": "DynamoDB read consistency",
+    "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadConsistency.html"
+   },
+   {
+    "title": "CRDT (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type"
+   },
+   {
+    "title": "Jepsen: Consistency Models",
+    "url": "https://jepsen.io/consistency"
+   }
+  ]
+ },
+ {
+  "slug": "strong-consistency",
+  "def": "强一致性通常指线性一致性（Linearizability）：每个操作看起来在调用与返回之间的某个瞬间原子生效，且所有客户端看到的操作顺序与真实时间顺序一致。一旦写入返回成功，之后任何读取都能看到它。它让分布式系统表现得像单副本，代价是需要共识或同步复制，延迟更高。",
+  "how": [
+   "写入需经共识协议（如 Raft）复制到多数副本并提交后才返回成功。",
+   "读取不能直接读本地副本，需确认自己仍是领导者或读到已提交的最新索引。",
+   "常见做法：读请求走日志（log read）、ReadIndex 确认领导权，或基于租约读。",
+   "所有操作在全局形成一个与实时顺序相容的全序，客户端不会看到回退。",
+   "分区：少数派一侧无法确认自己持有最新状态，只能拒绝或阻塞请求。"
+  ],
+  "terms": [
+   {
+    "t": "线性一致性 (Linearizability)",
+    "d": "单对象操作满足实时顺序的最强单对象一致性模型。"
+   },
+   {
+    "t": "顺序一致性 (Sequential Consistency)",
+    "d": "存在全局顺序且符合各客户端程序顺序，但不要求实时。"
+   },
+   {
+    "t": "严格可串行化 (Strict Serializability)",
+    "d": "多对象事务的可串行化加上实时顺序约束。"
+   },
+   {
+    "t": "ReadIndex",
+    "d": "Raft 中读前与多数派确认领导权、等待提交索引的读法。"
+   },
+   {
+    "t": "租约读 (Lease Read)",
+    "d": "领导者在租约期内直接本地读，依赖时钟误差有界。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "etcd 两种读一致性",
+   "src": "# 写入：经 Raft 多数派提交后返回\netcdctl put /config/feature_x on\n\n# 线性一致读（默认，l）：经领导者确认，必然看到最新提交值\netcdctl get /config/feature_x --consistency=l\n\n# 可串行化读（s）：直接读本地成员，延迟低，但可能读到旧值\netcdctl get /config/feature_x --consistency=s\n\n# 查看各成员状态：谁是 leader、raft term 与 index\netcdctl endpoint status --cluster --write-out=table",
+   "note": "同一集群中线性一致读需要领导者确认，延迟更高；可串行化读更快但可能陈旧。"
+  },
+  "table": {
+   "title": "一致性模型强弱",
+   "head": [
+    "模型",
+    "保证",
+    "代价"
+   ],
+   "rows": [
+    [
+     "线性一致",
+     "实时顺序，读到最新",
+     "需共识/同步复制，延迟高"
+    ],
+    [
+     "顺序一致",
+     "全局顺序，但可能滞后",
+     "比线性一致略低"
+    ],
+    [
+     "因果一致",
+     "因果相关操作有序",
+     "需追踪依赖"
+    ],
+    [
+     "最终一致",
+     "停止写入后收敛",
+     "可能读到旧值"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "线性一致存储",
+    "pros": "语义直观，适合锁和元数据",
+    "cons": "写延迟受多数派往返影响",
+    "when": "配置中心、选主、分布式锁"
+   },
+   {
+    "opt": "同步复制主从",
+    "pros": "实现相对简单",
+    "cons": "副本故障会阻塞写入",
+    "when": "单地域、副本少"
+   },
+   {
+    "opt": "弱一致+补偿",
+    "pros": "吞吐高、可用性强",
+    "cons": "业务需处理不一致",
+    "when": "大规模读多写少场景"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "认为写主读从也是强一致",
+    "fix": "异步复制的从库可能滞后，强一致读需走主或共识读"
+   },
+   {
+    "bad": "单节点事务隔离级别高，就以为跨系统也强一致",
+    "fix": "跨服务、跨库操作需单独设计一致性，如 Saga"
+   },
+   {
+    "bad": "依赖租约读却未考虑时钟漂移",
+    "fix": "评估时钟误差上界，或改用 ReadIndex 读"
+   }
+  ],
+  "checklist": [
+   "列出必须线性一致的操作",
+   "确认存储的默认读语义",
+   "读路径不经过异步副本",
+   "分区时客户端有错误处理",
+   "评估跨地域写延迟",
+   "用 Jepsen 类测试验证"
+  ],
+  "interview": [
+   {
+    "q": "线性一致和可串行化有何区别？",
+    "a": "线性一致针对单个对象的单次操作，要求符合实时顺序；可串行化针对多对象事务，只要求结果等价于某个串行顺序，不要求与实时一致。两者兼具称为严格可串行化。"
+   },
+   {
+    "q": "Raft 系统为什么读也要「走一遍」？",
+    "a": "旧领导者可能已被分区隔离而不自知，若直接本地读会返回过期数据。ReadIndex 让领导者先与多数派确认自己仍是领导者，并等待状态机应用到提交索引后再读，从而保证线性一致。"
+   },
+   {
+    "q": "跨地域部署强一致的代价是什么？",
+    "a": "每次写入要等多数副本确认，跨地域往返时间直接加到写延迟上；某些地域分区时可能整体不可写。常见折中是把领导者放在主要写入地域，或按数据归属地分片。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Jepsen: Linearizability",
+    "url": "https://jepsen.io/consistency/models/linearizable"
+   },
+   {
+    "title": "Linearizability (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Linearizability"
+   },
+   {
+    "title": "etcd API guarantees",
+    "url": "https://etcd.io/docs/v3.5/learning/api_guarantees/"
+   }
+  ]
+ },
+ {
+  "slug": "raft-consensus",
+  "def": "Raft 是一种为易理解而设计的分布式共识算法，让一组节点在部分节点故障时仍对同一份有序日志达成一致，从而构建复制状态机。它把问题拆为领导者选举、日志复制和安全性三部分，etcd、Consul 等系统都基于它实现强一致存储。",
+  "how": [
+   "节点有三种角色：领导者、跟随者、候选人；时间按任期（term）递增编号。",
+   "选举：跟随者在随机超时内没收到心跳就成为候选人，获得多数票即成为领导者。",
+   "复制：客户端写入发给领导者，领导者用 AppendEntries 把日志条目发给跟随者。",
+   "提交：条目被多数节点持久化后即为已提交，领导者应用到状态机并回复客户端。",
+   "安全性：只有日志足够新的候选人才能当选，保证已提交条目不会丢失。"
+  ],
+  "terms": [
+   {
+    "t": "任期 (Term)",
+    "d": "单调递增的逻辑时钟，每任期至多一个领导者。"
+   },
+   {
+    "t": "RequestVote",
+    "d": "候选人请求投票的 RPC，携带其最后日志的任期与索引。"
+   },
+   {
+    "t": "AppendEntries",
+    "d": "领导者复制日志和发送心跳的 RPC，附带一致性检查。"
+   },
+   {
+    "t": "提交索引 (Commit Index)",
+    "d": "已知被多数派复制、可以安全应用的最大日志索引。"
+   },
+   {
+    "t": "快照 (Snapshot)",
+    "d": "压缩已应用日志的状态镜像，防止日志无限增长。"
+   },
+   {
+    "t": "预投票 (Pre-Vote)",
+    "d": "正式选举前先试探能否获胜，避免被隔离节点扰乱集群。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "观察 etcd 的 Raft 状态",
+   "src": "# 三节点集群：查看谁是 leader、当前任期和日志索引\netcdctl --endpoints=http://n1:2379,http://n2:2379,http://n3:2379 \\\n  endpoint status --write-out=table\n# 输出列包含 IS LEADER、RAFT TERM、RAFT INDEX、RAFT APPLIED INDEX\n\n# 主动转移领导权到指定成员（如维护前）\netcdctl move-leader <目标成员ID>\n\n# 调整心跳与选举超时（毫秒），选举超时应为心跳的数倍\netcd --heartbeat-interval=100 --election-timeout=1000 ...\n\n# 停掉 leader 后再次查看：RAFT TERM 会增加，新 leader 被选出\netcdctl endpoint status --cluster --write-out=table",
+   "note": "etcd 默认心跳 100ms；任期号变化反映发生过选举，频繁变化说明集群不稳定。"
+  },
+  "table": {
+   "title": "集群规模与容错",
+   "head": [
+    "节点数",
+    "多数派",
+    "可容忍故障"
+   ],
+   "rows": [
+    [
+     "3",
+     "2",
+     "1"
+    ],
+    [
+     "5",
+     "3",
+     "2"
+    ],
+    [
+     "4",
+     "3",
+     "1（与 3 节点相同）"
+    ],
+    [
+     "7",
+     "4",
+     "3"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "3 节点",
+    "pros": "写延迟低，成本小",
+    "cons": "只容忍 1 个故障",
+    "when": "多数生产集群"
+   },
+   {
+    "opt": "5 节点",
+    "pros": "容忍 2 个故障，可跨 3 个可用区",
+    "cons": "每次写入需更多确认",
+    "when": "高可用要求高的核心元数据"
+   },
+   {
+    "opt": "更多节点",
+    "pros": "容错更高",
+    "cons": "写性能下降，可用非投票成员替代",
+    "when": "极少需要"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "部署偶数个节点以为更可靠",
+    "fix": "用奇数节点；偶数节点不提升容错且多数派更大"
+   },
+   {
+    "bad": "磁盘 fsync 慢导致心跳超时，频繁重新选举",
+    "fix": "使用低延迟 SSD，监控 WAL fsync 延迟，调整超时参数"
+   },
+   {
+    "bad": "把 Raft 集群跨高延迟地域部署，写入极慢",
+    "fix": "控制节点间延迟，选举超时需远大于往返时间"
+   },
+   {
+    "bad": "直接替换故障节点而不做成员变更",
+    "fix": "先移除旧成员再加入新成员，按官方流程逐个变更"
+   }
+  ],
+  "checklist": [
+   "节点数为奇数",
+   "节点分布在不同故障域",
+   "磁盘 fsync 延迟有监控",
+   "选举超时匹配网络延迟",
+   "有快照与日志压缩配置",
+   "成员变更流程已演练"
+  ],
+  "interview": [
+   {
+    "q": "Raft 为什么用随机选举超时？",
+    "a": "若所有跟随者同时超时，会同时发起选举并瓜分选票，导致无人获得多数、反复重选。随机化超时使通常只有一个节点先超时并赢得选举，大幅减少选票分裂。"
+   },
+   {
+    "q": "如何保证已提交日志不会被新领导者覆盖？",
+    "a": "投票限制：跟随者只投票给日志至少和自己一样新的候选人（比较最后条目的任期与索引）；已提交条目存在于多数派中，任何获胜者必然包含它。此外领导者只通过提交本任期条目来间接提交旧条目。"
+   },
+   {
+    "q": "Raft 和 Paxos 的主要区别？",
+    "a": "两者容错能力相当。Raft 采用强领导者，日志只从领导者流向跟随者，并把问题分解为选举、复制、安全性，规范更完整易于实现；经典 Paxos 侧重单值共识，Multi-Paxos 的工程细节需要自行补全。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "The Raft Consensus Algorithm",
+    "url": "https://raft.github.io/"
+   },
+   {
+    "title": "In Search of an Understandable Consensus Algorithm (Raft 论文)",
+    "url": "https://raft.github.io/raft.pdf"
+   },
+   {
+    "title": "etcd Tuning",
+    "url": "https://etcd.io/docs/v3.5/tuning/"
+   }
+  ]
+ },
+ {
+  "slug": "leader-election",
+  "def": "主节点选举（Leader Election）是让一组同质实例中在同一时刻只有一个成为领导者、负责执行特定工作（如调度任务、写入、协调）的机制，领导者故障后自动选出新的。通常借助共识存储（etcd、ZooKeeper）或 Kubernetes Lease 上的租约实现，关键难点是避免同时出现两个领导者。",
+  "how": [
+   "竞选：实例尝试在共享存储中创建或更新一个租约/锁记录，写入自己的身份。",
+   "当选：成功获得记录的实例成为领导者，开始执行只允许单实例做的工作。",
+   "续约：领导者在租约到期前定期续约；其他实例则持续观察该记录。",
+   "失效转移：领导者崩溃或失联导致租约过期，其他实例抢占记录成为新领导者。",
+   "防护：旧领导者恢复后需检测已失去领导权，并配合递增的防护令牌拒绝其写入。"
+  ],
+  "terms": [
+   {
+    "t": "租约 (Lease)",
+    "d": "带有效期的所有权声明，需定期续约，过期自动失效。"
+   },
+   {
+    "t": "防护令牌 (Fencing Token)",
+    "d": "每次换主递增的编号，下游拒绝更旧编号的请求。"
+   },
+   {
+    "t": "僵尸领导者 (Zombie Leader)",
+    "d": "已失去领导权却不自知、仍在执行操作的旧实例。"
+   },
+   {
+    "t": "Kubernetes Lease",
+    "d": "coordination.k8s.io 中用于选主和心跳的轻量 API 对象。"
+   },
+   {
+    "t": "临时节点 (Ephemeral Node)",
+    "d": "ZooKeeper 中随会话结束自动删除的节点，常用于选主。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "K8s Lease 选主记录",
+   "src": "# 控制器类组件（如 kube-controller-manager）用 Lease 选主\n# 查看：kubectl get lease -n kube-system\napiVersion: coordination.k8s.io/v1\nkind: Lease\nmetadata:\n  name: my-operator-leader\n  namespace: ops\nspec:\n  holderIdentity: my-operator-7d9f-abcde   # 当前领导者的身份\n  leaseDurationSeconds: 15                 # 超过此时长未续约即可被抢占\n  acquireTime: \"2026-10-20T08:00:00.000000Z\"\n  renewTime: \"2026-10-20T08:05:12.000000Z\" # 领导者定期更新\n  leaseTransitions: 3                      # 领导者变更次数",
+   "note": "通常由 client-go 的 leaderelection 等库自动维护，示例展示其状态字段。"
+  },
+  "table": {
+   "title": "选主实现方式",
+   "head": [
+    "方式",
+    "依赖",
+    "特点"
+   ],
+   "rows": [
+    [
+     "Kubernetes Lease",
+     "K8s API Server",
+     "K8s 内组件首选，库支持完善"
+    ],
+    [
+     "etcd 选举 API",
+     "etcd 集群",
+     "基于租约和修订号，强一致"
+    ],
+    [
+     "ZooKeeper 临时顺序节点",
+     "ZooKeeper",
+     "成熟，会话断开自动释放"
+    ],
+    [
+     "数据库行锁/咨询锁",
+     "关系型数据库",
+     "简单，但依赖单库可用性"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "单领导者+热备",
+    "pros": "逻辑简单，避免重复执行",
+    "cons": "故障转移有租约时长的空窗",
+    "when": "定时任务、控制器、调度器"
+   },
+   {
+    "opt": "按分片多领导者",
+    "pros": "负载分散，故障影响小",
+    "cons": "分片分配与再平衡更复杂",
+    "when": "任务量大需要水平扩展"
+   },
+   {
+    "opt": "无领导者+幂等",
+    "pros": "无选举，扩展性好",
+    "cons": "需要任务可安全重复执行",
+    "when": "任务天然幂等"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "GC 停顿后旧领导者继续写入，与新领导者冲突",
+    "fix": "每次操作前检查租约，并在下游使用防护令牌拒绝旧写入"
+   },
+   {
+    "bad": "租约时长设得过短，网络抖动导致频繁换主",
+    "fix": "根据续约间隔和网络状况设定，续约周期显著短于租约"
+   },
+   {
+    "bad": "用 Redis 单节点 SETNX 当可靠选主",
+    "fix": "关键场景使用基于共识的存储，并结合防护令牌"
+   }
+  ],
+  "checklist": [
+   "选主依赖强一致存储",
+   "租约时长与续约周期合理",
+   "失去领导权时立即停止工作",
+   "下游校验防护令牌",
+   "监控领导者变更次数",
+   "故障转移时间满足要求"
+  ],
+  "interview": [
+   {
+    "q": "选主机制如何避免同时有两个领导者？",
+    "a": "仅靠租约无法完全避免：旧领导者可能因停顿而不知租约已过期。需要两层保障：选主依赖线性一致存储保证同一时刻只授予一个租约；下游资源校验单调递增的防护令牌，拒绝旧领导者的写入。"
+   },
+   {
+    "q": "Kubernetes 控制器为什么需要选主？",
+    "a": "控制器通常多副本部署以保证可用，但调和逻辑若多副本同时执行会重复操作或冲突。通过 Lease 选主，只有领导者执行调和，其他副本待命，领导者故障时在租约过期后接管。"
+   },
+   {
+    "q": "租约时长怎么定？",
+    "a": "租约越短，故障转移越快，但网络抖动或停顿更易误判导致换主；越长则故障空窗越久。一般续约间隔为租约的几分之一，并留出重试余量，再按业务可容忍的中断时间折中。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Kubernetes: Leases",
+    "url": "https://kubernetes.io/docs/concepts/architecture/leases/"
+   },
+   {
+    "title": "How to do distributed locking (Martin Kleppmann)",
+    "url": "https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html"
+   },
+   {
+    "title": "Leader election (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Leader_election"
+   }
+  ]
+ },
+ {
+  "slug": "split-brain",
+  "def": "脑裂（Split Brain）是高可用集群在网络分区或心跳中断时，多个节点都认为对方已故障、各自晋升为主节点并同时接受写入的故障状态。结果是两份数据各自演进，恢复后出现冲突或数据丢失。防御核心是多数派仲裁与隔离（fencing），确保任何时刻只有一个主能生效。",
+  "how": [
+   "触发：主备之间网络中断或心跳丢失，但两边节点本身都还在正常运行。",
+   "误判：备节点认为主节点已死而自行晋升，原主节点仍继续对外提供写服务。",
+   "分叉：两个主各自接受客户端写入，数据从同一点开始分叉，形成两份历史。",
+   "预防：只有能联系到多数派（或仲裁者）的一侧才允许成为主节点。",
+   "隔离：新主上任前通过 STONITH 或存储隔离强制让旧主下线或失去写权限。"
+  ],
+  "terms": [
+   {
+    "t": "隔离 (Fencing)",
+    "d": "阻止被判定故障的节点继续访问共享资源的手段。"
+   },
+   {
+    "t": "STONITH",
+    "d": "「爆头」式隔离：通过电源管理等强制关闭疑似故障节点。"
+   },
+   {
+    "t": "仲裁节点 (Witness / Tie-breaker)",
+    "d": "不存数据、只参与投票，用于两节点集群打破平局。"
+   },
+   {
+    "t": "多数派 (Quorum)",
+    "d": "超过半数的投票成员，只有多数派一侧可继续服务。"
+   },
+   {
+    "t": "心跳 (Heartbeat)",
+    "d": "节点间周期性存活信号，丢失超过阈值即判定故障。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "Redis 主从防脑裂配置",
+   "src": "# sentinel.conf —— 至少 3 个 Sentinel 部署在不同机器\n# 最后的 2 是 quorum：至少 2 个 Sentinel 认为主节点下线才判定客观下线\nsentinel monitor mymaster 10.0.0.1 6379 2\nsentinel down-after-milliseconds mymaster 5000\nsentinel failover-timeout mymaster 60000\n\n# redis.conf（主节点）—— 限制被隔离的旧主继续接受写入\n# 至少 1 个从节点在线且复制延迟不超过 10 秒，否则拒绝写入\nmin-replicas-to-write 1\nmin-replicas-max-lag 10",
+   "note": "故障转移需要 Sentinel 多数派授权；旧主失去从节点后自动拒写，缩小脑裂期间的数据损失。"
+  },
+  "table": {
+   "title": "防脑裂手段对比",
+   "head": [
+    "手段",
+    "原理",
+    "局限"
+   ],
+   "rows": [
+    [
+     "多数派仲裁",
+     "少数派一侧不能晋升或写入",
+     "至少需要 3 个投票成员"
+    ],
+    [
+     "STONITH 隔离",
+     "强制关闭旧主",
+     "依赖带外管理通道可靠"
+    ],
+    [
+     "防护令牌",
+     "存储拒绝旧任期写入",
+     "需要下游资源配合校验"
+    ],
+    [
+     "写入前置条件",
+     "旧主无从节点时拒写",
+     "只能缩小而非消除窗口"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "三节点以上多数派",
+    "pros": "从机制上避免双主",
+    "cons": "成本更高，需跨故障域部署",
+    "when": "数据库、协调服务等核心组件"
+   },
+   {
+    "opt": "两节点+仲裁者",
+    "pros": "节省数据节点成本",
+    "cons": "仲裁者需独立网络位置",
+    "when": "小规模主备"
+   },
+   {
+    "opt": "人工切换",
+    "pros": "不会自动误切",
+    "cons": "故障恢复慢，依赖值班",
+    "when": "切换代价极高的系统"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "两节点主备只靠互相心跳判断，断网即双主",
+    "fix": "引入第三方仲裁或多数派机制"
+   },
+   {
+    "bad": "故障转移后不隔离旧主，旧主恢复后继续写",
+    "fix": "新主上任前先隔离旧主，或在存储层校验任期"
+   },
+   {
+    "bad": "心跳网络与业务网络共用，单点抖动触发误切",
+    "fix": "心跳走冗余网络，合理设置故障判定阈值"
+   }
+  ],
+  "checklist": [
+   "投票成员数为奇数且≥3",
+   "投票成员跨故障域分布",
+   "故障转移包含隔离旧主",
+   "客户端能发现新主地址",
+   "演练过网络分区场景",
+   "有数据分叉后的对账方案"
+  ],
+  "interview": [
+   {
+    "q": "为什么两节点集群容易脑裂？",
+    "a": "两个节点互相心跳，断网时各自只能看到自己，无法区分对方宕机还是网络断开；任何一方都不构成多数（2 的多数是 2），要么都停服，要么都可能晋升。因此需要第三方仲裁者打破对称。"
+   },
+   {
+    "q": "多数派机制如何防止脑裂？",
+    "a": "晋升主节点必须获得超过半数成员同意，网络分区后最多只有一侧满足多数，另一侧无法选出主；原主若在少数派一侧，也应检测到失去多数派而主动降级停止写入。"
+   },
+   {
+    "q": "脑裂已经发生，数据怎么处理？",
+    "a": "先停止一侧写入，确定权威数据源；对比两侧在分叉点之后的写入，按业务规则合并或人工处理冲突，如订单按唯一 ID 去重、金额类走对账；最后补齐日志并复盘仲裁配置。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Split-brain (computing) - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Split-brain_(computing)"
+   },
+   {
+    "title": "Redis Sentinel",
+    "url": "https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/"
+   },
+   {
+    "title": "STONITH - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/STONITH"
+   },
+   {
+    "title": "ClusterLabs Pacemaker 文档",
+    "url": "https://clusterlabs.org/pacemaker/doc/"
+   }
+  ]
+ },
+ {
+  "slug": "quorums",
+  "def": "法定人数机制（Quorum）是复制系统中规定一次读或写必须得到多少个副本确认才算成功的规则。设副本数 N、写需确认数 W、读需确认数 R，当 W + R > N 时读写集合必然相交，读能看到最新写入。它让系统在部分副本故障时仍可工作，并在一致性、延迟与可用性之间调节。",
+  "how": [
+   "数据复制到 N 个副本节点，通常分布在不同机架或可用区以隔离故障。",
+   "写入：请求发往全部副本，收到至少 W 个确认即向客户端返回成功。",
+   "读取向副本发请求，收到至少 R 个响应后按版本号或时间戳选出最新值。",
+   "W + R > N 保证读集合与最近写集合至少重叠一个副本，从而读到最新值。",
+   "读修复与后台反熵把落后的副本补齐，确认数不足时请求以失败返回。"
+  ],
+  "terms": [
+   {
+    "t": "N / W / R",
+    "d": "副本数、写入确认数、读取响应数三个可调参数。"
+   },
+   {
+    "t": "严格法定人数 (Strict Quorum)",
+    "d": "读写只计入数据真正归属的 N 个副本。"
+   },
+   {
+    "t": "宽松法定人数 (Sloppy Quorum)",
+    "d": "归属副本不可达时临时写入其他节点，提高可用性。"
+   },
+   {
+    "t": "提示移交 (Hinted Handoff)",
+    "d": "临时节点暂存写入，归属副本恢复后再转交给它。"
+   },
+   {
+    "t": "LOCAL_QUORUM",
+    "d": "Cassandra 中只在本数据中心内取多数，避免跨地域延迟。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "Cassandra 一致性级别",
+   "src": "-- cqlsh：keyspace 每个数据中心 3 副本\nCREATE KEYSPACE shop WITH replication =\n  {'class': 'NetworkTopologyStrategy', 'dc1': 3};\n\n-- QUORUM = floor(3/2)+1 = 2\n-- 写 QUORUM + 读 QUORUM：2 + 2 > 3，读能看到已确认的写\nCONSISTENCY QUORUM;\nINSERT INTO shop.carts (user_id, item, qty) VALUES (42, 'book', 1);\nSELECT * FROM shop.carts WHERE user_id = 42;\n\n-- 读 ONE：延迟最低、可用性最高，但可能读到旧值（1 + 2 = 3，不大于 3）\nCONSISTENCY ONE;\nSELECT * FROM shop.carts WHERE user_id = 42;\n\n-- 多数据中心时常用 LOCAL_QUORUM，避免跨地域往返\nCONSISTENCY LOCAL_QUORUM;",
+   "note": "CONSISTENCY 是 cqlsh 命令，驱动中按语句设置；W+R>N 才保证读到最新确认写入。"
+  },
+  "table": {
+   "title": "N=3 时的组合",
+   "head": [
+    "W / R",
+    "是否重叠",
+    "特点"
+   ],
+   "rows": [
+    [
+     "W=2, R=2",
+     "是",
+     "读写均衡，常见默认"
+    ],
+    [
+     "W=3, R=1",
+     "是",
+     "读快，任一副本故障即不可写"
+    ],
+    [
+     "W=1, R=3",
+     "是",
+     "写快，读需全部副本在线"
+    ],
+    [
+     "W=1, R=1",
+     "否",
+     "延迟最低，可能读到旧值"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "多数派读写",
+    "pros": "容忍少数副本故障且读到最新",
+    "cons": "每次操作等待多个副本",
+    "when": "大多数需要较强一致的数据"
+   },
+   {
+    "opt": "低 W/R",
+    "pros": "延迟低、可用性高",
+    "cons": "可能读到旧值",
+    "when": "计数、日志、可容忍陈旧"
+   },
+   {
+    "opt": "宽松法定人数",
+    "pros": "分区时仍可写",
+    "cons": "W+R>N 不再保证读到最新",
+    "when": "购物车等写可用性优先"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "以为 W+R>N 就等于线性一致",
+    "fix": "并发写、失败写的部分残留仍可能导致异常，需版本与读修复配合"
+   },
+   {
+    "bad": "写失败后客户端以为没写入，但部分副本已写",
+    "fix": "写失败结果视为不确定，重试需幂等"
+   },
+   {
+    "bad": "多数据中心使用 QUORUM，每次跨地域等待",
+    "fix": "按需使用 LOCAL_QUORUM，并明确跨地域一致性需求"
+   }
+  ],
+  "checklist": [
+   "N、W、R 按数据类型设定",
+   "关键数据满足 W+R>N",
+   "副本跨故障域分布",
+   "写入重试幂等",
+   "读修复/反熵已启用",
+   "监控确认数不足的失败"
+  ],
+  "interview": [
+   {
+    "q": "为什么 W+R>N 能读到最新写？",
+    "a": "成功的写入至少落在 W 个副本上，读取会询问 R 个副本；W+R>N 时两个集合必然至少有一个副本相同，读到的响应中至少一个包含该写入，再按版本号选出最新值返回。"
+   },
+   {
+    "q": "宽松法定人数有什么代价？",
+    "a": "分区时写入可落到非归属节点并靠提示移交补回，提高了写可用性；但此时 W 个确认并不在 N 个归属副本中，读的 R 个副本可能都不含新值，W+R>N 的保证失效，只能保证最终一致。"
+   },
+   {
+    "q": "Raft 的多数派和 Dynamo 式 Quorum 有何不同？",
+    "a": "Raft 由领导者对日志排序，多数派复制后提交，提供线性一致；Dynamo 式无领导者，客户端或协调者并行写多个副本，没有全局顺序，需要版本向量或 LWW 处理冲突，通常只提供可调的最终一致。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Dynamo: Amazon's Highly Available Key-value Store",
+    "url": "https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf"
+   },
+   {
+    "title": "Cassandra: Dynamo 架构与一致性",
+    "url": "https://cassandra.apache.org/doc/latest/cassandra/architecture/dynamo.html"
+   },
+   {
+    "title": "Quorum (distributed computing) - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Quorum_(distributed_computing)"
+   }
+  ]
+ },
+ {
+  "slug": "clock-skew",
+  "def": "时钟偏斜（Clock Skew）指分布式系统中不同机器的本地时钟在同一时刻读数不同，且由于晶振频率差异（漂移）会随时间扩大。即使使用 NTP 同步，也只能把误差控制在一定范围内。依赖墙上时钟做排序、超时、锁过期或冲突合并时，偏斜可能导致数据丢失或逻辑错误。",
+  "how": [
+   "来源：每台机器的晶振频率略有差异，本地时钟以不同速度走，误差持续累积。",
+   "同步：NTP/chrony 定期与上游时间源校对，逐步调整速率或直接跳变修正时间。",
+   "误差：同步受网络延迟不对称影响，偏差只能缩小到一个范围而无法完全消除。",
+   "影响：用时间戳比较不同机器上的事件先后可能出错，例如最后写入胜出丢更新。",
+   "对策：计时用单调时钟，排序用逻辑时钟或混合逻辑时钟，必要时等待误差上界。"
+  ],
+  "terms": [
+   {
+    "t": "时钟漂移 (Clock Drift)",
+    "d": "时钟走速与真实时间的偏差率，导致误差随时间累积。"
+   },
+   {
+    "t": "单调时钟 (Monotonic Clock)",
+    "d": "只增不减、不受校时跳变影响，适合测量时间间隔。"
+   },
+   {
+    "t": "Lamport 时钟",
+    "d": "逻辑计数器，保证因果相关事件的时间戳单调递增。"
+   },
+   {
+    "t": "混合逻辑时钟 (HLC)",
+    "d": "结合物理时间与逻辑计数，接近真实时间又保持因果顺序。"
+   },
+   {
+    "t": "TrueTime",
+    "d": "Spanner 的时间 API，返回带误差上界的时间区间。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "单调时钟与 Lamport 时钟",
+   "src": "import time\n\n# 1) 计算耗时/超时：用单调时钟，不受 NTP 校时跳变影响\nstart = time.monotonic()\ntime.sleep(0.2)\nelapsed = time.monotonic() - start      # 用 time.time() 相减可能为负或偏大\n\n# 2) 跨节点事件排序：Lamport 逻辑时钟\nclass LamportClock:\n    def __init__(self):\n        self.t = 0\n    def tick(self):                     # 本地事件或发送消息前\n        self.t += 1\n        return self.t\n    def recv(self, remote_t):           # 收到消息时取较大值再加一\n        self.t = max(self.t, remote_t) + 1\n        return self.t\n\na, b = LamportClock(), LamportClock()\nmsg_t = a.tick()                        # A 发送消息，时间戳 1\nprint(b.recv(msg_t), round(elapsed, 2)) # B 收到后时间戳 2，保证晚于发送",
+   "note": "墙上时钟用于展示，单调时钟用于计时，逻辑时钟用于跨节点的因果排序。"
+  },
+  "table": {
+   "title": "时间方案对比",
+   "head": [
+    "方案",
+    "提供什么",
+    "局限"
+   ],
+   "rows": [
+    [
+     "NTP 同步墙上时钟",
+     "近似真实时间",
+     "有误差，可能回跳"
+    ],
+    [
+     "单调时钟",
+     "单机内可靠的时间间隔",
+     "不能跨机器比较"
+    ],
+    [
+     "Lamport/向量时钟",
+     "因果顺序",
+     "与真实时间无关"
+    ],
+    [
+     "HLC / TrueTime",
+     "接近真实时间且有序",
+     "需要实现或专用硬件支持"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "依赖 NTP 时间戳",
+    "pros": "简单直观，可读性好",
+    "cons": "偏斜导致排序错误",
+    "when": "日志展示、粗粒度统计"
+   },
+   {
+    "opt": "逻辑时钟/版本号",
+    "pros": "不依赖物理时间，排序可靠",
+    "cons": "不反映真实时间",
+    "when": "冲突检测、事件因果"
+   },
+   {
+    "opt": "HLC",
+    "pros": "兼顾因果与近似物理时间",
+    "cons": "实现更复杂",
+    "when": "分布式数据库、跨节点事务"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用 time.time() 计算超时或耗时，校时后出现负值",
+    "fix": "计时一律使用单调时钟"
+   },
+   {
+    "bad": "用各节点本地时间戳做最后写入胜出",
+    "fix": "使用版本号、逻辑时钟或由单一节点分配顺序"
+   },
+   {
+    "bad": "分布式锁过期依赖不同机器时钟一致",
+    "fix": "锁使用存储端计时并配合防护令牌"
+   },
+   {
+    "bad": "未监控 NTP 同步状态，偏差悄悄扩大",
+    "fix": "监控时钟偏移并在超阈值时告警或摘除节点"
+   }
+  ],
+  "checklist": [
+   "所有节点运行 NTP/chrony",
+   "监控时钟偏移并告警",
+   "计时代码使用单调时钟",
+   "不以本地时间戳跨节点排序",
+   "日志带时区与高精度时间",
+   "容器/虚拟机时间源可靠"
+  ],
+  "interview": [
+   {
+    "q": "为什么不能用时间戳判断跨节点事件先后？",
+    "a": "不同机器时钟存在偏斜，NTP 也只保证误差在一定范围内；两事件间隔小于该误差时，时间戳大小与真实先后可能相反。需要因果顺序时应使用逻辑时钟或由单点分配序号。"
+   },
+   {
+    "q": "Spanner 怎么解决时钟问题？",
+    "a": "TrueTime 借助 GPS 和原子钟把时钟误差控制在较小的已知范围内，并返回时间区间。提交时等待误差区间过去（commit wait）再对外可见，从而保证时间戳顺序与真实提交顺序一致。"
+   },
+   {
+    "q": "chrony 的跳变和渐调有什么区别？",
+    "a": "跳变（step）直接把时钟设为正确值，修正快但会造成时间回退或跳跃；渐调（slew）微调时钟速率逐步追上，时间连续但修正慢。生产中通常只在启动时允许跳变，运行时渐调。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Lamport: Time, Clocks, and the Ordering of Events",
+    "url": "https://lamport.azurewebsites.net/pubs/time-clocks.pdf"
+   },
+   {
+    "title": "Spanner: Google's Globally-Distributed Database",
+    "url": "https://research.google/pubs/spanner-googles-globally-distributed-database-2/"
+   },
+   {
+    "title": "Logical Physical Clocks (HLC 论文)",
+    "url": "https://cse.buffalo.edu/tech-reports/2014-04.pdf"
+   },
+   {
+    "title": "chrony 文档",
+    "url": "https://chrony-project.org/documentation.html"
+   }
+  ]
+ },
+ {
+  "slug": "distributed-locks",
+  "def": "分布式锁是在多个进程或机器之间协调对共享资源互斥访问的机制，常基于 Redis、etcd、ZooKeeper 或数据库实现。它分为两类用途：提升效率（避免重复工作，偶尔失效可接受）和保证正确性（绝不能并发）。后者必须考虑进程停顿、时钟和网络问题，通常需要防护令牌配合。",
+  "how": [
+   "加锁：在共享存储中原子地创建锁记录，写入唯一持有者标识并设置过期时间。",
+   "持有：获得锁的客户端执行临界区操作；执行时间较长时需在过期前续期。",
+   "释放：只有持有者才能删除锁，删除前需原子比对自己的标识，避免误删他人的锁。",
+   "失效：持有者崩溃后锁按过期时间自动释放，其他客户端随后可以获取。",
+   "防护：存储按顺序发放递增令牌，下游资源拒绝令牌更小的写入请求。"
+  ],
+  "terms": [
+   {
+    "t": "互斥 (Mutual Exclusion)",
+    "d": "同一时刻只有一个持有者能进入临界区。"
+   },
+   {
+    "t": "锁过期 (TTL)",
+    "d": "防止持有者崩溃导致死锁的自动释放时间。"
+   },
+   {
+    "t": "防护令牌 (Fencing Token)",
+    "d": "随每次加锁递增的编号，下游据此拒绝过期持有者。"
+   },
+   {
+    "t": "Redlock",
+    "d": "Redis 作者提出的多实例加锁算法，其安全性有争议。"
+   },
+   {
+    "t": "看门狗续期 (Watchdog)",
+    "d": "后台定时延长锁过期时间，避免任务未完成锁就过期。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Redis 单实例锁",
+   "src": "import uuid, redis\n\nr = redis.Redis(host=\"localhost\", port=6379)\n\n# 释放脚本：值匹配才删除，比较与删除在 Redis 中原子执行\nRELEASE = \"\"\"\nif redis.call('get', KEYS[1]) == ARGV[1] then\n  return redis.call('del', KEYS[1])\nend\nreturn 0\n\"\"\"\n\ndef acquire(name: str, ttl_ms: int = 30000):\n    token = str(uuid.uuid4())                  # 唯一持有者标识\n    ok = r.set(f\"lock:{name}\", token, nx=True, px=ttl_ms)  # 不存在才设置，带过期\n    return token if ok else None\n\ndef release(name: str, token: str) -> bool:\n    return r.eval(RELEASE, 1, f\"lock:{name}\", token) == 1\n\nt = acquire(\"daily-report\")\nif t:\n    try:\n        pass                                   # 临界区：生成日报\n    finally:\n        release(\"daily-report\", t)",
+   "note": "适合效率型场景；若需正确性保证，应配合防护令牌或改用共识存储。"
+  },
+  "table": {
+   "title": "实现方式对比",
+   "head": [
+    "实现",
+    "可靠性",
+    "适用"
+   ],
+   "rows": [
+    [
+     "Redis 单实例 SET NX PX",
+     "主从切换时可能丢锁",
+     "避免重复执行等效率型"
+    ],
+    [
+     "etcd / ZooKeeper",
+     "基于共识，较可靠",
+     "正确性要求高的协调"
+    ],
+    [
+     "数据库行锁/唯一约束",
+     "依赖数据库事务",
+     "业务已在同一数据库"
+    ],
+    [
+     "Redlock",
+     "有争议，依赖时钟假设",
+     "需审慎评估"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Redis 锁",
+    "pros": "性能高、实现简单",
+    "cons": "故障转移时锁可能丢失",
+    "when": "偶发重复可接受"
+   },
+   {
+    "opt": "etcd/ZK 锁",
+    "pros": "强一致、会话失效自动释放",
+    "cons": "延迟较高，需运维共识集群",
+    "when": "必须严格互斥"
+   },
+   {
+    "opt": "不加锁+幂等/乐观并发",
+    "pros": "无锁开销，不怕持有者停顿",
+    "cons": "需要设计版本号或唯一键",
+    "when": "可改造为条件写的场景"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用 DEL 直接释放，误删已被别人重新获取的锁",
+    "fix": "释放时用脚本比对持有者标识后再删除"
+   },
+   {
+    "bad": "SETNX 与 EXPIRE 分两步执行，中间崩溃形成永久锁",
+    "fix": "使用 SET key value NX PX ttl 一条命令原子完成"
+   },
+   {
+    "bad": "GC 停顿超过 TTL，两个客户端同时进入临界区",
+    "fix": "下游使用防护令牌校验，或改用条件写入"
+   },
+   {
+    "bad": "用分布式锁保护本可用数据库约束解决的问题",
+    "fix": "优先用唯一约束、乐观锁等存储自带机制"
+   }
+  ],
+  "checklist": [
+   "加锁一条命令原子完成",
+   "释放前比对持有者标识",
+   "TTL 大于正常执行时间",
+   "长任务有续期机制",
+   "正确性场景使用防护令牌",
+   "锁获取失败有重试与退避"
+  ],
+  "interview": [
+   {
+    "q": "Redis 分布式锁有哪些坑？",
+    "a": "SETNX 与过期分开设置导致死锁；释放时不校验持有者误删；主从异步复制下主节点宕机，锁未同步到新主即丢失；客户端停顿超过 TTL 后锁被他人获取却仍在执行。前两个可修复，后两个需要防护令牌或换共识存储。"
+   },
+   {
+    "q": "什么是防护令牌，为什么需要？",
+    "a": "锁服务每次授予锁时返回单调递增的编号，客户端访问共享资源时附带编号，资源方记录见过的最大编号并拒绝更小的。这样即使旧持有者因停顿以为自己仍持锁，其写入也会被拒绝。"
+   },
+   {
+    "q": "Redlock 的争议点是什么？",
+    "a": "Kleppmann 认为它依赖时钟漂移有界、进程停顿可控等时序假设，且不提供防护令牌，用于正确性场景不安全；antirez 认为在合理假设下可用。共识是：正确性关键场景应使用共识系统加防护令牌。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Redis: Distributed Locks",
+    "url": "https://redis.io/docs/latest/develop/clients/patterns/distributed-locks/"
+   },
+   {
+    "title": "How to do distributed locking (Martin Kleppmann)",
+    "url": "https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html"
+   },
+   {
+    "title": "Is Redlock safe? (antirez)",
+    "url": "http://antirez.com/news/101"
+   },
+   {
+    "title": "Redis SET 命令",
+    "url": "https://redis.io/docs/latest/commands/set/"
+   }
+  ]
+ },
+ {
+  "slug": "consistent-hashing",
+  "def": "一致性哈希（Consistent Hashing）是一种把键映射到节点的分布方法：键和节点都映射到同一个哈希环上，键归属于顺时针方向遇到的第一个节点。增删节点时只有相邻区间的键需要迁移，约为总量的 1/N，而非普通取模哈希那样几乎全部重映射。常用于分布式缓存、存储分片和负载均衡。",
+  "how": [
+   "建环：把哈希值空间首尾相接成环，例如 0 到 2³²−1 的整数空间。",
+   "放节点：对每个节点标识做哈希，映射到环上的若干位置（虚拟节点）。",
+   "定位键：对键做哈希，沿环顺时针找到第一个节点位置，即为该键的归属节点。",
+   "增删节点：只影响新节点与其前驱之间的键区间，其余键保持原有归属不变。",
+   "虚拟节点：每个物理节点在环上放多个点，使负载更均匀，并可按机器权重调整。"
+  ],
+  "terms": [
+   {
+    "t": "哈希环 (Hash Ring)",
+    "d": "首尾相连的哈希值空间，节点与键都映射在上面。"
+   },
+   {
+    "t": "虚拟节点 (Virtual Node)",
+    "d": "一个物理节点在环上的多个映射点，用于均衡负载。"
+   },
+   {
+    "t": "取模哈希 (Modulo Hashing)",
+    "d": "hash(key) % N，节点数变化时几乎所有键都重映射。"
+   },
+   {
+    "t": "Rendezvous 哈希 (HRW)",
+    "d": "为每个键选择与之组合哈希值最大的节点，无需维护环。"
+   },
+   {
+    "t": "Jump 一致性哈希",
+    "d": "Google 提出的无内存开销算法，适合节点编号连续的场景。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "带虚拟节点的哈希环",
+   "src": "import bisect, hashlib\n\ndef h(s: str) -> int:\n    return int(hashlib.md5(s.encode()).hexdigest(), 16) % (2**32)\n\nclass Ring:\n    def __init__(self, nodes, vnodes=100):\n        self.ring = sorted((h(f\"{n}#{i}\"), n) for n in nodes for i in range(vnodes))\n        self.keys = [k for k, _ in self.ring]\n\n    def get(self, key: str) -> str:\n        i = bisect.bisect(self.keys, h(key)) % len(self.keys)  # 顺时针第一个\n        return self.ring[i][1]\n\nkeys = [f\"user:{i}\" for i in range(10000)]\nr3 = Ring([\"A\", \"B\", \"C\"])\nr4 = Ring([\"A\", \"B\", \"C\", \"D\"])\nmoved = sum(r3.get(k) != r4.get(k) for k in keys)\nprint(f\"新增一个节点后迁移比例: {moved / len(keys):.1%}\")   # 约 25%，取模哈希约 75%",
+   "note": "从 3 节点扩到 4 节点只迁移约 1/4 的键；虚拟节点越多分布越均匀。"
+  },
+  "table": {
+   "title": "键分配算法对比",
+   "head": [
+    "算法",
+    "节点变化时迁移量",
+    "特点"
+   ],
+   "rows": [
+    [
+     "取模哈希",
+     "几乎全部",
+     "最简单，不适合动态扩缩"
+    ],
+    [
+     "一致性哈希环",
+     "约 1/N",
+     "需维护环，用虚拟节点均衡"
+    ],
+    [
+     "Rendezvous 哈希",
+     "约 1/N",
+     "无需环，查找需遍历所有节点"
+    ],
+    [
+     "Jump 哈希",
+     "约 1/N",
+     "无内存开销，只适合尾部增删"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "一致性哈希",
+    "pros": "扩缩容迁移少，去中心化",
+    "cons": "需虚拟节点才能均衡",
+    "when": "缓存集群、无中心的存储"
+   },
+   {
+    "opt": "固定槽位映射",
+    "pros": "迁移以槽为单位，可控",
+    "cons": "需维护槽到节点的映射表",
+    "when": "如 Redis Cluster 的 16384 槽"
+   },
+   {
+    "opt": "中心目录",
+    "pros": "可任意迁移单个分片",
+    "cons": "目录服务成为依赖",
+    "when": "需要精细控制数据放置"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "不用虚拟节点，几个节点在环上分布不均导致负载倾斜",
+    "fix": "每个节点设置足够多的虚拟节点，并按容量设权重"
+   },
+   {
+    "bad": "各客户端节点列表或哈希函数不一致，路由结果不同",
+    "fix": "统一哈希函数与节点配置，由配置中心下发"
+   },
+   {
+    "bad": "以为一致性哈希能解决热点键",
+    "fix": "热点键需要副本、本地缓存或拆分，不能靠哈希分布解决"
+   }
+  ],
+  "checklist": [
+   "使用虚拟节点并评估均匀度",
+   "客户端哈希函数与配置一致",
+   "节点变更时有数据迁移流程",
+   "迁移期间读写有回源方案",
+   "监控各节点负载分布",
+   "热点键有单独方案"
+  ],
+  "interview": [
+   {
+    "q": "为什么取模哈希扩容代价大？",
+    "a": "hash(key) % N 中 N 一变，绝大多数键的余数都会改变，从 3 台扩到 4 台约有 3/4 的键换节点，对缓存意味着大面积失效、穿透到数据库。一致性哈希只迁移约 1/N。"
+   },
+   {
+    "q": "虚拟节点解决了什么问题？",
+    "a": "物理节点少时在环上的位置随机，各自负责的区间大小差异很大，负载不均；节点下线时其区间全部压给一个后继。虚拟节点把每台机器打散成许多小区间，负载更均匀，下线时压力分摊到多台机器。"
+   },
+   {
+    "q": "Redis Cluster 用的是一致性哈希吗？",
+    "a": "不是环形一致性哈希，而是固定 16384 个哈希槽，用 CRC16(key) 对 16384 取模确定槽，再由集群维护槽到节点的映射。扩缩容时迁移槽而非重算全部键，效果类似但更可控。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Consistent hashing - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Consistent_hashing"
+   },
+   {
+    "title": "Karger et al.: Consistent Hashing and Random Trees",
+    "url": "https://www.cs.princeton.edu/courses/archive/fall09/cos518/papers/chash.pdf"
+   },
+   {
+    "title": "A Fast, Minimal Memory, Consistent Hash Algorithm (Jump Hash)",
+    "url": "https://arxiv.org/abs/1406.2294"
+   }
+  ]
+ },
+ {
+  "slug": "bloom-filters",
+  "def": "布隆过滤器（Bloom Filter）是一种空间效率极高的概率型数据结构，用一个位数组和 k 个哈希函数判断元素是否在集合中：回答「不在」一定正确，回答「可能在」有一定误判率，且标准版本不支持删除。常用于减少无效磁盘读取、防缓存穿透和大规模去重预筛。",
+  "how": [
+   "初始化：分配 m 位全为 0 的位数组，并选定 k 个相互独立的哈希函数。",
+   "插入：对元素计算 k 个哈希值，把位数组中对应的 k 个位置都置为 1。",
+   "查询：检查 k 个位置，只要有任一位为 0 就说明该元素一定不在集合中。",
+   "误判：k 个位置全为 1 时也可能是被其他元素置位的，结论只能是可能存在。",
+   "参数：误判率约为 (1 − e^(−kn/m))^k，最优 k = (m/n)·ln2，n 为元素数量。"
+  ],
+  "terms": [
+   {
+    "t": "误判率 (False Positive Rate)",
+    "d": "不在集合中的元素被判为可能存在的概率。"
+   },
+   {
+    "t": "假阴性 (False Negative)",
+    "d": "标准布隆过滤器不会出现：已插入的元素一定被判为存在。"
+   },
+   {
+    "t": "计数布隆过滤器 (Counting Bloom)",
+    "d": "位换成计数器以支持删除，空间开销更大。"
+   },
+   {
+    "t": "布谷鸟过滤器 (Cuckoo Filter)",
+    "d": "支持删除、在低误判率下空间效率更好的替代结构。"
+   },
+   {
+    "t": "缓存穿透 (Cache Penetration)",
+    "d": "大量查询不存在的键，绕过缓存直接压垮数据库。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "按目标误判率建过滤器",
+   "src": "import hashlib, math\n\nclass Bloom:\n    def __init__(self, n: int, p: float):\n        self.m = math.ceil(-n * math.log(p) / (math.log(2) ** 2))  # 位数\n        self.k = max(1, round(self.m / n * math.log(2)))           # 哈希个数\n        self.bits = bytearray((self.m + 7) // 8)\n\n    def _idx(self, item: str):\n        d = hashlib.sha256(item.encode()).digest()\n        a, b = int.from_bytes(d[:8], \"big\"), int.from_bytes(d[8:16], \"big\")\n        return [(a + i * b) % self.m for i in range(self.k)]       # 双重哈希\n\n    def add(self, item: str):\n        for i in self._idx(item):\n            self.bits[i // 8] |= 1 << (i % 8)\n\n    def __contains__(self, item: str) -> bool:\n        return all(self.bits[i // 8] >> (i % 8) & 1 for i in self._idx(item))\n\nbf = Bloom(n=1_000_000, p=0.01)     # 百万元素、1% 误判率 → 约 1.2MB、k=7\nbf.add(\"user:42\")\nprint(\"user:42\" in bf, \"user:43\" in bf, bf.m, bf.k)",
+   "note": "按公式由元素数 n 和目标误判率 p 推出 m 与 k；1% 误判率约需每元素 9.6 位。"
+  },
+  "table": {
+   "title": "典型应用场景",
+   "head": [
+    "场景",
+    "过滤器作用",
+    "误判的后果"
+   ],
+   "rows": [
+    [
+     "LSM 存储（RocksDB 等）",
+     "跳过不含该键的数据文件",
+     "多读一次文件"
+    ],
+    [
+     "防缓存穿透",
+     "拦截一定不存在的键",
+     "少量请求仍查数据库"
+    ],
+    [
+     "爬虫 URL 去重",
+     "判断是否抓过",
+     "个别新 URL 被跳过"
+    ],
+    [
+     "推荐去重",
+     "过滤已展示内容",
+     "少量新内容未展示"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "标准布隆过滤器",
+    "pros": "空间极省、查询 O(k)",
+    "cons": "不能删除，有误判",
+    "when": "集合只增不删"
+   },
+   {
+    "opt": "计数布隆/布谷鸟过滤器",
+    "pros": "支持删除",
+    "cons": "实现更复杂，空间更大或有插入失败",
+    "when": "集合需删除元素"
+   },
+   {
+    "opt": "精确集合（哈希表）",
+    "pros": "无误判",
+    "cons": "内存占用高",
+    "when": "元素量可承受且不能误判"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "实际元素数远超设计容量，误判率急剧上升",
+    "fix": "按预期规模留余量，监控填充率，超限时重建或使用可扩展版本"
+   },
+   {
+    "bad": "用它判断「一定存在」做业务决策",
+    "fix": "只用其「一定不存在」的结论，存在时仍需查真实数据"
+   },
+   {
+    "bad": "数据删除后过滤器仍判为存在，长期失真",
+    "fix": "定期全量重建，或改用支持删除的结构"
+   }
+  ],
+  "checklist": [
+   "按 n 和 p 计算 m 与 k",
+   "预留容量增长余量",
+   "只信任「不存在」的结论",
+   "有定期重建机制",
+   "监控实际误判率",
+   "多实例共享时保证构建一致"
+  ],
+  "interview": [
+   {
+    "q": "布隆过滤器为什么不会假阴性？",
+    "a": "插入时元素对应的 k 个位都被置 1，标准版本从不把位清零，因此查询同一元素时这 k 位必然仍为 1，结果总是可能存在。误判只来自其他元素恰好把这 k 位都置成了 1。"
+   },
+   {
+    "q": "如何确定位数组大小和哈希个数？",
+    "a": "给定元素数 n 和目标误判率 p，m = −n·ln p / (ln2)²，k = (m/n)·ln2。例如 p=1% 时每元素约 9.6 位、k 约为 7；误判率每降低 10 倍，每元素约增加 4.8 位。"
+   },
+   {
+    "q": "怎么用布隆过滤器防缓存穿透？",
+    "a": "把数据库中所有有效键预先加入过滤器，请求先查过滤器：判为一定不存在则直接返回，不查缓存和数据库；判为可能存在才走正常流程。新增数据要同步加入，删除较多时需定期重建。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Bloom filter - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Bloom_filter"
+   },
+   {
+    "title": "RocksDB Bloom Filter",
+    "url": "https://github.com/facebook/rocksdb/wiki/RocksDB-Bloom-Filter"
+   },
+   {
+    "title": "Redis: Bloom filter",
+    "url": "https://redis.io/docs/latest/develop/data-types/probabilistic/bloom-filter/"
+   }
+  ]
+ },
+ {
+  "slug": "two-phase-commit",
+  "def": "两阶段提交（Two-Phase Commit，2PC）是让多个参与者（数据库、资源管理器）对一个分布式事务达成要么全部提交、要么全部回滚的原子提交协议。由协调者先询问所有参与者能否提交（准备阶段），全部同意后再统一下达提交（提交阶段）。它保证原子性，但存在阻塞和性能问题。",
+  "how": [
+   "准备阶段：协调者向所有参与者发送 prepare 请求，要求各自做好提交准备。",
+   "参与者投票：把事务数据和准备状态持久化并保持锁，然后回复同意或拒绝。",
+   "决策：全部同意则协调者记录提交决定；任一拒绝或超时则决定回滚整个事务。",
+   "提交阶段：协调者把决定发给所有参与者，参与者执行提交或回滚并释放锁。",
+   "阻塞问题：参与者投同意后若协调者宕机，只能持锁等待协调者恢复后的决定。"
+  ],
+  "terms": [
+   {
+    "t": "协调者 (Coordinator)",
+    "d": "驱动协议、收集投票并做出最终提交或回滚决定的角色。"
+   },
+   {
+    "t": "参与者 (Participant)",
+    "d": "持有部分事务数据、参与投票并执行决定的资源管理器。"
+   },
+   {
+    "t": "不确定状态 (In-doubt)",
+    "d": "已投同意但未收到最终决定，必须等待而不能自行决定。"
+   },
+   {
+    "t": "XA",
+    "d": "X/Open 定义的分布式事务接口标准，多种数据库支持。"
+   },
+   {
+    "t": "Saga",
+    "d": "用一系列本地事务加补偿操作替代分布式原子提交的模式。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "PostgreSQL 的准备事务",
+   "src": "-- 需先设置 max_prepared_transactions > 0（默认 0，修改需重启）\n-- 参与者 1（库 A）：执行本地操作后进入准备状态\nBEGIN;\nUPDATE accounts SET balance = balance - 100 WHERE id = 1;\nPREPARE TRANSACTION 'tx-20261020-001';   -- 持久化，连接断开也不丢\n\n-- 参与者 2（库 B）\nBEGIN;\nUPDATE accounts SET balance = balance + 100 WHERE id = 9;\nPREPARE TRANSACTION 'tx-20261020-001';\n\n-- 协调者：两边都准备成功后，分别下达提交\nCOMMIT PREPARED 'tx-20261020-001';\n-- 任一方失败则对已准备的一方执行：\n-- ROLLBACK PREPARED 'tx-20261020-001';\n\n-- 排查遗留的不确定事务（会一直持有锁）\nSELECT gid, prepared, database FROM pg_prepared_xacts;",
+   "note": "数据库只提供参与者能力，协调者逻辑需由事务管理器实现；遗留准备事务会阻塞清理。"
+  },
+  "table": {
+   "title": "分布式事务方案对比",
+   "head": [
+    "方案",
+    "一致性",
+    "主要代价"
+   ],
+   "rows": [
+    [
+     "2PC / XA",
+     "原子提交（强）",
+     "阻塞、持锁时间长、性能低"
+    ],
+    [
+     "3PC",
+     "减少部分阻塞",
+     "假设网络有界，实践少用"
+    ],
+    [
+     "Saga",
+     "最终一致",
+     "需设计补偿，存在中间状态"
+    ],
+    [
+     "Outbox + 消息",
+     "最终一致",
+     "异步延迟，消费者需幂等"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "2PC",
+    "pros": "真正的原子性，编程模型简单",
+    "cons": "协调者故障会阻塞，吞吐受限",
+    "when": "少量参与者、低频关键操作"
+   },
+   {
+    "opt": "Saga",
+    "pros": "无全局锁，可用性高",
+    "cons": "补偿逻辑复杂，中间状态可见",
+    "when": "跨微服务的长业务流程"
+   },
+   {
+    "opt": "重新划分边界",
+    "pros": "变成单库本地事务，最简单",
+    "cons": "需调整服务或数据归属",
+    "when": "强一致数据可归到同一服务"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "协调者不持久化决定，宕机恢复后不知该提交还是回滚",
+    "fix": "协调者在发出提交前把决定写入持久日志"
+   },
+   {
+    "bad": "遗留的准备事务长期持锁，阻塞其他写入与 VACUUM",
+    "fix": "监控 pg_prepared_xacts，建立超时人工处理流程"
+   },
+   {
+    "bad": "在高并发微服务调用链上使用 2PC，延迟和锁争用飙升",
+    "fix": "改用 Saga 或 Outbox，或把强一致数据合并到同一服务"
+   }
+  ],
+  "checklist": [
+   "协调者决定已持久化",
+   "参与者支持准备事务",
+   "有不确定事务的监控",
+   "超时与恢复流程已演练",
+   "评估了锁持有时长",
+   "考虑过 Saga 等替代方案"
+  ],
+  "interview": [
+   {
+    "q": "2PC 为什么是阻塞协议？",
+    "a": "参与者投同意后就放弃了单方面回滚的权利，必须等待协调者决定；若协调者此时宕机，参与者不知道其他人的投票，既不能提交也不能回滚，只能持锁等待协调者恢复，期间相关数据不可用。"
+   },
+   {
+    "q": "2PC 和 Raft 等共识算法有什么区别？",
+    "a": "2PC 解决原子提交：所有参与者都必须同意，任一否决即回滚，不容忍参与者故障。共识解决多副本对同一值达成一致，只需多数派，能容忍少数故障。可以用共识复制协调者状态来缓解 2PC 的阻塞。"
+   },
+   {
+    "q": "微服务里为什么很少用 2PC？",
+    "a": "各服务通常使用不同存储，未必支持 XA；2PC 要求所有参与者同步在线并持锁，降低可用性和吞吐，服务间耦合紧。实践中多用 Saga、Outbox 实现最终一致，或调整边界避免跨服务强一致。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL: PREPARE TRANSACTION",
+    "url": "https://www.postgresql.org/docs/current/sql-prepare-transaction.html"
+   },
+   {
+    "title": "Two-phase commit protocol - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Two-phase_commit_protocol"
+   },
+   {
+    "title": "Pattern: Saga",
+    "url": "https://microservices.io/patterns/data/saga.html"
+   }
+  ]
+ },
+ {
+  "slug": "cqrs",
+  "def": "命令查询职责分离（CQRS）是一种架构模式：把修改状态的命令（Command）和读取数据的查询（Query）拆成两套模型，必要时使用不同的存储。写模型专注业务规则和一致性，读模型按页面或查询需求反规范化，从而分别优化和扩展。读模型通常通过事件异步更新，因此存在同步延迟。",
+  "how": [
+   "命令端：接收意图明确的命令，校验业务规则后修改写模型，不返回查询数据。",
+   "发布变化：写入成功后发出领域事件，可通过 Outbox 或 CDC 可靠投递。",
+   "投影：订阅事件的投影程序把变化写入一个或多个反规范化的读模型。",
+   "查询端：直接读取为查询定制的读模型，例如搜索索引、缓存或宽表。",
+   "一致性：读模型相对写模型有延迟，界面需按最终一致设计或做读己之写处理。"
+  ],
+  "terms": [
+   {
+    "t": "命令 (Command)",
+    "d": "表达改变状态意图的请求，如 PlaceOrder，可被拒绝。"
+   },
+   {
+    "t": "查询 (Query)",
+    "d": "只读请求，不产生副作用。"
+   },
+   {
+    "t": "读模型 / 投影 (Projection)",
+    "d": "由事件推导出的、为特定查询优化的数据视图。"
+   },
+   {
+    "t": "反规范化 (Denormalization)",
+    "d": "冗余存储数据以减少查询时的关联计算。"
+   },
+   {
+    "t": "投影重建 (Replay)",
+    "d": "从头重放事件以重新生成或修复读模型。"
+   }
+  ],
+  "code": {
+   "lang": "typescript",
+   "title": "命令与投影分离",
+   "src": "type OrderPlaced = { type: \"OrderPlaced\"; orderId: string; userId: string; total: number };\n\n// 写模型：只关心业务规则\nconst orders = new Map<string, { status: string; total: number }>();\nconst bus: Array<(e: OrderPlaced) => void> = [];\n\nfunction placeOrder(cmd: { orderId: string; userId: string; total: number }) {\n  if (cmd.total <= 0) throw new Error(\"金额必须为正\");      // 业务校验\n  if (orders.has(cmd.orderId)) throw new Error(\"订单已存在\");\n  orders.set(cmd.orderId, { status: \"PLACED\", total: cmd.total });\n  bus.forEach((h) => h({ type: \"OrderPlaced\", ...cmd }));  // 发布事件\n}\n\n// 读模型：按「用户订单汇总」页面定制\nconst userSummary = new Map<string, { count: number; spent: number }>();\nbus.push((e) => {\n  const s = userSummary.get(e.userId) ?? { count: 0, spent: 0 };\n  userSummary.set(e.userId, { count: s.count + 1, spent: s.spent + e.total });\n});\n\nplaceOrder({ orderId: \"o1\", userId: \"u1\", total: 99 });\nconsole.log(userSummary.get(\"u1\"));   // { count: 1, spent: 99 }",
+   "note": "进程内演示；生产中事件经消息系统异步传递，读模型存于独立存储。"
+  },
+  "table": {
+   "title": "读写两侧对比",
+   "head": [
+    "维度",
+    "命令端",
+    "查询端"
+   ],
+   "rows": [
+    [
+     "数据模型",
+     "规范化、聚合边界清晰",
+     "反规范化、按页面定制"
+    ],
+    [
+     "一致性",
+     "强一致、校验不变量",
+     "最终一致"
+    ],
+    [
+     "扩展方式",
+     "按写入量扩展",
+     "按读取量独立扩展"
+    ],
+    [
+     "典型存储",
+     "关系型数据库、事件存储",
+     "搜索引擎、缓存、宽表"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "完整 CQRS（分离存储）",
+    "pros": "读写独立优化与扩展",
+    "cons": "同步延迟、组件多、调试难",
+    "when": "读写负载差异大、查询复杂"
+   },
+   {
+    "opt": "同库读写模型分离",
+    "pros": "代码清晰，无同步延迟",
+    "cons": "扩展受限于单库",
+    "when": "想理清复杂领域逻辑"
+   },
+   {
+    "opt": "传统 CRUD",
+    "pros": "简单直接，团队熟悉",
+    "cons": "复杂查询与业务规则混杂",
+    "when": "大多数普通业务系统"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "简单 CRUD 系统也上 CQRS，复杂度远超收益",
+    "fix": "只在复杂领域或读写差异显著的子系统中使用"
+   },
+   {
+    "bad": "用户提交后马上查询，读模型还没更新",
+    "fix": "返回命令结果给前端乐观展示，或关键页面读写模型"
+   },
+   {
+    "bad": "投影非幂等，事件重放后数据翻倍",
+    "fix": "投影按事件 ID 或版本幂等处理，支持安全重建"
+   }
+  ],
+  "checklist": [
+   "确认复杂度带来实际收益",
+   "事件可靠投递到投影",
+   "投影幂等且可重建",
+   "监控读模型同步延迟",
+   "界面处理最终一致",
+   "读模型 schema 有版本管理"
+  ],
+  "interview": [
+   {
+    "q": "CQRS 一定要配合事件溯源吗？",
+    "a": "不需要。CQRS 只要求读写模型分离，写端可以是普通关系表，通过 Outbox 或 CDC 更新读模型。事件溯源与 CQRS 常一起使用，因为事件流天然适合投影，但两者可以独立采用。"
+   },
+   {
+    "q": "CQRS 带来的最大挑战是什么？",
+    "a": "读写之间的最终一致：用户可能看不到刚做的修改；还要处理投影失败、重放、事件版本演进和多个读模型的运维。调试时需要跨组件追踪一次变更的完整路径。"
+   },
+   {
+    "q": "什么场景适合 CQRS？",
+    "a": "读写比例悬殊、查询形态多样（列表、搜索、报表）、业务规则复杂需要清晰写模型、或读写需独立扩展的子系统。不应作为整个系统的默认架构，而是局部使用。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "CQRS (Martin Fowler)",
+    "url": "https://martinfowler.com/bliki/CQRS.html"
+   },
+   {
+    "title": "CQRS pattern (Azure Architecture Center)",
+    "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/cqrs"
+   }
+  ]
+ },
+ {
+  "slug": "event-sourcing",
+  "def": "事件溯源（Event Sourcing）是一种持久化模式：不直接保存实体的当前状态，而是把每次状态变化作为不可变事件按顺序追加到事件存储中，当前状态通过按顺序重放事件得到。它天然提供完整审计历史和时间回溯能力，常与 CQRS 搭配，但带来事件版本演进和查询方面的复杂度。",
+  "how": [
+   "命令处理：加载实体的历史事件并重放出当前状态，再校验命令是否允许执行。",
+   "追加事件：校验通过后生成新事件，追加到该实体的事件流末尾，从不修改旧事件。",
+   "并发控制：追加时附带期望版本号，若事件流已被他人追加则冲突重试。",
+   "读取状态：按顺序折叠事件得到状态；事件过多时定期保存快照以加速加载。",
+   "下游投影：事件被订阅后构建各种读模型，也可以重放全部事件来重建读模型。"
+  ],
+  "terms": [
+   {
+    "t": "事件流 (Event Stream)",
+    "d": "同一实体（聚合）按顺序排列的全部事件。"
+   },
+   {
+    "t": "事件存储 (Event Store)",
+    "d": "只追加、按流和版本组织事件的持久化存储。"
+   },
+   {
+    "t": "快照 (Snapshot)",
+    "d": "某一版本时的状态缓存，加载时从快照之后开始重放。"
+   },
+   {
+    "t": "乐观并发 (Optimistic Concurrency)",
+    "d": "按期望版本追加，版本不符即拒绝，避免覆盖。"
+   },
+   {
+    "t": "事件升级 (Upcasting)",
+    "d": "读取时把旧版本事件转换为新结构的兼容手段。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "最小事件存储",
+   "src": "import json, sqlite3\n\ndb = sqlite3.connect(\":memory:\")\ndb.execute(\"\"\"CREATE TABLE events (\n  stream_id TEXT, version INTEGER, type TEXT, data TEXT,\n  PRIMARY KEY (stream_id, version))\"\"\")   # 主键保证同版本只能写一次\n\ndef append(stream, expected_version, type_, data):\n    # expected_version 不对会触发主键冲突 → 乐观并发失败\n    db.execute(\"INSERT INTO events VALUES (?,?,?,?)\",\n               (stream, expected_version + 1, type_, json.dumps(data)))\n\ndef load(stream):\n    balance, version = 0, 0\n    for v, t, d in db.execute(\"SELECT version, type, data FROM events \"\n                              \"WHERE stream_id=? ORDER BY version\", (stream,)):\n        amt = json.loads(d)[\"amount\"]\n        balance += amt if t == \"Deposited\" else -amt   # 折叠事件得到状态\n        version = v\n    return balance, version\n\nappend(\"acct-1\", 0, \"Deposited\", {\"amount\": 100})\nappend(\"acct-1\", 1, \"Withdrawn\", {\"amount\": 30})\nprint(load(\"acct-1\"))          # (70, 2)",
+   "note": "用 (stream_id, version) 唯一约束实现乐观并发；状态由事件重放计算得出。"
+  },
+  "table": {
+   "title": "状态存储 vs 事件溯源",
+   "head": [
+    "维度",
+    "状态存储",
+    "事件溯源"
+   ],
+   "rows": [
+    [
+     "存什么",
+     "当前状态",
+     "全部变化事件"
+    ],
+    [
+     "历史审计",
+     "需额外审计表",
+     "天然完整"
+    ],
+    [
+     "查询",
+     "直接查询",
+     "需投影成读模型"
+    ],
+    [
+     "结构演进",
+     "迁移表结构",
+     "需兼容旧事件版本"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "事件溯源",
+    "pros": "完整审计、可回溯、易构建新视图",
+    "cons": "学习曲线陡，事件版本演进难",
+    "when": "金融账务、审计要求高的核心域"
+   },
+   {
+    "opt": "状态存储+审计日志",
+    "pros": "查询简单，团队熟悉",
+    "cons": "审计日志可能与状态不一致",
+    "when": "多数业务系统"
+   },
+   {
+    "opt": "状态存储+CDC 事件",
+    "pros": "低侵入地对外提供变化流",
+    "cons": "事件是表级变化而非业务语义",
+    "when": "需要数据同步但不需完整溯源"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "直接修改或删除历史事件来纠错",
+    "fix": "追加补偿或更正事件，保持历史不可变"
+   },
+   {
+    "bad": "事件字段随意变更，旧事件无法反序列化",
+    "fix": "事件带版本号，新增字段向后兼容，必要时 upcasting"
+   },
+   {
+    "bad": "长生命周期实体每次加载重放上万事件",
+    "fix": "定期生成快照，从快照之后开始重放"
+   },
+   {
+    "bad": "把个人敏感数据直接写入不可变事件",
+    "fix": "敏感字段加密存储，删除时销毁密钥（加密擦除）"
+   }
+  ],
+  "checklist": [
+   "事件命名表达业务事实",
+   "追加带期望版本号",
+   "事件结构有版本策略",
+   "长事件流有快照",
+   "投影可重放重建",
+   "敏感数据有擦除方案"
+  ],
+  "interview": [
+   {
+    "q": "事件溯源中如何处理并发写？",
+    "a": "每个事件流有单调版本号，写入时声明期望版本，存储层原子检查当前版本是否匹配，不匹配说明有人先写入，返回冲突；客户端重新加载最新状态、重新校验命令后再尝试追加。"
+   },
+   {
+    "q": "事件结构变了怎么办？",
+    "a": "事件不可变，不能批量改写历史。常用做法：只做向后兼容的新增字段；为事件加版本号，读取时用 upcaster 把旧版本转成新结构；变化很大时定义新事件类型，必要时通过流复制迁移。"
+   },
+   {
+    "q": "GDPR 删除请求和不可变事件冲突吗？",
+    "a": "有冲突。常见方案是加密擦除：每个用户的敏感字段用独立密钥加密，删除时销毁密钥使数据不可读；或把敏感数据放在事件之外的可删除存储，事件只保存引用。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Event Sourcing (Martin Fowler)",
+    "url": "https://martinfowler.com/eaaDev/EventSourcing.html"
+   },
+   {
+    "title": "Event Sourcing pattern (Azure Architecture Center)",
+    "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/event-sourcing"
+   },
+   {
+    "title": "CQRS (Martin Fowler)",
+    "url": "https://martinfowler.com/bliki/CQRS.html"
+   }
+  ]
+ },
+ {
+  "slug": "multi-region",
+  "def": "跨地域多活/容灾（Multi-Region）指把应用和数据部署在多个地理区域，以抵御整个区域级故障并降低就近用户延迟。按模式分为主备（一个区域服务、另一个待命）与多活（多个区域同时服务）。核心难点在于跨地域数据复制的延迟、一致性取舍，以及故障切换的可靠性。",
+  "how": [
+   "定目标：按业务确定 RTO（可容忍的恢复时间）与 RPO（可容忍的数据丢失量）。",
+   "选模式：备份恢复、温备、热备或多活，成本与恢复速度随级别依次升高。",
+   "数据复制：跨区域异步复制常见，切换时可能丢失尚未复制的写入，即 RPO 大于零。",
+   "流量调度：DNS 故障转移、全局负载均衡或 Anycast 按健康检查把流量导向健康区域。",
+   "演练验证：定期进行真实切换演练，验证容量、数据完整性与运维手册是否有效。"
+  ],
+  "terms": [
+   {
+    "t": "RTO (Recovery Time Objective)",
+    "d": "从故障发生到服务恢复的目标时长。"
+   },
+   {
+    "t": "RPO (Recovery Point Objective)",
+    "d": "可接受丢失的最大数据时间窗口。"
+   },
+   {
+    "t": "主备 (Active-Passive)",
+    "d": "只有主区域处理流量，备区域在故障时接管。"
+   },
+   {
+    "t": "多活 (Active-Active)",
+    "d": "多个区域同时处理读写，需解决数据冲突。"
+   },
+   {
+    "t": "单元化 (Cell-based)",
+    "d": "按用户或租户划分归属区域，每个单元独立闭环。"
+   }
+  ],
+  "code": {
+   "lang": "json",
+   "title": "Route 53 主备故障转移",
+   "src": "{\n  \"Comment\": \"api 主备：主区域健康检查失败时自动切到备区域\",\n  \"Changes\": [\n    {\"Action\": \"UPSERT\",\n     \"ResourceRecordSet\": {\n       \"Name\": \"api.example.com\", \"Type\": \"A\", \"TTL\": 60,\n       \"SetIdentifier\": \"primary-us-east-1\", \"Failover\": \"PRIMARY\",\n       \"HealthCheckId\": \"11111111-2222-3333-4444-555555555555\",\n       \"ResourceRecords\": [{\"Value\": \"203.0.113.10\"}]}},\n    {\"Action\": \"UPSERT\",\n     \"ResourceRecordSet\": {\n       \"Name\": \"api.example.com\", \"Type\": \"A\", \"TTL\": 60,\n       \"SetIdentifier\": \"secondary-eu-west-1\", \"Failover\": \"SECONDARY\",\n       \"ResourceRecords\": [{\"Value\": \"198.51.100.20\"}]}}\n  ]\n}",
+   "note": "经 change-resource-record-sets 提交；TTL 影响切换速度，ID 与 IP 为示例。"
+  },
+  "table": {
+   "title": "容灾等级对比",
+   "head": [
+    "模式",
+    "RTO / RPO",
+    "成本"
+   ],
+   "rows": [
+    [
+     "备份恢复",
+     "小时级 / 取决于备份周期",
+     "最低"
+    ],
+    [
+     "温备 (Pilot Light/Warm)",
+     "分钟到小时 / 分钟级",
+     "中"
+    ],
+    [
+     "热备",
+     "分钟级 / 秒级",
+     "高"
+    ],
+    [
+     "多活",
+     "近乎零 / 取决于复制方式",
+     "最高"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "主备",
+    "pros": "数据模型简单，无写冲突",
+    "cons": "备区域闲置，切换有中断",
+    "when": "多数业务的区域级容灾"
+   },
+   {
+    "opt": "多活（按用户单元化）",
+    "pros": "区域故障影响小，就近低延迟",
+    "cons": "路由与数据归属设计复杂",
+    "when": "全球用户、高可用要求"
+   },
+   {
+    "opt": "多活（任意区域可写）",
+    "pros": "写入可用性最高",
+    "cons": "需处理并发写冲突",
+    "when": "可接受最终一致的数据"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "备区域容量不足，切换后立即被流量压垮",
+    "fix": "按全量流量规划备区域容量或预留快速扩容能力"
+   },
+   {
+    "bad": "共享依赖（认证、配置、DNS）只在主区域，切换后依然不可用",
+    "fix": "梳理全部依赖，确保关键依赖同样跨区域"
+   },
+   {
+    "bad": "从未真实切换演练，故障时手册失效",
+    "fix": "定期在生产进行受控切换演练并更新手册"
+   },
+   {
+    "bad": "以为异步复制 RPO 为零",
+    "fix": "测量复制延迟，按实际延迟评估 RPO"
+   }
+  ],
+  "checklist": [
+   "RTO/RPO 已与业务确认",
+   "关键依赖均跨区域",
+   "备区域容量可承接",
+   "复制延迟有监控",
+   "切换与回切有演练",
+   "DNS TTL 与切换目标匹配"
+  ],
+  "interview": [
+   {
+    "q": "多活最难的部分是什么？",
+    "a": "数据。跨地域同步复制延迟太高，异步复制又会产生冲突和数据丢失。常见做法是单元化：按用户或租户确定归属区域，同一用户的写入只在一个区域进行，避免冲突；全局数据则单独用强一致存储。"
+   },
+   {
+    "q": "DNS 故障转移有什么局限？",
+    "a": "客户端和中间解析器会缓存记录，即使 TTL 很短，部分客户端仍会在一段时间内访问旧地址；健康检查判定也需要时间。对切换速度要求高时可用全局负载均衡或 Anycast，并让客户端具备重试能力。"
+   },
+   {
+    "q": "怎么证明容灾方案真的有效？",
+    "a": "定期演练：在生产或等价环境中真实切断主区域，测量实际 RTO 和数据丢失，验证容量、依赖和手册；把演练结果与目标对比并整改。没有演练过的容灾方案应视为不可用。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "AWS: Disaster recovery options in the cloud",
+    "url": "https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/disaster-recovery-options-in-the-cloud.html"
+   },
+   {
+    "title": "Route 53: Configuring DNS failover",
+    "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-failover-configuring.html"
+   },
+   {
+    "title": "Azure Well-Architected: Disaster recovery",
+    "url": "https://learn.microsoft.com/en-us/azure/well-architected/reliability/disaster-recovery"
+   }
+  ]
+ },
+ {
+  "slug": "chaos-engineering",
+  "def": "混沌工程（Chaos Engineering）是在生产或类生产环境中主动、受控地注入故障（如杀进程、加网络延迟、断依赖），通过实验验证系统能否维持稳态的工程实践。它以科学实验方式发现韧性缺陷：先定义稳态和假设，再控制爆炸半径注入故障，观察并修复，而不是随意破坏。",
+  "how": [
+   "定义稳态：选择反映用户体验的指标作为正常基线，如成功率、延迟、订单量。",
+   "提出假设：在某种故障下（如一个实例宕机），稳态指标应保持在可接受范围内。",
+   "设计实验：选择故障类型、作用范围（爆炸半径）、持续时间和中止条件。",
+   "执行观察：注入故障并实时监控，一旦指标越过中止阈值立即停止并回滚。",
+   "改进扩展：修复发现的问题，逐步扩大范围，并把实验自动化持续运行。"
+  ],
+  "terms": [
+   {
+    "t": "稳态 (Steady State)",
+    "d": "系统正常运行时可度量的输出特征，作为实验对照。"
+   },
+   {
+    "t": "爆炸半径 (Blast Radius)",
+    "d": "实验可能影响的用户与系统范围，应从小开始。"
+   },
+   {
+    "t": "故障注入 (Fault Injection)",
+    "d": "人为引入延迟、错误、资源耗尽等故障的手段。"
+   },
+   {
+    "t": "游戏日 (Game Day)",
+    "d": "团队集中演练故障场景并检验应急流程的活动。"
+   },
+   {
+    "t": "中止条件 (Abort Condition)",
+    "d": "指标恶化到该阈值时立即停止实验。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "Chaos Mesh 注入网络延迟",
+   "src": "apiVersion: chaos-mesh.org/v1alpha1\nkind: NetworkChaos\nmetadata:\n  name: payment-delay\n  namespace: chaos-testing\nspec:\n  action: delay\n  mode: one                     # 只影响一个匹配的 Pod，控制爆炸半径\n  selector:\n    namespaces: [\"shop\"]\n    labelSelectors:\n      app: payment\n  delay:\n    latency: \"200ms\"\n    jitter: \"50ms\"\n    correlation: \"25\"\n  duration: \"5m\"                # 到期自动恢复",
+   "note": "假设：支付服务单实例延迟 200ms 时，下单成功率不低于基线；同时观察超时与重试行为。"
+  },
+  "table": {
+   "title": "常见故障实验",
+   "head": [
+    "实验",
+    "验证什么",
+    "常用工具"
+   ],
+   "rows": [
+    [
+     "杀 Pod/实例",
+     "自动恢复与冗余",
+     "Chaos Mesh、Chaos Monkey"
+    ],
+    [
+     "网络延迟/丢包",
+     "超时、重试与熔断设置",
+     "Chaos Mesh、tc"
+    ],
+    [
+     "依赖不可用",
+     "降级与兜底逻辑",
+     "故障注入代理、服务网格"
+    ],
+    [
+     "资源耗尽",
+     "限流与资源隔离",
+     "stress-ng、云故障注入服务"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "生产环境实验",
+    "pros": "最真实，能发现环境特有问题",
+    "cons": "有影响用户的风险",
+    "when": "监控完善、有中止机制后"
+   },
+   {
+    "opt": "预发环境实验",
+    "pros": "风险低，可大胆尝试",
+    "cons": "流量与配置不同，结论有偏差",
+    "when": "起步阶段、新实验首次运行"
+   },
+   {
+    "opt": "游戏日人工演练",
+    "pros": "同时检验人和流程",
+    "cons": "频率低，难以持续",
+    "when": "验证应急响应与手册"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "没有监控与稳态定义就开始注入故障",
+    "fix": "先建立可观测性和基线，否则无法判断实验结果"
+   },
+   {
+    "bad": "一开始就扩大到全量或核心链路",
+    "fix": "从单实例、小比例流量开始，逐步扩大爆炸半径"
+   },
+   {
+    "bad": "实验没有自动停止条件，故障持续扩散",
+    "fix": "设置持续时间与指标中止阈值，并准备一键回滚"
+   },
+   {
+    "bad": "发现问题后只记录不修复",
+    "fix": "把发现转成工单跟踪修复，并复跑实验验证"
+   }
+  ],
+  "checklist": [
+   "稳态指标已定义",
+   "假设写成可验证形式",
+   "爆炸半径从小开始",
+   "有中止条件与回滚",
+   "相关团队已知情",
+   "发现项有跟踪与复验"
+  ],
+  "interview": [
+   {
+    "q": "混沌工程和故障测试有什么区别？",
+    "a": "传统测试验证已知条件下的预期行为；混沌工程以实验方式探索未知：在接近真实的环境中注入真实故障，观察整体系统的涌现行为，常发现配置、超时、依赖链等在单元测试中看不到的问题。"
+   },
+   {
+    "q": "如何安全地在生产做混沌实验？",
+    "a": "有完善监控和稳态基线；从最小爆炸半径开始；设置自动中止条件和持续时间；选择低峰期并通知相关方；准备回滚手段；实验前确认已有的冗余和降级机制理论上能应对该故障。"
+   },
+   {
+    "q": "第一个混沌实验你会做什么？",
+    "a": "选一个有多副本的无状态服务，在预发环境随机杀掉一个实例，假设成功率和延迟不受明显影响。它风险低，却能验证健康检查、负载均衡摘除、自动重建和告警是否按预期工作。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Principles of Chaos Engineering",
+    "url": "https://principlesofchaos.org/"
+   },
+   {
+    "title": "Chaos Mesh 文档",
+    "url": "https://chaos-mesh.org/docs/"
+   },
+   {
+    "title": "AWS Fault Injection Service",
+    "url": "https://docs.aws.amazon.com/fis/latest/userguide/what-is.html"
+   },
+   {
+    "title": "Netflix Chaos Monkey",
+    "url": "https://github.com/Netflix/chaosmonkey"
+   }
+  ]
+ },
+ {
+  "slug": "capacity-planning",
+  "def": "容量规划（Capacity Planning）是根据业务增长预测和系统性能模型，提前确定需要多少计算、存储、网络与数据库资源，以在满足 SLO 的前提下控制成本的工程活动。它结合历史数据、压测结果、排队论估算和冗余要求（如 N+1），回答「何时、加多少、加在哪」。",
+  "how": [
+   "测基线：采集当前流量、资源利用率与延迟，找出对容量最敏感的瓶颈资源。",
+   "建模型：通过压测得到单实例在满足延迟 SLO 时能承受的最大吞吐。",
+   "预测需求：结合历史增长趋势、季节性峰值和业务活动计划估算未来峰值流量。",
+   "加冗余：考虑 N+1 或可用区故障、发布期间实例减少，并预留突发余量。",
+   "执行复盘：提前采购或配置扩容策略，定期对比预测与实际值并修正模型。"
+  ],
+  "terms": [
+   {
+    "t": "利特尔法则 (Little's Law)",
+    "d": "L = λW：系统内平均请求数等于到达率乘以平均停留时间。"
+   },
+   {
+    "t": "余量 (Headroom)",
+    "d": "峰值负载之外为突发和故障预留的容量。"
+   },
+   {
+    "t": "N+1 冗余",
+    "d": "在满足需求的 N 份资源外再多备一份以容忍单点故障。"
+   },
+   {
+    "t": "拐点 (Knee Point)",
+    "d": "利用率超过某值后延迟急剧上升的位置。"
+   },
+   {
+    "t": "负载测试 (Load Testing)",
+    "d": "按预期或更高流量施压，测量吞吐与延迟关系。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "估算实例数",
+   "src": "import math\n\npeak_rps = 1200          # 预测峰值每秒请求数（含活动增长）\nlatency_s = 0.15         # 平均处理耗时\nper_inst_max_rps = 180   # 压测得出：单实例 p99 仍达标时的最大吞吐\ntarget_util = 0.6        # 只用到 60%，远离延迟拐点\nzones = 3                # 跨 3 个可用区，需容忍丢失 1 个\n\n# 利特尔法则：系统中同时在处理的请求数\nconcurrency = peak_rps * latency_s\nneeded = peak_rps / (per_inst_max_rps * target_util)\n# 丢失一个可用区后剩余实例仍需扛住峰值\ntotal = math.ceil(needed * zones / (zones - 1))\n\nprint(f\"并发约 {concurrency:.0f}，正常需 {math.ceil(needed)} 台，\"\n      f\"考虑可用区故障共需 {total} 台\")",
+   "note": "所有输入都应来自压测与监控；N+1 和目标利用率决定了最终余量。"
+  },
+  "table": {
+   "title": "规划输入与来源",
+   "head": [
+    "输入",
+    "来源",
+    "注意"
+   ],
+   "rows": [
+    [
+     "峰值流量预测",
+     "历史监控 + 业务计划",
+     "区分日常峰值与活动峰值"
+    ],
+    [
+     "单实例容量",
+     "压测",
+     "以延迟 SLO 达标为准，而非 CPU 满载"
+    ],
+    [
+     "目标利用率",
+     "排队特性与风险偏好",
+     "高利用率时延迟非线性上升"
+    ],
+    [
+     "冗余要求",
+     "可用性目标",
+     "可用区故障、发布滚动"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "预留固定容量",
+    "pros": "稳定可预测，可用预留折扣",
+    "cons": "低谷时浪费",
+    "when": "基线流量稳定"
+   },
+   {
+    "opt": "自动扩缩容",
+    "pros": "按需付费，应对波动",
+    "cons": "扩容有延迟，依赖指标正确",
+    "when": "流量波动明显"
+   },
+   {
+    "opt": "预热+自动扩缩混合",
+    "pros": "兼顾突发与成本",
+    "cons": "需要准确的活动排期",
+    "when": "大促、发布会等可预期高峰"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "按 CPU 利用率规划，忽视数据库连接、带宽等真实瓶颈",
+    "fix": "压测找出首个饱和资源，以其为规划依据"
+   },
+   {
+    "bad": "把利用率目标定到 90% 以上",
+    "fix": "考虑排队效应和故障冗余，常见目标显著低于满载"
+   },
+   {
+    "bad": "只扩应用层，下游数据库和第三方配额跟不上",
+    "fix": "沿调用链评估所有依赖的容量与限额"
+   },
+   {
+    "bad": "依赖自动扩缩应对秒级突发",
+    "fix": "提前预热，并设置最小实例数和扩容余量"
+   }
+  ],
+  "checklist": [
+   "瓶颈资源已通过压测确定",
+   "峰值预测含业务活动",
+   "冗余覆盖可用区故障",
+   "下游依赖容量已评估",
+   "云配额与限额已确认",
+   "预测与实际定期复盘"
+  ],
+  "interview": [
+   {
+    "q": "为什么不能把服务器用到 100%？",
+    "a": "排队论表明利用率接近 100% 时排队等待时间急剧增长，延迟远超 SLO；突发流量和实例故障也需要余量。此外 N+1 冗余要求故障后剩余资源能承担全部负载，因此正常利用率必须留出空间。"
+   },
+   {
+    "q": "如何确定单实例容量？",
+    "a": "在接近生产的环境做阶梯压测，逐步增加负载，记录吞吐与 p99 延迟、错误率，找到延迟或错误率超出 SLO 前的最大吞吐作为容量上限，同时记录首先饱和的资源。"
+   },
+   {
+    "q": "大促容量规划你会怎么做？",
+    "a": "根据历史大促与业务目标估算峰值倍数；全链路压测找瓶颈；为数据库、缓存、消息队列和第三方接口确认容量；提前扩容和预热；准备限流、降级与熔断预案；活动中实时监控并复盘。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Google SRE Book: Introduction",
+    "url": "https://sre.google/sre-book/introduction/"
+   },
+   {
+    "title": "Google SRE Book: Handling Overload",
+    "url": "https://sre.google/sre-book/handling-overload/"
+   },
+   {
+    "title": "Little's law - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Little%27s_law"
+   },
+   {
+    "title": "Grafana k6 文档",
+    "url": "https://grafana.com/docs/k6/latest/"
+   }
+  ]
+ },
+ {
+  "slug": "opentelemetry",
+  "def": "OpenTelemetry（OTel）是 CNCF 的开源可观测性标准与工具集，定义了生成、采集和导出遥测数据（链路追踪、指标、日志）的统一 API、SDK、语义约定和 OTLP 传输协议，并提供 Collector 作为采集与处理管道。它让埋点与后端解耦，避免被单一监控厂商锁定。",
+  "how": [
+   "埋点：通过各语言 SDK 的自动插桩或手动 API 生成 span、指标和日志记录。",
+   "上下文传播：用 W3C traceparent 等请求头在服务间传递 trace ID，把调用串成链路。",
+   "SDK 处理：在进程内完成采样、批量缓冲，并补充服务名等资源属性后导出。",
+   "Collector：接收 OTLP 等多种格式的数据，经过滤、脱敏、批处理后转发到多个后端。",
+   "后端分析：Jaeger、Prometheus 或商业平台存储并展示数据，可随时切换后端。"
+  ],
+  "terms": [
+   {
+    "t": "OTLP",
+    "d": "OpenTelemetry 的原生传输协议，支持 gRPC 与 HTTP。"
+   },
+   {
+    "t": "Collector",
+    "d": "独立运行的遥测管道，由接收器、处理器、导出器组成。"
+   },
+   {
+    "t": "语义约定 (Semantic Conventions)",
+    "d": "统一的属性命名规范，如 http.request.method。"
+   },
+   {
+    "t": "资源 (Resource)",
+    "d": "描述遥测来源的属性，如 service.name、部署环境。"
+   },
+   {
+    "t": "采样 (Sampling)",
+    "d": "只保留部分链路以控制成本，分头部采样与尾部采样。"
+   },
+   {
+    "t": "上下文传播 (Context Propagation)",
+    "d": "跨进程传递追踪上下文，使调用能串联成链路。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "Collector 基础管道",
+   "src": "receivers:\n  otlp:\n    protocols:\n      grpc: {endpoint: 0.0.0.0:4317}\n      http: {endpoint: 0.0.0.0:4318}\n\nprocessors:\n  memory_limiter:            # 防止 Collector 自身内存溢出，放在最前面\n    check_interval: 1s\n    limit_mib: 1024\n  batch: {}                  # 批量发送，降低导出开销\n\nexporters:\n  otlphttp:\n    endpoint: https://otel-backend.example.com\n  debug: {}                  # 调试时打印到 Collector 日志\n\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      processors: [memory_limiter, batch]\n      exporters: [otlphttp]\n    metrics:\n      receivers: [otlp]\n      processors: [memory_limiter, batch]\n      exporters: [otlphttp, debug]",
+   "note": "应用统一发到 Collector，后端变化只需改导出器；处理器顺序会影响行为。"
+  },
+  "table": {
+   "title": "OTel 组件分工",
+   "head": [
+    "组件",
+    "职责",
+    "运行位置"
+   ],
+   "rows": [
+    [
+     "API",
+     "定义埋点接口，库作者依赖它",
+     "应用进程内"
+    ],
+    [
+     "SDK",
+     "实现采样、处理、导出",
+     "应用进程内"
+    ],
+    [
+     "自动插桩",
+     "无需改代码为常见框架埋点",
+     "应用进程内/代理"
+    ],
+    [
+     "Collector",
+     "接收、处理、路由遥测数据",
+     "Sidecar、节点或网关"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "应用直连后端",
+    "pros": "部署简单，少一跳",
+    "cons": "换后端或加处理需改应用配置",
+    "when": "小规模、单一后端"
+   },
+   {
+    "opt": "经 Collector 转发",
+    "pros": "集中脱敏、采样、多路导出",
+    "cons": "多维护一个组件",
+    "when": "生产环境默认推荐"
+   },
+   {
+    "opt": "厂商私有 Agent",
+    "pros": "开箱功能多",
+    "cons": "埋点与厂商绑定，迁移成本高",
+    "when": "已深度使用某平台"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "各服务 service.name 不规范，链路和指标无法归属",
+    "fix": "统一设置资源属性，包括服务名、版本和环境"
+   },
+   {
+    "bad": "跨服务调用未传播上下文，链路断成多段",
+    "fix": "确保 HTTP/消息客户端插桩并传递 traceparent 头"
+   },
+   {
+    "bad": "全量采集链路，存储成本失控",
+    "fix": "按需配置头部或尾部采样，保留错误与慢请求"
+   },
+   {
+    "bad": "Collector 未配 memory_limiter，流量突增时 OOM",
+    "fix": "启用 memory_limiter 并为 Collector 设置资源限制"
+   }
+  ],
+  "checklist": [
+   "资源属性统一规范",
+   "服务间上下文传播已验证",
+   "采样策略已配置",
+   "Collector 有内存限制",
+   "敏感属性在管道中脱敏",
+   "遵循语义约定命名"
+  ],
+  "interview": [
+   {
+    "q": "OpenTelemetry 解决了什么问题？",
+    "a": "过去每个监控厂商有自己的 SDK 和协议，换后端要重写埋点。OTel 统一了 API、数据模型和传输协议，埋点只做一次，可导出到任意兼容后端；同时统一三类信号的关联，如从指标跳到链路再到日志。"
+   },
+   {
+    "q": "头部采样和尾部采样有何区别？",
+    "a": "头部采样在链路开始时就决定是否保留，开销小但可能丢掉之后才出错的链路；尾部采样在 Collector 等待整条链路结束后再按错误、延迟等条件决定，能保留有价值的链路，但需缓存数据、资源消耗更大。"
+   },
+   {
+    "q": "为什么推荐使用 Collector？",
+    "a": "它把遥测处理从应用剥离：集中做批处理、重试、脱敏、采样和多后端路由；应用只需发 OTLP 到本地，换后端或调整策略不必重新发布应用；也能接收 Prometheus、Jaeger 等旧格式便于迁移。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "What is OpenTelemetry?",
+    "url": "https://opentelemetry.io/docs/what-is-opentelemetry/"
+   },
+   {
+    "title": "OpenTelemetry Collector Configuration",
+    "url": "https://opentelemetry.io/docs/collector/configuration/"
+   },
+   {
+    "title": "OpenTelemetry Specification",
+    "url": "https://opentelemetry.io/docs/specs/otel/"
+   }
+  ]
+ },
+ {
+  "slug": "metrics-cardinality",
+  "def": "指标基数（Metrics Cardinality）指一个指标名下由不同标签取值组合产生的独立时间序列数量。每个唯一组合都要单独存储和索引，总序列数约等于各标签取值数的乘积。把用户 ID、请求 URL、trace ID 等无界值放进标签会导致基数爆炸，使监控系统内存、查询和费用急剧上升。",
+  "how": [
+   "序列生成：指标名加上一组标签键值唯一确定一条时间序列，例如按 method 和 status 区分。",
+   "乘积效应：各标签取值数相乘，10 个路由×5 种方法×6 个状态码即为 300 条序列。",
+   "存储压力：时序数据库为每条活跃序列维护内存索引，序列越多内存占用越高。",
+   "爆炸来源：无界标签（用户 ID、原始 URL、错误消息）导致序列数随流量持续增长。",
+   "治理：埋点时限制标签取值，采集端丢弃或聚合高基数标签，并监控序列总数。"
+  ],
+  "terms": [
+   {
+    "t": "时间序列 (Time Series)",
+    "d": "指标名加唯一标签组合对应的一串带时间戳的样本。"
+   },
+   {
+    "t": "标签 (Label / Attribute)",
+    "d": "附加在指标上的维度键值对，用于筛选与聚合。"
+   },
+   {
+    "t": "活跃序列 (Active Series)",
+    "d": "近期仍在产生样本的序列，决定内存占用。"
+   },
+   {
+    "t": "序列流失 (Churn)",
+    "d": "序列频繁新建与消失，如 Pod 名随每次发布变化。"
+   },
+   {
+    "t": "Exemplar",
+    "d": "附在指标样本上的示例 trace ID，避免把 trace ID 当标签。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "采集端丢弃高基数标签",
+   "src": "# prometheus.yml\nscrape_configs:\n  - job_name: api\n    static_configs:\n      - targets: [\"api:9100\"]\n    metric_relabel_configs:\n      # 删除不该存在的高基数标签\n      - action: labeldrop\n        regex: \"user_id|session_id|request_id\"\n      # 整个丢弃某个调试用的高基数指标\n      - source_labels: [__name__]\n        regex: \"http_request_duration_by_path_seconds.*\"\n        action: drop\n\n# 排查：哪些指标序列最多（在 Prometheus 中执行）\n#   topk(10, count by (__name__) ({__name__=~\".+\"}))\n# 某指标的某标签有多少种取值\n#   count(count by (path) (http_requests_total))",
+   "note": "采集端兜底只是止血，根本办法是在埋点处把路径归一为路由模板等有界值。"
+  },
+  "table": {
+   "title": "标签取值是否合适",
+   "head": [
+    "标签",
+    "取值范围",
+    "建议"
+   ],
+   "rows": [
+    [
+     "method / status_code",
+     "有界、很小",
+     "适合"
+    ],
+    [
+     "route（路由模板）",
+     "有界",
+     "适合，如 /users/{id}"
+    ],
+    [
+     "原始 URL path",
+     "无界",
+     "不适合，需归一化"
+    ],
+    [
+     "user_id / trace_id",
+     "无界",
+     "不适合，放日志或 exemplar"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "埋点时控制标签",
+    "pros": "从源头解决，成本最低",
+    "cons": "需开发规范与代码审查",
+    "when": "所有新指标"
+   },
+   {
+    "opt": "采集端 relabel 丢弃",
+    "pros": "无需改应用，快速止血",
+    "cons": "信息丢失，规则需维护",
+    "when": "线上已出现基数爆炸"
+   },
+   {
+    "opt": "高维分析交给日志/链路",
+    "pros": "保留细粒度上下文",
+    "cons": "查询成本高，不适合告警",
+    "when": "需要按用户排查问题"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把原始 URL 作为标签，带 ID 的路径产生海量序列",
+    "fix": "使用框架的路由模板作为标签值"
+   },
+   {
+    "bad": "把错误消息全文放进标签",
+    "fix": "用有限的错误类别或错误码作为标签"
+   },
+   {
+    "bad": "在 Kubernetes 中以 Pod 名为维度长期聚合，发布后序列大量流失",
+    "fix": "告警与看板按服务或 Deployment 聚合"
+   },
+   {
+    "bad": "直方图桶数过多且叠加多个标签",
+    "fix": "精简桶数量，减少直方图上的标签维度"
+   }
+  ],
+  "checklist": [
+   "新指标标签取值有界",
+   "路径使用路由模板",
+   "无用户/请求级 ID 标签",
+   "监控活跃序列总数",
+   "有基数告警阈值",
+   "采集端有兜底丢弃规则"
+  ],
+  "interview": [
+   {
+    "q": "为什么不能把 user_id 当指标标签？",
+    "a": "每个用户一个序列，序列数随用户量无界增长，时序库为每条活跃序列维护索引和内存，很快耗尽资源，查询也变慢，按序列计费的服务费用飙升。按用户分析应使用日志或链路数据。"
+   },
+   {
+    "q": "如何估算一个指标的基数？",
+    "a": "各标签可能取值数相乘，再乘以产生该指标的实例数。例如 20 个路由、4 种方法、5 类状态码、50 个 Pod 约为 2 万条序列；直方图还需乘以桶数加上 sum 与 count 序列。"
+   },
+   {
+    "q": "指标、日志、链路在高维数据上怎么分工？",
+    "a": "指标适合低基数、可聚合、用于告警和趋势的数据；日志和链路保留高维细节，如用户、请求 ID、参数，用于排查。通过 exemplar 或 trace ID 关联，从异常指标跳转到具体请求。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Prometheus: Metric and label naming",
+    "url": "https://prometheus.io/docs/practices/naming/"
+   },
+   {
+    "title": "Prometheus: Instrumentation best practices",
+    "url": "https://prometheus.io/docs/practices/instrumentation/"
+   },
+   {
+    "title": "Prometheus Configuration (metric_relabel_configs)",
+    "url": "https://prometheus.io/docs/prometheus/latest/configuration/configuration/"
+   }
+  ]
+ },
+ {
+  "slug": "terraform-state",
+  "def": "Terraform 状态文件（state）记录了配置中的每个资源地址与云上真实资源 ID 及其属性之间的映射。Terraform 依靠它计算计划（plan）中的增删改、追踪依赖和提升性能。状态必须妥善存放、加锁与保护：它可能包含明文敏感信息，损坏或并发写入会导致资源被误建或误删。",
+  "how": [
+   "记录映射：apply 后把资源地址（如 aws_s3_bucket.logs）与真实 ID、属性写入状态。",
+   "计算差异：plan 时对比配置、状态与刷新得到的真实资源，生成需要执行的变更。",
+   "远程存储：团队使用 S3、Terraform Cloud 等远程后端共享状态，而非放在本地。",
+   "加锁：执行时获取状态锁，防止多人或多条流水线同时修改同一份状态。",
+   "重构：通过 moved 块、import 块或 state 子命令调整映射而不重建资源。"
+  ],
+  "terms": [
+   {
+    "t": "后端 (Backend)",
+    "d": "决定状态存放位置与加锁方式的配置，如 s3、gcs。"
+   },
+   {
+    "t": "状态锁 (State Locking)",
+    "d": "防止并发操作同时写同一状态的互斥机制。"
+   },
+   {
+    "t": "漂移 (Drift)",
+    "d": "真实资源被手动修改，与状态和配置不一致。"
+   },
+   {
+    "t": "moved 块",
+    "d": "在配置中声明资源地址变更，避免重命名时销毁重建。"
+   },
+   {
+    "t": "import 块",
+    "d": "把已存在的云资源纳入 Terraform 管理并写入状态。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "常用状态操作",
+   "src": "# 初始化远程后端（S3 后端的锁参数见官方文档，较新版本支持 use_lockfile）\nterraform init -backend-config=\"bucket=my-tf-state\" \\\n               -backend-config=\"key=prod/network.tfstate\"\n\nterraform state list                         # 列出状态中所有资源地址\nterraform state show aws_s3_bucket.logs      # 查看某资源记录的属性\n\n# 只检测漂移：刷新状态与真实资源的差异，不改基础设施\nterraform plan -refresh-only\n\n# 重命名资源地址而不重建（也可在配置中写 moved 块）\nterraform state mv aws_s3_bucket.logs aws_s3_bucket.access_logs\n\n# 放弃管理但保留真实资源\nterraform state rm aws_instance.legacy\n\n# 进程异常退出后锁未释放时，确认无人操作再强制解锁\nterraform force-unlock <LOCK_ID>",
+   "note": "state 子命令直接改映射，执行前应备份并确认；可审查的 moved/import 块更推荐。"
+  },
+  "table": {
+   "title": "状态存储方式对比",
+   "head": [
+    "方式",
+    "加锁",
+    "适用"
+   ],
+   "rows": [
+    [
+     "本地文件",
+     "仅本机",
+     "个人实验"
+    ],
+    [
+     "S3 / GCS 等对象存储",
+     "需配置锁",
+     "自建团队协作"
+    ],
+    [
+     "HCP Terraform 等托管服务",
+     "内置",
+     "需要权限、审计与运行管理"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "单一大状态",
+    "pros": "依赖引用方便",
+    "cons": "plan 慢、爆炸半径大、锁争用",
+    "when": "小型项目"
+   },
+   {
+    "opt": "按环境/组件拆分状态",
+    "pros": "影响范围小，并行度高",
+    "cons": "跨状态引用需输出与数据源",
+    "when": "中大型基础设施"
+   },
+   {
+    "opt": "托管后端",
+    "pros": "锁、版本、权限开箱即用",
+    "cons": "依赖外部服务与费用",
+    "when": "团队规模扩大、合规要求高"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把 tfstate 提交到 Git 仓库",
+    "fix": "使用远程后端，并把 *.tfstate 加入 .gitignore"
+   },
+   {
+    "bad": "状态桶未加密、权限过宽，泄露其中的密码和密钥",
+    "fix": "启用加密与版本控制，严格限制读取权限"
+   },
+   {
+    "bad": "重命名资源后直接 apply，资源被销毁重建",
+    "fix": "使用 moved 块或 state mv，先看 plan 确认无销毁"
+   },
+   {
+    "bad": "手工在控制台改资源，导致长期漂移",
+    "fix": "定期执行 refresh-only 检测漂移，变更一律走代码"
+   }
+  ],
+  "checklist": [
+   "状态存于远程后端",
+   "状态启用加锁",
+   "存储加密且有版本历史",
+   "读取权限最小化",
+   "按环境/组件拆分",
+   "有漂移检测机制"
+  ],
+  "interview": [
+   {
+    "q": "Terraform 为什么需要状态文件？",
+    "a": "云 API 无法可靠地根据配置反查对应哪个真实资源，状态保存了地址到真实 ID 的映射；它还记录依赖关系以便正确删除顺序，并缓存属性提升大规模基础设施的 plan 性能。"
+   },
+   {
+    "q": "两个人同时 apply 会怎样？",
+    "a": "若后端支持并启用了锁，后到者会因拿不到锁而失败；若没有锁，双方可能基于同一旧状态计算并写回，后写覆盖先写，造成状态与真实资源不一致，甚至重复创建资源。"
+   },
+   {
+    "q": "状态文件中的敏感信息怎么保护？",
+    "a": "状态会以明文保存资源属性，可能含数据库密码等。应使用加密的远程后端、开启版本控制、严格限制访问权限；尽量让密钥由密钥管理服务生成和引用。OpenTofu 还提供状态加密功能。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Terraform: State",
+    "url": "https://developer.hashicorp.com/terraform/language/state"
+   },
+   {
+    "title": "Terraform: S3 backend",
+    "url": "https://developer.hashicorp.com/terraform/language/backend/s3"
+   },
+   {
+    "title": "Terraform CLI: state 命令",
+    "url": "https://developer.hashicorp.com/terraform/cli/commands/state"
+   },
+   {
+    "title": "OpenTofu: State encryption",
+    "url": "https://opentofu.org/docs/language/state/encryption/"
+   }
+  ]
+ },
+ {
+  "slug": "gitops",
+  "def": "GitOps 是一种以 Git 仓库作为系统期望状态唯一可信来源的持续交付与运维方式：基础设施和应用以声明式配置存放在 Git 中，集群内的代理（如 Argo CD、Flux）持续拉取并把实际状态调和到与 Git 一致。变更通过 PR 完成，天然具备审计、评审和回滚能力。",
+  "how": [
+   "声明期望状态：用 Kubernetes 清单、Helm 或 Kustomize 描述应用与环境的目标状态。",
+   "版本化：所有配置存于 Git，通过 PR 评审合并，每次变更都有提交记录可追溯。",
+   "拉取同步：集群内的 GitOps 控制器监听仓库，发现新提交后自动拉取。",
+   "持续调和：控制器对比实际状态与期望状态，自动修正差异，包括手工改动产生的漂移。",
+   "回滚：回滚即 git revert 到旧提交，控制器自动把集群同步回该版本。"
+  ],
+  "terms": [
+   {
+    "t": "期望状态 (Desired State)",
+    "d": "Git 中声明的系统应有状态。"
+   },
+   {
+    "t": "调和 (Reconciliation)",
+    "d": "持续对比并消除实际状态与期望状态差异的循环。"
+   },
+   {
+    "t": "拉取模式 (Pull-based)",
+    "d": "集群内代理主动拉取配置，无需对外暴露集群凭证。"
+   },
+   {
+    "t": "自愈 (Self-heal)",
+    "d": "自动撤销绕过 Git 的手工修改。"
+   },
+   {
+    "t": "配置仓库 (Config Repo)",
+    "d": "与应用代码分离、专门存放部署清单的仓库。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "Argo CD Application",
+   "src": "apiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: shop-api\n  namespace: argocd\nspec:\n  project: default\n  source:\n    repoURL: https://github.com/example/shop-deploy.git\n    targetRevision: main\n    path: apps/shop-api/overlays/prod     # Kustomize 目录\n  destination:\n    server: https://kubernetes.default.svc\n    namespace: shop\n  syncPolicy:\n    automated:\n      prune: true        # Git 中删除的资源也从集群删除\n      selfHeal: true     # 集群被手工修改时自动改回\n    syncOptions:\n      - CreateNamespace=true",
+   "note": "CI 只负责构建镜像并更新配置仓库中的镜像标签，部署由 Argo CD 拉取完成。"
+  },
+  "table": {
+   "title": "推送式 CD 与 GitOps",
+   "head": [
+    "维度",
+    "推送式 CI/CD",
+    "GitOps 拉取式"
+   ],
+   "rows": [
+    [
+     "谁执行部署",
+     "CI 流水线调用 kubectl/helm",
+     "集群内控制器"
+    ],
+    [
+     "集群凭证",
+     "CI 持有，暴露面大",
+     "留在集群内"
+    ],
+    [
+     "漂移处理",
+     "不感知",
+     "持续检测并自愈"
+    ],
+    [
+     "回滚",
+     "重跑旧流水线",
+     "git revert"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "GitOps（Argo CD/Flux）",
+    "pros": "可审计、自愈、凭证不出集群",
+    "cons": "密钥管理与多环境结构需设计",
+    "when": "Kubernetes 上的持续交付"
+   },
+   {
+    "opt": "流水线推送部署",
+    "pros": "简单直观，适用非 K8s 目标",
+    "cons": "凭证外放，漂移不可见",
+    "when": "虚拟机、Serverless 或小团队"
+   },
+   {
+    "opt": "混合",
+    "pros": "基础设施用 Terraform，应用用 GitOps",
+    "cons": "两套工具链",
+    "when": "同时管理云资源与集群"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把明文 Secret 提交到配置仓库",
+    "fix": "使用 Sealed Secrets、SOPS 或外部密钥管理器同步"
+   },
+   {
+    "bad": "仍有人直接 kubectl 改生产，被自愈覆盖后引发困惑",
+    "fix": "收紧集群写权限，所有变更走 PR"
+   },
+   {
+    "bad": "镜像标签用 latest，Git 中看不出实际部署版本",
+    "fix": "使用不可变标签或摘要，由 CI 提交更新"
+   },
+   {
+    "bad": "一个仓库目录结构混乱，多环境配置大量复制",
+    "fix": "用 Kustomize overlays 或 Helm values 分层管理环境"
+   }
+  ],
+  "checklist": [
+   "期望状态全部在 Git",
+   "生产变更必须经 PR",
+   "密钥不以明文入库",
+   "镜像使用不可变标签",
+   "启用漂移检测与告警",
+   "回滚流程已演练"
+  ],
+  "interview": [
+   {
+    "q": "GitOps 和普通 CI/CD 的核心区别？",
+    "a": "核心是拉取与持续调和：普通 CD 由流水线一次性推送变更，之后不再关心集群状态；GitOps 控制器持续把集群对齐到 Git，能发现并修正漂移，且部署凭证不必交给外部 CI 系统。"
+   },
+   {
+    "q": "GitOps 中如何管理密钥？",
+    "a": "不在 Git 中存明文：可存加密后的 Secret（Sealed Secrets、SOPS），由集群内私钥解密；或在 Git 中只声明引用，由 External Secrets 等从云密钥管理服务同步。重点是密钥轮换和访问控制。"
+   },
+   {
+    "q": "紧急故障时还要走 PR 吗？",
+    "a": "原则上要，可设快速通道：精简评审、预先批准的回滚 PR。若必须手工干预，可临时暂停自动同步，修复后立即把改动补回 Git 并恢复同步，否则自愈会覆盖手工修改或留下漂移。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OpenGitOps Principles",
+    "url": "https://opengitops.dev/"
+   },
+   {
+    "title": "Argo CD 文档",
+    "url": "https://argo-cd.readthedocs.io/en/stable/"
+   },
+   {
+    "title": "Argo CD: Automated Sync Policy",
+    "url": "https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/"
+   },
+   {
+    "title": "Flux 文档",
+    "url": "https://fluxcd.io/flux/"
+   }
+  ]
+ },
+ {
+  "slug": "resource-requests-and-limits",
+  "def": "Kubernetes 资源请求（requests）与限制（limits）是为容器声明 CPU 和内存的两个值：requests 是调度器据以选择节点并保证分配的资源量，limits 是运行时可使用的上限。超 CPU 限制被节流，超内存限制被 OOMKill。两者的组合还决定 Pod 的 QoS 等级与驱逐优先级。",
+  "how": [
+   "调度：调度器只看 requests，把 Pod 放到剩余可分配资源足够的节点上。",
+   "CPU 请求：通过 cgroup 权重在 CPU 争用时按比例分配，不争用时可以超用。",
+   "CPU 限制：通过 CFS 配额限制每个周期内可用的 CPU 时间，超出即被节流等待。",
+   "内存限制：容器内存超过 limit 会被内核 OOM Killer 终止，状态显示 OOMKilled。",
+   "QoS 与驱逐：节点资源紧张时按 QoS 等级与超用程度驱逐，BestEffort 最先被驱逐。"
+  ],
+  "terms": [
+   {
+    "t": "QoS 等级",
+    "d": "三档服务质量等级，由 requests 与 limits 的设置方式自动判定。"
+   },
+   {
+    "t": "CPU 节流 (Throttling)",
+    "d": "容器用完 CFS 配额后被暂停到下一周期，表现为延迟升高。"
+   },
+   {
+    "t": "OOMKilled",
+    "d": "容器因超出内存限制被内核终止的状态。"
+   },
+   {
+    "t": "超售 (Overcommit)",
+    "d": "节点上 limits 总和大于实际资源，依赖并非所有容器同时满载。"
+   },
+   {
+    "t": "LimitRange / ResourceQuota",
+    "d": "命名空间级的默认值、上下限与总量配额。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "容器资源配置",
+   "src": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: api\nspec:\n  replicas: 3\n  selector: {matchLabels: {app: api}}\n  template:\n    metadata: {labels: {app: api}}\n    spec:\n      containers:\n      - name: api\n        image: registry.example.com/api:1.8.3\n        resources:\n          requests:\n            cpu: \"500m\"        # 调度保证 0.5 核\n            memory: \"512Mi\"\n          limits:\n            memory: \"512Mi\"    # 内存 limit = request，避免节点内存超售\n            # 不设 CPU limit：避免节流，靠 requests 在争用时分配\n# QoS 为 Burstable；若 CPU、内存都设 limit 且等于 request 则为 Guaranteed",
+   "note": "常见做法：内存 limit 等于 request，CPU 只设 request；CPU limit 按场景权衡。"
+  },
+  "table": {
+   "title": "QoS 等级判定",
+   "head": [
+    "等级",
+    "条件",
+    "驱逐顺序"
+   ],
+   "rows": [
+    [
+     "Guaranteed",
+     "每个容器 CPU 与内存都设置且 limit = request",
+     "最后"
+    ],
+    [
+     "Burstable",
+     "至少一个容器设了 request 或 limit，但不满足上条",
+     "居中"
+    ],
+    [
+     "BestEffort",
+     "所有容器都未设置 request 与 limit",
+     "最先"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "设置 CPU limit",
+    "pros": "防止单个容器占满节点 CPU",
+    "cons": "可能频繁节流，尾延迟升高",
+    "when": "多租户、需严格隔离"
+   },
+   {
+    "opt": "不设 CPU limit",
+    "pros": "空闲 CPU 可被利用，延迟更稳",
+    "cons": "依赖准确的 requests 防止争抢",
+    "when": "延迟敏感、requests 设置合理"
+   },
+   {
+    "opt": "Guaranteed QoS",
+    "pros": "驱逐优先级最低，表现可预期",
+    "cons": "资源利用率较低",
+    "when": "数据库等关键有状态服务"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "不设 requests，节点被过度调度后频繁驱逐",
+    "fix": "根据监控的实际用量设置 requests，并用 LimitRange 设默认值"
+   },
+   {
+    "bad": "CPU limit 设得过低，CPU 使用率不高却延迟飙升",
+    "fix": "监控节流指标，调高或去掉 CPU limit"
+   },
+   {
+    "bad": "JVM 等运行时未按容器内存限制配置堆，频繁 OOMKilled",
+    "fix": "让运行时感知容器限制，堆上限留出非堆内存余量"
+   },
+   {
+    "bad": "requests 远大于实际用量，集群资源大量闲置",
+    "fix": "定期按 P95 用量调整，可借助 VPA 推荐值"
+   }
+  ],
+  "checklist": [
+   "所有容器设置了 requests",
+   "内存 limit 已设置",
+   "监控 CPU 节流与 OOM 事件",
+   "关键服务 QoS 合理",
+   "命名空间有 LimitRange/Quota",
+   "requests 定期按实际用量调整"
+  ],
+  "interview": [
+   {
+    "q": "requests 和 limits 分别影响什么？",
+    "a": "requests 影响调度和争用时的资源保证：调度器按它找节点，CPU 争用时按其比例分配。limits 影响运行时上限：CPU 超出被节流，内存超出被 OOMKill。两者共同决定 QoS 等级和节点压力下的驱逐顺序。"
+   },
+   {
+    "q": "CPU 使用率才 40% 为何还被节流？",
+    "a": "CFS 配额按短周期计算，监控的使用率是长时间平均值。多线程程序可能在一个周期的前一小段用完配额，随后整个周期都被暂停，平均看并不高但请求延迟明显变长。看节流指标而非平均使用率。"
+   },
+   {
+    "q": "内存为什么通常建议 limit 等于 request？",
+    "a": "内存是不可压缩资源，超用无法像 CPU 那样节流回收。若 limit 远高于 request，节点内存被超售，压力大时会触发驱逐或 OOM，影响其他 Pod；设为相等让调度时的预留与实际上限一致，行为更可预期。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Kubernetes: Resource Management for Pods and Containers",
+    "url": "https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/"
+   },
+   {
+    "title": "Kubernetes: Pod Quality of Service Classes",
+    "url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-qos/"
+   },
+   {
+    "title": "Kubernetes: Limit Ranges",
+    "url": "https://kubernetes.io/docs/concepts/policy/limit-range/"
+   }
+  ]
+ },
+ {
+  "slug": "pod-disruption-budgets",
+  "def": "Pod 中断预算（PodDisruptionBudget，PDB）是 Kubernetes 中限制自愿中断时同时不可用 Pod 数量的策略对象。在节点排空、集群升级、自动缩容等通过驱逐 API 进行的操作中，若驱逐会使可用 Pod 低于预算，请求就会被拒绝，从而保证维护期间服务仍有足够副本运行。",
+  "how": [
+   "定义预算：用标签选择器匹配一组 Pod，设置 minAvailable 或 maxUnavailable。",
+   "自愿中断：kubectl drain、集群自动扩缩器等通过驱逐 API 请求移除 Pod。",
+   "预算检查：API Server 计算当前健康 Pod 数，驱逐后若违反预算则拒绝该请求。",
+   "重试推进：调用方稍后重试，待替换 Pod 在其他节点就绪后，驱逐才得以继续。",
+   "范围限制：节点宕机等非自愿中断不受 PDB 约束，直接删除 Pod 也会绕过 PDB。"
+  ],
+  "terms": [
+   {
+    "t": "自愿中断 (Voluntary Disruption)",
+    "d": "由运维操作主动发起的中断，如排空节点、升级。"
+   },
+   {
+    "t": "非自愿中断 (Involuntary Disruption)",
+    "d": "硬件故障、内核崩溃、节点失联等不可控中断。"
+   },
+   {
+    "t": "驱逐 API (Eviction API)",
+    "d": "会检查 PDB 的 Pod 移除接口，drain 通过它工作。"
+   },
+   {
+    "t": "minAvailable / maxUnavailable",
+    "d": "至少保持可用数或最多不可用数，可写整数或百分比。"
+   },
+   {
+    "t": "unhealthyPodEvictionPolicy",
+    "d": "控制不健康 Pod 是否可在预算不足时被驱逐。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "PDB 定义与检查",
+   "src": "apiVersion: policy/v1\nkind: PodDisruptionBudget\nmetadata:\n  name: api-pdb\n  namespace: shop\nspec:\n  maxUnavailable: 1            # 任意时刻最多 1 个副本因自愿中断不可用\n  selector:\n    matchLabels:\n      app: api\n  # 不健康的 Pod 即使预算不足也允许被驱逐，避免卡住排空\n  unhealthyPodEvictionPolicy: AlwaysAllow\n\n# 查看当前允许的中断数：\n#   kubectl get pdb -n shop\n#   ALLOWED DISRUPTIONS 为 0 时，drain 会一直等待重试",
+   "note": "maxUnavailable 在扩缩副本时更稳定；ALLOWED DISRUPTIONS 长期为 0 会阻塞节点维护。"
+  },
+  "table": {
+   "title": "PDB 配置选择",
+   "head": [
+    "配置",
+    "效果",
+    "风险"
+   ],
+   "rows": [
+    [
+     "maxUnavailable: 1",
+     "每次只中断 1 个",
+     "副本多时升级较慢"
+    ],
+    [
+     "minAvailable: 50%",
+     "至少一半副本在线",
+     "副本数很少时取整可能过严"
+    ],
+    [
+     "minAvailable 等于副本数",
+     "不允许任何自愿驱逐",
+     "节点排空与升级被永久阻塞"
+    ],
+    [
+     "maxUnavailable: 0",
+     "同样不允许驱逐",
+     "同上，应避免"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "maxUnavailable",
+    "pros": "随副本数变化仍允许固定中断量",
+    "cons": "副本少时比例可能过大",
+    "when": "多数无状态服务"
+   },
+   {
+    "opt": "minAvailable",
+    "pros": "直观表达最低在线要求",
+    "cons": "副本数调整后需同步修改",
+    "when": "有明确最小副本要求的服务"
+   },
+   {
+    "opt": "不设 PDB",
+    "pros": "维护操作不受阻",
+    "cons": "排空时可能同时下线全部副本",
+    "when": "可接受中断的批处理或开发环境"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "单副本服务配 minAvailable: 1，节点永远排空不了",
+    "fix": "关键服务至少两副本，或用 maxUnavailable: 1 接受短暂中断"
+   },
+   {
+    "bad": "以为 PDB 能防止节点宕机导致的不可用",
+    "fix": "PDB 只管自愿中断，可用性还需多副本和跨可用区分布"
+   },
+   {
+    "bad": "PDB 选择器与 Deployment 标签不匹配，预算形同虚设",
+    "fix": "用 kubectl get pdb 检查 CURRENT/ALLOWED 字段是否符合预期"
+   },
+   {
+    "bad": "Pod 一直不就绪导致预算耗尽，维护被卡住",
+    "fix": "修复就绪探针或设置 unhealthyPodEvictionPolicy: AlwaysAllow"
+   }
+  ],
+  "checklist": [
+   "关键服务有 PDB",
+   "副本数大于 PDB 要求",
+   "选择器与工作负载匹配",
+   "ALLOWED DISRUPTIONS 非 0",
+   "副本跨节点/可用区分布",
+   "升级前检查 PDB 状态"
+  ],
+  "interview": [
+   {
+    "q": "PDB 能防住哪些中断，防不住哪些？",
+    "a": "能限制经由驱逐 API 的自愿中断，如 kubectl drain、集群自动缩容、托管集群节点升级。防不住节点宕机、内核崩溃、网络分区等非自愿中断，也拦不住直接删除 Pod 或删除 Deployment。"
+   },
+   {
+    "q": "集群升级卡在排空节点，怎么排查？",
+    "a": "先看 kubectl get pdb 是否有 ALLOWED DISRUPTIONS 为 0 的预算；常见原因是单副本服务配置了 minAvailable: 1、Pod 未就绪占用预算、副本无法在其他节点调度。按原因扩副本、修复探针或调整 PDB。"
+   },
+   {
+    "q": "minAvailable 和 maxUnavailable 怎么选？",
+    "a": "maxUnavailable 表达每次允许中断几个，副本数增加时也不需修改，对滚动维护更友好；minAvailable 表达最少在线数，适合对最低容量有硬性要求的服务。两者只能设置一个。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Kubernetes: Disruptions",
+    "url": "https://kubernetes.io/docs/concepts/workloads/pods/disruptions/"
+   },
+   {
+    "title": "Kubernetes: Specifying a Disruption Budget",
+    "url": "https://kubernetes.io/docs/tasks/run-application/configure-pdb/"
+   }
+  ]
+ }
+]

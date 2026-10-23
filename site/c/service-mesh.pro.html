@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="服务网格 专业模式：服务网格（Service Mesh）是微服务通信的基础设施层：在每个服务旁部署代理（sidecar，或节点级代理），由控制平面统一下发配置，透明地提供 mTLS">
+<title>🎓 服务网格 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="service-mesh" data-answer="0" data-prev="nat-gateways.pro.html" data-next="ingress-controllers.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#net">🔥 进阶 · 🌐 网络与 API</a><span>›</span><a href="service-mesh.html">服务网格</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.422 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="nat-gateways.pro.html" rel="prev"><small>‹ 上一个</small><b>🚪 网络地址转换网关</b></a><a class="pn next" href="ingress-controllers.pro.html" rel="next"><small>下一个 ›</small><b>🏥 K8s入口控制器</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🕸️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>服务网格</h1><p class="en">Service Mesh</p>
+    <div class="hbtns"><a class="prosw back" href="service-mesh.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">服务网格（Service Mesh）是微服务通信的基础设施层：在每个服务旁部署代理（sidecar，或节点级代理），由控制平面统一下发配置，透明地提供 mTLS 加密与身份认证、重试与超时、流量切分、熔断和可观测性，使这些能力不必写进每个服务的业务代码。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>数据平面：每个 Pod 注入代理（如 Envoy），透明拦截该服务的全部进出流量。</p></li><li><span class="sn">2</span><p>控制平面：如 istiod 汇总服务发现、路由规则和证书，推送给所有代理。</p></li><li><span class="sn">3</span><p>安全：代理之间自动建立 mTLS，基于工作负载身份做认证与授权。</p></li><li><span class="sn">4</span><p>流量治理：按规则执行重试、超时、按权重分流（金丝雀）、故障注入。</p></li><li><span class="sn">5</span><p>可观测：所有代理以统一格式产出请求指标、访问日志和链路追踪数据。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>Sidecar 代理</dt><dd>与业务容器同 Pod 运行、拦截其网络流量的代理容器。</dd></div><div class="term"><dt>数据平面 / 控制平面</dt><dd>前者转发实际流量，后者管理配置、证书与策略。</dd></div><div class="term"><dt>mTLS (Mutual TLS)</dt><dd>通信双方互相验证证书的 TLS，用于服务间身份认证。</dd></div><div class="term"><dt>Ambient 模式</dt><dd>Istio 的无 sidecar 模式，用节点级 ztunnel 与可选 waypoint 代理。</dd></div><div class="term"><dt>金丝雀发布 (Canary)</dt><dd>按比例把少量流量导到新版本观察后再扩大。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Istio 分流+重试+mTLS</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code>apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: reviews
+spec:
+  hosts: [&quot;reviews&quot;]
+  http:
+  - route:
+    - destination: {host: reviews, subset: v1}
+      weight: 90                      # 90% 流量到稳定版
+    - destination: {host: reviews, subset: v2}
+      weight: 10                      # 10% 金丝雀
+    retries: {attempts: 3, perTryTimeout: 2s}
+    timeout: 6s
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: prod
+spec:
+  mtls: {mode: STRICT}                # 命名空间内只接受 mTLS 流量</code></pre></div><p class="cnote">subset v1/v2 需在 DestinationRule 中定义；业务代码无需改动。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见服务网格</h3><div class="tw"><table><thead><tr><th>方案</th><th>数据平面</th><th>特点</th></tr></thead><tbody><tr><td data-h="方案">Istio（sidecar）</td><td data-h="数据平面">Envoy</td><td data-h="特点">功能最全，配置复杂</td></tr><tr><td data-h="方案">Istio Ambient</td><td data-h="数据平面">ztunnel + waypoint</td><td data-h="特点">无 sidecar，降低资源与运维成本</td></tr><tr><td data-h="方案">Linkerd</td><td data-h="数据平面">Rust 编写的专用代理</td><td data-h="特点">轻量，上手简单</td></tr><tr><td data-h="方案">Cilium Service Mesh</td><td data-h="数据平面">eBPF + Envoy</td><td data-h="特点">与 CNI 集成，可省去部分 sidecar</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>引入服务网格</h4><p><b class="k-p">优点</b>统一安全与流量治理，语言无关</p><p><b class="k-c">代价</b>额外延迟、资源占用和运维复杂度</p><p><b class="k-w">适用</b>服务多、多语言、合规要求 mTLS</p></div><div class="trd"><h4>SDK/框架内实现</h4><p><b class="k-p">优点</b>无额外组件，开销小</p><p><b class="k-c">代价</b>每种语言重复实现，升级困难</p><p><b class="k-w">适用</b>服务少、技术栈统一</p></div><div class="trd"><h4>仅网关+NetworkPolicy</h4><p><b class="k-p">优点</b>简单，覆盖南北向流量</p><p><b class="k-c">代价</b>服务间缺少加密与精细治理</p><p><b class="k-w">适用</b>规模较小的集群</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>服务很少就上网格，运维成本远超收益</p><p class="fix"><b>✓</b>先评估是否真的需要 mTLS 与精细流量治理</p></li><li><p class="bad"><b>✗</b>应用层与网格都配重试，重试次数相乘放大故障</p><p class="fix"><b>✓</b>统一在一层配置重试，并设置总超时与重试预算</p></li><li><p class="bad"><b>✗</b>直接切 STRICT mTLS，未注入代理的服务调用全断</p><p class="fix"><b>✓</b>先用 PERMISSIVE 模式过渡，确认全部注入后再切换</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>已评估网格必要性</span></label></li><li><label><input type="checkbox"><span>mTLS 迁移有过渡方案</span></label></li><li><label><input type="checkbox"><span>重试只在一层配置</span></label></li><li><label><input type="checkbox"><span>代理资源请求已设置</span></label></li><li><label><input type="checkbox"><span>控制平面高可用</span></label></li><li><label><input type="checkbox"><span>升级流程已演练</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>服务网格解决了哪些问题？</summary><p>把服务间通信的横切关注点从业务代码剥离：mTLS 加密与身份、授权策略、重试超时熔断、流量切分、统一的指标与追踪。多语言团队不必各自实现，策略可集中管理和审计。</p></details><details class="iv"><summary>sidecar 模式的代价是什么？</summary><p>每个 Pod 多一个代理容器，占用 CPU 内存，请求多两跳增加延迟；代理升级需要重启 Pod；注入与启动顺序问题会导致偶发失败。Ambient 等无 sidecar 模式正是为降低这些成本。</p></details><details class="iv"><summary>API 网关和服务网格的区别？</summary><p>API 网关处理南北向流量：外部请求入口、认证、限流、API 管理；服务网格处理东西向流量：集群内服务间通信的安全与治理。两者可以并存，部分产品同时覆盖两种场景。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://istio.io/latest/docs/overview/what-is-istio/" target="_blank" rel="noopener"><b>What is Istio?</b><small>istio.io ↗</small></a></li><li><a href="https://istio.io/latest/docs/ambient/overview/" target="_blank" rel="noopener"><b>Istio Ambient mode overview</b><small>istio.io ↗</small></a></li><li><a href="https://linkerd.io/what-is-a-service-mesh/" target="_blank" rel="noopener"><b>Linkerd: What is a service mesh?</b><small>linkerd.io ↗</small></a></li><li><a href="https://www.envoyproxy.io/docs/envoy/latest/intro/what_is_envoy" target="_blank" rel="noopener"><b>What is Envoy</b><small>envoyproxy.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="nat-gateways.pro.html" rel="prev"><small>‹ 上一个</small><b>🚪 网络地址转换网关</b></a><a class="pn next" href="ingress-controllers.pro.html" rel="next"><small>下一个 ›</small><b>🏥 K8s入口控制器</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

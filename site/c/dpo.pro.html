@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="直接偏好优化 (DPO) 专业模式：直接偏好优化（DPO，Rafailov 等，2023）是一种偏好对齐方法：利用「同一提示下更好与更差回答」的成对数据，直接以分类式损失优化语言模型，无需像 RL">
+<title>🎓 直接偏好优化 (DPO) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="dpo" data-answer="0" data-prev="tensor-parallelism.pro.html" data-next="rlvr-grpo.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#llmops">🔥 进阶 · 🧠 模型工程与推理部署</a><span>›</span><a href="dpo.html">直接偏好优化 (DPO)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.485 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="tensor-parallelism.pro.html" rel="prev"><small>‹ 上一个</small><b>🧮 张量并行</b></a><a class="pn next" href="rlvr-grpo.pro.html" rel="next"><small>下一个 ›</small><b>🏅 可验证奖励强化学习 (RLVR / GRPO)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">👍</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🧠 模型工程与推理部署</span><span>⏱ 约 10 分钟</span></div>
+    <h1>直接偏好优化 (DPO)</h1><p class="en">DPO</p>
+    <div class="hbtns"><a class="prosw back" href="dpo.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">直接偏好优化（DPO，Rafailov 等，2023）是一种偏好对齐方法：利用「同一提示下更好与更差回答」的成对数据，直接以分类式损失优化语言模型，无需像 RLHF 那样单独训练奖励模型并运行 PPO 强化学习。论文证明在相同的 KL 约束奖励最大化目标下，最优策略可用策略与参考模型的对数概率比表示，从而把强化学习化为监督学习。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>准备偏好数据：每条包含提示 x、偏好回答 y_w（chosen）与较差回答 y_l（rejected）。</p></li><li><span class="sn">2</span><p>冻结一份参考模型（通常是 SFT 后的模型），训练模型从同一初始化开始。</p></li><li><span class="sn">3</span><p>计算隐式奖励 β·log(π_θ(y|x)/π_ref(y|x))，分别作用于偏好与较差回答。</p></li><li><span class="sn">4</span><p>损失为 −log σ(隐式奖励差)：提高偏好回答相对参考模型的概率，同时降低较差回答的概率。</p></li><li><span class="sn">5</span><p>β 控制偏离参考模型的程度；训练中常监控隐式奖励差距与偏好准确率，并用独立评测集检验真实效果。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>参考模型 (Reference Model)</dt><dd>训练中固定不变的初始策略，用来约束新模型不要偏离太远。</dd></div><div class="term"><dt>β (beta)</dt><dd>控制 KL 约束强度的超参数，越小越允许偏离参考模型，TRL 默认值以文档为准。</dd></div><div class="term"><dt>Bradley-Terry 模型</dt><dd>把两两偏好概率建模为两者奖励差的 sigmoid，是 DPO 推导的基础。</dd></div><div class="term"><dt>隐式奖励 (Implicit Reward)</dt><dd>由策略与参考模型对数概率比给出的奖励，无需显式奖励模型。</dd></div><div class="term"><dt>IPO / KTO / SimPO</dt><dd>DPO 的变体，分别改进过拟合、支持非成对数据、去除参考模型等。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>TRL 训练 DPO</span><em>python</em><button class="ccopy">复制</button></div><pre><code># pip install trl datasets ；模型与数据集名以官方文档为准
+from datasets import load_dataset
+from trl import DPOConfig, DPOTrainer
+
+# 每条样本包含 prompt / chosen / rejected
+train = load_dataset(&quot;trl-lib/ultrafeedback_binarized&quot;, split=&quot;train&quot;)
+
+args = DPOConfig(
+    output_dir=&quot;qwen-dpo&quot;,
+    beta=0.1,                    # KL 约束强度
+    learning_rate=5e-7,          # 全参数 DPO 常用很小的学习率
+    per_device_train_batch_size=2,
+    gradient_accumulation_steps=8,
+    num_train_epochs=1,
+    logging_steps=10,
+)
+
+trainer = DPOTrainer(
+    model=&quot;Qwen/Qwen3-0.6B&quot;,     # 通常应从 SFT 后的模型开始
+    args=args,
+    train_dataset=train,
+)
+trainer.train()
+# 观察日志中的 rewards/margins 与 rewards/accuracies</code></pre></div><p class="cnote">未传 ref_model 时 TRL 会自动用初始模型副本作为参考；超参数仅为示意，需按任务调优。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">RLHF(PPO) 与 DPO 对比</h3><div class="tw"><table><thead><tr><th>维度</th><th>RLHF + PPO</th><th>DPO</th></tr></thead><tbody><tr><td data-h="维度">奖励模型</td><td data-h="RLHF + PPO">需单独训练</td><td data-h="DPO">不需要（隐式奖励）</td></tr><tr><td data-h="维度">训练时采样</td><td data-h="RLHF + PPO">在线生成回答</td><td data-h="DPO">离线使用固定数据</td></tr><tr><td data-h="维度">同时加载模型</td><td data-h="RLHF + PPO">策略、参考、奖励、价值</td><td data-h="DPO">策略与参考</td></tr><tr><td data-h="维度">稳定性</td><td data-h="RLHF + PPO">超参数敏感</td><td data-h="DPO">类监督学习，较稳定</td></tr><tr><td data-h="维度">探索新回答</td><td data-h="RLHF + PPO">能</td><td data-h="DPO">受限于数据中的回答</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>DPO（离线偏好）</h4><p><b class="k-p">优点</b>实现简单、资源省、训练稳定</p><p><b class="k-c">代价</b>无法探索数据外的更优回答</p><p><b class="k-w">适用</b>已有高质量偏好对，资源有限</p></div><div class="trd"><h4>在线/迭代 DPO</h4><p><b class="k-p">优点</b>用当前模型生成新回答再标注，缓解分布偏移</p><p><b class="k-c">代价</b>需要持续标注或评审模型</p><p><b class="k-w">适用</b>需要多轮持续改进</p></div><div class="trd"><h4>PPO 等在线 RL</h4><p><b class="k-p">优点</b>可持续探索，上限高</p><p><b class="k-c">代价</b>工程复杂、成本高</p><p><b class="k-w">适用</b>大规模对齐且有成熟基础设施</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>偏好数据中 chosen 普遍更长，模型学会啰嗦</p><p class="fix"><b>✓</b>检查长度偏差，平衡数据或使用长度归一化的变体</p></li><li><p class="bad"><b>✗</b>直接在基座模型上做 DPO</p><p class="fix"><b>✓</b>先 SFT 让模型分布接近偏好数据，再做 DPO</p></li><li><p class="bad"><b>✗</b>学习率过大导致输出退化</p><p class="fix"><b>✓</b>使用很小的学习率并监控生成样例与评测分</p></li><li><p class="bad"><b>✗</b>只看训练偏好准确率</p><p class="fix"><b>✓</b>用独立评测集或人工评估检验真实质量</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>偏好数据经过去重、质量与长度偏差检查</span></label></li><li><label><input type="checkbox"><span>从 SFT 模型开始训练</span></label></li><li><label><input type="checkbox"><span>β 与学习率做过小范围扫描</span></label></li><li><label><input type="checkbox"><span>监控奖励差距、准确率与 KL</span></label></li><li><label><input type="checkbox"><span>保留集评测通用能力未明显退化</span></label></li><li><label><input type="checkbox"><span>抽样人工检查生成结果</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>DPO 为什么不需要奖励模型？</summary><p>在带 KL 约束的奖励最大化目标下，最优策略与奖励存在闭式关系：奖励可表示为策略与参考模型的对数概率比乘 β 加上只与提示有关的项。代入 Bradley-Terry 偏好模型后该项抵消，损失只依赖策略与参考模型的概率，于是可直接优化策略。</p></details><details class="iv"><summary>β 的作用是什么，如何调？</summary><p>β 对应 KL 约束强度。β 小，模型可大幅偏离参考，偏好拟合更强但易过拟合或退化；β 大则更保守。常从 0.1 附近开始，结合奖励差距、生成质量与通用能力评测做小范围扫描。</p></details><details class="iv"><summary>DPO 的主要局限是什么？</summary><p>它是离线方法，只能在数据已有的回答之间学习偏好，无法探索更好的回答，且当模型分布偏离数据时效果下降；对偏好数据中的噪声和长度等偏差敏感。迭代式 DPO 或在线 RL 可缓解，对可验证任务常改用 RLVR。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://arxiv.org/abs/2305.18290" target="_blank" rel="noopener"><b>Rafailov et al.: Direct Preference Optimization (arXiv:2305.18290)</b><small>arxiv.org ↗</small></a></li><li><a href="https://huggingface.co/docs/trl/dpo_trainer" target="_blank" rel="noopener"><b>TRL: DPO Trainer</b><small>huggingface.co ↗</small></a></li><li><a href="https://arxiv.org/abs/2411.15124" target="_blank" rel="noopener"><b>Tülu 3 Post-Training Report (arXiv:2411.15124)</b><small>arxiv.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="tensor-parallelism.pro.html" rel="prev"><small>‹ 上一个</small><b>🧮 张量并行</b></a><a class="pn next" href="rlvr-grpo.pro.html" rel="next"><small>下一个 ›</small><b>🏅 可验证奖励强化学习 (RLVR / GRPO)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

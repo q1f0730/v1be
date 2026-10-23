@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="竞态条件 专业模式：竞态条件（Race Condition）指程序结果依赖于多个并发执行单元的时序，当它们无同步地访问共享状态且至少一方在写时，会出现不确定的错误结果。它存在于线程">
+<title>🎓 竞态条件 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="race-conditions" data-answer="0" data-prev="monolith-vs-microservices.pro.html" data-next="backpressure.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#dist">🔮 高级 · 🕸️ 分布式</a><span>›</span><a href="race-conditions.html">竞态条件</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.284 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="monolith-vs-microservices.pro.html" rel="prev"><small>‹ 上一个</small><b>🧱 单体 vs 微服务</b></a><a class="pn next" href="backpressure.pro.html" rel="next"><small>下一个 ›</small><b>🚰 反压 / 背压机制</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🏁</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>竞态条件</h1><p class="en">Race Conditions</p>
+    <div class="hbtns"><a class="prosw back" href="race-conditions.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">竞态条件（Race Condition）指程序结果依赖于多个并发执行单元的时序，当它们无同步地访问共享状态且至少一方在写时，会出现不确定的错误结果。它存在于线程、进程、分布式服务乃至数据库事务各层，典型形态是读-改-写和先检查后执行（TOCTOU），解决手段是原子操作、锁、事务隔离或乐观并发控制。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>两个执行单元几乎同时读取同一个共享值，例如两个请求读到的库存都是 1。</p></li><li><span class="sn">2</span><p>各自基于旧值计算新结果并写回，后写的覆盖先写的，出现丢失更新（Lost Update）。</p></li><li><span class="sn">3</span><p>先检查后执行时，检查与执行之间状态被别人改变，导致检查结论失效。</p></li><li><span class="sn">4</span><p>问题只在特定交错时序下出现，本地测试难复现，高并发或线上负载下才暴露。</p></li><li><span class="sn">5</span><p>修复思路是让读-改-写成为原子操作：加锁、数据库条件更新、版本号比较（CAS）或唯一约束。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>临界区 (Critical Section)</dt><dd>访问共享资源、同一时刻只允许一个执行单元进入的代码段。</dd></div><div class="term"><dt>丢失更新 (Lost Update)</dt><dd>并发读-改-写中一方的修改被另一方覆盖。</dd></div><div class="term"><dt>TOCTOU</dt><dd>检查时刻与使用时刻之间状态被改变导致的竞态。</dd></div><div class="term"><dt>比较并交换 (CAS)</dt><dd>仅当当前值等于预期值时才写入的原子操作，乐观并发的基础。</dd></div><div class="term"><dt>数据竞争 (Data Race)</dt><dd>多线程无同步地访问同一内存且至少一个是写，是竞态的一种。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>读改写竞态与加锁</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import threading, time
+
+stock = 100
+lock = threading.Lock()
+
+def buy_unsafe():
+    global stock
+    current = stock          # 读
+    time.sleep(0)            # 让出 CPU，放大交错概率
+    stock = current - 1      # 写：可能覆盖别人的结果
+
+def buy_safe():
+    global stock
+    with lock:               # 临界区：读改写整体原子化
+        stock -= 1
+
+for fn in (buy_unsafe, buy_safe):
+    stock = 100
+    ts = [threading.Thread(target=fn) for _ in range(100)]
+    [t.start() for t in ts]; [t.join() for t in ts]
+    print(fn.__name__, stock)  # unsafe 往往 &gt; 0，safe 稳定为 0</code></pre></div><p class="cnote">演示读-改-写在多线程下丢失更新，以及用锁保护临界区后结果确定。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">不同层级的防护手段</h3><div class="tw"><table><thead><tr><th>层级</th><th>典型竞态</th><th>常用手段</th></tr></thead><tbody><tr><td data-h="层级">进程内多线程</td><td data-h="典型竞态">共享变量读改写</td><td data-h="常用手段">Mutex、原子类型、不可变数据</td></tr><tr><td data-h="层级">数据库</td><td data-h="典型竞态">超卖、重复创建</td><td data-h="常用手段">条件 UPDATE、唯一约束、SELECT FOR UPDATE</td></tr><tr><td data-h="层级">分布式服务</td><td data-h="典型竞态">多实例同时处理同一任务</td><td data-h="常用手段">乐观锁版本号、带租约的分布式锁</td></tr><tr><td data-h="层级">文件系统</td><td data-h="典型竞态">TOCTOU 检查后写</td><td data-h="常用手段">原子 rename、O_EXCL 创建</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>悲观锁</h4><p><b class="k-p">优点</b>语义直观，冲突时不需重试</p><p><b class="k-c">代价</b>吞吐低，易死锁</p><p><b class="k-w">适用</b>冲突频繁、临界区短</p></div><div class="trd"><h4>乐观并发（版本号/CAS）</h4><p><b class="k-p">优点</b>无锁等待，读多写少时高效</p><p><b class="k-c">代价</b>冲突时要重试，热点下浪费</p><p><b class="k-w">适用</b>冲突少的更新</p></div><div class="trd"><h4>数据库原子语句</h4><p><b class="k-p">优点</b>简单可靠，无需额外组件</p><p><b class="k-c">代价</b>只适合能用单条语句表达的逻辑</p><p><b class="k-w">适用</b>扣库存、计数器等</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>先 SELECT 查库存够不够，再 UPDATE 扣减，两步之间被并发穿透。</p><p class="fix"><b>✓</b>用 UPDATE … SET stock=stock-1 WHERE id=? AND stock&gt;0 并检查影响行数。</p></li><li><p class="bad"><b>✗</b>用 Redis SETNX 做分布式锁但不设过期，持有者崩溃后永久死锁。</p><p class="fix"><b>✓</b>用 SET key val NX PX 设租约，释放时校验持有者标识。</p></li><li><p class="bad"><b>✗</b>认为有 GIL 的 Python 不会有竞态。</p><p class="fix"><b>✓</b>GIL 只保证字节码级别，复合操作仍需加锁。</p></li><li><p class="bad"><b>✗</b>只在单机测试并发，没覆盖多实例部署。</p><p class="fix"><b>✓</b>在多副本和压测场景下验证，借助竞态检测工具。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>列出所有共享可变状态及其保护方式</span></label></li><li><label><input type="checkbox"><span>读改写操作已原子化或加锁</span></label></li><li><label><input type="checkbox"><span>业务唯一性由数据库约束兜底</span></label></li><li><label><input type="checkbox"><span>分布式锁有租约和持有者校验</span></label></li><li><label><input type="checkbox"><span>并发路径有压测或竞态检测覆盖</span></label></li><li><label><input type="checkbox"><span>锁的获取顺序一致以避免死锁</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>如何防止秒杀超卖？</summary><p>核心是把检查和扣减合成一个原子操作：数据库条件更新并检查影响行数，或 Redis Lua 脚本原子扣减；订单表加唯一约束防重复下单；高峰时前置队列削峰。不要在应用层先查后改。</p></details><details class="iv"><summary>乐观锁和悲观锁怎么选？</summary><p>看冲突概率和临界区长度。冲突少、读多写少用乐观锁，用版本号比较更新，失败重试；冲突多或重试代价高用悲观锁如 SELECT FOR UPDATE，但要控制持锁时间和加锁顺序。</p></details><details class="iv"><summary>怎样发现代码中的竞态？</summary><p>代码审查关注共享状态和先查后改模式；使用工具，如 Go 的 -race、C/C++ 的 ThreadSanitizer；在压测中构造高并发；对 AI 生成的并发代码要求写出并发测试用例。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://en.wikipedia.org/wiki/Race_condition" target="_blank" rel="noopener"><b>Wikipedia：Race condition</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://go.dev/doc/articles/race_detector" target="_blank" rel="noopener"><b>Go Data Race Detector</b><small>go.dev ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/explicit-locking.html" target="_blank" rel="noopener"><b>PostgreSQL 文档：显式锁</b><small>postgresql.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="monolith-vs-microservices.pro.html" rel="prev"><small>‹ 上一个</small><b>🧱 单体 vs 微服务</b></a><a class="pn next" href="backpressure.pro.html" rel="next"><small>下一个 ›</small><b>🚰 反压 / 背压机制</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

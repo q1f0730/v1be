@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="有据生成与引用溯源 专业模式：有据生成（Grounding）指让模型的回答建立在显式提供的外部证据上（检索到的文档、搜索结果、数据库记录），引用溯源（Citations）则把回答中的具体论断">
+<title>🎓 有据生成与引用溯源 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="grounding-and-citations" data-answer="0" data-prev="jailbreak.pro.html" data-next="reasoning-effort.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#ai">🌊 中级 · 🤖 AI 与提示词</a><span>›</span><a href="grounding-and-citations.html">有据生成与引用溯源</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.157 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="jailbreak.pro.html" rel="prev"><small>‹ 上一个</small><b>🔓 越狱攻击 (Jailbreak)</b></a><a class="pn next" href="reasoning-effort.pro.html" rel="next"><small>下一个 ›</small><b>🧠 思考预算 (Reasoning Effort)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📎</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>有据生成与引用溯源</h1><p class="en">Grounding &amp; Citations</p>
+    <div class="hbtns"><a class="prosw back" href="grounding-and-citations.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">有据生成（Grounding）指让模型的回答建立在显式提供的外部证据上（检索到的文档、搜索结果、数据库记录），引用溯源（Citations）则把回答中的具体论断与证据片段一一对应。它属于 LLM 应用的可信度层，是 RAG 与联网搜索产品的核心要求，用于降低幻觉并让用户能够核查。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>检索或接收证据：通过 RAG、搜索 API 或用户上传获得文档，并切分为可引用的片段，保留来源元数据。</p></li><li><span class="sn">2</span><p>构造提示：把证据连同编号或标题放入上下文，并指示模型只依据证据作答、证据不足时明确说明。</p></li><li><span class="sn">3</span><p>生成带引用的回答：模型在论断后标注来源编号；部分 API 原生返回引用的字符或页码范围。</p></li><li><span class="sn">4</span><p>后处理校验：检查引用是否存在、被引片段是否真正支持该论断，必要时删除或重写不受支持的句子。</p></li><li><span class="sn">5</span><p>前端呈现：引用可点击跳转到原文高亮处，让用户低成本核查。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>有据性 (Groundedness / Faithfulness)</dt><dd>回答内容能被所给证据支持的程度。</dd></div><div class="term"><dt>引用准确率 (Citation Precision)</dt><dd>所给引用中真正支持对应论断的比例。</dd></div><div class="term"><dt>引用召回率 (Citation Recall)</dt><dd>需要引用的论断中确实给出了支持引用的比例。</dd></div><div class="term"><dt>归因 (Attribution)</dt><dd>把生成内容追溯到具体来源片段的过程。</dd></div><div class="term"><dt>拒答 (Abstention)</dt><dd>证据不足时明确表示无法回答，而不是猜测。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Anthropic Citations 接口</span><em>python</em><button class="ccopy">复制</button></div><pre><code># pip install anthropic
+import anthropic
+
+client = anthropic.Anthropic()
+contract = open(&quot;contract.txt&quot;, encoding=&quot;utf-8&quot;).read()
+
+msg = client.messages.create(
+    model=&quot;claude-sonnet-4-5&quot;,  # 换成你在用的模型
+    max_tokens=1024,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: [
+        {&quot;type&quot;: &quot;document&quot;,
+         &quot;source&quot;: {&quot;type&quot;: &quot;text&quot;, &quot;media_type&quot;: &quot;text/plain&quot;, &quot;data&quot;: contract},
+         &quot;title&quot;: &quot;服务合同&quot;,
+         &quot;citations&quot;: {&quot;enabled&quot;: True}},   # 开启原生引用
+        {&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: &quot;违约金条款是怎么约定的？资料中没有就直说。&quot;},
+    ]}],
+)
+
+for block in msg.content:
+    if block.type == &quot;text&quot;:
+        print(block.text)
+        for c in block.citations or []:      # 每段文字对应的原文出处
+            print(&quot;  ↳ 引用:&quot;, c.cited_text[:60])</code></pre></div><p class="cnote">原生引用返回被引原文与位置，比让模型自己写编号更可靠，但仍需抽检是否真正支持论断。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">引用实现方式对比</h3><div class="tw"><table><thead><tr><th>方式</th><th>可靠性</th><th>实现成本</th><th>说明</th></tr></thead><tbody><tr><td data-h="方式">提示中要求标编号</td><td data-h="可靠性">中</td><td data-h="实现成本">低</td><td data-h="说明">模型可能编造或错标编号</td></tr><tr><td data-h="方式">API 原生引用</td><td data-h="可靠性">较高</td><td data-h="实现成本">低</td><td data-h="说明">返回被引片段与位置</td></tr><tr><td data-h="方式">生成后 NLI/LLM 校验</td><td data-h="可靠性">高</td><td data-h="实现成本">中</td><td data-h="说明">逐句验证是否被支持</td></tr><tr><td data-h="方式">抽取式回答</td><td data-h="可靠性">最高</td><td data-h="实现成本">中</td><td data-h="说明">直接摘原文，表达受限</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>严格只用证据</h4><p><b class="k-p">优点</b>幻觉少、可审计</p><p><b class="k-c">代价</b>证据缺失时回答受限</p><p><b class="k-w">适用</b>法律、医疗、客服知识库</p></div><div class="trd"><h4>证据 + 模型常识</h4><p><b class="k-p">优点</b>回答更完整流畅</p><p><b class="k-c">代价</b>混入无出处内容，难核查</p><p><b class="k-w">适用</b>通用助手，需标明哪些无出处</p></div><div class="trd"><h4>生成后逐句校验</h4><p><b class="k-p">优点</b>显著提升引用准确率</p><p><b class="k-c">代价</b>额外延迟与费用</p><p><b class="k-w">适用</b>高风险输出</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>有引用标记就默认内容正确</p><p class="fix"><b>✓</b>评测引用准确率，抽检被引片段是否真正支持论断</p></li><li><p class="bad"><b>✗</b>检索质量差，模型只能基于无关片段作答</p><p class="fix"><b>✓</b>先优化检索与重排，并在证据不足时触发拒答</p></li><li><p class="bad"><b>✗</b>切片丢失来源元数据，无法回链原文</p><p class="fix"><b>✓</b>每个片段保存文档 ID、页码或段落位置</p></li><li><p class="bad"><b>✗</b>提示允许模型「补充」，导致无出处内容混入</p><p class="fix"><b>✓</b>明确区分有据部分与推断部分，或禁止补充</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个片段携带可回链的来源信息</span></label></li><li><label><input type="checkbox"><span>提示要求证据不足时拒答</span></label></li><li><label><input type="checkbox"><span>有引用准确率与有据性评测</span></label></li><li><label><input type="checkbox"><span>前端引用可跳转到原文</span></label></li><li><label><input type="checkbox"><span>高风险场景做生成后校验</span></label></li><li><label><input type="checkbox"><span>记录检索结果便于复盘</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>如何评估 RAG 回答的有据性？</summary><p>构建带标准证据的评测集；逐句判断论断是否被检索片段蕴含（可用 NLI 模型或 LLM 评审并人工抽检）；同时统计引用准确率与召回率、拒答是否恰当，并把检索质量与生成质量分开度量。</p></details><details class="iv"><summary>原生引用 API 相比提示里要求标号有什么优势？</summary><p>原生引用由系统把输出片段与输入文档的具体位置绑定，返回被引原文，减少编造编号或错位；前端可直接高亮原文。但它不保证论断语义上被完整支持，仍需评测。</p></details><details class="iv"><summary>证据之间互相矛盾怎么办？</summary><p>提示中要求模型显式指出冲突并分别引用；按来源权威性、时间新旧设置优先级；必要时把冲突呈现给用户而非擅自裁决；检索阶段可按版本或日期过滤过期文档。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.anthropic.com/en/docs/build-with-claude/citations" target="_blank" rel="noopener"><b>Anthropic 文档：Citations</b><small>docs.anthropic.com ↗</small></a></li><li><a href="https://arxiv.org/abs/2305.14627" target="_blank" rel="noopener"><b>Gao et al. 2023：Enabling LLMs to Generate Text with Citations</b><small>arxiv.org ↗</small></a></li><li><a href="https://arxiv.org/abs/2005.11401" target="_blank" rel="noopener"><b>Lewis et al. 2020：Retrieval-Augmented Generation</b><small>arxiv.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="jailbreak.pro.html" rel="prev"><small>‹ 上一个</small><b>🔓 越狱攻击 (Jailbreak)</b></a><a class="pn next" href="reasoning-effort.pro.html" rel="next"><small>下一个 ›</small><b>🧠 思考预算 (Reasoning Effort)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

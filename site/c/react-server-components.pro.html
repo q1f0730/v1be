@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="React 服务端组件 (RSC) 专业模式：React 服务端组件（RSC）是只在服务器（或构建时）执行的 React 组件，可直接访问数据库、文件系统和密钥，其渲染结果以序列化的 RSC 负载发送给客户">
+<title>🎓 React 服务端组件 (RSC) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="react-server-components" data-answer="0" data-prev="durable-execution.pro.html" data-next="web-workers.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#fe">🔥 进阶 · 🎨 前端工程</a><span>›</span><a href="react-server-components.html">React 服务端组件 (RSC)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.477 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="durable-execution.pro.html" rel="prev"><small>‹ 上一个</small><b>💾 持久化执行 (Temporal)</b></a><a class="pn next" href="web-workers.pro.html" rel="next"><small>下一个 ›</small><b>👷 Web Worker 多线程</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">⚛️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🎨 前端工程</span><span>⏱ 约 10 分钟</span></div>
+    <h1>React 服务端组件 (RSC)</h1><p class="en">React Server Components</p>
+    <div class="hbtns"><a class="prosw back" href="react-server-components.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">React 服务端组件（RSC）是只在服务器（或构建时）执行的 React 组件，可直接访问数据库、文件系统和密钥，其渲染结果以序列化的 RSC 负载发送给客户端，组件代码本身不进入浏览器包。客户端组件用 &#x27;use client&#x27; 指令标记，负责状态与交互。RSC 在 React 19 中稳定，Next.js App Router 默认使用。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>在支持 RSC 的框架中，组件默认是服务端组件，可以是 async 函数，直接 await 数据。</p></li><li><span class="sn">2</span><p>服务器渲染组件树，生成描述 UI 的 RSC 负载：服务端组件被展开为结果，客户端组件以模块引用和序列化 props 占位。</p></li><li><span class="sn">3</span><p>&#x27;use client&#x27; 标记客户端边界：该文件及其导入的模块进入客户端包，可使用 useState、事件处理和浏览器 API。</p></li><li><span class="sn">4</span><p>服务端组件可把可序列化的 props 或其他服务端组件作为 children 传给客户端组件，反之客户端组件不能导入服务端组件。</p></li><li><span class="sn">5</span><p>客户端根据负载重建树并对客户端组件进行水合；配合 Suspense 可流式发送，&#x27;use server&#x27; 标记的服务器函数供客户端调用以修改数据。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>RSC 负载 (RSC Payload)</dt><dd>服务端组件树渲染结果的紧凑序列化格式，客户端据此构建 UI。</dd></div><div class="term"><dt>&#x27;use client&#x27;</dt><dd>放在文件顶部的指令，声明客户端组件边界及其依赖进入浏览器包。</dd></div><div class="term"><dt>服务器函数 (Server Functions)</dt><dd>用 &#x27;use server&#x27; 标记、可被客户端调用的服务端异步函数，原称 Server Actions。</dd></div><div class="term"><dt>可序列化 Props</dt><dd>跨边界传递的数据须可序列化，函数（服务器函数除外）和类实例不能传。</dd></div><div class="term"><dt>server-only</dt><dd>npm 包，导入后若模块被客户端引用则构建报错，防止泄露服务端代码。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Next.js 服务端与客户端组件</span><em>typescript</em><button class="ccopy">复制</button></div><pre><code>// app/posts/page.tsx —— 服务端组件（默认）
+import &#x27;server-only&#x27;
+import { db } from &#x27;@/lib/db&#x27;          // 数据库客户端只存在于服务器
+import LikeButton from &#x27;./LikeButton&#x27;
+
+export default async function PostsPage() {
+  const posts = await db.post.findMany({ take: 10 })   // 直接查库
+  return (
+    &lt;ul&gt;
+      {posts.map((p) =&gt; (
+        &lt;li key={p.id}&gt;
+          {p.title}
+          &lt;LikeButton postId={p.id} initial={p.likes} /&gt;  {/* 只传可序列化数据 */}
+        &lt;/li&gt;
+      ))}
+    &lt;/ul&gt;
+  )
+}
+
+// app/posts/LikeButton.tsx —— 客户端组件
+&#x27;use client&#x27;
+import { useState } from &#x27;react&#x27;
+
+export default function LikeButton({ postId, initial }: { postId: number; initial: number }) {
+  const [likes, setLikes] = useState(initial)
+  return &lt;button onClick={() =&gt; setLikes(likes + 1)}&gt;👍 {likes}&lt;/button&gt;
+}</code></pre></div><p class="cnote">两段为两个文件；db 的具体 ORM 写法为示意，以项目实际为准。&#x27;use client&#x27; 必须位于文件最顶部。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">服务端组件与客户端组件</h3><div class="tw"><table><thead><tr><th>能力</th><th>服务端组件</th><th>客户端组件</th></tr></thead><tbody><tr><td data-h="能力">async/await 取数</td><td data-h="服务端组件">支持</td><td data-h="客户端组件">不直接支持（用框架或 use）</td></tr><tr><td data-h="能力">useState / useEffect</td><td data-h="服务端组件">不支持</td><td data-h="客户端组件">支持</td></tr><tr><td data-h="能力">访问数据库与密钥</td><td data-h="服务端组件">可以</td><td data-h="客户端组件">不可以</td></tr><tr><td data-h="能力">代码进入浏览器包</td><td data-h="服务端组件">否</td><td data-h="客户端组件">是</td></tr><tr><td data-h="能力">事件处理（onClick）</td><td data-h="服务端组件">不支持</td><td data-h="客户端组件">支持</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>默认服务端组件，交互处下沉客户端</h4><p><b class="k-p">优点</b>JS 包更小，数据就近获取，密钥不外泄</p><p><b class="k-c">代价</b>需要理解边界与序列化规则</p><p><b class="k-w">适用</b>内容型页面、数据密集的后台</p></div><div class="trd"><h4>传统客户端渲染 SPA</h4><p><b class="k-p">优点</b>心智模型简单，前后端完全分离</p><p><b class="k-c">代价</b>首屏依赖 JS 下载与 API 往返</p><p><b class="k-w">适用</b>高度交互的工具型应用</p></div><div class="trd"><h4>SSR + 全量水合</h4><p><b class="k-p">优点</b>首屏有 HTML，生态成熟</p><p><b class="k-c">代价</b>所有组件代码仍要下载并水合</p><p><b class="k-w">适用</b>Pages Router 等既有项目</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>在页面顶层加 &#x27;use client&#x27;，整棵树变成客户端组件</p><p class="fix"><b>✓</b>只给需要交互的叶子组件加 &#x27;use client&#x27;</p></li><li><p class="bad"><b>✗</b>把含密钥的配置对象作为 props 传给客户端组件</p><p class="fix"><b>✓</b>跨边界只传最少的可序列化数据，敏感模块导入 server-only</p></li><li><p class="bad"><b>✗</b>向客户端组件传递函数或类实例导致报错</p><p class="fix"><b>✓</b>传原始数据，或使用 &#x27;use server&#x27; 服务器函数</p></li><li><p class="bad"><b>✗</b>以为服务器函数天然有权限保护</p><p class="fix"><b>✓</b>服务器函数是公开端点，内部必须做认证与授权校验</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>&#x27;use client&#x27; 只出现在需要交互的组件</span></label></li><li><label><input type="checkbox"><span>敏感模块导入 server-only</span></label></li><li><label><input type="checkbox"><span>跨边界 props 均可序列化且最少化</span></label></li><li><label><input type="checkbox"><span>服务器函数内做鉴权与输入校验</span></label></li><li><label><input type="checkbox"><span>慢数据用 Suspense 流式加载</span></label></li><li><label><input type="checkbox"><span>检查客户端包体积变化</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>RSC 和 SSR 的区别是什么？</summary><p>SSR 在服务器把组件渲染成 HTML，但组件代码仍会发到浏览器并水合；RSC 的服务端组件只在服务器运行，代码不进入客户端包，输出的是可与客户端组件组合的 RSC 负载。两者可同时使用：RSC 负载也可在服务器上进一步渲染成首屏 HTML。</p></details><details class="iv"><summary>为什么客户端组件不能导入服务端组件？</summary><p>客户端组件及其导入都会打包进浏览器，而服务端组件可能依赖数据库和密钥，无法在浏览器运行。正确做法是在服务端组件中把服务端组件作为 children 或 props 传入客户端组件，由服务器先渲染好再组合。</p></details><details class="iv"><summary>AI 生成 Next.js 代码常见的 RSC 错误？</summary><p>在服务端组件中使用 useState 或 onClick 导致报错；为消除报错在顶层滥加 &#x27;use client&#x27;，失去 RSC 收益；把环境变量或数据库对象传给客户端；服务器函数缺少鉴权。评审时应重点检查边界位置与跨边界数据。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://react.dev/reference/rsc/server-components" target="_blank" rel="noopener"><b>React: Server Components</b><small>react.dev ↗</small></a></li><li><a href="https://react.dev/reference/rsc/use-client" target="_blank" rel="noopener"><b>React: &#x27;use client&#x27; directive</b><small>react.dev ↗</small></a></li><li><a href="https://nextjs.org/docs/app/getting-started/server-and-client-components" target="_blank" rel="noopener"><b>Next.js: Server and Client Components</b><small>nextjs.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="durable-execution.pro.html" rel="prev"><small>‹ 上一个</small><b>💾 持久化执行 (Temporal)</b></a><a class="pn next" href="web-workers.pro.html" rel="next"><small>下一个 ›</small><b>👷 Web Worker 多线程</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

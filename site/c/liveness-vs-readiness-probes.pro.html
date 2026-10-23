@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="存活与就绪探针分野 专业模式：存活探针（Liveness Probe）与就绪探针（Readiness Probe）是 Kubernetes 的两类健康检查。存活探针回答进程是否卡死、需要重启">
+<title>🎓 存活与就绪探针分野 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="liveness-vs-readiness-probes" data-answer="0" data-prev="thundering-herd.pro.html" data-next="graceful-shutdown.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sre">🔮 高级 · 🩺 高可用 SRE</a><span>›</span><a href="liveness-vs-readiness-probes.html">存活与就绪探针分野</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.292 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="thundering-herd.pro.html" rel="prev"><small>‹ 上一个</small><b>🐟 惊群效应 / 缓存击穿</b></a><a class="pn next" href="graceful-shutdown.pro.html" rel="next"><small>下一个 ›</small><b>🌙 优雅停机机制</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🩺</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>存活与就绪探针分野</h1><p class="en">Liveness vs Readiness Probes</p>
+    <div class="hbtns"><a class="prosw back" href="liveness-vs-readiness-probes.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">存活探针（Liveness Probe）与就绪探针（Readiness Probe）是 Kubernetes 的两类健康检查。存活探针回答进程是否卡死、需要重启；就绪探针回答此刻能否接收流量、是否应在 Service 端点中。二者属编排层，配合启动探针（Startup Probe）区分启动慢与已挂掉，决定重启与摘流。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>kubelet 按 periodSeconds 周期执行探针，方式可以是 HTTP GET、TCP 连接、gRPC 或 exec 命令。</p></li><li><span class="sn">2</span><p>启动探针存在时，在其成功之前存活和就绪探针都不执行，给慢启动应用留时间。</p></li><li><span class="sn">3</span><p>存活探针连续失败达到 failureThreshold，kubelet 杀掉并按重启策略重启容器。</p></li><li><span class="sn">4</span><p>就绪探针失败时容器不被重启，但其 Pod 从 Service 的端点列表中移除，不再接收流量。</p></li><li><span class="sn">5</span><p>就绪恢复后重新加入端点；滚动发布也依赖就绪状态决定推进节奏。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>启动探针 (Startup Probe)</dt><dd>启动阶段专用探针，成功前屏蔽存活与就绪探针。</dd></div><div class="term"><dt>端点 (EndpointSlice)</dt><dd>Service 后端可接流量的 Pod 地址集合。</dd></div><div class="term"><dt>失败阈值 (failureThreshold)</dt><dd>连续失败多少次判定探针失败，默认 3。</dd></div><div class="term"><dt>初始延迟 (initialDelaySeconds)</dt><dd>容器启动后多久开始首次探测。</dd></div><div class="term"><dt>CrashLoopBackOff</dt><dd>容器反复崩溃或被杀后，重启间隔递增的状态。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>三种探针配置</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code>containers:
+  - name: api
+    image: example/api:1.0
+    ports: [{ containerPort: 8080 }]
+    startupProbe:            # 启动最多 30×10=300 秒
+      httpGet: { path: /livez, port: 8080 }
+      failureThreshold: 30
+      periodSeconds: 10
+    livenessProbe:           # 只查进程自身，失败则重启
+      httpGet: { path: /livez, port: 8080 }
+      periodSeconds: 10
+      timeoutSeconds: 2
+      failureThreshold: 3
+    readinessProbe:          # 能否接流量，失败则摘流不重启
+      httpGet: { path: /readyz, port: 8080 }
+      periodSeconds: 5
+      failureThreshold: 2</code></pre></div><p class="cnote">启动探针兜住慢启动，存活探针管重启，就绪探针管是否进入负载均衡。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">三类探针对照</h3><div class="tw"><table><thead><tr><th>探针</th><th>回答的问题</th><th>失败后果</th></tr></thead><tbody><tr><td data-h="探针">Startup</td><td data-h="回答的问题">启动完成了吗</td><td data-h="失败后果">超过阈值后重启容器</td></tr><tr><td data-h="探针">Liveness</td><td data-h="回答的问题">进程卡死了吗</td><td data-h="失败后果">重启容器</td></tr><tr><td data-h="探针">Readiness</td><td data-h="回答的问题">现在能接流量吗</td><td data-h="失败后果">从 Service 端点移除，不重启</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>就绪探针检查关键依赖</h4><p><b class="k-p">优点</b>依赖不可用时自动摘流</p><p><b class="k-c">代价</b>共享依赖故障会让所有 Pod 同时摘流</p><p><b class="k-w">适用</b>依赖是实例私有的，如本地缓存加载</p></div><div class="trd"><h4>存活探针只检查进程</h4><p><b class="k-p">优点</b>避免依赖抖动引发重启风暴</p><p><b class="k-c">代价</b>无法发现依赖导致的不可用</p><p><b class="k-w">适用</b>几乎总是推荐</p></div><div class="trd"><h4>不配存活探针</h4><p><b class="k-p">优点</b>零误杀风险</p><p><b class="k-c">代价</b>死锁进程不会被自动恢复</p><p><b class="k-w">适用</b>进程卡死后会自行退出的应用</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>存活探针检查数据库，数据库抖动导致全部 Pod 被重启。</p><p class="fix"><b>✓</b>存活探针只检查进程能否响应，不调用外部依赖。</p></li><li><p class="bad"><b>✗</b>存活和就绪用同一个端点同一参数。</p><p class="fix"><b>✓</b>分开端点，存活阈值更宽松，就绪更敏感。</p></li><li><p class="bad"><b>✗</b>慢启动应用用很大的 initialDelaySeconds 硬撑。</p><p class="fix"><b>✓</b>改用启动探针，启动完成后再启用存活探针。</p></li><li><p class="bad"><b>✗</b>探针超时用默认 1 秒，GC 停顿时误判失败。</p><p class="fix"><b>✓</b>根据实际延迟设置 timeoutSeconds 和阈值。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>存活与就绪探针使用不同端点</span></label></li><li><label><input type="checkbox"><span>存活探针不依赖外部服务</span></label></li><li><label><input type="checkbox"><span>慢启动应用配置了启动探针</span></label></li><li><label><input type="checkbox"><span>超时与阈值按真实延迟调整</span></label></li><li><label><input type="checkbox"><span>停机时就绪先失败以便摘流</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>就绪探针应不应该检查数据库？</summary><p>要看依赖是否共享。若所有 Pod 共用一个数据库，它故障时全部 Pod 都变成未就绪，Service 无后端，用户反而拿不到友好错误。通常就绪只检查实例自身准备状态，依赖故障交给熔断和降级处理。</p></details><details class="iv"><summary>为什么需要启动探针？</summary><p>有些应用启动需要较长时间加载。只用存活探针时，要么初始延迟设很长导致真挂掉也发现得慢，要么启动中就被误杀陷入 CrashLoopBackOff。启动探针把启动期单独处理，成功后再交给存活探针。</p></details><details class="iv"><summary>探针失败后流量多久会停止？</summary><p>大约是 periodSeconds 乘以 failureThreshold，再加上端点更新传播到 kube-proxy 或负载均衡器的时间。因此停机时应先让就绪失败或在 preStop 中等待，避免请求打到正在退出的 Pod。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/" target="_blank" rel="noopener"><b>Kubernetes：配置存活、就绪和启动探针</b><small>kubernetes.io ↗</small></a></li><li><a href="https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/" target="_blank" rel="noopener"><b>Kubernetes：Liveness, Readiness, and Startup Probes</b><small>kubernetes.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="thundering-herd.pro.html" rel="prev"><small>‹ 上一个</small><b>🐟 惊群效应 / 缓存击穿</b></a><a class="pn next" href="graceful-shutdown.pro.html" rel="next"><small>下一个 ›</small><b>🌙 优雅停机机制</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

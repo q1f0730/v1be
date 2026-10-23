@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="四大黄金信号 专业模式：四大黄金信号（Four Golden Signals）是 Google《SRE》一书提出的面向用户服务的监控基线：延迟（Latency）、流量（Traffic）">
+<title>🎓 四大黄金信号 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="golden-signals" data-answer="0" data-prev="flaky-tests.pro.html" data-next="prometheus-and-grafana.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sre">🔮 高级 · 🩺 高可用 SRE</a><span>›</span><a href="golden-signals.html">四大黄金信号</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.401 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="flaky-tests.pro.html" rel="prev"><small>‹ 上一个</small><b>🎲 不稳定测试 (Flaky Tests)</b></a><a class="pn next" href="prometheus-and-grafana.pro.html" rel="next"><small>下一个 ›</small><b>📈 指标监控 (Prometheus / Grafana)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🚥</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>四大黄金信号</h1><p class="en">Golden Signals</p>
+    <div class="hbtns"><a class="prosw back" href="golden-signals.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">四大黄金信号（Four Golden Signals）是 Google《SRE》一书提出的面向用户服务的监控基线：延迟（Latency）、流量（Traffic）、错误（Errors）、饱和度（Saturation）。它属于可观测性与 SRE 实践层，回答「服务对用户是否健康」，为 SLO 与告警提供起点；同类方法还有面向请求的 RED 与面向资源的 USE。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>延迟：处理请求所需时间，用分位数（P50/P95/P99）而非平均值，并区分成功与失败请求的延迟。</p></li><li><span class="sn">2</span><p>流量：系统承受的需求量，如每秒 HTTP 请求数、并发会话数、每秒处理的消息数或 Token 数。</p></li><li><span class="sn">3</span><p>错误：失败请求的比率，包括显式错误（5xx）、隐式错误（200 但内容错误）和超出 SLO 的慢响应。</p></li><li><span class="sn">4</span><p>饱和度：服务有多「满」，关注最受限的资源，如 CPU、内存、连接池、队列长度、GPU 显存，常作为容量预警。</p></li><li><span class="sn">5</span><p>基于四个信号建立看板与 SLO，告警优先针对影响用户的症状（错误率、延迟），而不是底层原因。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>分位数延迟 (Percentile Latency)</dt><dd>P99 表示 99% 请求不超过该耗时，能暴露长尾。</dd></div><div class="term"><dt>RED 方法</dt><dd>Rate、Errors、Duration，面向请求驱动服务的简化版本。</dd></div><div class="term"><dt>USE 方法</dt><dd>Utilization、Saturation、Errors，面向资源（CPU、磁盘）的分析方法。</dd></div><div class="term"><dt>症状告警 (Symptom-based Alerting)</dt><dd>按用户可感知的问题告警，而非按内部原因。</dd></div><div class="term"><dt>SLI / SLO</dt><dd>服务水平指标 / 目标，常由黄金信号推导而来。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Prometheus 中的四个信号</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code># recording rules：把四个信号预计算为便于看板和告警使用的指标
+groups:
+  - name: golden-signals
+    rules:
+      - record: job:http_requests:rate5m          # 流量
+        expr: sum by (job) (rate(http_requests_total[5m]))
+      - record: job:http_errors:ratio5m           # 错误率
+        expr: |
+          sum by (job) (rate(http_requests_total{status=~&quot;5..&quot;}[5m]))
+          / sum by (job) (rate(http_requests_total[5m]))
+      - record: job:http_latency:p99_5m           # 延迟（P99）
+        expr: |
+          histogram_quantile(0.99,
+            sum by (job, le) (rate(http_request_duration_seconds_bucket[5m])))
+      - record: instance:cpu:saturation           # 饱和度（以 CPU 使用率示意）
+        expr: 1 - avg by (instance) (rate(node_cpu_seconds_total{mode=&quot;idle&quot;}[5m]))</code></pre></div><p class="cnote">指标名遵循常见约定（需应用与 node_exporter 暴露对应指标）；饱和度应选最先耗尽的资源。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">三种监控方法对比</h3><div class="tw"><table><thead><tr><th>方法</th><th>关注对象</th><th>指标</th></tr></thead><tbody><tr><td data-h="方法">四大黄金信号</td><td data-h="关注对象">面向用户的服务</td><td data-h="指标">延迟、流量、错误、饱和度</td></tr><tr><td data-h="方法">RED</td><td data-h="关注对象">请求驱动的微服务</td><td data-h="指标">速率、错误、耗时</td></tr><tr><td data-h="方法">USE</td><td data-h="关注对象">硬件与系统资源</td><td data-h="指标">利用率、饱和度、错误</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>症状告警（错误率、延迟）</h4><p><b class="k-p">优点</b>直接对应用户影响，噪音少</p><p><b class="k-c">代价</b>定位根因需要再下钻</p><p><b class="k-w">适用</b>值班告警的主要来源</p></div><div class="trd"><h4>原因告警（CPU、磁盘）</h4><p><b class="k-p">优点</b>能提前预警</p><p><b class="k-c">代价</b>易产生大量不影响用户的告警</p><p><b class="k-w">适用</b>容量预警，通常不叫醒人</p></div><div class="trd"><h4>基于 SLO 燃烧率告警</h4><p><b class="k-p">优点</b>兼顾灵敏度与误报</p><p><b class="k-c">代价</b>需先定义 SLO 与错误预算</p><p><b class="k-w">适用</b>成熟团队的标准做法</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>用平均延迟衡量性能</p><p class="fix"><b>✓</b>使用 P95/P99 等分位数，并用直方图指标聚合</p></li><li><p class="bad"><b>✗</b>错误只统计 5xx</p><p class="fix"><b>✓</b>把业务失败、超时与超过 SLO 的慢请求也计入</p></li><li><p class="bad"><b>✗</b>把失败请求的快速响应混入延迟统计，使延迟看起来很好</p><p class="fix"><b>✓</b>成功与失败请求的延迟分开统计</p></li><li><p class="bad"><b>✗</b>饱和度只看 CPU</p><p class="fix"><b>✓</b>找出真正的瓶颈资源：连接池、队列、线程池、显存</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个对外服务都有四个信号的看板</span></label></li><li><label><input type="checkbox"><span>延迟使用直方图与分位数</span></label></li><li><label><input type="checkbox"><span>错误定义包含隐式错误</span></label></li><li><label><input type="checkbox"><span>饱和度指向最受限资源</span></label></li><li><label><input type="checkbox"><span>告警以用户症状为主</span></label></li><li><label><input type="checkbox"><span>LLM 服务额外监控 TTFT 与 Token 吞吐</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么不用平均延迟？</summary><p>延迟分布通常长尾，少量极慢请求被大量快请求平均掉；而长尾请求往往影响最重要的用户或在扇出调用中被放大。分位数能直接反映这部分体验。</p></details><details class="iv"><summary>饱和度和利用率有什么区别？</summary><p>利用率是资源忙碌的时间比例；饱和度是超出处理能力、正在排队的工作量。利用率 100% 前就可能出现排队，延迟上升，饱和度更能预测性能劣化。</p></details><details class="iv"><summary>LLM 应用的黄金信号如何调整？</summary><p>延迟可拆为首 Token 时间与每 Token 时间；流量用请求数与 Token 吞吐；错误包含限流、超时、内容拒绝和结构化输出解析失败；饱和度关注 GPU 显存、KV 缓存与排队长度。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://sre.google/sre-book/monitoring-distributed-systems/" target="_blank" rel="noopener"><b>Google SRE Book：Monitoring Distributed Systems</b><small>sre.google ↗</small></a></li><li><a href="https://www.brendangregg.com/usemethod.html" target="_blank" rel="noopener"><b>Brendan Gregg：The USE Method</b><small>brendangregg.com ↗</small></a></li><li><a href="https://prometheus.io/docs/practices/histograms/" target="_blank" rel="noopener"><b>Prometheus 文档：Histograms and summaries</b><small>prometheus.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="flaky-tests.pro.html" rel="prev"><small>‹ 上一个</small><b>🎲 不稳定测试 (Flaky Tests)</b></a><a class="pn next" href="prometheus-and-grafana.pro.html" rel="next"><small>下一个 ›</small><b>📈 指标监控 (Prometheus / Grafana)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="依赖版本锁文件 专业模式：依赖锁文件（Lockfile）记录依赖树中每个包的精确版本、来源与完整性哈希，如 package-lock.json、pnpm-lock.yaml、poetry">
+<title>🎓 依赖版本锁文件 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="lockfiles" data-answer="0" data-prev="staging-environments.pro.html" data-next="branch-protection.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#devops">🌊 中级 · 🔭 可观测与交付</a><span>›</span><a href="lockfiles.html">依赖版本锁文件</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.151 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="staging-environments.pro.html" rel="prev"><small>‹ 上一个</small><b>🎭 预发布/准生产环境</b></a><a class="pn next" href="branch-protection.pro.html" rel="next"><small>下一个 ›</small><b>🛡️ 版本库分支保护规则</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔒</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>依赖版本锁文件</h1><p class="en">Lockfiles</p>
+    <div class="hbtns"><a class="prosw back" href="lockfiles.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">依赖锁文件（Lockfile）记录依赖树中每个包的精确版本、来源与完整性哈希，如 package-lock.json、pnpm-lock.yaml、poetry.lock、uv.lock、Cargo.lock。它属于构建与供应链层，保证不同机器、CI 与生产安装出完全一致的依赖，是可复现构建与防篡改的基础。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>清单文件（如 package.json）只写版本范围，例如 ^1.2.0，允许匹配多个版本。</p></li><li><span class="sn">2</span><p>包管理器解析范围与传递依赖，选出一组确定版本，连同来源 URL 和哈希写入锁文件。</p></li><li><span class="sn">3</span><p>后续安装优先按锁文件还原，不再重新解析，因此新发布的版本不会被意外引入。</p></li><li><span class="sn">4</span><p>安装时校验下载内容的哈希（如 npm 的 integrity 字段），不匹配即报错。</p></li><li><span class="sn">5</span><p>升级依赖时显式执行 update 命令重新解析，锁文件变化随代码一起提交与审查。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>语义化版本 (SemVer)</dt><dd>主.次.修订版本号约定，^ 与 ~ 表示允许的升级范围。</dd></div><div class="term"><dt>传递依赖 (Transitive Dependency)</dt><dd>依赖的依赖，通常占依赖树的大多数。</dd></div><div class="term"><dt>完整性哈希 (Integrity Hash)</dt><dd>包内容的摘要，用于校验未被篡改。</dd></div><div class="term"><dt>可复现构建 (Reproducible Build)</dt><dd>相同输入在任何环境产生相同产物。</dd></div><div class="term"><dt>冻结安装 (Frozen Install)</dt><dd>锁文件与清单不一致时直接失败，不改写锁文件。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>CI 中严格按锁文件安装</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># Node.js：npm ci 只按 package-lock.json 安装，
+# 与 package.json 不一致时报错，且会先删除 node_modules
+npm ci
+
+# pnpm / Yarn（v2+）的等价写法
+pnpm install --frozen-lockfile
+yarn install --immutable
+
+# Python (uv)：锁文件过期则失败
+uv sync --locked
+
+# Python (pip)：要求每个包都有哈希
+pip install --require-hashes -r requirements.txt
+
+# 本地有意升级某个依赖，再提交锁文件的 diff
+npm install lodash@latest
+git add package.json package-lock.json
+git commit -m &quot;chore(deps): bump lodash&quot;</code></pre></div><p class="cnote">CI 与生产用冻结模式安装，锁文件只在有意升级时变化并经过审查。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">各生态的锁文件</h3><div class="tw"><table><thead><tr><th>生态</th><th>清单文件</th><th>锁文件</th><th>严格安装命令</th></tr></thead><tbody><tr><td data-h="生态">npm</td><td data-h="清单文件">package.json</td><td data-h="锁文件">package-lock.json</td><td data-h="严格安装命令">npm ci</td></tr><tr><td data-h="生态">pnpm</td><td data-h="清单文件">package.json</td><td data-h="锁文件">pnpm-lock.yaml</td><td data-h="严格安装命令">pnpm install --frozen-lockfile</td></tr><tr><td data-h="生态">uv (Python)</td><td data-h="清单文件">pyproject.toml</td><td data-h="锁文件">uv.lock</td><td data-h="严格安装命令">uv sync --locked</td></tr><tr><td data-h="生态">Cargo (Rust)</td><td data-h="清单文件">Cargo.toml</td><td data-h="锁文件">Cargo.lock</td><td data-h="严格安装命令">cargo build --locked</td></tr><tr><td data-h="生态">Go modules</td><td data-h="清单文件">go.mod</td><td data-h="锁文件">go.sum（校验和）</td><td data-h="严格安装命令">go mod verify</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>提交锁文件</h4><p><b class="k-p">优点</b>环境一致，可复现，可审计</p><p><b class="k-c">代价</b>锁文件冲突与 diff 较大</p><p><b class="k-w">适用</b>应用、服务，几乎总是</p></div><div class="trd"><h4>库项目不依赖锁文件发布</h4><p><b class="k-p">优点</b>让使用方自行解析兼容版本</p><p><b class="k-c">代价</b>库自身 CI 结果可能不稳定</p><p><b class="k-w">适用</b>发布到注册表的库（锁文件仍可用于开发）</p></div><div class="trd"><h4>自动依赖升级 PR</h4><p><b class="k-p">优点</b>持续获得安全修复</p><p><b class="k-c">代价</b>PR 噪声，需要测试兜底</p><p><b class="k-w">适用</b>有可靠 CI 的项目</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>把锁文件加入 .gitignore</p><p class="fix"><b>✓</b>应用项目必须提交锁文件</p></li><li><p class="bad"><b>✗</b>CI 用 npm install，悄悄改写锁文件</p><p class="fix"><b>✓</b>CI 改用 npm ci 或冻结模式安装</p></li><li><p class="bad"><b>✗</b>解决合并冲突时手改锁文件</p><p class="fix"><b>✓</b>取一方版本后重新运行包管理器生成</p></li><li><p class="bad"><b>✗</b>让 AI 随手加依赖，锁文件里多出大量陌生包</p><p class="fix"><b>✓</b>审查锁文件 diff，核对新增包名、来源与维护状况</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>锁文件已提交且只有一种包管理器</span></label></li><li><label><input type="checkbox"><span>CI 使用冻结/严格安装</span></label></li><li><label><input type="checkbox"><span>锁文件 diff 纳入代码审查</span></label></li><li><label><input type="checkbox"><span>启用依赖漏洞扫描</span></label></li><li><label><input type="checkbox"><span>有定期依赖升级机制</span></label></li><li><label><input type="checkbox"><span>私有源地址与哈希校验正常</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>有了 ^ 版本范围为什么还需要锁文件？</summary><p>范围允许匹配新发布的版本，不同时间安装会得到不同依赖树，传递依赖更不可控。锁文件固定解析结果，保证可复现，并让每次依赖变化都显式出现在代码审查里。</p></details><details class="iv"><summary>锁文件如何防范供应链攻击？</summary><p>完整性哈希能发现已锁定版本被替换或下载被篡改；但若锁定的版本本身是恶意发布就无能为力。还需结合依赖审查、漏洞与恶意包扫描、延迟采用新版本和最小化依赖。</p></details><details class="iv"><summary>npm install 和 npm ci 的区别？</summary><p>npm install 会按范围解析并可能更新锁文件；npm ci 要求锁文件存在且与 package.json 一致，删除 node_modules 后严格按锁文件安装，不写回锁文件，适合 CI 与生产构建。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json" target="_blank" rel="noopener"><b>npm Docs：package-lock.json</b><small>docs.npmjs.com ↗</small></a></li><li><a href="https://docs.npmjs.com/cli/v10/commands/npm-ci" target="_blank" rel="noopener"><b>npm Docs：npm ci</b><small>docs.npmjs.com ↗</small></a></li><li><a href="https://docs.astral.sh/uv/concepts/projects/sync/" target="_blank" rel="noopener"><b>uv 文档：Locking and syncing</b><small>docs.astral.sh ↗</small></a></li><li><a href="https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html" target="_blank" rel="noopener"><b>Cargo Book：Cargo.toml vs Cargo.lock</b><small>doc.rust-lang.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="staging-environments.pro.html" rel="prev"><small>‹ 上一个</small><b>🎭 预发布/准生产环境</b></a><a class="pn next" href="branch-protection.pro.html" rel="next"><small>下一个 ›</small><b>🛡️ 版本库分支保护规则</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

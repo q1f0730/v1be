@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="温度 (Temperature) 专业模式：温度（Temperature）是 LLM 解码阶段的采样参数，用于缩放输出概率分布的「尖锐程度」：低温让高概率 Token 更占优，输出更确定；高温拉平分布，输">
+<title>🎓 温度 (Temperature) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l1" id="main" data-slug="temperature" data-answer="0" data-prev="hallucination.pro.html" data-next="vibe-coding.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l1.html#ai">🌱 初级 · 🤖 AI 与提示词</a><span>›</span><a href="temperature.html">温度 (Temperature)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.7 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="hallucination.pro.html" rel="prev"><small>‹ 上一个</small><b>🌀 AI 幻觉</b></a><a class="pn next" href="vibe-coding.pro.html" rel="next"><small>下一个 ›</small><b>🎧 氛围编程 (Vibe Coding)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🌡️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌱 初级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>温度 (Temperature)</h1><p class="en">Temperature</p>
+    <div class="hbtns"><a class="prosw back" href="temperature.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">温度（Temperature）是 LLM 解码阶段的采样参数，用于缩放输出概率分布的「尖锐程度」：低温让高概率 Token 更占优，输出更确定；高温拉平分布，输出更多样。它不改变模型知识，只改变选词的随机性，常与 top_p、top_k 一起控制生成风格。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>模型为词表中每个 Token 输出一个原始分数（logit）。</p></li><li><span class="sn">2</span><p>把每个 logit 除以温度 T，再做 softmax 得到概率分布。</p></li><li><span class="sn">3</span><p>T &lt; 1 放大分数差距，分布变尖；T &gt; 1 缩小差距，分布变平。</p></li><li><span class="sn">4</span><p>T 趋近 0 时近似贪心解码，总选最高概率 Token，但多数服务不保证完全确定。</p></li><li><span class="sn">5</span><p>可再叠加 top_p（核采样）或 top_k 截掉长尾，然后按概率随机抽取下一个 Token。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>Logit</dt><dd>softmax 之前的原始分数，温度作用在这一层。</dd></div><div class="term"><dt>Softmax</dt><dd>把一组分数转换成总和为 1 的概率分布的函数。</dd></div><div class="term"><dt>Top-p (Nucleus Sampling)</dt><dd>只在累计概率达到 p 的最小 Token 集合里采样。</dd></div><div class="term"><dt>Top-k</dt><dd>只在概率最高的 k 个 Token 中采样。</dd></div><div class="term"><dt>贪心解码 (Greedy Decoding)</dt><dd>每步直接取概率最高的 Token，不做随机采样。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>温度如何改变分布</span><em>python</em><button class="ccopy">复制</button></div><pre><code># pip install numpy ；演示温度对 softmax 分布的影响
+import numpy as np
+
+logits = np.array([4.0, 3.0, 1.0, 0.5])   # 4 个候选 Token 的原始分数
+tokens = [&quot;的&quot;, &quot;了&quot;, &quot;吧&quot;, &quot;呢&quot;]
+
+def softmax_t(x, t):
+    z = x / t
+    z = z - z.max()                # 数值稳定
+    p = np.exp(z)
+    return p / p.sum()
+
+for t in [0.2, 0.7, 1.0, 1.5]:
+    p = softmax_t(logits, t)
+    print(f&quot;T={t}: &quot;, {k: round(float(v), 3) for k, v in zip(tokens, p)})
+
+# 输出可见：T 越低，第一名概率越接近 1；T 越高，分布越平均</code></pre></div><p class="cnote">温度只是对 logit 的缩放，跑一下就能直观看到分布尖锐度的变化。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">主流 API 采样参数</h3><div class="tw"><table><thead><tr><th>参数</th><th>Anthropic</th><th>OpenAI Chat</th></tr></thead><tbody><tr><td data-h="参数">temperature 范围</td><td data-h="Anthropic">0–1，默认 1</td><td data-h="OpenAI Chat">0–2，默认 1</td></tr><tr><td data-h="参数">top_p</td><td data-h="Anthropic">支持</td><td data-h="OpenAI Chat">支持</td></tr><tr><td data-h="参数">top_k</td><td data-h="Anthropic">支持</td><td data-h="OpenAI Chat">不提供</td></tr><tr><td data-h="参数">推理类模型</td><td data-h="Anthropic">开启扩展思考时有限制</td><td data-h="OpenAI Chat">部分推理模型不支持调温度</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>低温（约 0–0.3）</h4><p><b class="k-p">优点</b>稳定、可复现性更好</p><p><b class="k-c">代价</b>措辞单调，可能陷入重复</p><p><b class="k-w">适用</b>抽取、分类、代码、结构化输出</p></div><div class="trd"><h4>中温（约 0.5–0.8）</h4><p><b class="k-p">优点</b>兼顾准确与自然</p><p><b class="k-c">代价</b>偶有发散</p><p><b class="k-w">适用</b>对话、解释、一般写作</p></div><div class="trd"><h4>高温（≥1）</h4><p><b class="k-p">优点</b>多样、有创意</p><p><b class="k-c">代价</b>更易出错和跑题</p><p><b class="k-w">适用</b>头脑风暴、多候选生成</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>以为 temperature=0 就完全可复现</p><p class="fix"><b>✓</b>服务端并行计算等因素仍可能有差异，需要缓存或记录输出</p></li><li><p class="bad"><b>✗</b>同时大幅调 temperature 和 top_p</p><p class="fix"><b>✓</b>官方通常建议只调其中一个，便于定位效果</p></li><li><p class="bad"><b>✗</b>用高温度「治」回答单调</p><p class="fix"><b>✓</b>先改提示词和示例，温度只做微调</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>按任务类型设定默认温度</span></label></li><li><label><input type="checkbox"><span>确认所用模型是否支持该参数</span></label></li><li><label><input type="checkbox"><span>温度值写入配置并记录在日志</span></label></li><li><label><input type="checkbox"><span>评测时固定温度对比提示词效果</span></label></li><li><label><input type="checkbox"><span>需要多样性时用多次采样而非极高温</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>温度为 0 时为什么输出仍可能变化？</summary><p>服务端推理涉及浮点运算顺序、批处理和硬件并行，相同输入的 logit 可能有微小差异，平局或近似平局时会选到不同 Token，后续自回归放大差异。此外部分接口在 0 时并非严格贪心。</p></details><details class="iv"><summary>temperature 和 top_p 有何区别？</summary><p>温度改变整个分布的形状（缩放 logit）；top_p 不改形状，只截掉累计概率之外的长尾再归一化采样。前者控制「多随机」，后者控制「候选池多大」，通常二选一调整。</p></details><details class="iv"><summary>代码生成该用什么温度？</summary><p>一般偏低以减少语法和逻辑错误；但若用「生成多个候选再用测试筛选」的策略，适度提高温度可增加候选多样性、提高至少一个通过的概率。具体以评测结果为准。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.anthropic.com/en/api/messages" target="_blank" rel="noopener"><b>Anthropic Messages API（temperature 参数）</b><small>docs.anthropic.com ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Softmax_function" target="_blank" rel="noopener"><b>Wikipedia: Softmax function（含温度参数）</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://arxiv.org/abs/1904.09751" target="_blank" rel="noopener"><b>The Curious Case of Neural Text Degeneration（Top-p 论文）</b><small>arxiv.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="hallucination.pro.html" rel="prev"><small>‹ 上一个</small><b>🌀 AI 幻觉</b></a><a class="pn next" href="vibe-coding.pro.html" rel="next"><small>下一个 ›</small><b>🎧 氛围编程 (Vibe Coding)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

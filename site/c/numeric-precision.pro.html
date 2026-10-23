@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="数值精度 (FP32 / BF16 / FP8) 专业模式：数值精度（Numeric Precision）指模型权重、激活和梯度用何种数据格式表示，如 FP32、FP16、BF16、FP8 及整数格式。它属于训练与推理的">
+<title>🎓 数值精度 (FP32 / BF16 / FP8) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="numeric-precision" data-answer="0" data-prev="inference-engines.pro.html" data-next="serverless-gpu.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#llmops">🔮 高级 · 🧠 模型工程与推理部署</a><span>›</span><a href="numeric-precision.html">数值精度 (FP32 / BF16 / FP8)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.387 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="inference-engines.pro.html" rel="prev"><small>‹ 上一个</small><b>🏎️ 推理引擎 (vLLM / SGLang / llama.cpp)</b></a><a class="pn next" href="serverless-gpu.pro.html" rel="next"><small>下一个 ›</small><b>☁️ 无服务器 GPU 推理</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔢</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🧠 模型工程与推理部署</span><span>⏱ 约 10 分钟</span></div>
+    <h1>数值精度 (FP32 / BF16 / FP8)</h1><p class="en">Numeric Precision</p>
+    <div class="hbtns"><a class="prosw back" href="numeric-precision.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">数值精度（Numeric Precision）指模型权重、激活和梯度用何种数据格式表示，如 FP32、FP16、BF16、FP8 及整数格式。它属于训练与推理的数值计算层，直接决定显存占用（每参数 4/2/1 字节）、计算吞吐（新硬件对低精度有专用 Tensor Core 加速）和数值稳定性。混合精度训练与低精度推理是当前主流。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>浮点数由符号位、指数位和尾数位组成：指数位决定可表示的范围，尾数位决定精度。</p></li><li><span class="sn">2</span><p>FP16（1-5-10）精度较高但范围小，训练时需损失缩放防止梯度下溢；BF16（1-8-7）与 FP32 范围相同，精度较低，更稳定。</p></li><li><span class="sn">3</span><p>FP8 有 E4M3（精度优先）与 E5M2（范围优先）两种格式，需配合缩放因子，并需 Hopper、Ada 等较新架构的硬件支持。</p></li><li><span class="sn">4</span><p>混合精度训练用低精度做前向与反向计算，保留 FP32 主权重与累加，兼顾速度与稳定性。</p></li><li><span class="sn">5</span><p>推理时常以 BF16/FP16 加载，进一步用 FP8 或 INT8/INT4 量化以降低显存与带宽需求。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>指数位 / 尾数位 (Exponent / Mantissa)</dt><dd>分别决定数值范围和有效精度。</dd></div><div class="term"><dt>BF16 (bfloat16)</dt><dd>保留 FP32 的 8 位指数，尾数 7 位，训练稳定。</dd></div><div class="term"><dt>FP8 (E4M3 / E5M2)</dt><dd>8 位浮点格式，需缩放因子，用于训练与推理加速。</dd></div><div class="term"><dt>混合精度 (Mixed Precision)</dt><dd>低精度计算 + 高精度主权重/累加的组合方案。</dd></div><div class="term"><dt>损失缩放 (Loss Scaling)</dt><dd>放大损失以避免 FP16 梯度下溢，再缩回更新。</dd></div><div class="term"><dt>TF32</dt><dd>NVIDIA Ampere 起的矩阵运算格式，FP32 范围、10 位尾数。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>PyTorch 混合精度与显存估算</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import torch
+
+# 各精度每个元素的字节数
+for dt in (torch.float32, torch.float16, torch.bfloat16):
+    print(dt, torch.tensor([], dtype=dt).element_size(), &quot;bytes&quot;)
+
+# 7B 参数模型仅权重所需显存（不含 KV 缓存与激活）
+params = 7e9
+for name, b in {&quot;FP32&quot;: 4, &quot;BF16&quot;: 2, &quot;FP8/INT8&quot;: 1, &quot;INT4&quot;: 0.5}.items():
+    print(f&quot;{name:8s} ≈ {params * b / 1024**3:.1f} GiB&quot;)
+
+# 混合精度训练：autocast 内用 BF16 计算，参数仍为 FP32
+model = torch.nn.Linear(1024, 1024).cuda()
+opt = torch.optim.AdamW(model.parameters())
+x = torch.randn(8, 1024, device=&quot;cuda&quot;)
+with torch.autocast(device_type=&quot;cuda&quot;, dtype=torch.bfloat16):
+    loss = model(x).float().pow(2).mean()
+loss.backward()   # BF16 范围与 FP32 相同，通常无需 GradScaler
+opt.step()</code></pre></div><p class="cnote">权重显存与字节数成正比；BF16 autocast 是常用的混合精度方式（需支持 BF16 的 GPU）。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见数值格式</h3><div class="tw"><table><thead><tr><th>格式</th><th>位布局 (符号-指数-尾数)</th><th>字节</th><th>主要用途</th></tr></thead><tbody><tr><td data-h="格式">FP32</td><td data-h="位布局 (符号-指数-尾数)">1-8-23</td><td data-h="字节">4</td><td data-h="主要用途">主权重、累加、传统训练</td></tr><tr><td data-h="格式">FP16</td><td data-h="位布局 (符号-指数-尾数)">1-5-10</td><td data-h="字节">2</td><td data-h="主要用途">推理、需损失缩放的训练</td></tr><tr><td data-h="格式">BF16</td><td data-h="位布局 (符号-指数-尾数)">1-8-7</td><td data-h="字节">2</td><td data-h="主要用途">主流训练与推理</td></tr><tr><td data-h="格式">FP8 E4M3 / E5M2</td><td data-h="位布局 (符号-指数-尾数)">1-4-3 / 1-5-2</td><td data-h="字节">1</td><td data-h="主要用途">新架构训练与推理加速</td></tr><tr><td data-h="格式">INT8 / INT4</td><td data-h="位布局 (符号-指数-尾数)">整数 + 缩放因子</td><td data-h="字节">1 / 0.5</td><td data-h="主要用途">量化推理</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>BF16</h4><p><b class="k-p">优点</b>稳定、无需损失缩放、生态成熟</p><p><b class="k-c">代价</b>精度低于 FP16，老 GPU 不支持</p><p><b class="k-w">适用</b>Ampere 及更新 GPU 的训练与推理</p></div><div class="trd"><h4>FP16</h4><p><b class="k-p">优点</b>旧硬件广泛支持</p><p><b class="k-c">代价</b>范围小，易溢出，训练需损失缩放</p><p><b class="k-w">适用</b>不支持 BF16 的设备</p></div><div class="trd"><h4>FP8</h4><p><b class="k-p">优点</b>吞吐更高、显存减半（相对 BF16）</p><p><b class="k-c">代价</b>需硬件支持与缩放校准</p><p><b class="k-w">适用</b>Hopper/Ada 及更新硬件的大规模部署</p></div><div class="trd"><h4>INT4 等低比特量化</h4><p><b class="k-p">优点</b>显存最小，可在消费级设备运行</p><p><b class="k-c">代价</b>质量损失需评估</p><p><b class="k-w">适用</b>本地与边缘推理</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>在不支持 BF16 的 GPU 上强行使用 BF16</p><p class="fix"><b>✓</b>先确认硬件能力（torch.cuda.is_bf16_supported()），否则用 FP16</p></li><li><p class="bad"><b>✗</b>FP16 训练不做损失缩放，梯度变成 0 或 NaN</p><p class="fix"><b>✓</b>使用 GradScaler 等动态损失缩放</p></li><li><p class="bad"><b>✗</b>把累加和归一化也放在低精度</p><p class="fix"><b>✓</b>softmax、LayerNorm、累加保持 FP32，框架 autocast 通常会处理</p></li><li><p class="bad"><b>✗</b>只按权重估显存，忽略优化器状态</p><p class="fix"><b>✓</b>训练时 AdamW 状态和主权重通常是权重显存的数倍</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>确认硬件支持的精度格式</span></label></li><li><label><input type="checkbox"><span>推理精度与模型发布精度一致或经评测</span></label></li><li><label><input type="checkbox"><span>训练使用混合精度并保留 FP32 主权重</span></label></li><li><label><input type="checkbox"><span>低精度切换后跑基准评测</span></label></li><li><label><input type="checkbox"><span>显存估算包含 KV 缓存与激活</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>BF16 为什么比 FP16 更适合训练？</summary><p>BF16 与 FP32 指数位相同，可表示范围一致，梯度和激活不易溢出或下溢，通常无需损失缩放；虽然尾数精度更低，但深度学习对此较不敏感。</p></details><details class="iv"><summary>FP8 训练的关键难点？</summary><p>动态范围和精度都很有限，需要按张量或按块的缩放因子，并在前向用 E4M3、反向梯度常用 E5M2；敏感算子保持高精度，并依赖硬件 Tensor Core 支持。</p></details><details class="iv"><summary>精度和量化是一回事吗？</summary><p>相关但不同。精度指数据格式；量化通常指把高精度权重映射到低比特（尤其整数）表示并配合缩放因子，是降低精度的一类具体方法，常伴随校准过程。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.pytorch.org/docs/stable/amp.html" target="_blank" rel="noopener"><b>PyTorch 文档：Automatic Mixed Precision</b><small>docs.pytorch.org ↗</small></a></li><li><a href="https://arxiv.org/abs/2209.05433" target="_blank" rel="noopener"><b>FP8 Formats for Deep Learning (arXiv 2209.05433)</b><small>arxiv.org ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Bfloat16_floating-point_format" target="_blank" rel="noopener"><b>Wikipedia: bfloat16 floating-point format</b><small>en.wikipedia.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="inference-engines.pro.html" rel="prev"><small>‹ 上一个</small><b>🏎️ 推理引擎 (vLLM / SGLang / llama.cpp)</b></a><a class="pn next" href="serverless-gpu.pro.html" rel="next"><small>下一个 ›</small><b>☁️ 无服务器 GPU 推理</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

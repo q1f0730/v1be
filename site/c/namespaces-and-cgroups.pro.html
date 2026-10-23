@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="容器底层隔离 (Namespace / cgroups) 专业模式：Linux 命名空间（Namespaces）和控制组（cgroups）是容器的两大内核基础。命名空间隔离进程能看到的系统资源视图，如进程号、网络、挂载点、主机名">
+<title>🎓 容器底层隔离 (Namespace / cgroups) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="namespaces-and-cgroups" data-answer="0" data-prev="platform-engineering.pro.html" data-next="saga-pattern.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#devops">🔥 进阶 · 🔭 可观测与交付</a><span>›</span><a href="namespaces-and-cgroups.html">容器底层隔离 (Namespace / cgroups)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.473 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="platform-engineering.pro.html" rel="prev"><small>‹ 上一个</small><b>🛤️ 平台工程 (内部开发者平台)</b></a><a class="pn next" href="saga-pattern.pro.html" rel="next"><small>下一个 ›</small><b>🧾 Saga 分布式事务模式</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📦</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>容器底层隔离 (Namespace / cgroups)</h1><p class="en">Namespaces &amp; cgroups</p>
+    <div class="hbtns"><a class="prosw back" href="namespaces-and-cgroups.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">Linux 命名空间（Namespaces）和控制组（cgroups）是容器的两大内核基础。命名空间隔离进程能看到的系统资源视图，如进程号、网络、挂载点、主机名和用户；cgroups 对进程组的资源用量做限制、记账与优先级控制，如 CPU、内存、IO、进程数。容器本质上是共享宿主内核、被这两者约束的普通进程。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>运行时（如 runc）通过 clone 或 unshare 系统调用为容器进程创建一组新的命名空间。</p></li><li><span class="sn">2</span><p>PID 命名空间让容器内进程从 1 开始编号；网络命名空间提供独立网卡、路由与端口；挂载命名空间配合根文件系统切换提供独立文件视图。</p></li><li><span class="sn">3</span><p>用户命名空间可把容器内 root 映射为宿主上的非特权用户，降低逃逸后的危害。</p></li><li><span class="sn">4</span><p>运行时在 cgroup 层级中为容器建目录，写入 memory.max、cpu.max、pids.max 等限制并把进程加入。</p></li><li><span class="sn">5</span><p>内存超限时内核在该 cgroup 内触发 OOM 终止进程；CPU 超出配额则被节流。再配合 capabilities、seccomp 与 LSM 收紧权限。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>PID 命名空间</dt><dd>隔离进程号空间，容器内看不到宿主的其他进程。</dd></div><div class="term"><dt>用户命名空间 (User Namespace)</dt><dd>隔离 UID/GID 映射，容器内 root 可对应宿主普通用户。</dd></div><div class="term"><dt>cgroup v2</dt><dd>统一层级的新版控制组接口，目前主流发行版与 Kubernetes 推荐使用。</dd></div><div class="term"><dt>cpu.max</dt><dd>cgroup v2 CPU 配额，格式为「配额 周期」微秒，如 50000 100000 即半核。</dd></div><div class="term"><dt>CPU 节流 (Throttling)</dt><dd>进程在周期内用完配额后被暂停调度，表现为延迟升高。</dd></div><div class="term"><dt>Linux Capabilities</dt><dd>把 root 权限拆成细粒度能力，容器默认只保留一部分。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>手动体验命名空间与 cgroup</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 需要 root 和 cgroup v2；仅用于学习，勿在生产机上随意操作
+# 1) 新的 PID/挂载/主机名命名空间：里面 ps 只能看到自己
+sudo unshare --pid --fork --mount-proc --uts bash -c &#x27;hostname box; hostname; ps aux&#x27;
+
+# 2) 列出当前系统中的命名空间
+lsns | head
+
+# 3) cgroup v2：创建组并限制为半核 CPU、256MB 内存、最多 64 个进程
+echo &quot;+cpu +memory +pids&quot; | sudo tee /sys/fs/cgroup/cgroup.subtree_control
+sudo mkdir -p /sys/fs/cgroup/demo
+echo &quot;50000 100000&quot; | sudo tee /sys/fs/cgroup/demo/cpu.max
+echo 256M          | sudo tee /sys/fs/cgroup/demo/memory.max
+echo 64            | sudo tee /sys/fs/cgroup/demo/pids.max
+echo $$            | sudo tee /sys/fs/cgroup/demo/cgroup.procs   # 当前 shell 加入
+cat /sys/fs/cgroup/demo/memory.events    # oom_kill 计数
+
+# 4) Docker 等价写法：运行时替你完成上述设置
+docker run --rm --cpus=0.5 --memory=256m --pids-limit=64 alpine sh</code></pre></div><p class="cnote">启用控制器的那行在部分系统上可能已由 systemd 完成；实验结束后把 shell 移出并删除 demo 目录。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">主要命名空间类型</h3><div class="tw"><table><thead><tr><th>命名空间</th><th>隔离内容</th><th>容器中的表现</th></tr></thead><tbody><tr><td data-h="命名空间">PID</td><td data-h="隔离内容">进程号</td><td data-h="容器中的表现">容器主进程 PID 为 1</td></tr><tr><td data-h="命名空间">Network</td><td data-h="隔离内容">网卡、路由、端口</td><td data-h="容器中的表现">每个容器可独立监听 80 端口</td></tr><tr><td data-h="命名空间">Mount</td><td data-h="隔离内容">挂载点</td><td data-h="容器中的表现">独立的根文件系统视图</td></tr><tr><td data-h="命名空间">UTS</td><td data-h="隔离内容">主机名、域名</td><td data-h="容器中的表现">容器有自己的 hostname</td></tr><tr><td data-h="命名空间">User</td><td data-h="隔离内容">UID/GID 映射</td><td data-h="容器中的表现">容器内 root 不等于宿主 root</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>普通容器（命名空间 + cgroups）</h4><p><b class="k-p">优点</b>启动快、开销低、密度高</p><p><b class="k-c">代价</b>共享内核，内核漏洞可导致逃逸</p><p><b class="k-w">适用</b>可信或同租户工作负载</p></div><div class="trd"><h4>用户态内核（如 gVisor）</h4><p><b class="k-p">优点</b>拦截系统调用，隔离更强</p><p><b class="k-c">代价</b>部分系统调用性能下降或不兼容</p><p><b class="k-w">适用</b>运行不可信代码，如 AI 代码沙箱</p></div><div class="trd"><h4>轻量虚拟机（如 Firecracker、Kata）</h4><p><b class="k-p">优点</b>独立内核，接近虚拟机隔离</p><p><b class="k-c">代价</b>启动与资源开销高于容器</p><p><b class="k-w">适用</b>多租户强隔离、Serverless 平台</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>以为容器等于安全沙箱，直接运行不可信代码</p><p class="fix"><b>✓</b>不可信负载使用 gVisor、微虚拟机等更强隔离并禁止特权</p></li><li><p class="bad"><b>✗</b>设置过低的 CPU limit 导致严重节流</p><p class="fix"><b>✓</b>监控节流指标，按实测设置 limit，延迟敏感服务谨慎设 CPU 上限</p></li><li><p class="bad"><b>✗</b>容器内应用按宿主机总内存计算堆大小</p><p class="fix"><b>✓</b>使用能识别 cgroup 限制的运行时版本或显式配置堆上限</p></li><li><p class="bad"><b>✗</b>使用 --privileged 解决权限问题</p><p class="fix"><b>✓</b>只添加必需的 capability 或挂载，保持默认 seccomp</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有容器设置内存上限与进程数上限</span></label></li><li><label><input type="checkbox"><span>监控 OOM 次数与 CPU 节流时间</span></label></li><li><label><input type="checkbox"><span>禁止特权容器，最小化 capabilities</span></label></li><li><label><input type="checkbox"><span>评估启用用户命名空间或非 root 运行</span></label></li><li><label><input type="checkbox"><span>不可信代码运行在强隔离沙箱中</span></label></li><li><label><input type="checkbox"><span>宿主内核及时打安全补丁</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>容器和虚拟机的隔离本质区别？</summary><p>虚拟机通过虚拟化硬件运行独立的客户机内核；容器是宿主内核上的普通进程，靠命名空间改变可见视图、cgroups 限制资源、capabilities 与 seccomp 限制系统调用。容器更轻但共享内核，内核漏洞会破坏所有容器的隔离。</p></details><details class="iv"><summary>Kubernetes 的 requests 和 limits 落到内核是什么？</summary><p>在 cgroup v2 下，CPU request 转为 cpu.weight 用于争用时按比例分配，CPU limit 转为 cpu.max 配额会导致节流；内存 limit 转为 memory.max，超限触发 cgroup 内 OOM。内存 request 主要用于调度与驱逐判断。</p></details><details class="iv"><summary>为什么 AI 代码执行沙箱常不只依赖 Docker？</summary><p>Agent 执行的代码不可信，普通容器与宿主共享内核，一旦存在内核或运行时漏洞就可能逃逸。因此常用 gVisor 拦截系统调用，或 Firecracker 等微虚拟机提供独立内核，再叠加网络出口限制、只读文件系统和资源配额。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://man7.org/linux/man-pages/man7/namespaces.7.html" target="_blank" rel="noopener"><b>namespaces(7) - Linux manual page</b><small>man7.org ↗</small></a></li><li><a href="https://docs.kernel.org/admin-guide/cgroup-v2.html" target="_blank" rel="noopener"><b>Linux Kernel: Control Group v2</b><small>docs.kernel.org ↗</small></a></li><li><a href="https://kubernetes.io/docs/concepts/architecture/cgroups/" target="_blank" rel="noopener"><b>Kubernetes: About cgroup v2</b><small>kubernetes.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="platform-engineering.pro.html" rel="prev"><small>‹ 上一个</small><b>🛤️ 平台工程 (内部开发者平台)</b></a><a class="pn next" href="saga-pattern.pro.html" rel="next"><small>下一个 ›</small><b>🧾 Saga 分布式事务模式</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

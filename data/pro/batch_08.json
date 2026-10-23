@@ -1,0 +1,3894 @@
+[
+ {
+  "slug": "orm-lazy-loading",
+  "def": "ORM 延迟加载（Lazy Loading）是对象关系映射框架的默认关联加载策略：查询主对象时不取关联数据，首次访问关联属性时才自动发出额外 SQL。它让简单场景代码简洁，但在循环中访问关联会产生经典的 N+1 查询问题，是 ORM 性能问题的头号来源。",
+  "how": [
+   "查询主实体时，ORM 只加载主表字段，关联属性被标记为“未加载”或用代理对象占位。",
+   "代码首次读取关联属性时，ORM 拦截访问，通过当前会话发出一条查询获取关联数据。",
+   "在循环中逐个访问 N 个对象的关联，会产生 1 条主查询加 N 条关联查询（N+1）。",
+   "预加载（eager loading）在主查询时用 JOIN 或第二条 IN 查询一次性取回关联，消除 N+1。",
+   "会话关闭后再访问未加载的关联会报错；异步 ORM 中隐式延迟加载通常被禁止。"
+  ],
+  "terms": [
+   {
+    "t": "N+1 查询 (N+1 Query Problem)",
+    "d": "1 条主查询后，为每条结果各发 1 条关联查询。"
+   },
+   {
+    "t": "预加载 (Eager Loading)",
+    "d": "在查询主对象时同时加载指定关联。"
+   },
+   {
+    "t": "joinedload",
+    "d": "SQLAlchemy 用 LEFT JOIN 同一条 SQL 取回关联。"
+   },
+   {
+    "t": "selectinload",
+    "d": "SQLAlchemy 用第二条 WHERE id IN (...) 查询批量加载。"
+   },
+   {
+    "t": "raiseload",
+    "d": "访问未预加载的关联时直接抛错，用于强制显式加载。"
+   },
+   {
+    "t": "游离对象 (Detached Instance)",
+    "d": "已脱离会话的对象，无法再触发延迟加载。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "SQLAlchemy 消除 N+1",
+   "src": "from sqlalchemy import select\nfrom sqlalchemy.orm import selectinload, raiseload\n\n# 假设 User.posts 是一对多关系，engine 用 echo=True 可在日志看到 SQL\n\n# 反例：N+1，100 个用户 → 1 + 100 条 SQL\nusers = session.scalars(select(User).limit(100)).all()\nfor u in users:\n    print(u.name, len(u.posts))      # 每次访问 posts 都发一条查询\n\n# 修正：selectinload 批量加载 → 共 2 条 SQL\nstmt = select(User).options(selectinload(User.posts)).limit(100)\nfor u in session.scalars(stmt):\n    print(u.name, len(u.posts))      # 不再触发查询\n\n# 防回归：除显式预加载外，禁止任何延迟加载\nstmt = select(User).options(selectinload(User.posts), raiseload(\"*\"))\nu = session.scalars(stmt).first()\n# 访问未预加载的关联会抛 InvalidRequestError，而不是悄悄查库\n\n# Django 对应写法：\n#   User.objects.prefetch_related(\"posts\")   一对多/多对多\n#   Post.objects.select_related(\"author\")    多对一，JOIN",
+   "note": "selectinload 把 N 条查询合并为 1 条 IN 查询；raiseload 让遗漏的预加载在测试中暴露。"
+  },
+  "table": {
+   "title": "加载策略对比",
+   "head": [
+    "策略",
+    "SQL 形态",
+    "适用"
+   ],
+   "rows": [
+    [
+     "延迟加载",
+     "访问时逐条查询",
+     "只偶尔访问关联"
+    ],
+    [
+     "JOIN 预加载",
+     "主查询 LEFT JOIN",
+     "多对一、一对一"
+    ],
+    [
+     "IN 批量预加载",
+     "第二条 IN 查询",
+     "一对多、多对多"
+    ],
+    [
+     "禁止加载 (raise)",
+     "访问即报错",
+     "接口层防 N+1 回归"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "默认延迟加载",
+    "pros": "代码简洁，不取用不到的数据",
+    "cons": "循环中易出现 N+1",
+    "when": "后台脚本、低频访问"
+   },
+   {
+    "opt": "按查询显式预加载",
+    "pros": "SQL 数量可预期",
+    "cons": "需了解每个接口用到哪些关联",
+    "when": "API 列表接口"
+   },
+   {
+    "opt": "JOIN 预加载一对多",
+    "pros": "只需一条 SQL",
+    "cons": "结果行膨胀，分页易出错",
+    "when": "关联数量很少时"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "序列化器（如返回 JSON）里隐式访问关联触发 N+1",
+    "fix": "在查询处预加载序列化需要的全部关联"
+   },
+   {
+    "bad": "一对多用 JOIN 预加载再 LIMIT，分页结果错乱",
+    "fix": "一对多改用 IN 批量加载或子查询分页"
+   },
+   {
+    "bad": "会话关闭后在模板中访问关联报错",
+    "fix": "在会话内完成加载，或返回 DTO"
+   },
+   {
+    "bad": "AI 生成的 ORM 代码通过了测试，但线上 SQL 数暴增",
+    "fix": "测试中断言查询次数，或开启 raiseload"
+   }
+  ],
+  "checklist": [
+   "列表接口的 SQL 数量与数据量无关",
+   "序列化用到的关联都已预加载",
+   "一对多预加载使用 IN 批量方式",
+   "测试中有查询次数断言",
+   "开发环境开启 SQL 日志或 N+1 检测",
+   "异步 ORM 不依赖隐式延迟加载"
+  ],
+  "interview": [
+   {
+    "q": "如何在项目中系统地发现 N+1？",
+    "a": "开发环境开启 SQL 日志或 APM，按请求统计查询数；使用检测工具（如 Rails 的 Bullet、Django Debug Toolbar、nplusone）；测试中断言某接口查询次数上限；用 raiseload 把隐式加载变成错误。"
+   },
+   {
+    "q": "joinedload 和 selectinload 怎么选？",
+    "a": "多对一/一对一用 JOIN，行数不膨胀，一条 SQL 完成。一对多/多对多用 selectinload，避免笛卡尔膨胀与分页问题，代价是多一次往返。关联层级深时 selectin 更可控。"
+   },
+   {
+    "q": "为什么异步 ORM 不允许隐式延迟加载？",
+    "a": "延迟加载在属性访问时同步发起 IO，而异步代码需要显式 await。SQLAlchemy asyncio 下隐式加载会抛错（如 MissingGreenlet），需改用预加载或 AsyncAttrs 的 awaitable_attrs 显式等待。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "SQLAlchemy: Relationship Loading Techniques",
+    "url": "https://docs.sqlalchemy.org/en/20/orm/queryguide/relationships.html"
+   },
+   {
+    "title": "Django: select_related / prefetch_related",
+    "url": "https://docs.djangoproject.com/en/5.0/ref/models/querysets/"
+   },
+   {
+    "title": "Rails Guides: Eager Loading Associations",
+    "url": "https://guides.rubyonrails.org/active_record_querying.html"
+   }
+  ]
+ },
+ {
+  "slug": "load-balancer",
+  "def": "负载均衡器（Load Balancer）位于客户端与一组后端实例之间，按算法把请求或连接分配到健康的实例上。它提供水平扩展、故障隔离与无停机发布能力。按工作层次分为四层（基于 TCP/UDP 连接）和七层（理解 HTTP，可按路径、头部路由）。",
+  "how": [
+   "客户端连接负载均衡器的地址（VIP 或域名），而不是某台后端。",
+   "均衡器按算法在健康实例中选择后端：轮询、加权、最少连接、哈希等。",
+   "健康检查持续探测后端：主动定时请求探活接口，或被动统计失败自动摘除。",
+   "七层均衡器可终止 TLS、解析 HTTP，按 Host/路径路由，并注入 X-Forwarded-For 等头。",
+   "实例下线时先进入连接排空，等存量请求处理完再移除，实现无损发布。"
+  ],
+  "terms": [
+   {
+    "t": "L4 / L7 负载均衡",
+    "d": "按传输层连接转发，与按 HTTP 内容转发。"
+   },
+   {
+    "t": "健康检查 (Health Check)",
+    "d": "判定后端可用性的探测，失败即停止转发。"
+   },
+   {
+    "t": "会话保持 (Sticky Session)",
+    "d": "同一客户端固定转发到同一后端。"
+   },
+   {
+    "t": "连接排空 (Connection Draining)",
+    "d": "摘除实例前等待现有请求完成。"
+   },
+   {
+    "t": "一致性哈希 (Consistent Hashing)",
+    "d": "增减节点时只迁移少量键的哈希分配方式。"
+   },
+   {
+    "t": "最少连接 (Least Connections)",
+    "d": "把新请求发给当前活跃连接最少的后端。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "Nginx 七层负载均衡",
+   "src": "# /etc/nginx/conf.d/api.conf\nupstream api_backend {\n    least_conn;                               # 最少连接算法\n    server 10.0.1.11:8080 weight=2 max_fails=3 fail_timeout=10s;\n    server 10.0.1.12:8080 max_fails=3 fail_timeout=10s;\n    server 10.0.1.13:8080 backup;             # 其他都不可用时才启用\n    keepalive 32;                             # 与后端保持的空闲长连接数\n}\n\nserver {\n    listen 80;\n    location / {\n        proxy_pass http://api_backend;\n        proxy_http_version 1.1;               # 后端长连接需要 HTTP/1.1\n        proxy_set_header Connection \"\";\n        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n        # 连接失败、超时或 502/503 时换下一台重试（注意非幂等请求）\n        proxy_next_upstream error timeout http_502 http_503;\n    }\n}\n# 开源版只有被动健康检查（max_fails）；主动 health_check 属于 NGINX Plus",
+   "note": "max_fails 实现被动摘除；keepalive 复用与后端的连接，降低握手开销。"
+  },
+  "table": {
+   "title": "常见分配算法",
+   "head": [
+    "算法",
+    "原理",
+    "适用场景"
+   ],
+   "rows": [
+    [
+     "轮询/加权轮询",
+     "依次分配，按权重比例",
+     "实例同构、请求耗时相近"
+    ],
+    [
+     "最少连接",
+     "选活跃连接最少者",
+     "请求耗时差异大、长连接"
+    ],
+    [
+     "IP/键哈希",
+     "按客户端或键哈希固定后端",
+     "需要会话保持或本地缓存"
+    ],
+    [
+     "随机二选一",
+     "随机挑两台取较空闲者",
+     "大规模集群，实现简单"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "四层（如 NLB）",
+    "pros": "性能高、延迟低，协议无关",
+    "cons": "无法按 URL/头部路由",
+    "when": "TCP/UDP、gRPC 直通、超高吞吐"
+   },
+   {
+    "opt": "七层（如 ALB、Nginx）",
+    "pros": "内容路由、TLS 终止、重写",
+    "cons": "开销更大，需解析协议",
+    "when": "HTTP 服务与微服务网关"
+   },
+   {
+    "opt": "客户端负载均衡",
+    "pros": "少一跳，服务间调用延迟低",
+    "cons": "每种语言都要实现与维护",
+    "when": "服务网格或 gRPC 内部调用"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "健康检查只探活端口，应用已不可用仍接流量",
+    "fix": "探测能反映依赖状态的就绪接口"
+   },
+   {
+    "bad": "依赖粘性会话保存用户状态，实例下线即丢会话",
+    "fix": "会话外置到 Redis 或改用无状态 token"
+   },
+   {
+    "bad": "对 POST 等非幂等请求自动重试导致重复下单",
+    "fix": "仅对幂等请求重试，或使用幂等键"
+   },
+   {
+    "bad": "后端看到的客户端 IP 全是均衡器地址",
+    "fix": "读取 X-Forwarded-For 并只信任已知代理"
+   }
+  ],
+  "checklist": [
+   "健康检查覆盖应用就绪状态",
+   "发布流程包含连接排空",
+   "空闲超时与后端 keep-alive 匹配",
+   "非幂等请求不自动重试",
+   "后端正确获取真实客户端 IP",
+   "均衡器本身有多可用区冗余"
+  ],
+  "interview": [
+   {
+    "q": "四层和七层负载均衡如何选？",
+    "a": "需要按路径、Host、头部路由，做 TLS 终止、重写或 WAF，选七层；追求极致吞吐、低延迟或非 HTTP 协议（数据库、游戏 UDP），选四层。很多架构是四层在前保证扩展，七层在后做路由。"
+   },
+   {
+    "q": "为什么最少连接比轮询更适合长连接？",
+    "a": "轮询只保证请求数平均，不考虑每个请求持续多久。WebSocket、gRPC 流等长连接会在某些实例上堆积，轮询仍持续往上分配；最少连接按当前活跃连接选择，更接近真实负载。"
+   },
+   {
+    "q": "如何做到发布时零错误？",
+    "a": "实例先从均衡器摘除（或就绪检查失败），进入连接排空；应用收到终止信号后停止接新请求、处理完存量再退出；新实例就绪检查通过后才接流量；配合滚动或蓝绿发布。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "NGINX: HTTP Load Balancing",
+    "url": "https://nginx.org/en/docs/http/load_balancing.html"
+   },
+   {
+    "title": "NGINX: ngx_http_upstream_module",
+    "url": "https://nginx.org/en/docs/http/ngx_http_upstream_module.html"
+   },
+   {
+    "title": "AWS: What is Elastic Load Balancing",
+    "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/userguide/what-is-load-balancing.html"
+   }
+  ]
+ },
+ {
+  "slug": "reverse-proxy",
+  "def": "反向代理（Reverse Proxy）是部署在服务端、代表后端服务接收客户端请求的中间层。客户端只与代理通信，代理再把请求转发给内部服务。它集中承担 TLS 终止、路由、压缩、缓存、限流和安全过滤等横切职责，常见实现有 Nginx、Caddy、Envoy、Traefik。",
+  "how": [
+   "客户端 DNS 解析到代理的地址，与代理建立连接并完成 TLS 握手。",
+   "代理按 Host、路径等规则匹配，把请求转发给对应的上游服务。",
+   "转发时改写或添加请求头，如 X-Forwarded-For、X-Forwarded-Proto，告知后端原始信息。",
+   "代理接收上游响应，可先缓冲、压缩或写入缓存，再返回给客户端。",
+   "代理在入口统一实施超时、请求体大小限制、限流、访问日志等策略。"
+  ],
+  "terms": [
+   {
+    "t": "正向代理 (Forward Proxy)",
+    "d": "代表客户端访问外部，与反向代理方向相反。"
+   },
+   {
+    "t": "TLS 终止 (TLS Termination)",
+    "d": "在代理上解密 HTTPS，内部再转发。"
+   },
+   {
+    "t": "X-Forwarded-For",
+    "d": "事实标准请求头，记录经过的客户端与代理 IP 链。"
+   },
+   {
+    "t": "Forwarded",
+    "d": "RFC 7239 定义的标准化转发信息头。"
+   },
+   {
+    "t": "响应缓冲 (Proxy Buffering)",
+    "d": "代理先接收上游响应再发给客户端，影响流式输出。"
+   },
+   {
+    "t": "可信代理 (Trusted Proxy)",
+    "d": "后端只信任来自已知代理地址的转发头。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "Nginx 反向代理配置",
+   "src": "server {\n    listen 443 ssl;\n    server_name app.example.com;\n    ssl_certificate     /etc/ssl/app/fullchain.pem;\n    ssl_certificate_key /etc/ssl/app/privkey.pem;\n    client_max_body_size 20m;                    # 上传大小上限\n\n    location /api/ {\n        proxy_pass http://127.0.0.1:3000;        # 转发给本机 Node 服务\n        proxy_set_header Host $host;\n        proxy_set_header X-Real-IP $remote_addr;\n        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n        proxy_set_header X-Forwarded-Proto $scheme;\n        proxy_read_timeout 60s;\n    }\n\n    location /api/stream {                      # SSE/AI 流式输出\n        proxy_pass http://127.0.0.1:3000;\n        proxy_buffering off;                     # 关闭缓冲，逐块下发\n        proxy_read_timeout 1h;\n    }\n\n    location /ws {                               # WebSocket 升级\n        proxy_pass http://127.0.0.1:3000;\n        proxy_http_version 1.1;\n        proxy_set_header Upgrade $http_upgrade;\n        proxy_set_header Connection \"upgrade\";\n    }\n}",
+   "note": "转发头告诉后端原始协议与 IP；流式接口需关缓冲，WebSocket 需透传 Upgrade。"
+  },
+  "table": {
+   "title": "常见反向代理",
+   "head": [
+    "实现",
+    "配置方式",
+    "特点"
+   ],
+   "rows": [
+    [
+     "Nginx",
+     "静态配置文件 + reload",
+     "成熟高性能，生态最广"
+    ],
+    [
+     "Caddy",
+     "Caddyfile/JSON API",
+     "默认自动申请与续期 HTTPS"
+    ],
+    [
+     "Envoy",
+     "xDS 动态配置",
+     "服务网格数据面，可观测性强"
+    ],
+    [
+     "Traefik",
+     "从 Docker/K8s 自动发现",
+     "容器环境配置少"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "代理处终止 TLS",
+    "pros": "证书集中管理，后端简单",
+    "cons": "代理到后端是明文，需内网隔离",
+    "when": "可信内网的常规部署"
+   },
+   {
+    "opt": "端到端 TLS / mTLS",
+    "pros": "内部流量也加密并鉴权",
+    "cons": "证书分发与轮换复杂",
+    "when": "零信任或合规要求"
+   },
+   {
+    "opt": "托管边缘代理（CDN）",
+    "pros": "抗 DDoS、全球就近接入",
+    "cons": "配置受平台限制，有费用",
+    "when": "面向公网的大流量站点"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "后端无条件信任 X-Forwarded-For，IP 可被伪造",
+    "fix": "只信任来自已知代理的头，按跳数取真实 IP"
+   },
+   {
+    "bad": "AI 流式接口经代理后一次性才返回",
+    "fix": "关闭代理缓冲，后端设置 X-Accel-Buffering: no"
+   },
+   {
+    "bad": "后端生成的跳转链接变成 http 或内网地址",
+    "fix": "传递 Host 与 X-Forwarded-Proto，并配置框架信任代理"
+   },
+   {
+    "bad": "代理超时短于后端处理时间，返回 504",
+    "fix": "按接口设置合理超时，长任务改异步"
+   }
+  ],
+  "checklist": [
+   "转发 Host、X-Forwarded-For/Proto",
+   "后端配置了可信代理列表",
+   "流式与 WebSocket 路径单独配置",
+   "请求体大小与超时按接口设置",
+   "访问日志记录真实客户端 IP",
+   "后端端口不直接暴露公网"
+  ],
+  "interview": [
+   {
+    "q": "反向代理和负载均衡器是什么关系？",
+    "a": "负载均衡是反向代理的一种功能。反向代理泛指在服务端代收请求的中间层，可只代理一个后端，侧重 TLS、路由、缓存、安全；当它把流量分到多个后端时就承担了负载均衡。Nginx、Envoy 两者兼备。"
+   },
+   {
+    "q": "如何在代理链后正确获取客户端 IP？",
+    "a": "X-Forwarded-For 按“客户端, 代理1, 代理2”追加。应从右往左跳过已知可信代理，取第一个不可信的地址；框架中配置可信代理列表（如 Express 的 trust proxy）。最左边的值可被客户端伪造。"
+   },
+   {
+    "q": "为什么 SSE 经过 Nginx 后不流式了？",
+    "a": "Nginx 默认开启 proxy_buffering，会先缓冲上游响应再发出，小块数据被攒起来。需在 location 中关闭缓冲，或由后端返回 X-Accel-Buffering: no；同时调大读超时，并关闭可能干扰的压缩。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "NGINX: ngx_http_proxy_module",
+    "url": "https://nginx.org/en/docs/http/ngx_http_proxy_module.html"
+   },
+   {
+    "title": "RFC 7239: Forwarded HTTP Extension",
+    "url": "https://www.rfc-editor.org/rfc/rfc7239"
+   },
+   {
+    "title": "MDN: X-Forwarded-For",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For"
+   },
+   {
+    "title": "Caddy: reverse_proxy",
+    "url": "https://caddyserver.com/docs/caddyfile/directives/reverse_proxy"
+   }
+  ]
+ },
+ {
+  "slug": "dns-propagation",
+  "def": "所谓 DNS 传播（DNS Propagation）并不是变更被主动推送到全网，而是各级缓存（递归解析器、操作系统、浏览器）在旧记录的 TTL 到期前继续返回旧值。修改记录后，不同用户在不同时间看到新值。理解 TTL 与缓存层级，才能把切换窗口控制到可预期。",
+  "how": [
+   "权威 DNS 服务器保存记录及其 TTL，修改后权威端立即返回新值。",
+   "递归解析器（运营商、8.8.8.8、1.1.1.1）按 TTL 缓存答案，到期前不会重新查询。",
+   "操作系统、浏览器和应用运行时也有各自的缓存，部分客户端不严格遵守 TTL。",
+   "更换 NS（换 DNS 服务商）还受上级注册局委派记录的 TTL 影响，通常更久。",
+   "查询不存在的记录也会被缓存（负缓存），时长由 SOA 记录决定。"
+  ],
+  "terms": [
+   {
+    "t": "TTL (Time To Live)",
+    "d": "记录可被缓存的秒数。"
+   },
+   {
+    "t": "权威服务器 (Authoritative Server)",
+    "d": "持有域名区域数据的最终来源。"
+   },
+   {
+    "t": "递归解析器 (Recursive Resolver)",
+    "d": "替客户端逐级查询并缓存结果的服务器。"
+   },
+   {
+    "t": "负缓存 (Negative Caching)",
+    "d": "缓存“记录不存在”的结果，见 RFC 2308。"
+   },
+   {
+    "t": "NS 委派 (Delegation)",
+    "d": "上级区域用 NS 记录指明子域由谁负责。"
+   },
+   {
+    "t": "SOA 记录",
+    "d": "区域起始授权记录，含序列号与负缓存时长等。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "切换前后的 DNS 排查",
+   "src": "# 1. 查当前记录与剩余 TTL（第二列为秒）\ndig +noall +answer api.example.com A\n\n# 2. 直接问权威服务器，确认改动已生效\ndig +short NS example.com\ndig @ns1.example-dns.com api.example.com A +norecurse\n\n# 3. 对比几家公共解析器的缓存状态\nfor r in 8.8.8.8 1.1.1.1 223.5.5.5; do\n  echo \"$r -> $(dig @$r +short api.example.com A)\"\ndone\n\n# 4. 从根开始逐级追踪委派路径（换 NS 时尤其有用）\ndig +trace api.example.com\n\n# 5. 本机缓存：macOS 清缓存\nsudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder\n# Linux（systemd-resolved）\nresolvectl flush-caches",
+   "note": "先问权威确认改动，再看各解析器缓存；dig +trace 排查委派问题。"
+  },
+  "table": {
+   "title": "影响生效时间的因素",
+   "head": [
+    "因素",
+    "影响",
+    "可控性"
+   ],
+   "rows": [
+    [
+     "记录 TTL",
+     "解析器最长缓存时长",
+     "可控：变更前提前调低"
+    ],
+    [
+     "NS 委派 TTL",
+     "换服务商时的延迟",
+     "由注册局决定，常为数小时到两天"
+    ],
+    [
+     "负缓存 TTL",
+     "新增记录前被查过则延迟",
+     "可控：SOA 中设置"
+    ],
+    [
+     "客户端缓存",
+     "浏览器/OS/JVM 自有缓存",
+     "部分可控，需应用配置"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "长 TTL（数小时）",
+    "pros": "查询少、解析快，抗权威故障",
+    "cons": "切换慢，出错回滚也慢",
+    "when": "长期稳定的记录"
+   },
+   {
+    "opt": "短 TTL（数十秒到几分钟）",
+    "pros": "切换和回滚快",
+    "cons": "查询量与延迟增加",
+    "when": "迁移窗口或故障切换记录"
+   },
+   {
+    "opt": "不改 DNS，改后端指向",
+    "pros": "切换即时生效",
+    "cons": "需要负载均衡或 Anycast 层",
+    "when": "频繁切换的生产流量"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "切换当天才把 TTL 调低",
+    "fix": "至少提前一个旧 TTL 周期调低，等旧缓存过期"
+   },
+   {
+    "bad": "切换后立刻下线旧服务器",
+    "fix": "保留旧服务直到旧 TTL 过期且流量归零"
+   },
+   {
+    "bad": "上线前反复查询尚未创建的记录",
+    "fix": "注意负缓存，必要时降低 SOA 负缓存时长"
+   },
+   {
+    "bad": "Java 等运行时永久缓存 DNS，切换后连旧 IP",
+    "fix": "配置运行时 DNS 缓存时长，如 networkaddress.cache.ttl"
+   }
+  ],
+  "checklist": [
+   "提前调低待改记录的 TTL",
+   "权威服务器已确认返回新值",
+   "多个公共解析器验证通过",
+   "旧服务保留到旧 TTL 过期",
+   "切换完成后恢复较长 TTL",
+   "应用运行时的 DNS 缓存已核查"
+  ],
+  "interview": [
+   {
+    "q": "为什么说“DNS 传播”这个说法不准确？",
+    "a": "DNS 没有把变更推送出去的机制。权威端修改即生效，各处看到旧值是因为解析器和客户端缓存未过期。生效时间由旧记录的 TTL 和缓存行为决定，所以要提前降 TTL，而不是等它“传播”。"
+   },
+   {
+    "q": "迁移服务器时如何安排 DNS 切换？",
+    "a": "提前一个以上旧 TTL 周期把记录 TTL 降到较短值；新服务准备好后修改记录；用权威查询与多家解析器验证；新旧服务并行运行直到旧流量消失；确认稳定后恢复正常 TTL。"
+   },
+   {
+    "q": "换 DNS 服务商为什么比改 A 记录慢？",
+    "a": "换服务商要修改注册局中的 NS 委派，解析器缓存的是上级区域返回的 NS 记录，其 TTL 由注册局设定，常比普通记录长。期间新旧服务商都应保持相同的完整记录，避免解析失败。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 1034: Domain Names - Concepts",
+    "url": "https://www.rfc-editor.org/rfc/rfc1034"
+   },
+   {
+    "title": "RFC 2308: Negative Caching of DNS Queries",
+    "url": "https://www.rfc-editor.org/rfc/rfc2308"
+   },
+   {
+    "title": "Cloudflare Docs: DNS TTL",
+    "url": "https://developers.cloudflare.com/dns/manage-dns-records/reference/ttl/"
+   },
+   {
+    "title": "Google Public DNS: Flush Cache",
+    "url": "https://developers.google.com/speed/public-dns/cache"
+   }
+  ]
+ },
+ {
+  "slug": "keep-alive",
+  "def": "HTTP Keep-Alive（持久连接）指在同一条 TCP（及 TLS）连接上连续发送多个 HTTP 请求，而不是每个请求新建连接。HTTP/1.1 默认启用。它省去重复的 TCP 握手、TLS 握手与慢启动，显著降低延迟和服务器开销，但需要在客户端、代理和服务端之间协调空闲超时。",
+  "how": [
+   "首个请求完成 TCP 与 TLS 握手，响应后连接不关闭，进入空闲状态。",
+   "后续请求复用这条连接，跳过握手；HTTP/1.1 中同一连接上请求按顺序处理。",
+   "任一方发送 Connection: close 或空闲超过超时时间，连接被关闭。",
+   "客户端用连接池按主机维护多条空闲连接，请求时优先取出复用。",
+   "链路中各跳（客户端→负载均衡→后端）各自管理连接，超时需按链路协调。"
+  ],
+  "terms": [
+   {
+    "t": "持久连接 (Persistent Connection)",
+    "d": "一条连接承载多个请求/响应。"
+   },
+   {
+    "t": "空闲超时 (Idle Timeout)",
+    "d": "连接无请求多久后被关闭。"
+   },
+   {
+    "t": "Connection: close",
+    "d": "表示本次响应后关闭连接的头。"
+   },
+   {
+    "t": "连接池 (Connection Pool / Agent)",
+    "d": "客户端按主机复用空闲连接的组件。"
+   },
+   {
+    "t": "TCP Keepalive",
+    "d": "TCP 层探活机制，与 HTTP Keep-Alive 是两回事。"
+   },
+   {
+    "t": "队头阻塞 (Head-of-line Blocking)",
+    "d": "HTTP/1.1 同连接上前一个响应未完成，后面只能等。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "Node 服务端与客户端复用",
+   "src": "const http = require('node:http');\n\n// 服务端：空闲超时要大于前面负载均衡的空闲超时（AWS ALB 默认 60 秒）\n// 否则后端先关连接，均衡器复用到已关闭的连接会返回 502\nconst server = http.createServer((req, res) => res.end('ok'));\nserver.keepAliveTimeout = 65_000;  // Node 默认值为 5 秒\nserver.headersTimeout = 66_000;    // 旧版 Node 中需大于 keepAliveTimeout\nserver.listen(3000);\n\n// 客户端：显式启用连接复用并限制每个主机的并发连接\nconst agent = new http.Agent({ keepAlive: true, maxSockets: 50 });\n\nfunction ping() {\n  http.get({ host: 'localhost', port: 3000, path: '/', agent }, (res) => {\n    res.resume();  // 必须读完响应体，连接才会被放回池中复用\n  });\n}\nping(); ping(); // 第二次请求复用第一次的连接\n\n// Python 对应：requests.Session() 会自动复用连接",
+   "note": "后端空闲超时大于上游；客户端用 Agent 复用，并读完响应体以归还连接。"
+  },
+  "table": {
+   "title": "常见组件的空闲超时默认值",
+   "head": [
+    "组件",
+    "参数",
+    "默认值"
+   ],
+   "rows": [
+    [
+     "Nginx",
+     "keepalive_timeout",
+     "75 秒"
+    ],
+    [
+     "Node.js http.Server",
+     "keepAliveTimeout",
+     "5 秒"
+    ],
+    [
+     "AWS ALB",
+     "连接空闲超时",
+     "60 秒"
+    ],
+    [
+     "Apache httpd",
+     "KeepAliveTimeout",
+     "5 秒"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "长空闲超时",
+    "pros": "复用率高，握手少",
+    "cons": "占用更多文件描述符与内存",
+    "when": "客户端少、请求频繁"
+   },
+   {
+    "opt": "短空闲超时",
+    "pros": "快速释放空闲资源",
+    "cons": "频繁重连，延迟上升",
+    "when": "海量低频客户端"
+   },
+   {
+    "opt": "升级到 HTTP/2",
+    "pros": "一条连接并发多请求",
+    "cons": "需 TLS 与组件支持",
+    "when": "浏览器访问、多请求并发"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "后端空闲超时短于负载均衡，偶发 502",
+    "fix": "后端超时设为大于上游空闲超时"
+   },
+   {
+    "bad": "客户端没读完响应体，连接无法复用",
+    "fix": "总是消费或丢弃完整响应体"
+   },
+   {
+    "bad": "每次请求 new 一个 HTTP 客户端",
+    "fix": "全局复用客户端/Session 及其连接池"
+   },
+   {
+    "bad": "把 TCP keepalive 当作 HTTP keep-alive 调",
+    "fix": "区分两层，各自按需配置"
+   }
+  ],
+  "checklist": [
+   "各跳空闲超时按链路递增配置",
+   "服务调用方复用全局客户端",
+   "连接池大小有上限与监控",
+   "代理到后端也启用长连接",
+   "压测确认无偶发 502/ECONNRESET",
+   "滚动发布时连接能平滑关闭"
+  ],
+  "interview": [
+   {
+    "q": "为什么负载均衡后偶发 502？",
+    "a": "常见原因是后端空闲超时短于均衡器：后端关闭空闲连接的同时，均衡器正好在这条连接上转发新请求，收到 RST 就返回 502。把后端 keep-alive 超时设得比均衡器更长即可解决。"
+   },
+   {
+    "q": "HTTP Keep-Alive 与 TCP Keepalive 的区别？",
+    "a": "HTTP Keep-Alive 指连接在请求之间保持打开以供复用，由应用层空闲超时控制。TCP Keepalive 是内核在长时间无数据时发送探测包，检测对端是否存活、维持 NAT 映射。两者独立。"
+   },
+   {
+    "q": "有了 keep-alive 为什么还需要 HTTP/2？",
+    "a": "HTTP/1.1 持久连接上请求只能串行，前一个响应慢会阻塞后面（队头阻塞），浏览器只好对同一主机开多条连接。HTTP/2 在一条连接上多路复用多个流，并压缩头部。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "MDN: Keep-Alive",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Keep-Alive"
+   },
+   {
+    "title": "RFC 9112: HTTP/1.1",
+    "url": "https://www.rfc-editor.org/rfc/rfc9112"
+   },
+   {
+    "title": "Node.js: http 模块",
+    "url": "https://nodejs.org/api/http.html"
+   },
+   {
+    "title": "NGINX: keepalive_timeout",
+    "url": "https://nginx.org/en/docs/http/ngx_http_core_module.html#keepalive_timeout"
+   }
+  ]
+ },
+ {
+  "slug": "http-2",
+  "def": "HTTP/2 是 HTTP 的第二个主要版本（现行规范 RFC 9113），保持方法、状态码、头部等语义不变，改变的是传输方式：二进制分帧、单连接多路复用、HPACK 头部压缩与流级流量控制。它解决了 HTTP/1.1 的应用层队头阻塞和多连接开销，但仍受 TCP 层队头阻塞影响。",
+  "how": [
+   "浏览器通过 TLS 的 ALPN 扩展协商 h2；明文 h2c 浏览器不支持，多用于内部服务。",
+   "消息被拆成二进制帧（HEADERS、DATA 等），每帧带流 ID。",
+   "多个请求作为独立的流在同一连接上交错传输，响应可乱序返回。",
+   "HPACK 用静态表、动态表与哈夫曼编码压缩重复的头部字段。",
+   "流量控制按流和连接两级窗口限速；单个 TCP 丢包仍会阻塞所有流。"
+  ],
+  "terms": [
+   {
+    "t": "帧 (Frame)",
+    "d": "HTTP/2 最小传输单位，有类型、长度与流 ID。"
+   },
+   {
+    "t": "流 (Stream)",
+    "d": "连接内一个双向帧序列，对应一次请求/响应。"
+   },
+   {
+    "t": "多路复用 (Multiplexing)",
+    "d": "多个流在同一连接上并发交错传输。"
+   },
+   {
+    "t": "HPACK",
+    "d": "HTTP/2 头部压缩格式，RFC 7541。"
+   },
+   {
+    "t": "ALPN",
+    "d": "TLS 扩展，握手时协商应用层协议（h2、http/1.1）。"
+   },
+   {
+    "t": "服务器推送 (Server Push)",
+    "d": "服务端主动推送资源，已被主流浏览器移除。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "验证站点是否启用 HTTP/2",
+   "src": "# 1. 看 curl 实际协商到的协议版本（输出 2 表示 HTTP/2）\ncurl -sI --http2 https://www.example.com -o /dev/null -w '%{http_version}\\n'\n\n# 2. 看 TLS 握手中 ALPN 协商结果\necho | openssl s_client -alpn h2 -connect www.example.com:443 2>/dev/null \\\n  | grep -i 'ALPN'\n# 期望输出：ALPN protocol: h2\n\n# 3. 详细过程：可看到 \"using HTTP/2\" 及流 ID\ncurl -sv --http2 https://www.example.com -o /dev/null 2>&1 | grep -iE 'ALPN|HTTP/2'\n\n# Nginx 启用方式（1.25.1 起推荐写法）：\n#   listen 443 ssl;\n#   http2 on;\n# 更早版本写作：listen 443 ssl http2;",
+   "note": "以 ALPN 协商结果为准；浏览器 DevTools 网络面板的 Protocol 列显示 h2。"
+  },
+  "table": {
+   "title": "HTTP/1.1、2、3 对比",
+   "head": [
+    "特性",
+    "HTTP/1.1",
+    "HTTP/2",
+    "HTTP/3"
+   ],
+   "rows": [
+    [
+     "传输层",
+     "TCP",
+     "TCP",
+     "QUIC（基于 UDP）"
+    ],
+    [
+     "报文格式",
+     "文本",
+     "二进制帧",
+     "二进制帧"
+    ],
+    [
+     "单连接并发",
+     "否（串行）",
+     "多路复用",
+     "多路复用"
+    ],
+    [
+     "队头阻塞",
+     "应用层 + TCP 层",
+     "TCP 层",
+     "基本消除"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "启用 HTTP/2",
+    "pros": "少连接、多并发、头部压缩",
+    "cons": "高丢包网络下可能不如多连接",
+    "when": "绝大多数 HTTPS 站点"
+   },
+   {
+    "opt": "再加 HTTP/3",
+    "pros": "消除 TCP 队头阻塞，连接迁移",
+    "cons": "UDP 可能被拦截，运维新",
+    "when": "移动端、弱网用户多"
+   },
+   {
+    "opt": "内部服务 h2c",
+    "pros": "gRPC 等可用，无 TLS 开销",
+    "cons": "流量明文",
+    "when": "可信内网的服务间调用"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "仍保留域名分片和大量资源合并",
+    "fix": "HTTP/2 下改为合理拆分，利用多路复用与缓存"
+   },
+   {
+    "bad": "以为启用 HTTP/2 后就没有队头阻塞",
+    "fix": "TCP 层仍会阻塞，弱网可考虑 HTTP/3"
+   },
+   {
+    "bad": "只在 CDN 开启，以为全链路都是 h2",
+    "fix": "分别确认边缘与回源各段使用的协议"
+   },
+   {
+    "bad": "继续依赖已废弃的服务器推送",
+    "fix": "改用 103 Early Hints 或 preload"
+   }
+  ],
+  "checklist": [
+   "ALPN 协商结果为 h2",
+   "TLS 版本与套件满足 HTTP/2 要求",
+   "取消域名分片等 HTTP/1 优化",
+   "代理/负载均衡支持端到端或回源协议",
+   "限制并发流数量等防滥用参数",
+   "评估是否同时启用 HTTP/3"
+  ],
+  "interview": [
+   {
+    "q": "HTTP/2 多路复用解决了什么、没解决什么？",
+    "a": "解决了 HTTP/1.1 同一连接只能串行、需开多连接的问题，多个流可交错传输。没解决 TCP 层队头阻塞：任意一个包丢失，TCP 必须按序交付，所有流都要等重传。HTTP/3 通过 QUIC 按流独立交付来解决。"
+   },
+   {
+    "q": "为什么服务器推送被淘汰？",
+    "a": "服务端很难知道客户端缓存里已有什么，经常推送重复资源浪费带宽，实际收益有限且实现复杂。Chrome 已移除支持，替代方案是 103 Early Hints 和 preload，让浏览器自己决定是否请求。"
+   },
+   {
+    "q": "HPACK 为什么不直接用 gzip 压缩头部？",
+    "a": "对头部用通用压缩曾导致 CRIME 攻击，可通过压缩后长度推测密文中的 Cookie。HPACK 用静态表、动态表索引和哈夫曼编码，设计上降低此类风险，同时适合头部高度重复的场景。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 9113: HTTP/2",
+    "url": "https://www.rfc-editor.org/rfc/rfc9113"
+   },
+   {
+    "title": "RFC 7541: HPACK",
+    "url": "https://www.rfc-editor.org/rfc/rfc7541"
+   },
+   {
+    "title": "RFC 9114: HTTP/3",
+    "url": "https://www.rfc-editor.org/rfc/rfc9114"
+   },
+   {
+    "title": "MDN: HTTP/2 术语",
+    "url": "https://developer.mozilla.org/en-US/docs/Glossary/HTTP_2"
+   }
+  ]
+ },
+ {
+  "slug": "websockets",
+  "def": "WebSocket（RFC 6455）是在单条 TCP 连接上提供全双工、低开销消息通道的协议。它以一次 HTTP/1.1 升级握手开始，之后客户端和服务端可随时互发文本或二进制帧，适合聊天、协同编辑、实时行情与游戏。长连接带来的连接管理、扩容与鉴权是工程重点。",
+  "how": [
+   "客户端发送带 Upgrade: websocket、Sec-WebSocket-Key 的 HTTP GET 请求。",
+   "服务端校验后返回 101 Switching Protocols，并用该 key 计算 Sec-WebSocket-Accept。",
+   "之后双方以帧通信，客户端发往服务端的帧必须掩码，帧可分片承载大消息。",
+   "用 Ping/Pong 控制帧做心跳，检测断线并维持中间设备的连接状态。",
+   "任一方发 Close 帧并带状态码结束；多实例部署时需借助发布订阅在实例间广播。"
+  ],
+  "terms": [
+   {
+    "t": "升级握手 (Upgrade Handshake)",
+    "d": "用 HTTP 请求把连接切换为 WebSocket 协议。"
+   },
+   {
+    "t": "帧 (Frame)",
+    "d": "WebSocket 传输单位，分文本、二进制、控制帧。"
+   },
+   {
+    "t": "掩码 (Masking)",
+    "d": "客户端帧必须用随机键异或，防代理缓存投毒。"
+   },
+   {
+    "t": "子协议 (Subprotocol)",
+    "d": "经 Sec-WebSocket-Protocol 协商的上层消息格式。"
+   },
+   {
+    "t": "CSWSH",
+    "d": "跨站 WebSocket 劫持，因未校验 Origin 被他站建立连接。"
+   },
+   {
+    "t": "背压 (Backpressure)",
+    "d": "发送速度超过对端接收时的缓冲控制。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "Node ws 服务端与心跳",
+   "src": "// npm i ws\nimport { WebSocketServer } from 'ws';\n\nconst ALLOWED_ORIGINS = new Set(['https://app.example.com']);\nconst wss = new WebSocketServer({ port: 8080 });\n\nwss.on('connection', (ws, req) => {\n  // 防跨站 WebSocket 劫持：校验 Origin（鉴权另需 Cookie 或 token）\n  if (!ALLOWED_ORIGINS.has(req.headers.origin)) return ws.close(1008, 'origin');\n\n  ws.isAlive = true;\n  ws.on('pong', () => { ws.isAlive = true; });\n  ws.on('message', (data) => ws.send(`echo: ${data}`));\n});\n\n// 每 30 秒心跳：上一轮没回 pong 的连接视为断开\nconst timer = setInterval(() => {\n  for (const ws of wss.clients) {\n    if (!ws.isAlive) { ws.terminate(); continue; }\n    ws.isAlive = false;\n    ws.ping();\n  }\n}, 30_000);\nwss.on('close', () => clearInterval(timer));\n\n// 浏览器端：const s = new WebSocket('wss://api.example.com/ws');\n//          s.onmessage = (e) => console.log(e.data);",
+   "note": "Origin 校验防 CSWSH；Ping/Pong 心跳清理半开连接，参考 ws 官方示例。"
+  },
+  "table": {
+   "title": "实时通信方案对比",
+   "head": [
+    "方案",
+    "方向",
+    "底层",
+    "适用"
+   ],
+   "rows": [
+    [
+     "WebSocket",
+     "双向",
+     "独立协议（HTTP 升级）",
+     "聊天、协同、游戏"
+    ],
+    [
+     "SSE",
+     "服务端→客户端",
+     "普通 HTTP 流",
+     "通知、AI 流式输出"
+    ],
+    [
+     "长轮询",
+     "模拟推送",
+     "普通 HTTP 请求",
+     "兼容性兜底"
+    ],
+    [
+     "WebTransport",
+     "双向，多流",
+     "HTTP/3",
+     "低延迟新场景，支持仍在演进"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "原生 WebSocket",
+    "pros": "协议标准、开销小",
+    "cons": "重连、心跳、房间需自建",
+    "when": "团队有能力自管连接层"
+   },
+   {
+    "opt": "Socket.IO 等封装库",
+    "pros": "自带重连、房间、降级",
+    "cons": "私有协议，需两端都用该库",
+    "when": "快速做实时功能"
+   },
+   {
+    "opt": "托管实时服务",
+    "pros": "免运维，弹性扩容",
+    "cons": "按连接/消息计费",
+    "when": "连接数波动大"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "不校验 Origin，导致跨站 WebSocket 劫持",
+    "fix": "握手时校验 Origin 白名单并做鉴权"
+   },
+   {
+    "bad": "把 token 放在 URL 查询参数，被访问日志记录",
+    "fix": "用 Cookie，或连接后首条消息发送短期 token"
+   },
+   {
+    "bad": "多实例部署后，消息只发给同实例的连接",
+    "fix": "用 Redis Pub/Sub 等在实例间广播"
+   },
+   {
+    "bad": "空闲连接被负载均衡超时断开",
+    "fix": "心跳间隔小于各层空闲超时，客户端指数退避重连"
+   }
+  ],
+  "checklist": [
+   "握手阶段校验 Origin 并鉴权",
+   "生产使用 wss:// 加密",
+   "心跳间隔小于代理空闲超时",
+   "客户端有指数退避重连",
+   "多实例有跨实例消息分发",
+   "单连接消息大小与速率有上限"
+  ],
+  "interview": [
+   {
+    "q": "WebSocket 握手是怎样完成的？",
+    "a": "客户端发 GET，带 Upgrade: websocket、Sec-WebSocket-Key 与版本 13。服务端把 key 拼接固定 GUID 后做 SHA-1 再 Base64，作为 Sec-WebSocket-Accept 随 101 返回，此后不再走 HTTP。"
+   },
+   {
+    "q": "WebSocket 如何横向扩展？",
+    "a": "连接是有状态的，扩容要解决两点：均衡器支持升级和长连接（会话保持可选）；消息需能送达任意实例上的连接，常用 Redis Pub/Sub、NATS 或 Kafka 做广播，并维护用户到实例的映射。"
+   },
+   {
+    "q": "AI 流式输出该用 WebSocket 还是 SSE？",
+    "a": "多数场景用 SSE：只需服务端单向推送 token，基于普通 HTTP，易过代理与鉴权，主流大模型 API 也以 SSE 返回。需要双向实时交互（语音对话、打断、协同）时才选 WebSocket。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 6455: The WebSocket Protocol",
+    "url": "https://www.rfc-editor.org/rfc/rfc6455"
+   },
+   {
+    "title": "MDN: WebSockets API",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API"
+   },
+   {
+    "title": "ws (Node.js WebSocket 库)",
+    "url": "https://github.com/websockets/ws"
+   },
+   {
+    "title": "OWASP WebSocket Security Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/WebSocket_Security_Cheat_Sheet.html"
+   }
+  ]
+ },
+ {
+  "slug": "server-sent-events",
+  "def": "服务端发送事件（Server-Sent Events，SSE）是 HTML 标准定义的服务端到浏览器单向推送机制：客户端发起一个普通 HTTP 请求，服务端以 text/event-stream 格式持续写出事件，连接保持打开。EventSource 内置自动重连与续传，是通知流与大模型流式输出的常用传输方式。",
+  "how": [
+   "客户端发起 GET 请求（EventSource）或用 fetch 读取流式响应体。",
+   "服务端返回 Content-Type: text/event-stream，并且不结束响应。",
+   "每个事件由若干行组成：data、event、id、retry 字段，以空行结束一个事件。",
+   "以冒号开头的注释行会被客户端忽略，可用作心跳，防止代理因空闲断开连接。",
+   "断线后 EventSource 按 retry 间隔自动重连，并通过 Last-Event-ID 头告知最后收到的 id。"
+  ],
+  "terms": [
+   {
+    "t": "text/event-stream",
+    "d": "SSE 的 MIME 类型，UTF-8 文本、按行解析。"
+   },
+   {
+    "t": "EventSource",
+    "d": "浏览器内置的 SSE 客户端 API，只支持 GET。"
+   },
+   {
+    "t": "Last-Event-ID",
+    "d": "重连时浏览器自动携带的请求头，用于续传。"
+   },
+   {
+    "t": "retry 字段",
+    "d": "服务端指定的重连等待毫秒数。"
+   },
+   {
+    "t": "命名事件 (Named Event)",
+    "d": "用 event 字段区分类型，客户端按名监听。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "Express SSE 与断点续传",
+   "src": "app.get('/events', (req, res) => {\n  res.writeHead(200, {\n    'Content-Type': 'text/event-stream',\n    'Cache-Control': 'no-cache',\n    'X-Accel-Buffering': 'no',          // 告诉 Nginx 不要缓冲\n  });\n  let id = Number(req.headers['last-event-id'] ?? 0);  // 断线重连时续传\n  res.write('retry: 5000\\n\\n');         // 建议浏览器 5 秒后重连\n\n  const tick = setInterval(() => {\n    id += 1;\n    res.write(`id: ${id}\\nevent: tick\\ndata: ${JSON.stringify({ t: Date.now() })}\\n\\n`);\n  }, 1000);\n  const heartbeat = setInterval(() => res.write(': ping\\n\\n'), 15000);\n\n  req.on('close', () => { clearInterval(tick); clearInterval(heartbeat); });\n});\n\n// 浏览器端\nconst es = new EventSource('/events');\nes.addEventListener('tick', (e) => console.log(e.lastEventId, JSON.parse(e.data)));\nes.onerror = () => console.warn('断开，浏览器会自动重连');",
+   "note": "id 加 Last-Event-ID 实现续传；注释行心跳保活；客户端断开时清理定时器。"
+  },
+  "table": {
+   "title": "事件流字段",
+   "head": [
+    "字段",
+    "作用",
+    "示例"
+   ],
+   "rows": [
+    [
+     "data",
+     "事件数据，可多行拼接",
+     "data: {\"delta\":\"你\"}"
+    ],
+    [
+     "event",
+     "事件类型名",
+     "event: message_stop"
+    ],
+    [
+     "id",
+     "事件 ID，用于续传",
+     "id: 42"
+    ],
+    [
+     "retry",
+     "重连间隔（毫秒）",
+     "retry: 5000"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "EventSource",
+    "pros": "自动重连与续传，零依赖",
+    "cons": "只能 GET，不能自定义请求头",
+    "when": "通知、行情等订阅推送"
+   },
+   {
+    "opt": "fetch + 流式读取",
+    "pros": "可 POST、带 Authorization 头",
+    "cons": "重连与解析需自己实现",
+    "when": "调用大模型流式接口"
+   },
+   {
+    "opt": "WebSocket",
+    "pros": "双向实时",
+    "cons": "协议与运维更复杂",
+    "when": "客户端也要频繁上行消息"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "经过 Nginx/CDN 后事件被攒成一大块",
+    "fix": "关闭代理缓冲与压缩，或返回 X-Accel-Buffering: no"
+   },
+   {
+    "bad": "HTTP/1.1 下开多个标签页，连接数耗尽",
+    "fix": "启用 HTTP/2，或多标签共享一个连接"
+   },
+   {
+    "bad": "客户端断开后服务端仍在生成内容",
+    "fix": "监听 close 事件，中止上游生成并清理资源"
+   },
+   {
+    "bad": "data 中直接写含换行的文本，解析错位",
+    "fix": "数据用 JSON 编码，或每行分别加 data: 前缀"
+   }
+  ],
+  "checklist": [
+   "响应头为 text/event-stream 且禁缓存",
+   "代理与 CDN 不缓冲该路径",
+   "有心跳且间隔小于各层空闲超时",
+   "事件带 id，服务端支持续传",
+   "客户端断开时停止上游任务",
+   "生产环境启用 HTTP/2"
+  ],
+  "interview": [
+   {
+    "q": "为什么大模型 API 普遍用 SSE 而不是 WebSocket？",
+    "a": "生成过程是一次请求对应服务端单向连续输出，SSE 正好匹配：基于普通 HTTP，复用现有鉴权、网关、日志与负载均衡，实现简单。客户端通常用 fetch 读取流，以便 POST 请求体和设置鉴权头。"
+   },
+   {
+    "q": "SSE 如何做到断线不丢消息？",
+    "a": "服务端为每个事件分配递增 id；浏览器重连时自动带 Last-Event-ID；服务端从该 id 之后补发。需要服务端保留一段事件历史（内存环形缓冲或 Redis Stream），超出范围时让客户端全量刷新。"
+   },
+   {
+    "q": "SSE 的连接数限制是怎么回事？",
+    "a": "HTTP/1.1 下浏览器对同一域名的并发连接数有限（通常 6 个），每个 SSE 占用一个，多标签页时容易耗尽导致其他请求排队。HTTP/2 多路复用可解决，或用 BroadcastChannel 让多标签共享。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "HTML Standard: Server-sent events",
+    "url": "https://html.spec.whatwg.org/multipage/server-sent-events.html"
+   },
+   {
+    "title": "MDN: Using server-sent events",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events"
+   },
+   {
+    "title": "MDN: EventSource",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/API/EventSource"
+   }
+  ]
+ },
+ {
+  "slug": "long-polling",
+  "def": "长轮询（Long Polling）是用普通 HTTP 模拟服务端推送的技术：客户端发出请求后，服务端在有新数据或超时之前不返回响应；客户端收到响应后立刻发起下一次请求。它无需特殊协议，兼容性最好，但每条消息都要一次完整请求往返，连接与资源开销较大。",
+  "how": [
+   "客户端带上游标（上次收到的最后一条消息 ID）发起普通 HTTP 请求。",
+   "服务端若已有游标之后的新数据，立即返回；否则把请求挂起等待。",
+   "有新消息时唤醒挂起的请求并返回；等待超过时限则返回空响应（如 204）。",
+   "客户端处理结果、更新游标后立刻发起下一轮请求，出错时退避重试。",
+   "游标保证两次请求之间的空档期内产生的消息，在下一轮请求时被补发而不丢失。"
+  ],
+  "terms": [
+   {
+    "t": "短轮询 (Short Polling)",
+    "d": "固定间隔请求，无论有无数据立即返回。"
+   },
+   {
+    "t": "挂起请求 (Hanging Request)",
+    "d": "服务端暂不响应、保持打开的请求。"
+   },
+   {
+    "t": "游标 (Cursor)",
+    "d": "标记客户端已接收位置的 ID 或时间戳。"
+   },
+   {
+    "t": "轮询超时 (Poll Timeout)",
+    "d": "服务端最长挂起时间，需小于各层代理超时。"
+   },
+   {
+    "t": "惊群 (Thundering Herd)",
+    "d": "大量挂起请求同时被唤醒、同时重连。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "带游标的长轮询",
+   "src": "// 服务端（Express）：有新消息立即返回，否则最多挂起 25 秒\nconst messages = [];           // 示例用内存，生产用数据库或 Redis\nconst waiters = new Set();\n\napp.get('/poll', (req, res) => {\n  const since = Number(req.query.since ?? 0);\n  const fresh = messages.filter((m) => m.id > since);\n  if (fresh.length) return res.json(fresh);\n\n  const done = (msg) => { clearTimeout(timer); waiters.delete(done); res.json([msg]); };\n  const timer = setTimeout(() => { waiters.delete(done); res.status(204).end(); }, 25_000);\n  waiters.add(done);\n  req.on('close', () => { clearTimeout(timer); waiters.delete(done); });\n});\n\nfunction publish(text) {\n  const msg = { id: messages.length + 1, text };\n  messages.push(msg);\n  for (const w of [...waiters]) w(msg);\n}\n\n// 客户端：收到响应立刻发下一轮，出错时等待后重试\nasync function poll(since = 0) {\n  for (;;) {\n    try {\n      const r = await fetch(`/poll?since=${since}`);\n      if (r.status === 200) { const msgs = await r.json(); since = msgs.at(-1).id; render(msgs); }\n    } catch { await new Promise((ok) => setTimeout(ok, 2000)); }\n  }\n}",
+   "note": "游标防止请求间隙丢消息；挂起时限要短于代理与负载均衡的超时。"
+  },
+  "table": {
+   "title": "推送方案开销对比",
+   "head": [
+    "方案",
+    "每条消息开销",
+    "实时性",
+    "兼容性"
+   ],
+   "rows": [
+    [
+     "短轮询",
+     "固定频率请求，多为空",
+     "取决于间隔",
+     "最好"
+    ],
+    [
+     "长轮询",
+     "一次完整请求往返",
+     "接近实时",
+     "很好"
+    ],
+    [
+     "SSE",
+     "一个事件帧",
+     "实时",
+     "现代浏览器"
+    ],
+    [
+     "WebSocket",
+     "一个数据帧",
+     "实时、双向",
+     "现代浏览器"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "长轮询",
+    "pros": "纯 HTTP，穿透企业代理最稳",
+    "cons": "请求头开销大，挂起占资源",
+    "when": "兼容兜底或低频推送"
+   },
+   {
+    "opt": "SSE",
+    "pros": "单连接持续推送，自动重连",
+    "cons": "单向，部分代理需配置",
+    "when": "服务端单向推送"
+   },
+   {
+    "opt": "短轮询",
+    "pros": "实现最简单，易缓存",
+    "cons": "延迟与空请求浪费",
+    "when": "数据分钟级变化"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "挂起 60 秒，被负载均衡 60 秒空闲超时切断",
+    "fix": "挂起时长设为明显小于各层超时，如 20–30 秒"
+   },
+   {
+    "bad": "不带游标，两次请求之间的消息丢失",
+    "fix": "请求带上最后收到的 ID，服务端补发"
+   },
+   {
+    "bad": "同步阻塞式服务器每个挂起请求占一个线程",
+    "fix": "使用异步 IO 框架承载挂起连接"
+   },
+   {
+    "bad": "服务端故障时客户端立即疯狂重试",
+    "fix": "错误时指数退避并加随机抖动"
+   }
+  ],
+  "checklist": [
+   "请求携带游标，服务端支持补发",
+   "挂起时长小于所有中间层超时",
+   "服务端使用异步 IO",
+   "客户端错误时退避重试",
+   "多实例时消息经共享存储分发",
+   "监控挂起请求数量"
+  ],
+  "interview": [
+   {
+    "q": "长轮询和短轮询的本质区别？",
+    "a": "短轮询无论是否有数据都立即返回，客户端按固定间隔重复请求，延迟取决于间隔且大量请求为空。长轮询在没有数据时挂起请求，数据一到即返回，延迟接近实时，空请求只在超时时出现。"
+   },
+   {
+    "q": "长轮询如何在多实例部署下工作？",
+    "a": "请求可能落在任意实例，因此消息不能只存在某实例内存中。需把消息写入共享存储（数据库、Redis），并通过 Pub/Sub 通知各实例唤醒挂起的请求；游标基于全局递增 ID。"
+   },
+   {
+    "q": "现在还有理由用长轮询吗？",
+    "a": "有。某些企业代理或老旧网络环境会阻断 WebSocket 或缓冲流式响应，长轮询最可靠；Telegram Bot API 的 getUpdates 就采用长轮询。Socket.IO 等库也把它作为降级传输。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 6202: Long Polling and Streaming in Bidirectional HTTP",
+    "url": "https://www.rfc-editor.org/rfc/rfc6202"
+   },
+   {
+    "title": "Telegram Bot API: getUpdates",
+    "url": "https://core.telegram.org/bots/api#getupdates"
+   },
+   {
+    "title": "javascript.info: Long polling",
+    "url": "https://javascript.info/long-polling"
+   }
+  ]
+ },
+ {
+  "slug": "grpc",
+  "def": "gRPC 是 Google 开源的高性能远程过程调用框架，以 HTTP/2 为传输层、默认用 Protocol Buffers 定义接口和序列化消息。通过代码生成，调用远程服务就像调用本地函数。它支持一元调用与三种流式调用、超时传播和拦截器，广泛用于微服务内部通信。",
+  "how": [
+   "在 .proto 文件中定义 service 与方法、请求和响应消息。",
+   "protoc 及语言插件生成客户端存根（stub）和服务端接口代码。",
+   "客户端调用存根，请求被序列化为 Protobuf，作为 HTTP/2 流发送，元数据放在头部。",
+   "服务端反序列化、执行业务逻辑，返回响应与状态码（放在 HTTP/2 trailers 中）。",
+   "截止时间（deadline）随调用传播，超时自动取消；长连接复用承载大量并发调用。"
+  ],
+  "terms": [
+   {
+    "t": "存根 (Stub)",
+    "d": "生成的客户端代理，封装序列化与网络调用。"
+   },
+   {
+    "t": "一元调用 (Unary RPC)",
+    "d": "一个请求对应一个响应。"
+   },
+   {
+    "t": "流式 RPC (Streaming RPC)",
+    "d": "服务端流、客户端流、双向流三种模式。"
+   },
+   {
+    "t": "截止时间 (Deadline)",
+    "d": "调用必须完成的绝对时间点，超时返回 DEADLINE_EXCEEDED。"
+   },
+   {
+    "t": "元数据 (Metadata)",
+    "d": "随调用传递的键值对，类似 HTTP 头。"
+   },
+   {
+    "t": "gRPC-Web",
+    "d": "让浏览器经代理调用 gRPC 服务的协议变体。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Python 客户端调用与超时",
+   "src": "# greeter.proto:\n#   service Greeter { rpc SayHello (HelloRequest) returns (HelloReply); }\n#   message HelloRequest { string name = 1; }\n#   message HelloReply   { string message = 1; }\n# 生成代码：pip install grpcio grpcio-tools\n#   python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. greeter.proto\nimport grpc\nimport greeter_pb2, greeter_pb2_grpc\n\nwith grpc.insecure_channel(\"localhost:50051\") as channel:   # 内网示例，生产用 TLS\n    stub = greeter_pb2_grpc.GreeterStub(channel)\n    try:\n        reply = stub.SayHello(\n            greeter_pb2.HelloRequest(name=\"Q1f730\"),\n            timeout=2.0,                                  # 必须设截止时间\n            metadata=[(\"x-request-id\", \"req-123\")],\n        )\n        print(reply.message)\n    except grpc.RpcError as e:\n        if e.code() == grpc.StatusCode.DEADLINE_EXCEEDED:\n            print(\"超时\")\n        elif e.code() == grpc.StatusCode.UNAVAILABLE:\n            print(\"服务不可用，可按策略重试\")\n        else:\n            raise",
+   "note": "接口由 .proto 生成；每次调用都设 timeout，并按状态码区分可重试错误。"
+  },
+  "table": {
+   "title": "gRPC 与 REST/JSON",
+   "head": [
+    "维度",
+    "gRPC",
+    "REST + JSON"
+   ],
+   "rows": [
+    [
+     "接口定义",
+     ".proto 强类型契约",
+     "OpenAPI（可选）"
+    ],
+    [
+     "传输",
+     "HTTP/2，支持流式",
+     "HTTP/1.1 或 2"
+    ],
+    [
+     "载荷",
+     "二进制 Protobuf",
+     "文本 JSON，可读性好"
+    ],
+    [
+     "浏览器调用",
+     "需 gRPC-Web 或 Connect",
+     "原生支持"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "gRPC",
+    "pros": "强契约、性能好、原生流式",
+    "cons": "调试不直观，浏览器需代理",
+    "when": "微服务内部、多语言调用"
+   },
+   {
+    "opt": "REST/JSON",
+    "pros": "通用、易调试、生态成熟",
+    "cons": "契约松散，载荷较大",
+    "when": "对外公开 API"
+   },
+   {
+    "opt": "Connect / gRPC-Web",
+    "pros": "复用 proto 契约到浏览器",
+    "cons": "多一层协议与工具链",
+    "when": "前后端共享 proto"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "调用不设 deadline，下游卡住时请求无限挂起",
+    "fix": "每个调用设置截止时间并向下游传播"
+   },
+   {
+    "bad": "用四层负载均衡，长连接导致流量集中在少数实例",
+    "fix": "用七层（如 Envoy）或客户端负载均衡"
+   },
+   {
+    "bad": "所有错误都返回 UNKNOWN",
+    "fix": "按语义映射标准状态码，附带错误详情"
+   },
+   {
+    "bad": "随意修改 proto 字段编号或类型",
+    "fix": "遵循 Protobuf 兼容规则，在 CI 中做破坏性变更检查"
+   }
+  ],
+  "checklist": [
+   "所有调用设置了截止时间",
+   "负载均衡在请求级别分发",
+   "错误映射到标准状态码",
+   "生产启用 TLS 或 mTLS",
+   "proto 变更有兼容性检查",
+   "重试仅针对幂等方法与可重试状态码"
+  ],
+  "interview": [
+   {
+    "q": "为什么 gRPC 在 Kubernetes 默认 Service 下负载不均？",
+    "a": "kube-proxy 做的是四层连接级均衡，而 gRPC 客户端复用一条 HTTP/2 长连接发送所有请求，连接建立后请求全落在同一 Pod。需改用 headless Service 加客户端负载均衡，或经 Envoy/服务网格做请求级均衡。"
+   },
+   {
+    "q": "deadline 和 timeout 有何不同？为什么要传播？",
+    "a": "timeout 是相对时长，deadline 是绝对时间点。gRPC 把 deadline 随调用传给下游，下游可得知剩余时间，在上游已放弃时及时取消，避免为已超时的请求继续消耗资源。"
+   },
+   {
+    "q": "gRPC 的四种调用模式分别适合什么？",
+    "a": "一元：普通请求响应。服务端流：订阅、大结果分批下发。客户端流：批量上传、遥测上报。双向流：实时对话、协同。流式调用需注意背压与连接寿命管理。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "gRPC: Core concepts",
+    "url": "https://grpc.io/docs/what-is-grpc/core-concepts/"
+   },
+   {
+    "title": "gRPC: Deadlines",
+    "url": "https://grpc.io/docs/guides/deadlines/"
+   },
+   {
+    "title": "gRPC: Status codes",
+    "url": "https://grpc.io/docs/guides/status-codes/"
+   },
+   {
+    "title": "gRPC Python Quick start",
+    "url": "https://grpc.io/docs/languages/python/quickstart/"
+   }
+  ]
+ },
+ {
+  "slug": "protocol-buffers",
+  "def": "Protocol Buffers（Protobuf）是 Google 开发的语言无关、平台无关的结构化数据序列化格式。开发者在 .proto 文件中定义消息结构，编译器生成各语言代码。它以字段编号而非字段名编码，体积小、解析快，并有明确的前后向兼容规则，是 gRPC 的默认载荷格式。",
+  "how": [
+   "在 .proto 中为每个字段指定类型和唯一的字段编号。",
+   "protoc 生成各语言的消息类，提供序列化与反序列化方法。",
+   "编码时每个字段写为“标签 + 值”：标签由字段编号和线路类型组成，整数用变长编码。",
+   "未赋值的默认值字段通常不写出；解析时遇到不认识的编号会作为未知字段保留或跳过。",
+   "因为只认编号不认名字，改字段名不影响兼容，改编号或类型则会破坏兼容。"
+  ],
+  "terms": [
+   {
+    "t": "字段编号 (Field Number)",
+    "d": "字段在二进制中的唯一标识，一旦使用不可更改。"
+   },
+   {
+    "t": "线路类型 (Wire Type)",
+    "d": "决定如何读取值：VARINT、I64、LEN、I32 等。"
+   },
+   {
+    "t": "Varint",
+    "d": "变长整数编码，小数值占用更少字节。"
+   },
+   {
+    "t": "reserved",
+    "d": "声明已废弃的编号或名称，防止被复用。"
+   },
+   {
+    "t": "字段存在性 (Field Presence)",
+    "d": "能否区分“未设置”和“设为默认值”。"
+   },
+   {
+    "t": "未知字段 (Unknown Fields)",
+    "d": "旧代码不认识的新字段，解析时保留不报错。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": ".proto 定义与演进规则",
+   "src": "// user.proto\nsyntax = \"proto3\";\npackage demo.v1;\n\nmessage User {\n  int64  id    = 1;              // 1–15 号字段的标签只占 1 字节，留给高频字段\n  string name  = 2;\n  optional string nickname = 3;  // optional 可区分“未设置”与空字符串\n  repeated string tags = 4;\n  Status status = 5;\n  reserved 6;                    // 已删除字段的编号，永不复用\n  reserved \"email\";              // 也保留旧字段名\n}\n\nenum Status {\n  STATUS_UNSPECIFIED = 0;        // proto3 枚举第一个值必须是 0，作为默认值\n  STATUS_ACTIVE = 1;\n  STATUS_BANNED = 2;\n}\n\n// 编码示例：字段 1 为 varint 150 → 字节 08 96 01\n//   08 = (字段号 1 << 3) | 线路类型 0(VARINT)\n// 生成代码：protoc --python_out=. user.proto",
+   "note": "编号决定编码与兼容性；删除字段要 reserved，枚举零值作为未指定。"
+  },
+  "table": {
+   "title": "字段变更的兼容性",
+   "head": [
+    "变更",
+    "是否兼容",
+    "说明"
+   ],
+   "rows": [
+    [
+     "新增字段（新编号）",
+     "兼容",
+     "旧代码视为未知字段"
+    ],
+    [
+     "删除字段并 reserved",
+     "兼容",
+     "编号不可再用"
+    ],
+    [
+     "修改字段名",
+     "二进制兼容",
+     "JSON 映射与生成代码会变"
+    ],
+    [
+     "修改编号或不兼容类型",
+     "不兼容",
+     "数据会被错误解析"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Protobuf",
+    "pros": "体积小、解析快、强类型契约",
+    "cons": "不可读，需 schema 才能解码",
+    "when": "服务间通信、大量数据传输"
+   },
+   {
+    "opt": "JSON",
+    "pros": "人类可读，浏览器原生",
+    "cons": "体积大，无强制 schema",
+    "when": "公开 API、调试友好优先"
+   },
+   {
+    "opt": "Avro / Thrift",
+    "pros": "Avro 适合数据管道与 schema 演进",
+    "cons": "生态与工具链差异",
+    "when": "Kafka 等大数据场景"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "删除字段后把编号分配给新字段",
+    "fix": "删除时 reserved 编号和名称"
+   },
+   {
+    "bad": "把 int32 改成 string 等不兼容类型",
+    "fix": "新增字段承载新类型，逐步迁移"
+   },
+   {
+    "bad": "proto3 无法区分“没传”与“传了 0”",
+    "fix": "需要区分时用 optional 或包装类型"
+   },
+   {
+    "bad": "枚举零值赋予业务含义",
+    "fix": "零值固定为 UNSPECIFIED，业务值从 1 开始"
+   }
+  ],
+  "checklist": [
+   "字段编号从未被复用",
+   "删除字段已 reserved",
+   "枚举零值为 UNSPECIFIED",
+   "需要存在性的字段使用 optional",
+   "CI 中运行破坏性变更检测",
+   "包名带版本号（如 v1）"
+  ],
+  "interview": [
+   {
+    "q": "Protobuf 为什么比 JSON 小？",
+    "a": "不传输字段名，只传一个小整数标签；整数用 varint 变长编码，小数值只占一两个字节；默认值字段通常不写出；无引号、括号等语法字符。代价是必须有 schema 才能解读。"
+   },
+   {
+    "q": "proto3 的字段存在性问题是什么？",
+    "a": "早期 proto3 中标量字段无存在性，0、空字符串与未设置无法区分，部分更新语义因此难以表达。现在可用 optional 关键字恢复显式存在性，或使用 google.protobuf 包装类型。"
+   },
+   {
+    "q": "如何在团队里防止破坏性 proto 变更？",
+    "a": "在 CI 中用 buf breaking 等工具对比新旧 schema；约定只新增字段、删除必 reserved；包名带版本，重大变更走新版本包；代码评审重点关注编号与类型改动。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Protocol Buffers: Overview",
+    "url": "https://protobuf.dev/overview/"
+   },
+   {
+    "title": "Protocol Buffers: Encoding",
+    "url": "https://protobuf.dev/programming-guides/encoding/"
+   },
+   {
+    "title": "Protocol Buffers: Language Guide (proto3)",
+    "url": "https://protobuf.dev/programming-guides/proto3/"
+   },
+   {
+    "title": "Protocol Buffers: Dos and Don'ts",
+    "url": "https://protobuf.dev/best-practices/dos-donts/"
+   }
+  ]
+ },
+ {
+  "slug": "backward-compatibility",
+  "def": "向后兼容（Backward Compatibility）指系统的新版本仍能正确服务旧版本的客户端、数据或调用方式。它覆盖 API、数据库结构、消息格式、SDK 与配置等层面。在无法同时升级所有调用方的现实中（尤其是移动端与第三方集成），它是平滑演进与安全发布的前提。",
+  "how": [
+   "明确契约：接口、字段、语义、错误码与默认行为都属于对外承诺。",
+   "优先做增量变更：新增可选字段、新增端点，不删除、不改名、不改语义。",
+   "调用方遵循宽容读取：忽略不认识的字段，对新增枚举值有默认处理。",
+   "必须破坏时走版本化：新版本并行运行，旧版本标记弃用并公告下线时间。",
+   "用契约测试与 schema 差异检查在 CI 中自动拦截破坏性变更。"
+  ],
+  "terms": [
+   {
+    "t": "破坏性变更 (Breaking Change)",
+    "d": "会让现有调用方出错或行为改变的修改。"
+   },
+   {
+    "t": "向前兼容 (Forward Compatibility)",
+    "d": "旧版本能处理新版本产生的数据。"
+   },
+   {
+    "t": "宽容读取 (Tolerant Reader)",
+    "d": "只读取需要的字段，忽略其余。"
+   },
+   {
+    "t": "语义化版本 (SemVer)",
+    "d": "主版本.次版本.修订号，主版本递增表示不兼容。"
+   },
+   {
+    "t": "Sunset 头",
+    "d": "RFC 8594 定义，告知资源预计停止服务的时间。"
+   },
+   {
+    "t": "契约测试 (Contract Testing)",
+    "d": "验证提供方是否满足消费方期望的测试。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "OpenAPI 中的安全演进",
+   "src": "# openapi.yaml 片段：v1 接口的兼容性演进\npaths:\n  /v1/users/{id}:\n    get:\n      responses:\n        \"200\":\n          content:\n            application/json:\n              schema:\n                $ref: \"#/components/schemas/User\"\ncomponents:\n  schemas:\n    User:\n      type: object\n      required: [id, name]          # 不新增必填项，避免旧请求失败\n      properties:\n        id:   { type: string }\n        name: { type: string }\n        display_name:               # 新增可选字段：兼容\n          type: string\n        nickname:\n          type: string\n          deprecated: true          # 标记弃用，保留一段时间再移除\n          description: 请改用 display_name\n# 在 CI 中检查破坏性变更（oasdiff 工具）：\n#   oasdiff breaking openapi-main.yaml openapi.yaml",
+   "note": "只增不删、新字段可选、旧字段先弃用；用 schema 差异工具在合并前拦截。"
+  },
+  "table": {
+   "title": "常见变更的兼容性",
+   "head": [
+    "变更",
+    "对旧客户端",
+    "建议做法"
+   ],
+   "rows": [
+    [
+     "新增可选响应字段",
+     "通常安全",
+     "客户端需忽略未知字段"
+    ],
+    [
+     "新增必填请求参数",
+     "破坏",
+     "改为可选并给默认值"
+    ],
+    [
+     "删除或重命名字段",
+     "破坏",
+     "先新增、双写、弃用，再删除"
+    ],
+    [
+     "新增枚举值",
+     "可能破坏",
+     "客户端对未知值有兜底分支"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "URL 版本（/v1、/v2）",
+    "pros": "直观，易路由和缓存",
+    "cons": "版本粒度粗，维护多套",
+    "when": "公开 API 大版本演进"
+   },
+   {
+    "opt": "日期/头部版本（如 Stripe）",
+    "pros": "细粒度，按账户固定版本",
+    "cons": "实现复杂，需版本转换层",
+    "when": "大型平台型 API"
+   },
+   {
+    "opt": "只做增量不分版本",
+    "pros": "最简单，无版本碎片",
+    "cons": "历史包袱累积",
+    "when": "内部 API 或调用方可控"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "字段没删，但语义或单位悄悄变了",
+    "fix": "语义变化视同破坏性变更，用新字段表达"
+   },
+   {
+    "bad": "后端先上线新必填字段，旧 App 全部报错",
+    "fix": "先发兼容后端，旧版本占比降下来后再收紧"
+   },
+   {
+    "bad": "客户端遇到未知枚举值直接崩溃",
+    "fix": "所有枚举处理都有默认分支"
+   },
+   {
+    "bad": "AI 重构时顺手改了接口字段名",
+    "fix": "提示中明确接口契约不可变，CI 做 schema 对比"
+   }
+  ],
+  "checklist": [
+   "变更已对照破坏性变更清单检查",
+   "新字段为可选并有默认值",
+   "弃用字段有公告与下线日期",
+   "CI 运行 schema 差异或契约测试",
+   "客户端忽略未知字段与枚举值",
+   "监控旧版本调用量再决定下线"
+  ],
+  "interview": [
+   {
+    "q": "向后兼容和向前兼容的区别？",
+    "a": "向后兼容：新系统能处理旧客户端/旧数据，例如新 API 接受旧请求。向前兼容：旧系统能处理新数据，例如旧客户端收到含新字段的响应不出错。滚动发布期间新旧版本共存，两者通常都需要。"
+   },
+   {
+    "q": "如何安全地重命名一个 API 字段？",
+    "a": "新增新字段并同时返回新旧两个；文档与响应中标记旧字段弃用（可配 Deprecation/Sunset 头）；监控仍读取旧字段的调用方并通知迁移；调用量归零或到期后再删除旧字段。"
+   },
+   {
+    "q": "移动端为什么让兼容更难？",
+    "a": "用户不一定升级，旧版本可能存活很久，服务端无法强制同步更新。需要长期支持多个客户端版本，按版本统计流量，必要时用最低版本强制升级机制，并让客户端对未知字段宽容。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Semantic Versioning 2.0.0",
+    "url": "https://semver.org/"
+   },
+   {
+    "title": "Google AIP-180: Backwards compatibility",
+    "url": "https://google.aip.dev/180"
+   },
+   {
+    "title": "RFC 8594: The Sunset HTTP Header Field",
+    "url": "https://www.rfc-editor.org/rfc/rfc8594"
+   },
+   {
+    "title": "Stripe: API versioning",
+    "url": "https://docs.stripe.com/api/versioning"
+   }
+  ]
+ },
+ {
+  "slug": "latency-vs-throughput",
+  "def": "延迟（Latency）是单个请求从发出到完成所需的时间，吞吐量（Throughput）是单位时间内系统完成的请求或数据量。两者相关但不同：批处理、排队、并发可以提高吞吐却拉长延迟。性能目标需同时说明两者，并用分位数而非平均值描述延迟。",
+  "how": [
+   "延迟由网络往返、排队等待、处理时间、依赖调用等组成，常用 P50、P95、P99 描述。",
+   "吞吐受限于最慢的瓶颈资源（CPU、IO、锁、连接池、下游配额）。",
+   "Little 定律：系统内平均在途请求数 = 到达率 × 平均停留时间，把三者联系起来。",
+   "资源利用率接近饱和时，排队时间急剧上升，延迟呈非线性恶化。",
+   "扇出调用中，整体延迟取决于最慢的子调用，尾延迟会被放大。"
+  ],
+  "terms": [
+   {
+    "t": "分位数 (Percentile)",
+    "d": "P99 表示 99% 的请求不超过该延迟。"
+   },
+   {
+    "t": "尾延迟 (Tail Latency)",
+    "d": "高分位（P99、P99.9）的延迟，影响最差体验。"
+   },
+   {
+    "t": "Little 定律 (Little's Law)",
+    "d": "L = λW，在途数、到达率与停留时间的关系。"
+   },
+   {
+    "t": "饱和度 (Saturation)",
+    "d": "资源被占满、请求开始排队的程度。"
+   },
+   {
+    "t": "TTFT",
+    "d": "大模型首个 token 返回所需时间，属延迟指标。"
+   },
+   {
+    "t": "批处理 (Batching)",
+    "d": "合并多个请求一起处理，提高吞吐、增加等待。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "压测：同时看吞吐与分位数",
+   "src": "# pip install httpx\nimport asyncio, time, statistics, httpx\n\nURL, N, CONCURRENCY = \"http://localhost:8000/health\", 500, 50\n\nasync def main():\n    latencies, sem = [], asyncio.Semaphore(CONCURRENCY)\n    async with httpx.AsyncClient() as client:\n        async def one():\n            async with sem:\n                t = time.perf_counter()\n                await client.get(URL)\n                latencies.append(time.perf_counter() - t)\n        start = time.perf_counter()\n        await asyncio.gather(*(one() for _ in range(N)))\n        elapsed = time.perf_counter() - start\n\n    latencies.sort()\n    pct = lambda p: latencies[int(p * (len(latencies) - 1))] * 1000\n    rps = N / elapsed\n    print(f\"吞吐 {rps:.0f} req/s | P50 {pct(.50):.1f}ms P95 {pct(.95):.1f}ms P99 {pct(.99):.1f}ms\")\n    # Little 定律验证：在途请求数 ≈ 吞吐 × 平均延迟，应接近设定的并发\n    print(f\"估算在途 {rps * statistics.mean(latencies):.1f}（设定并发 {CONCURRENCY}）\")\n\nasyncio.run(main())",
+   "note": "改变并发数重复测量，可看到吞吐先升后平、延迟在饱和后陡增的拐点。"
+  },
+  "table": {
+   "title": "常见优化手段的影响",
+   "head": [
+    "手段",
+    "吞吐",
+    "延迟"
+   ],
+   "rows": [
+    [
+     "批处理/合并写",
+     "提升",
+     "单个请求变长"
+    ],
+    [
+     "增加并发/实例",
+     "提升（至瓶颈）",
+     "未饱和时基本不变"
+    ],
+    [
+     "缓存",
+     "提升",
+     "命中时大幅降低"
+    ],
+    [
+     "对冲请求 (Hedged Request)",
+     "略降（多发请求）",
+     "降低尾延迟"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "优先低延迟",
+    "pros": "交互体验好",
+    "cons": "资源利用率低，成本高",
+    "when": "在线交互、支付链路"
+   },
+   {
+    "opt": "优先高吞吐",
+    "pros": "单位成本低",
+    "cons": "单个任务等待更久",
+    "when": "离线批处理、数据管道"
+   },
+   {
+    "opt": "大模型推理批处理",
+    "pros": "GPU 利用率与总 tokens/s 提升",
+    "cons": "单请求 TTFT 与速度可能下降",
+    "when": "高并发推理服务"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只看平均延迟",
+    "fix": "报告 P50/P95/P99，并按接口拆分"
+   },
+   {
+    "bad": "压测只用固定并发，掩盖排队延迟",
+    "fix": "按固定到达率施压，观察延迟随负载变化"
+   },
+   {
+    "bad": "把利用率推到 95% 以上追求成本",
+    "fix": "为突发留余量，关注饱和后的延迟拐点"
+   },
+   {
+    "bad": "评估大模型服务只看 tokens/s",
+    "fix": "同时看 TTFT、单请求速度与并发下的分位数"
+   }
+  ],
+  "checklist": [
+   "SLO 同时定义延迟分位数与吞吐",
+   "压测覆盖到饱和拐点",
+   "监控按接口统计 P99",
+   "已识别当前的瓶颈资源",
+   "扇出调用有超时与降级",
+   "容量规划留有突发余量"
+  ],
+  "interview": [
+   {
+    "q": "为什么不能用平均延迟衡量性能？",
+    "a": "延迟分布通常长尾，少量极慢请求会被平均值掩盖，而用户恰恰记住慢的那几次。一个页面依赖多个请求时，遇到尾延迟的概率被放大。所以用 P95/P99 并结合分布图来定义目标。"
+   },
+   {
+    "q": "用 Little 定律能做什么估算？",
+    "a": "已知目标吞吐和平均延迟，可估算需要的并发度，例如 1000 req/s × 0.05 s ≈ 50 个在途请求，据此配置连接池、线程数或实例数；反过来也能根据并发上限推算最大吞吐。"
+   },
+   {
+    "q": "如何降低扇出系统的尾延迟？",
+    "a": "减少扇出宽度；对子调用设置超时与部分结果降级；对冲请求（超过 P95 时向另一副本补发）；隔离慢请求的资源；消除 GC 停顿等抖动来源。Dean 与 Barroso 的《The Tail at Scale》系统讨论了这些方法。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "The Tail at Scale (Google Research)",
+    "url": "https://research.google/pubs/the-tail-at-scale/"
+   },
+   {
+    "title": "Wikipedia: Little's law",
+    "url": "https://en.wikipedia.org/wiki/Little%27s_law"
+   },
+   {
+    "title": "Google SRE Book: Monitoring Distributed Systems",
+    "url": "https://sre.google/sre-book/monitoring-distributed-systems/"
+   }
+  ]
+ },
+ {
+  "slug": "egress-fees",
+  "def": "出站流量费（Egress Fees）是云厂商对数据从其网络流出时按量收取的费用，包括流向公网、跨区域、部分情况下跨可用区的传输。入站流量通常免费。它在架构图上不显眼，却常是账单中增长最快、最难预测的一项，也是迁移出云的重要成本壁垒。",
+  "how": [
+   "云厂商按流量方向和目的地分别计价：流入通常免费，流出到公网按 GB 阶梯计费。",
+   "同一区域内不同可用区之间的传输也可能计费（AWS 等对跨 AZ 流量双向收费）。",
+   "经 NAT 网关访问公网或云服务时，除出站费外还有按 GB 计的数据处理费。",
+   "经 CDN 分发时，用户流量从 CDN 出站按 CDN 价格计，回源流量另计。",
+   "账单按用量类型（usage type）汇总，需要用成本分析工具拆解到具体服务与链路。"
+  ],
+  "terms": [
+   {
+    "t": "出站流量 (Data Transfer Out)",
+    "d": "从云厂商网络流向外部的数据量。"
+   },
+   {
+    "t": "跨可用区流量 (Inter-AZ Transfer)",
+    "d": "同区域不同可用区之间的流量，常按 GB 计费。"
+   },
+   {
+    "t": "NAT 网关数据处理费",
+    "d": "流经 NAT 网关的每 GB 额外处理费用。"
+   },
+   {
+    "t": "回源 (Origin Fetch)",
+    "d": "CDN 未命中时向源站拉取内容产生的流量。"
+   },
+   {
+    "t": "VPC 端点 (VPC Endpoint)",
+    "d": "私网访问云服务，可绕开 NAT 网关。"
+   },
+   {
+    "t": "零出站费存储",
+    "d": "如 Cloudflare R2，不对出站流量收费的对象存储。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "找出最贵的流量类型",
+   "src": "#!/usr/bin/env bash\n# 用 AWS Cost Explorer 按用量类型拆分上月费用，筛出流量相关项\naws ce get-cost-and-usage \\\n  --time-period Start=2026-09-01,End=2026-10-01 \\\n  --granularity MONTHLY \\\n  --metrics UnblendedCost UsageQuantity \\\n  --group-by Type=DIMENSION,Key=USAGE_TYPE \\\n  --query 'ResultsByTime[0].Groups' --output json \\\n| jq -r '.[]\n    | select(.Keys[0] | test(\"DataTransfer|NatGateway-Bytes|CloudFront\"))\n    | [.Keys[0], .Metrics.UsageQuantity.Amount, .Metrics.UnblendedCost.Amount]\n    | @tsv' \\\n| sort -t$'\\t' -k3 -gr | head -20\n\n# 常见用量类型含义：\n#   *-DataTransfer-Out-Bytes       流向公网\n#   *-DataTransfer-Regional-Bytes  同区域跨可用区\n#   *-NatGateway-Bytes             NAT 网关数据处理",
+   "note": "先定位是公网出站、跨 AZ 还是 NAT 处理费，再决定用 CDN、端点还是同 AZ 部署。"
+  },
+  "table": {
+   "title": "流量计费（以 AWS 为例）",
+   "head": [
+    "流量路径",
+    "是否计费",
+    "优化方向"
+   ],
+   "rows": [
+    [
+     "公网流入",
+     "通常免费",
+     "—"
+    ],
+    [
+     "流出到公网",
+     "按 GB 阶梯计费",
+     "CDN、压缩、缓存"
+    ],
+    [
+     "同区域跨可用区",
+     "按 GB 双向计费",
+     "同 AZ 优先路由"
+    ],
+    [
+     "经 NAT 访问 S3 等",
+     "出站外加处理费",
+     "改用 VPC 网关端点"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "CDN 分发静态与下载内容",
+    "pros": "降低源站出站与延迟",
+    "cons": "增加 CDN 费用与缓存管理",
+    "when": "下载、图片、视频流量大"
+   },
+   {
+    "opt": "零出站费对象存储",
+    "pros": "出站成本几乎可忽略",
+    "cons": "多云架构、生态与功能差异",
+    "when": "公网分发大文件"
+   },
+   {
+    "opt": "服务同 AZ 部署",
+    "pros": "省跨 AZ 费并降延迟",
+    "cons": "可用性降低",
+    "when": "非关键或可快速重建的组件"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "私有子网服务经 NAT 网关拉取 S3 大文件",
+    "fix": "配置 S3 网关端点，流量不经 NAT"
+   },
+   {
+    "bad": "多 AZ 部署后服务间调用随机跨 AZ",
+    "fix": "启用拓扑感知路由，优先同 AZ"
+   },
+   {
+    "bad": "日志和监控数据全部发往外部 SaaS",
+    "fix": "本地采样、过滤、压缩后再发送"
+   },
+   {
+    "bad": "架构评审只算计算和存储，不算流量",
+    "fix": "按数据流图估算各段流量与单价"
+   }
+  ],
+  "checklist": [
+   "成本看板拆分出各类流量费用",
+   "私网访问云服务使用 VPC 端点",
+   "公网静态内容走 CDN 并压缩",
+   "跨 AZ 调用量已评估并优化",
+   "流量费设有预算与异常告警",
+   "迁移计划评估了出站费与减免政策"
+  ],
+  "interview": [
+   {
+    "q": "为什么云厂商入站免费、出站收费？",
+    "a": "一方面网络传输确有成本；另一方面这是商业策略：数据进来容易、出去昂贵，形成数据引力和迁移壁垒。2024 年起三大云陆续为彻底迁出的客户提供出站费减免，但需申请并满足条件。"
+   },
+   {
+    "q": "NAT 网关费用异常高通常是什么原因？",
+    "a": "私有子网中的服务通过 NAT 访问 S3、ECR、DynamoDB 等云服务或拉取大镜像，每 GB 都要付处理费。为这些服务配置网关端点或接口端点，可让流量走私网，绕过 NAT。"
+   },
+   {
+    "q": "设计多区域架构时如何考虑流量费？",
+    "a": "跨区域复制、同步调用都会产生流量费。应尽量让请求在区域内闭环，只复制必要数据，压缩并批量传输，异步复制替代同步调用，并在方案评审中按预估流量乘单价算清成本。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Amazon EC2 On-Demand Pricing（含 Data Transfer）",
+    "url": "https://aws.amazon.com/ec2/pricing/on-demand/"
+   },
+   {
+    "title": "Google Cloud: VPC network pricing",
+    "url": "https://cloud.google.com/vpc/network-pricing"
+   },
+   {
+    "title": "Cloudflare R2 Pricing",
+    "url": "https://developers.cloudflare.com/r2/pricing/"
+   },
+   {
+    "title": "AWS Blog: Free data transfer out when moving out of AWS",
+    "url": "https://aws.amazon.com/blogs/aws/free-data-transfer-out-to-internet-when-moving-out-of-aws/"
+   }
+  ]
+ },
+ {
+  "slug": "vpcs",
+  "def": "虚拟私有云（VPC）是在公有云中按账户隔离出的一块逻辑私有网络。你可以自定义 IP 地址段、划分子网、配置路由表、互联网网关和 NAT，决定哪些资源能访问公网、哪些只在内网互通。它是云上网络安全与架构设计的基础容器。",
+  "how": [
+   "创建 VPC 时指定一个私有 CIDR 地址段（通常取自 RFC 1918，如 10.0.0.0/16）。",
+   "在 VPC 内按可用区划分子网，每个子网关联一张路由表决定流量去向。",
+   "附加互联网网关（IGW）供公有子网出入公网，NAT 网关供私有子网单向出网。",
+   "通过 VPC 对等、Transit Gateway 或 VPN/专线与其他 VPC 和本地机房互联。",
+   "VPC 端点让私网直接访问对象存储等云服务；流日志记录网络流量用于审计排障。"
+  ],
+  "terms": [
+   {
+    "t": "CIDR 块",
+    "d": "用前缀长度表示的地址段，如 10.0.0.0/16。"
+   },
+   {
+    "t": "互联网网关 (Internet Gateway)",
+    "d": "让 VPC 与公网双向通信的组件。"
+   },
+   {
+    "t": "NAT 网关 (NAT Gateway)",
+    "d": "让私有子网主动出网但不被公网直接访问。"
+   },
+   {
+    "t": "VPC 对等 (VPC Peering)",
+    "d": "两个 VPC 私网直连，不具传递性。"
+   },
+   {
+    "t": "Transit Gateway",
+    "d": "AWS 中多个 VPC 与本地网络的中心路由枢纽。"
+   },
+   {
+    "t": "流日志 (Flow Logs)",
+    "d": "记录网卡级 IP 流量的元数据日志。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "AWS CLI 搭建 VPC 骨架",
+   "src": "#!/usr/bin/env bash\nset -euo pipefail\nREGION=us-east-1\n\n# 1. 创建 VPC，地址段避免与公司内网、其他 VPC 重叠\nVPC_ID=$(aws ec2 create-vpc --cidr-block 10.20.0.0/16 \\\n  --query Vpc.VpcId --output text)\naws ec2 modify-vpc-attribute --vpc-id \"$VPC_ID\" --enable-dns-hostnames '{\"Value\":true}'\n\n# 2. 互联网网关，供公有子网使用\nIGW_ID=$(aws ec2 create-internet-gateway \\\n  --query InternetGateway.InternetGatewayId --output text)\naws ec2 attach-internet-gateway --vpc-id \"$VPC_ID\" --internet-gateway-id \"$IGW_ID\"\n\n# 3. S3 网关端点：私有子网访问 S3 不经过 NAT\nRT_ID=$(aws ec2 describe-route-tables --filters Name=vpc-id,Values=\"$VPC_ID\" \\\n  --query 'RouteTables[0].RouteTableId' --output text)\naws ec2 create-vpc-endpoint --vpc-id \"$VPC_ID\" \\\n  --service-name \"com.amazonaws.$REGION.s3\" --route-table-ids \"$RT_ID\"\n\n# 4. 开启流日志（发往 S3 存储桶，需事先创建）\naws ec2 create-flow-logs --resource-type VPC --resource-ids \"$VPC_ID\" \\\n  --traffic-type ALL --log-destination-type s3 \\\n  --log-destination arn:aws:s3:::my-flow-logs-bucket",
+   "note": "演示 VPC 的核心组件；生产中建议用 Terraform 等 IaC 管理，子网另行规划。"
+  },
+  "table": {
+   "title": "VPC 互联方式",
+   "head": [
+    "方式",
+    "拓扑",
+    "特点"
+   ],
+   "rows": [
+    [
+     "VPC 对等",
+     "点对点",
+     "简单，不可传递，CIDR 不能重叠"
+    ],
+    [
+     "Transit Gateway",
+     "中心辐射",
+     "集中路由，适合大量 VPC"
+    ],
+    [
+     "PrivateLink/接口端点",
+     "服务暴露",
+     "只暴露单个服务，不打通整网"
+    ],
+    [
+     "VPN / 专线",
+     "云与机房",
+     "混合云连接"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "单 VPC 多子网",
+    "pros": "简单，内部互通方便",
+    "cons": "环境隔离弱，爆炸半径大",
+    "when": "小团队、早期项目"
+   },
+   {
+    "opt": "按环境/团队多 VPC",
+    "pros": "隔离清晰，权限边界明确",
+    "cons": "互联与地址规划更复杂",
+    "when": "多环境、多团队组织"
+   },
+   {
+    "opt": "共享 VPC",
+    "pros": "网络集中管理，业务账号复用",
+    "cons": "需要平台团队治理",
+    "when": "多账号的大型组织"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "多个 VPC 都用 10.0.0.0/16，日后无法对等",
+    "fix": "建立组织级 IP 地址规划，分配不重叠网段"
+   },
+   {
+    "bad": "地址段开得太小，扩容时 IP 耗尽",
+    "fix": "预留足够大的 CIDR 与空闲子网块"
+   },
+   {
+    "bad": "以为 A↔B、B↔C 对等后 A 能访问 C",
+    "fix": "对等不可传递，需直连或用 Transit Gateway"
+   },
+   {
+    "bad": "数据库放在有公网路由的子网",
+    "fix": "数据层放私有或隔离子网"
+   }
+  ],
+  "checklist": [
+   "CIDR 与其他网络无重叠并有登记",
+   "跨多个可用区规划子网",
+   "数据层不在公有子网",
+   "访问云服务优先走 VPC 端点",
+   "流日志已开启并有保留期",
+   "网络资源由 IaC 管理"
+  ],
+  "interview": [
+   {
+    "q": "VPC 对等和 Transit Gateway 怎么选？",
+    "a": "少量 VPC、简单点对点互通用对等，免费且延迟低（跨 AZ 等流量仍计费）；VPC 数量多、需要集中路由、连接本地网络或做流量检查时用 Transit Gateway，代价是按连接与流量收费、多一跳。"
+   },
+   {
+    "q": "私有子网的服务如何安全访问公网？",
+    "a": "出向流量经 NAT 网关，NAT 位于公有子网并通过 IGW 出网，外部无法主动发起连接到私有实例。访问云服务优先用 VPC 端点；需要限制出网目的地时加出口代理或防火墙。"
+   },
+   {
+    "q": "规划 VPC CIDR 要考虑什么？",
+    "a": "与本地机房、其他 VPC、合作方网络不重叠；为未来可用区、子网和 Kubernetes Pod 地址留足空间；按环境或区域分配规则清晰的网段并登记；避免使用过小的前缀，后期扩容代价很高。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "AWS: What is Amazon VPC?",
+    "url": "https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html"
+   },
+   {
+    "title": "Google Cloud: VPC networks",
+    "url": "https://cloud.google.com/vpc/docs/vpc"
+   },
+   {
+    "title": "RFC 1918: Address Allocation for Private Internets",
+    "url": "https://www.rfc-editor.org/rfc/rfc1918"
+   }
+  ]
+ },
+ {
+  "slug": "subnets",
+  "def": "子网（Subnet）是把 VPC 地址段进一步切分出的更小网段，在主流云上每个子网位于单一可用区。子网本身没有“公有”“私有”属性，决定其角色的是关联的路由表：默认路由指向互联网网关即为公有子网，指向 NAT 或无出网路由即为私有/隔离子网。",
+  "how": [
+   "从 VPC 的 CIDR 中划出不重叠的子网段，每个子网落在一个可用区。",
+   "云平台会保留每个子网的部分地址（AWS 为每个子网 5 个），可用地址少于理论值。",
+   "每个子网关联一张路由表；0.0.0.0/0 指向 IGW 为公有，指向 NAT 网关为私有。",
+   "典型三层布局：公有层放负载均衡与 NAT，私有层放应用，隔离层放数据库。",
+   "同一层在多个可用区各建一个子网，单个可用区故障时其他可用区继续服务。"
+  ],
+  "terms": [
+   {
+    "t": "公有子网 (Public Subnet)",
+    "d": "路由表含指向互联网网关的默认路由。"
+   },
+   {
+    "t": "私有子网 (Private Subnet)",
+    "d": "通过 NAT 出网，不能被公网直接访问。"
+   },
+   {
+    "t": "隔离子网 (Isolated Subnet)",
+    "d": "完全没有通往公网的路由。"
+   },
+   {
+    "t": "路由表 (Route Table)",
+    "d": "按目的网段决定下一跳的规则集合。"
+   },
+   {
+    "t": "前缀长度 (Prefix Length)",
+    "d": "/24 表示 256 个地址，前缀越大网段越小。"
+   },
+   {
+    "t": "保留地址 (Reserved IPs)",
+    "d": "云平台为网关、DNS 等占用的子网地址。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "规划三层多可用区子网",
+   "src": "import ipaddress\n\nvpc = ipaddress.ip_network(\"10.20.0.0/16\")\nazs = [\"a\", \"b\", \"c\"]\nblocks = list(vpc.subnets(new_prefix=20))   # 切成 16 个 /20，每个 4096 个地址\n\nplan = {}\nfor i, az in enumerate(azs):\n    plan[f\"public-{az}\"]  = blocks[i]       # 负载均衡、NAT 网关\n    plan[f\"private-{az}\"] = blocks[i + 3]   # 应用、容器\n    plan[f\"data-{az}\"]    = blocks[i + 6]   # 数据库、缓存（无公网路由）\n\nfor name, net in plan.items():\n    usable = net.num_addresses - 5           # AWS 每个子网保留 5 个地址\n    print(f\"{name:10} {str(net):16} 可用 {usable}\")\n\nprint(\"预留扩展：\", [str(b) for b in blocks[9:]])\n\n# 路由表设计：\n#   public-*  : 0.0.0.0/0 -> igw-xxxx\n#   private-* : 0.0.0.0/0 -> 同可用区的 nat-xxxx\n#   data-*    : 只有 VPC 本地路由",
+   "note": "用标准库算 CIDR，避免手算出错；公私属性由路由表决定，并预留空闲网段。"
+  },
+  "table": {
+   "title": "三层子网布局",
+   "head": [
+    "层",
+    "默认路由",
+    "放什么"
+   ],
+   "rows": [
+    [
+     "公有层",
+     "互联网网关",
+     "负载均衡、NAT 网关、堡垒机"
+    ],
+    [
+     "私有层",
+     "NAT 网关",
+     "应用服务、容器节点"
+    ],
+    [
+     "隔离层",
+     "无（仅 VPC 内）",
+     "数据库、缓存、内部存储"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "每个 AZ 一个 NAT 网关",
+    "pros": "单 AZ 故障不影响其他 AZ 出网",
+    "cons": "NAT 固定费用翻倍",
+    "when": "生产环境"
+   },
+   {
+    "opt": "共享单个 NAT 网关",
+    "pros": "成本低",
+    "cons": "单点故障，跨 AZ 流量费",
+    "when": "开发测试环境"
+   },
+   {
+    "opt": "大子网（/20 以上）",
+    "pros": "容器等场景 IP 充足",
+    "cons": "隔离粒度粗",
+    "when": "Kubernetes 节点与 Pod 子网"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "子网开成 /24，Kubernetes Pod 很快耗尽 IP",
+    "fix": "按 Pod 网络模型估算 IP 需求，给足前缀"
+   },
+   {
+    "bad": "以为给实例分配公网 IP 就能上网",
+    "fix": "还需所在子网路由指向 IGW 且安全规则放行"
+   },
+   {
+    "bad": "应用层只建在一个可用区",
+    "fix": "每一层在至少两个可用区各建子网"
+   },
+   {
+    "bad": "私有子网路由指向其他 AZ 的 NAT",
+    "fix": "每个 AZ 路由到本 AZ 的 NAT，避免跨 AZ 依赖"
+   }
+  ],
+  "checklist": [
+   "每层至少跨两个可用区",
+   "子网大小按峰值 IP 需求估算",
+   "公有子网中只有入口类组件",
+   "数据层子网无公网路由",
+   "私有子网路由到本 AZ 的 NAT",
+   "预留空闲网段供未来扩展"
+  ],
+  "interview": [
+   {
+    "q": "什么决定一个子网是公有还是私有？",
+    "a": "关联的路由表。默认路由 0.0.0.0/0 指向互联网网关就是公有子网；指向 NAT 网关是私有子网；没有出网路由是隔离子网。实例是否有公网 IP、安全组是否放行是另外两个条件。"
+   },
+   {
+    "q": "/24 子网在 AWS 上实际有多少可用地址？",
+    "a": "/24 共 256 个地址，AWS 保留网络地址、VPC 路由器、DNS、未来使用和广播地址共 5 个，因此可用 251 个。规划时还要考虑负载均衡、Lambda 网卡、Pod 等也会占用 IP。"
+   },
+   {
+    "q": "为什么数据库要放隔离子网？",
+    "a": "数据库不需要主动访问公网，也不应被公网访问。去掉出网路由可以减少数据外泄路径和误配置风险；更新补丁、备份等通过 VPC 端点或托管服务完成，即使安全组配置失误也多一层保护。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "AWS: Subnets for your VPC",
+    "url": "https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html"
+   },
+   {
+    "title": "AWS: Subnet CIDR blocks",
+    "url": "https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html"
+   },
+   {
+    "title": "Python: ipaddress 模块",
+    "url": "https://docs.python.org/3/library/ipaddress.html"
+   },
+   {
+    "title": "RFC 4632: CIDR",
+    "url": "https://www.rfc-editor.org/rfc/rfc4632"
+   }
+  ]
+ },
+ {
+  "slug": "firewalls",
+  "def": "防火墙是依据规则允许或阻止网络流量的控制点。传统网络防火墙工作在三、四层，按 IP、端口、协议和连接状态过滤；Web 应用防火墙（WAF）工作在七层，检查 HTTP 请求内容，防御 SQL 注入、XSS 和恶意爬虫等。两者位置与能力不同，常组合成纵深防御。",
+  "how": [
+   "流量到达防火墙后按规则顺序匹配，命中即执行允许、拒绝或记录。",
+   "有状态防火墙跟踪连接，已建立连接的回包自动放行，只需写发起方向规则。",
+   "默认策略应为拒绝（default deny），只显式放行业务需要的端口与来源。",
+   "WAF 解析 HTTP 请求的路径、参数、头部和正文，用签名规则与异常评分识别攻击。",
+   "规则命中记录日志，配合告警与观察模式逐步调优，降低误报。"
+  ],
+  "terms": [
+   {
+    "t": "有状态 / 无状态 (Stateful / Stateless)",
+    "d": "是否跟踪连接状态并自动放行回包。"
+   },
+   {
+    "t": "默认拒绝 (Default Deny)",
+    "d": "未明确允许的流量一律阻止。"
+   },
+   {
+    "t": "WAF",
+    "d": "检查 HTTP 层内容的 Web 应用防火墙。"
+   },
+   {
+    "t": "OWASP CRS",
+    "d": "开源通用 WAF 规则集，用于 ModSecurity、Coraza 等。"
+   },
+   {
+    "t": "出站过滤 (Egress Filtering)",
+    "d": "限制内部主机可访问的外部目的地。"
+   },
+   {
+    "t": "nftables",
+    "d": "Linux 内核新一代包过滤框架，取代 iptables。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "nftables 主机防火墙",
+   "src": "#!/usr/sbin/nft -f\n# /etc/nftables.conf：默认拒绝入站，只放行必要服务\nflush ruleset\n\ntable inet filter {\n  chain input {\n    type filter hook input priority 0; policy drop;\n    ct state established,related accept      # 有状态：放行已建立连接的回包\n    ct state invalid drop\n    iif \"lo\" accept\n    meta l4proto { icmp, ipv6-icmp } accept  # IPv6 依赖 ICMPv6，不能全禁\n    tcp dport { 80, 443 } accept             # 对外 Web 服务\n    ip saddr 203.0.113.0/24 tcp dport 22 accept   # SSH 只允许办公网段\n    limit rate 5/minute log prefix \"nft-drop: \"   # 抽样记录被丢弃的包\n  }\n  chain forward {\n    type filter hook forward priority 0; policy drop;\n  }\n  chain output {\n    type filter hook output priority 0; policy accept;\n  }\n}\n# 应用：sudo nft -f /etc/nftables.conf   查看：sudo nft list ruleset",
+   "note": "默认 drop + 放行已建立连接是有状态防火墙的基本形态；SSH 限定来源网段。"
+  },
+  "table": {
+   "title": "防火墙类型对比",
+   "head": [
+    "类型",
+    "工作层",
+    "能防",
+    "防不了"
+   ],
+   "rows": [
+    [
+     "网络/主机防火墙",
+     "L3–L4",
+     "端口暴露、非法来源",
+     "合法端口上的应用攻击"
+    ],
+    [
+     "云安全组/NACL",
+     "L3–L4",
+     "实例与子网级访问控制",
+     "HTTP 内容攻击"
+    ],
+    [
+     "WAF",
+     "L7（HTTP）",
+     "注入、XSS、恶意爬虫",
+     "业务逻辑漏洞、越权"
+    ],
+    [
+     "下一代防火墙",
+     "L3–L7",
+     "应用识别、入侵防御",
+     "加密流量需解密才能检查"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "云托管 WAF",
+    "pros": "规则托管更新，可抗大流量",
+    "cons": "按请求计费，误报需调优",
+    "when": "面向公网的 Web/API"
+   },
+   {
+    "opt": "自建 WAF（Coraza/ModSecurity）",
+    "pros": "规则完全可控，无请求费",
+    "cons": "运维与调优成本高",
+    "when": "私有化部署或合规要求"
+   },
+   {
+    "opt": "仅网络层防火墙",
+    "pros": "简单、性能好",
+    "cons": "看不到应用层攻击",
+    "when": "内部非 HTTP 服务"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "上了 WAF 就不修代码里的注入漏洞",
+    "fix": "WAF 只是缓解层，根因仍要用参数化查询等修复"
+   },
+   {
+    "bad": "WAF 直接开拦截模式，误伤正常用户",
+    "fix": "先观察模式运行，分析日志后再启用拦截"
+   },
+   {
+    "bad": "源站 IP 暴露，攻击者绕过 CDN/WAF 直连",
+    "fix": "源站只允许 CDN/WAF 出口 IP 或私网访问"
+   },
+   {
+    "bad": "只管入站不管出站",
+    "fix": "限制服务器出站目的地，阻断回连与数据外泄"
+   }
+  ],
+  "checklist": [
+   "入站默认拒绝，只放行必需端口",
+   "管理端口限定来源或走零信任访问",
+   "公网 Web 入口启用 WAF",
+   "源站不可绕过 WAF 直接访问",
+   "出站流量有限制策略",
+   "规则变更有评审与日志"
+  ],
+  "interview": [
+   {
+    "q": "有状态和无状态防火墙有什么区别？",
+    "a": "有状态防火墙维护连接表，允许出站请求后回包自动放行，规则简洁；无状态防火墙逐包独立判断，必须显式为双向流量写规则（包括临时端口范围）。AWS 安全组是有状态的，NACL 是无状态的。"
+   },
+   {
+    "q": "WAF 的检测原理和局限？",
+    "a": "基于签名与规则匹配已知攻击模式，配合异常评分、频率限制和机器人识别。局限：无法理解业务逻辑，防不了越权与逻辑漏洞；编码变形可能绕过；误报需持续调优。它是补充而非替代安全编码。"
+   },
+   {
+    "q": "如何防止攻击者绕过 CDN 直接打源站？",
+    "a": "源站安全组只允许 CDN/WAF 的出口 IP 段；或使用私网回源、隧道（如 Cloudflare Tunnel）；验证 CDN 注入的密钥头或 mTLS；并确保历史 DNS 记录与证书透明度日志不暴露源站 IP。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "nftables wiki",
+    "url": "https://wiki.nftables.org/wiki-nftables/index.php/Main_Page"
+   },
+   {
+    "title": "OWASP Core Rule Set",
+    "url": "https://coreruleset.org/"
+   },
+   {
+    "title": "NIST SP 800-41 Rev.1: Firewalls and Firewall Policy",
+    "url": "https://csrc.nist.gov/pubs/sp/800/41/r1/final"
+   },
+   {
+    "title": "Cloudflare WAF 文档",
+    "url": "https://developers.cloudflare.com/waf/"
+   }
+  ]
+ },
+ {
+  "slug": "security-groups",
+  "def": "安全组（Security Group）是云平台提供的虚拟防火墙，作用于实例或网卡级别，以“允许规则”控制入站和出站流量。它是有状态的：放行的请求其回包自动允许。安全组可以引用其他安全组作为来源，从而按角色而非 IP 描述访问关系，是云上最常用的访问控制手段。",
+  "how": [
+   "安全组绑定到实例、网卡、负载均衡或数据库等资源，一个资源可绑定多个安全组。",
+   "规则只有允许没有拒绝，未匹配的入站流量一律丢弃；AWS 新建安全组默认允许全部出站。",
+   "规则来源可以是 CIDR 网段、前缀列表，或另一个安全组（表示绑定了它的所有资源）。",
+   "有状态跟踪：入站被允许的连接，其响应流量无需出站规则即可返回。",
+   "子网级的网络 ACL 是另一层无状态控制，按编号顺序评估，可写拒绝规则。"
+  ],
+  "terms": [
+   {
+    "t": "入站/出站规则 (Ingress/Egress Rule)",
+    "d": "分别控制进入和离开资源的流量。"
+   },
+   {
+    "t": "安全组引用 (SG Reference)",
+    "d": "以另一安全组为来源，按角色授权。"
+   },
+   {
+    "t": "网络 ACL (NACL)",
+    "d": "子网级无状态访问控制，支持拒绝规则。"
+   },
+   {
+    "t": "前缀列表 (Prefix List)",
+    "d": "可复用的 CIDR 集合，便于统一维护。"
+   },
+   {
+    "t": "最小权限 (Least Privilege)",
+    "d": "只开放完成功能所需的最小端口与来源。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "按角色串联三层安全组",
+   "src": "#!/usr/bin/env bash\nset -euo pipefail\nVPC_ID=vpc-0123456789abcdef0\nmk() { aws ec2 create-security-group --vpc-id \"$VPC_ID\" \\\n         --group-name \"$1\" --description \"$1\" --query GroupId --output text; }\n\nALB_SG=$(mk alb-sg); APP_SG=$(mk app-sg); DB_SG=$(mk db-sg)\n\n# 公网只能访问负载均衡的 443\naws ec2 authorize-security-group-ingress --group-id \"$ALB_SG\" \\\n  --protocol tcp --port 443 --cidr 0.0.0.0/0\n# 应用只接受来自负载均衡安全组的流量\naws ec2 authorize-security-group-ingress --group-id \"$APP_SG\" \\\n  --protocol tcp --port 8080 --source-group \"$ALB_SG\"\n# 数据库只接受来自应用安全组的流量\naws ec2 authorize-security-group-ingress --group-id \"$DB_SG\" \\\n  --protocol tcp --port 5432 --source-group \"$APP_SG\"\n\n# 审计：找出对全网开放 22 端口的安全组\naws ec2 describe-security-groups \\\n  --filters Name=ip-permission.from-port,Values=22 \\\n            Name=ip-permission.cidr,Values=0.0.0.0/0 \\\n  --query 'SecurityGroups[].[GroupId,GroupName]' --output table",
+   "note": "用安全组引用代替 IP，扩缩容无需改规则；定期审计对 0.0.0.0/0 开放的端口。"
+  },
+  "table": {
+   "title": "安全组 vs 网络 ACL",
+   "head": [
+    "维度",
+    "安全组",
+    "网络 ACL"
+   ],
+   "rows": [
+    [
+     "作用范围",
+     "实例/网卡",
+     "子网"
+    ],
+    [
+     "状态",
+     "有状态",
+     "无状态（需放行回包端口）"
+    ],
+    [
+     "规则类型",
+     "仅允许",
+     "允许和拒绝"
+    ],
+    [
+     "评估方式",
+     "所有规则合并评估",
+     "按规则编号顺序，命中即止"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "按角色引用安全组",
+    "pros": "自动适配扩缩容，意图清晰",
+    "cons": "跨 VPC 引用受限制",
+    "when": "同 VPC 内服务间访问"
+   },
+   {
+    "opt": "按 CIDR 授权",
+    "pros": "可表达外部网段",
+    "cons": "IP 变动需改规则，易过宽",
+    "when": "办公网、合作方固定 IP"
+   },
+   {
+    "opt": "叠加 NACL 拒绝规则",
+    "pros": "可快速封禁恶意网段",
+    "cons": "无状态，配置易出错",
+    "when": "需要显式拒绝时"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "为排障临时开放 0.0.0.0/0:22 后忘记关闭",
+    "fix": "用 Session Manager 等免开端口方式，并定期审计"
+   },
+   {
+    "bad": "数据库安全组按应用子网 CIDR 放行",
+    "fix": "改为引用应用安全组，缩小到具体角色"
+   },
+   {
+    "bad": "所有服务共用一个“万能”安全组",
+    "fix": "按角色拆分，每个安全组职责单一"
+   },
+   {
+    "bad": "改了 NACL 却忘了放行回包的临时端口",
+    "fix": "无状态规则需同时放行出站临时端口范围"
+   }
+  ],
+  "checklist": [
+   "没有对 0.0.0.0/0 开放的管理端口",
+   "内部访问使用安全组引用",
+   "每个安全组职责单一、命名清晰",
+   "出站规则按需收紧",
+   "安全组变更由 IaC 管理并评审",
+   "定期自动审计过宽规则"
+  ],
+  "interview": [
+   {
+    "q": "安全组为什么只需要写入站规则就能通信？",
+    "a": "安全组有状态，会跟踪连接。入站请求被允许后，响应流量属于同一连接，自动放行，不需要额外出站规则。反过来，实例主动发起的出站连接被允许后，其回包入站也自动放行。"
+   },
+   {
+    "q": "引用安全组作为来源有什么好处？",
+    "a": "规则表达的是“哪个角色可以访问”，与具体 IP 无关。自动扩容新增实例只要绑定该安全组就自动获得访问权限，下线实例自动失去权限，避免维护 IP 列表，也不会因网段过宽误放其他服务。"
+   },
+   {
+    "q": "不开 22 端口如何登录云服务器？",
+    "a": "使用云厂商的会话管理服务（如 AWS Systems Manager Session Manager），通过实例上的代理反向连接，权限由 IAM 控制并有审计日志；或使用零信任访问网关。这样安全组无需任何入站管理端口。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "AWS: Security groups for your VPC",
+    "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-security-groups.html"
+   },
+   {
+    "title": "AWS: Network ACLs",
+    "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html"
+   },
+   {
+    "title": "Azure: Network security groups",
+    "url": "https://learn.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview"
+   },
+   {
+    "title": "AWS Systems Manager Session Manager",
+    "url": "https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager.html"
+   }
+  ]
+ },
+ {
+  "slug": "message-queue",
+  "def": "消息队列是生产者与消费者之间的异步中间件：生产者把消息写入队列后即可返回，消费者按自己的节奏取出处理并确认。它实现服务解耦、削峰填谷和失败重试，常见实现有 RabbitMQ、Amazon SQS、Kafka（日志型）、Redis Streams。代价是引入最终一致性与重复消费等问题。",
+  "how": [
+   "生产者把消息发送给 Broker，Broker 持久化后返回确认。",
+   "消费者拉取（或被推送）消息；处理期间消息对其他消费者不可见或标记为未确认。",
+   "处理成功后消费者确认（ack/删除），Broker 才真正移除消息。",
+   "超时未确认的消息重新投递，因此语义通常是“至少一次”，消费者需幂等。",
+   "多次失败的消息转入死信队列（DLQ）供排查；队列积压量是扩容消费者的信号。"
+  ],
+  "terms": [
+   {
+    "t": "Broker",
+    "d": "负责接收、存储和投递消息的服务端。"
+   },
+   {
+    "t": "确认 (Ack)",
+    "d": "消费者告知已成功处理，消息可被移除。"
+   },
+   {
+    "t": "至少一次 (At-least-once)",
+    "d": "消息不丢但可能重复投递的语义。"
+   },
+   {
+    "t": "可见性超时 (Visibility Timeout)",
+    "d": "SQS 中消息被取走后对他人隐藏的时长。"
+   },
+   {
+    "t": "死信队列 (DLQ)",
+    "d": "存放多次处理失败消息的队列。"
+   },
+   {
+    "t": "Outbox 模式",
+    "d": "业务写入与待发消息同事务落库，再异步投递。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "SQS 幂等消费者",
+   "src": "import json, boto3\n\nsqs = boto3.client(\"sqs\")\nQUEUE_URL = \"https://sqs.us-east-1.amazonaws.com/123456789012/orders\"\n\ndef consume_forever():\n    while True:\n        resp = sqs.receive_message(\n            QueueUrl=QUEUE_URL,\n            MaxNumberOfMessages=10,\n            WaitTimeSeconds=20,       # 长轮询，减少空请求\n            VisibilityTimeout=60,     # 需大于单条消息的最长处理时间\n        )\n        for msg in resp.get(\"Messages\", []):\n            body = json.loads(msg[\"Body\"])\n            # 幂等：同一 order_id 只处理一次（mark_processed 用唯一约束实现）\n            if mark_processed(body[\"order_id\"]):\n                send_confirmation_email(body)\n            # 处理成功才删除；抛异常则不删，超时后重新投递\n            sqs.delete_message(QueueUrl=QUEUE_URL, ReceiptHandle=msg[\"ReceiptHandle\"])\n\n# 队列上配置 RedrivePolicy：maxReceiveCount=5 后转入死信队列",
+   "note": "先处理后删除；重复投递靠业务幂等吸收；失败次数过多进入 DLQ。"
+  },
+  "table": {
+   "title": "主流消息系统对比",
+   "head": [
+    "系统",
+    "模型",
+    "消费后消息",
+    "典型场景"
+   ],
+   "rows": [
+    [
+     "RabbitMQ",
+     "队列 + 交换机路由",
+     "确认后删除",
+     "任务分发、复杂路由"
+    ],
+    [
+     "Amazon SQS",
+     "托管队列",
+     "删除后移除",
+     "云上异步任务"
+    ],
+    [
+     "Kafka",
+     "分区日志",
+     "按保留期保留，可回放",
+     "事件流、数据管道"
+    ],
+    [
+     "Redis Streams",
+     "追加流 + 消费组",
+     "需显式裁剪",
+     "轻量事件流"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "任务队列（RabbitMQ/SQS）",
+    "pros": "每条消息一个消费者处理，简单",
+    "cons": "消费后即删，不能回放",
+    "when": "后台任务、邮件、转码"
+   },
+   {
+    "opt": "日志型（Kafka）",
+    "pros": "高吞吐，多订阅方可回放",
+    "cons": "运维复杂，有序性按分区",
+    "when": "事件驱动、数据集成"
+   },
+   {
+    "opt": "数据库表当队列",
+    "pros": "无新组件，可与业务同事务",
+    "cons": "高吞吐下扩展性差",
+    "when": "规模小、强一致需求"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "假设消息只会投递一次",
+    "fix": "按至少一次设计，消费者用唯一键实现幂等"
+   },
+   {
+    "bad": "先写数据库再发消息，进程崩溃导致消息丢失",
+    "fix": "使用 Outbox 模式或事务消息"
+   },
+   {
+    "bad": "可见性超时小于处理时间，消息被重复处理",
+    "fix": "超时大于最长处理时间，或处理中延长超时"
+   },
+   {
+    "bad": "没有死信队列，毒消息无限重试",
+    "fix": "设置最大重试次数与 DLQ，并对 DLQ 告警"
+   }
+  ],
+  "checklist": [
+   "消费者幂等",
+   "处理成功后才确认",
+   "配置了死信队列与告警",
+   "监控队列积压与消息年龄",
+   "生产端可靠投递（Outbox 等）",
+   "消息体有版本号以便演进"
+  ],
+  "interview": [
+   {
+    "q": "如何实现“恰好一次”处理？",
+    "a": "端到端的恰好一次很难靠队列单独保证。实践是“至少一次投递 + 幂等消费”：用业务唯一键、去重表或条件写入，使重复消息不产生副作用。Kafka 事务能在其内部读-处理-写链路中提供恰好一次语义。"
+   },
+   {
+    "q": "消息顺序怎么保证？",
+    "a": "全局有序代价很高。通常只需按业务键有序：Kafka 用相同键进入同一分区，SQS FIFO 用 MessageGroupId。同一分组内只能串行消费，并行度受分组数限制；重试时还需避免乱序。"
+   },
+   {
+    "q": "队列积压时怎么办？",
+    "a": "先看消息年龄与积压量是否持续增长；扩容消费者（受分区数等限制）；排查下游瓶颈或毒消息；必要时降级非关键处理、批量消费。长期则做容量规划，按积压指标自动扩缩容。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Amazon SQS: Visibility timeout",
+    "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html"
+   },
+   {
+    "title": "Apache Kafka Documentation",
+    "url": "https://kafka.apache.org/documentation/"
+   },
+   {
+    "title": "microservices.io: Transactional outbox",
+    "url": "https://microservices.io/patterns/data/transactional-outbox.html"
+   }
+  ]
+ },
+ {
+  "slug": "cache-invalidation",
+  "def": "缓存失效（Cache Invalidation）指在源数据变化后，让缓存中的旧副本被删除、更新或过期，使读者不会长期看到过时数据。它涉及失效时机、并发竞态和雪崩防护，被戏称为计算机科学两大难题之一。常见策略包括 TTL 过期、写后删除、版本化键和事件驱动失效。",
+  "how": [
+   "旁路缓存（cache-aside）读：先查缓存，未命中则读数据库并回填缓存，设置 TTL。",
+   "写路径：先提交数据库更新，再删除对应缓存键，让下次读取回填新值。",
+   "TTL 作为兜底：即使删除失败或漏删，旧值也会在有限时间后自动过期。",
+   "版本化键：把版本号或内容哈希放进键名，数据变更即换新键，旧键自然淘汰。",
+   "事件驱动：通过 CDC 或消息监听数据变更，统一触发多处缓存与 CDN 失效。"
+  ],
+  "terms": [
+   {
+    "t": "旁路缓存 (Cache-aside)",
+    "d": "应用自行读写缓存，未命中时回源并回填。"
+   },
+   {
+    "t": "TTL",
+    "d": "缓存条目的存活时间，到期自动失效。"
+   },
+   {
+    "t": "缓存击穿 (Cache Stampede)",
+    "d": "热点键失效瞬间大量请求同时回源。"
+   },
+   {
+    "t": "单飞 (Single-flight)",
+    "d": "同一键并发未命中时只让一个请求回源。"
+   },
+   {
+    "t": "延迟双删 (Delayed Double Delete)",
+    "d": "写后删除，延迟片刻再删一次，缓解竞态。"
+   },
+   {
+    "t": "租约 (Lease)",
+    "d": "Facebook memcache 方案，防止旧值回填覆盖。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "旁路缓存与写后删除",
+   "src": "import json, random, time, redis\n\nr = redis.Redis()\nBASE_TTL = 300\n\ndef get_user(uid: int) -> dict:\n    key = f\"user:{uid}\"\n    if (cached := r.get(key)) is not None:\n        return json.loads(cached)\n    # 单飞：只有拿到锁的请求回源，其余短暂等待后重读缓存\n    if r.set(f\"lock:{key}\", 1, nx=True, ex=5):\n        user = db_get_user(uid)\n        # TTL 加随机抖动，避免大量键同一时刻过期\n        r.set(key, json.dumps(user), ex=BASE_TTL + random.randint(0, 60))\n        r.delete(f\"lock:{key}\")\n        return user\n    time.sleep(0.05)\n    return get_user(uid)\n\ndef update_user(uid: int, fields: dict) -> None:\n    db_update_user(uid, fields)     # 1. 先提交数据库事务\n    r.delete(f\"user:{uid}\")         # 2. 再删除缓存（删除而非写入新值）",
+   "note": "写后删除加 TTL 兜底；锁实现单飞防击穿。db_* 为业务自定义的数据库函数。"
+  },
+  "table": {
+   "title": "失效策略对比",
+   "head": [
+    "策略",
+    "一致性",
+    "复杂度",
+    "适用"
+   ],
+   "rows": [
+    [
+     "仅 TTL",
+     "最多旧 TTL 时长",
+     "低",
+     "可容忍旧数据的内容"
+    ],
+    [
+     "写后删除 + TTL",
+     "短暂不一致",
+     "中",
+     "大多数业务数据"
+    ],
+    [
+     "版本化键",
+     "强（换键即新）",
+     "中",
+     "静态资源、配置"
+    ],
+    [
+     "CDC 事件失效",
+     "秒级最终一致",
+     "高",
+     "多服务、多级缓存"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "写后删除缓存",
+    "pros": "简单，避免并发写入旧值",
+    "cons": "删除后首次读要回源",
+    "when": "通用默认做法"
+   },
+   {
+    "opt": "写后更新缓存",
+    "pros": "读始终命中",
+    "cons": "并发写可能乱序覆盖成旧值",
+    "when": "单写者、更新有序时"
+   },
+   {
+    "opt": "短 TTL 不主动失效",
+    "pros": "无失效逻辑",
+    "cons": "命中率与新鲜度只能折中",
+    "when": "数据源不可监听"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "先删缓存再写库，并发读把旧值回填",
+    "fix": "先写库再删缓存，必要时延迟双删"
+   },
+   {
+    "bad": "热点键过期瞬间数据库被打爆",
+    "fix": "单飞锁、提前刷新或逻辑过期"
+   },
+   {
+    "bad": "只删了详情缓存，列表与聚合缓存仍是旧的",
+    "fix": "梳理数据到缓存键的依赖映射，统一失效"
+   },
+   {
+    "bad": "缓存删除失败被静默忽略",
+    "fix": "删除失败重试或入队补偿，并保留 TTL 兜底"
+   }
+  ],
+  "checklist": [
+   "所有缓存键都有 TTL 兜底",
+   "写路径为先写库后删缓存",
+   "热点键有防击穿措施",
+   "TTL 带随机抖动",
+   "数据与缓存键的依赖关系有文档",
+   "监控命中率与回源量"
+  ],
+  "interview": [
+   {
+    "q": "为什么推荐删除缓存而不是更新缓存？",
+    "a": "两个并发写可能以不同顺序更新数据库与缓存，导致缓存停留在旧值；删除操作是幂等的，下次读取从数据库回填最新值。更新缓存还会为可能无人读取的数据付出序列化成本。"
+   },
+   {
+    "q": "先写库后删缓存还会不一致吗？",
+    "a": "会，但窗口很小：读请求未命中、读到旧值，此时写请求更新库并删缓存，随后读请求才把旧值写入缓存。可用 TTL 兜底、延迟双删，或 Facebook memcache 论文中的租约机制避免旧值回填。"
+   },
+   {
+    "q": "缓存击穿、穿透、雪崩如何区分与应对？",
+    "a": "击穿：单个热点键失效，用单飞锁或提前刷新。穿透：查询不存在的数据每次都回源，缓存空值或用布隆过滤器。雪崩：大量键同时过期或缓存宕机，用 TTL 抖动、多级缓存和限流降级。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Scaling Memcache at Facebook (NSDI '13)",
+    "url": "https://research.facebook.com/publications/scaling-memcache-at-facebook/"
+   },
+   {
+    "title": "AWS: Caching Best Practices",
+    "url": "https://aws.amazon.com/caching/best-practices/"
+   },
+   {
+    "title": "Martin Fowler: Two Hard Things",
+    "url": "https://martinfowler.com/bliki/TwoHardThings.html"
+   }
+  ]
+ },
+ {
+  "slug": "cache-hit-ratio",
+  "def": "缓存命中率是命中次数占总访问次数的比例：命中数 ÷（命中数 + 未命中数）。它是衡量缓存有效性的核心指标，直接决定后端负载与平均延迟。适用于应用缓存（Redis、Memcached）、CDN 和数据库缓冲池。要结合未命中原因、按键空间拆分和字节命中率一起看。",
+  "how": [
+   "每次访问缓存记一次命中或未命中，按时间窗口（如每分钟）计算比例并上报。",
+   "平均延迟 ≈ 命中率 × 缓存延迟 +（1 − 命中率）× 回源延迟，未命中代价通常高出几个数量级。",
+   "回源量 = 总请求 ×（1 − 命中率），命中率从 99% 降到 98%，回源量翻倍。",
+   "未命中原因可分为冷启动、容量不足被淘汰、主动失效、键本身不可缓存。",
+   "访问分布多呈长尾，少量热点键贡献大部分命中，容量增加的边际收益递减。"
+  ],
+  "terms": [
+   {
+    "t": "命中 / 未命中 (Hit / Miss)",
+    "d": "请求的数据在缓存中找到或找不到。"
+   },
+   {
+    "t": "字节命中率 (Byte Hit Ratio)",
+    "d": "按传输字节计算的命中率，CDN 常用。"
+   },
+   {
+    "t": "冷未命中 (Cold Miss)",
+    "d": "数据首次被访问、缓存中尚未存在。"
+   },
+   {
+    "t": "容量未命中 (Capacity Miss)",
+    "d": "缓存空间不足、数据被淘汰后造成的未命中。"
+   },
+   {
+    "t": "keyspace_hits / misses",
+    "d": "Redis INFO 中的命中与未命中计数。"
+   },
+   {
+    "t": "工作集 (Working Set)",
+    "d": "一段时间内被频繁访问的数据集合。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "Redis 命中率与淘汰情况",
+   "src": "#!/usr/bin/env bash\n# 1. 计算自上次重置以来的整体命中率\nredis-cli INFO stats | tr -d '\\r' | awk -F: '\n  /^keyspace_hits/   {h=$2}\n  /^keyspace_misses/ {m=$2}\n  /^evicted_keys/    {e=$2}\n  END { printf \"hits=%d misses=%d hit_ratio=%.2f%% evicted=%d\\n\", h, m, h*100/(h+m), e }'\n\n# 2. 内存使用与上限，判断是否因容量不足而淘汰\nredis-cli INFO memory | grep -E '^(used_memory_human|maxmemory_human):'\n\n# 3. 重置统计计数，便于观察某次调整后的效果\n# redis-cli CONFIG RESETSTAT\n\n# 4. 抽样找出访问频率最高的键（需 LFU 淘汰策略）\nredis-cli --hotkeys\n\n# 注意：INFO 只给全局命中率；按业务前缀统计需在应用侧埋点\n# 如 cache_requests_total{prefix=\"user\", result=\"hit\"}",
+   "note": "evicted_keys 增长说明有容量未命中；按业务前缀拆分命中率需应用侧埋点。"
+  },
+  "table": {
+   "title": "命中率变化对回源的影响",
+   "head": [
+    "命中率",
+    "每 100 万请求回源",
+    "相对 99% 的回源量"
+   ],
+   "rows": [
+    [
+     "90%",
+     "100,000",
+     "10 倍"
+    ],
+    [
+     "95%",
+     "50,000",
+     "5 倍"
+    ],
+    [
+     "99%",
+     "10,000",
+     "1 倍"
+    ],
+    [
+     "99.9%",
+     "1,000",
+     "0.1 倍"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "加大缓存容量",
+    "pros": "直接减少容量未命中",
+    "cons": "长尾下边际收益递减，成本上升",
+    "when": "evicted_keys 持续增长"
+   },
+   {
+    "opt": "延长 TTL",
+    "pros": "命中率提升明显",
+    "cons": "数据更旧，需配合主动失效",
+    "when": "数据变化慢"
+   },
+   {
+    "opt": "改进缓存键设计",
+    "pros": "合并重复，提高复用",
+    "cons": "需要改代码",
+    "when": "键含时间戳、随机参数等"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只看全局命中率，掩盖某类关键数据命中极低",
+    "fix": "按键前缀或业务类型拆分统计"
+   },
+   {
+    "bad": "缓存不存在的数据，空查询永远未命中",
+    "fix": "缓存空值（短 TTL）或使用布隆过滤器"
+   },
+   {
+    "bad": "缓存键包含时间戳、追踪 ID 等易变参数",
+    "fix": "规范化键，只保留影响结果的参数"
+   },
+   {
+    "bad": "只追求命中率，忽略数据新鲜度",
+    "fix": "命中率与过期数据比例一起设定目标"
+   }
+  ],
+  "checklist": [
+   "命中率按业务前缀拆分监控",
+   "淘汰数与内存使用有告警",
+   "缓存键已规范化",
+   "空结果有缓存策略",
+   "CDN 同时看请求与字节命中率",
+   "命中率下降会触发排查"
+  ],
+  "interview": [
+   {
+    "q": "命中率 95% 和 99% 差别大吗？",
+    "a": "非常大。看未命中率：5% 对 1%，回源量相差 5 倍。若后端只能承受 1% 的回源，命中率跌到 95% 就可能压垮数据库。所以要盯住未命中率与回源 QPS，而不仅是看起来都很高的命中率。"
+   },
+   {
+    "q": "命中率突然下降，如何排查？",
+    "a": "看是否有发布改了缓存键或序列化格式；evicted_keys 是否上升（容量不足）；是否有批量失效或缓存节点重启（冷启动）；流量构成是否变化（爬虫访问长尾数据）；TTL 是否被改短。"
+   },
+   {
+    "q": "CDN 的请求命中率和字节命中率有何不同？",
+    "a": "请求命中率按请求数计算，小文件多时容易很高；字节命中率按流量计算，更直接对应回源带宽与费用。大文件未命中会显著拉低字节命中率，因此优化成本时更应关注后者。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Redis: INFO 命令",
+    "url": "https://redis.io/docs/latest/commands/info/"
+   },
+   {
+    "title": "Wikipedia: Cache replacement policies",
+    "url": "https://en.wikipedia.org/wiki/Cache_replacement_policies"
+   },
+   {
+    "title": "Wikipedia: Cache (computing)",
+    "url": "https://en.wikipedia.org/wiki/Cache_(computing)"
+   }
+  ]
+ },
+ {
+  "slug": "cache-warming",
+  "def": "缓存预热（Cache Warming）是在流量到来之前，主动把预计会被访问的热点数据加载进缓存，避免冷启动时大量未命中直接冲击数据库。典型时机包括新缓存集群上线、缓存节点重启、大促或发布会前、CDN 新内容发布。预热本身也要限速，否则会变成另一种压力源。",
+  "how": [
+   "确定热点集合：来自访问日志排行、昨日统计、运营配置或线上流量采样。",
+   "从数据库或源站批量读取数据，写入缓存并设置带抖动的 TTL。",
+   "按批次与速率执行，监控数据库负载，避免预热本身造成过载。",
+   "预热完成后再切入流量，或通过灰度逐步提高新节点的流量比例。",
+   "也可用持久化（如 Redis RDB/AOF）或从旧集群复制，缩短重启后的冷启动。"
+  ],
+  "terms": [
+   {
+    "t": "冷启动 (Cold Start)",
+    "d": "缓存为空时命中率极低的阶段。"
+   },
+   {
+    "t": "热点集合 (Hot Set)",
+    "d": "预计会被高频访问、值得预热的数据。"
+   },
+   {
+    "t": "流量回放 (Traffic Replay)",
+    "d": "用录制的真实请求驱动预热。"
+   },
+   {
+    "t": "灰度切流 (Gradual Shift)",
+    "d": "逐步把流量从旧节点迁到新节点。"
+   },
+   {
+    "t": "CDN 预取 (Prefetch)",
+    "d": "主动让 CDN 节点提前拉取并缓存资源。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "分批限速预热热点商品",
+   "src": "import json, random, time, redis\n\nr = redis.Redis()\nBATCH, PAUSE = 200, 0.2         # 每批 200 条，批间暂停 0.2 秒，控制数据库压力\n\ndef hot_product_ids(limit: int = 5000) -> list[int]:\n    # 取昨日浏览量最高的商品；db_query 为业务自定义\n    return db_query(\n        \"SELECT product_id FROM product_daily_views \"\n        \"WHERE day = current_date - 1 ORDER BY views DESC LIMIT %s\", (limit,))\n\ndef warm():\n    ids = hot_product_ids()\n    for i in range(0, len(ids), BATCH):\n        rows = db_get_products(ids[i:i + BATCH])     # 一次批量查询\n        pipe = r.pipeline(transaction=False)          # 管道减少网络往返\n        for p in rows:\n            ttl = 3600 + random.randint(0, 600)       # TTL 抖动，避免同时过期\n            pipe.set(f\"product:{p['id']}\", json.dumps(p), ex=ttl, nx=True)\n        pipe.execute()\n        time.sleep(PAUSE)\n    print(f\"warmed {len(ids)} products\")\n\nif __name__ == \"__main__\":\n    warm()",
+   "note": "批量读、管道写、限速与 TTL 抖动；nx=True 不覆盖线上已写入的更新值。"
+  },
+  "table": {
+   "title": "预热数据来源",
+   "head": [
+    "来源",
+    "优点",
+    "局限"
+   ],
+   "rows": [
+    [
+     "历史访问日志排行",
+     "反映真实热度",
+     "对新内容无效"
+    ],
+    [
+     "运营/活动配置",
+     "可提前覆盖新品与活动",
+     "依赖人工准确性"
+    ],
+    [
+     "流量回放",
+     "最接近真实访问模式",
+     "需要录制与回放设施"
+    ],
+    [
+     "旧集群数据复制",
+     "完整保留工作集",
+     "需版本与格式兼容"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "主动预热",
+    "pros": "切流瞬间即有高命中率",
+    "cons": "需维护热点识别与脚本",
+    "when": "大促、新集群上线"
+   },
+   {
+    "opt": "被动自然填充",
+    "pros": "零额外工作",
+    "cons": "冷启动期数据库压力大",
+    "when": "流量小、后端余量大"
+   },
+   {
+    "opt": "持久化缓存",
+    "pros": "重启后快速恢复",
+    "cons": "占用磁盘，恢复期加载慢",
+    "when": "单节点重启频繁"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "预热脚本全速运行，先把数据库打满",
+    "fix": "分批限速，并监控数据库负载"
+   },
+   {
+    "bad": "所有预热数据用同一 TTL，一小时后集体过期",
+    "fix": "TTL 加随机抖动或按热度分层"
+   },
+   {
+    "bad": "预热覆盖了刚被业务更新的新值",
+    "fix": "写入使用 NX，或比较版本号后再写"
+   },
+   {
+    "bad": "缓存刚清空就切入全部流量",
+    "fix": "预热完成或灰度逐步放量"
+   }
+  ],
+  "checklist": [
+   "热点集合来源已确定并可更新",
+   "预热有速率限制",
+   "预热写入不覆盖新数据",
+   "TTL 带抖动",
+   "切流前检查命中率达到目标",
+   "预热脚本纳入发布与扩容流程"
+  ],
+  "interview": [
+   {
+    "q": "什么情况下必须做缓存预热？",
+    "a": "后端在零命中情况下无法承受正常流量时：新缓存集群替换旧集群、全量清缓存后、大促与热点事件前、多数节点同时重启。若后端余量足够承受冷启动，自然填充也可以接受。"
+   },
+   {
+    "q": "如何确定要预热哪些数据？",
+    "a": "基于访问日志或埋点统计热度排行，覆盖贡献主要流量的头部数据；结合运营提供的新品和活动清单；用历史曲线估算覆盖率与目标命中率的关系，在成本与效果间选择数量。"
+   },
+   {
+    "q": "如何避免预热本身造成故障？",
+    "a": "限速分批并监控数据库；在低峰期执行；使用只读副本作为数据源；写入使用 NX 避免覆盖更新；预热可中断、可重入；失败时有降级方案，例如灰度切流而非一次切换。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Amazon ElastiCache: Caching strategies",
+    "url": "https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/Strategies.html"
+   },
+   {
+    "title": "Redis: Persistence",
+    "url": "https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/"
+   },
+   {
+    "title": "AWS: Caching Best Practices",
+    "url": "https://aws.amazon.com/caching/best-practices/"
+   }
+  ]
+ },
+ {
+  "slug": "write-through-vs-write-back",
+  "def": "直写（Write-Through）与回写（Write-Back，也称 Write-Behind）是缓存的两种写策略。直写在写缓存的同时同步写入后端存储，完成后才返回；回写只写缓存并标记为脏数据，稍后异步批量写回。前者一致性好但写延迟高，后者写入快、能合并写，但缓存故障时可能丢数据。",
+  "how": [
+   "直写：写请求同时更新缓存与持久存储，两者都成功才返回，缓存与存储保持一致。",
+   "回写：写请求只更新缓存并记录脏标记，不等待持久存储，立即返回。",
+   "回写的后台任务按时间或数量阈值，把脏数据批量刷入存储；同一键多次写只刷最后一次。",
+   "回写在刷盘前若缓存节点崩溃，未持久化的写入会丢失，需要复制或日志保护。",
+   "另有绕写（Write-Around）：写只进存储不进缓存，避免一次性数据污染缓存。"
+  ],
+  "terms": [
+   {
+    "t": "脏数据 (Dirty Data)",
+    "d": "已在缓存修改、尚未写回存储的数据。"
+   },
+   {
+    "t": "写合并 (Write Coalescing)",
+    "d": "同一键多次写入只持久化最后一次。"
+   },
+   {
+    "t": "绕写 (Write-Around)",
+    "d": "写操作绕过缓存，只写存储。"
+   },
+   {
+    "t": "刷新 (Flush)",
+    "d": "把脏数据写回持久存储的动作。"
+   },
+   {
+    "t": "掉电保护 (Battery-backed Cache)",
+    "d": "存储控制器用电池或电容保护回写缓存。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "两种写策略的最小实现",
+   "src": "import threading\n\nclass WriteThrough:\n    def __init__(self, cache: dict, db: dict):\n        self.cache, self.db = cache, db\n    def put(self, k, v):\n        self.db[k] = v          # 先写持久层，失败则抛错、不更新缓存\n        self.cache[k] = v       # 两者都成功才返回\n\nclass WriteBack:\n    def __init__(self, cache: dict, db: dict):\n        self.cache, self.db = cache, db\n        self.dirty, self.lock = {}, threading.Lock()\n    def put(self, k, v):\n        self.cache[k] = v       # 只写缓存，立即返回\n        with self.lock:\n            self.dirty[k] = v   # 同一键多次写会被合并\n    def flush(self):            # 由定时器或阈值触发\n        with self.lock:\n            batch, self.dirty = self.dirty, {}\n        self.db.update(batch)   # 批量落库；flush 前进程崩溃，这批数据就丢了\n\nwb = WriteBack({}, {})\nfor i in range(1000):\n    wb.put(\"view:42\", i)        # 1000 次写\nwb.flush()\nprint(wb.db)                    # {'view:42': 999}，只落库 1 次",
+   "note": "回写把 1000 次写合并为 1 次落库，代价是 flush 前崩溃会丢数据。"
+  },
+  "table": {
+   "title": "写策略对比",
+   "head": [
+    "策略",
+    "写延迟",
+    "数据丢失风险",
+    "适用"
+   ],
+   "rows": [
+    [
+     "直写",
+     "高（含存储写）",
+     "低",
+     "订单、账户等关键数据"
+    ],
+    [
+     "回写",
+     "低（仅缓存）",
+     "有（未刷盘部分）",
+     "计数、浏览量、指标"
+    ],
+    [
+     "绕写",
+     "存储写延迟",
+     "低",
+     "写多读少、一次性数据"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "直写",
+    "pros": "缓存与存储一致，故障不丢写",
+    "cons": "写延迟叠加，写放大",
+    "when": "写入必须可靠且立即可读"
+   },
+   {
+    "opt": "回写",
+    "pros": "写快、合并写、削峰",
+    "cons": "可能丢数据，一致性弱",
+    "when": "可容忍少量丢失的高频写"
+   },
+   {
+    "opt": "绕写 + 读时填充",
+    "pros": "避免缓存被写污染",
+    "cons": "刚写入的数据首读未命中",
+    "when": "写后很少立即读取"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用回写缓存存支付状态等关键数据",
+    "fix": "关键数据直写持久层，回写只用于可丢数据"
+   },
+   {
+    "bad": "直写时先写缓存再写库，库失败后缓存是脏的",
+    "fix": "先写持久层，成功后再更新缓存或删除缓存"
+   },
+   {
+    "bad": "回写队列无上限，存储故障时内存被撑爆",
+    "fix": "设置脏数据上限与背压，超限时降级为直写"
+   },
+   {
+    "bad": "忽略操作系统页缓存也是回写",
+    "fix": "需要持久性时显式 fsync 或使用数据库事务"
+   }
+  ],
+  "checklist": [
+   "按数据重要性选择写策略",
+   "回写有刷新周期与脏数据上限",
+   "回写缓存有复制或日志保护",
+   "直写先写持久层",
+   "能评估最坏情况下丢失多少数据",
+   "存储故障时有降级路径"
+  ],
+  "interview": [
+   {
+    "q": "回写缓存如何降低数据丢失风险？",
+    "a": "缩短刷新间隔、限制脏数据量；缓存节点做主从复制；先写追加日志（类似 WAL）再更新内存；硬件层面用电池或电容保护的控制器缓存。本质是在写性能与可丢失窗口之间选择。"
+   },
+   {
+    "q": "浏览量计数适合哪种策略？",
+    "a": "适合回写：写入极高频且同一键反复更新，合并后批量落库能大幅降低数据库写压力；偶尔丢失几秒计数业务上可接受。可用 Redis INCR 累加，定时把增量批量写回数据库。"
+   },
+   {
+    "q": "数据库本身用的是哪种策略？",
+    "a": "多数数据库的缓冲池对数据页是回写：修改先在内存中，后台刷脏页。持久性靠预写日志保证：提交时日志先落盘，崩溃后重放日志恢复。这样兼得回写的性能与直写般的可靠性。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Wikipedia: Cache (computing) — Writing policies",
+    "url": "https://en.wikipedia.org/wiki/Cache_(computing)#Writing_policies"
+   },
+   {
+    "title": "Amazon ElastiCache: Caching strategies",
+    "url": "https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/Strategies.html"
+   },
+   {
+    "title": "AWS: Caching Best Practices",
+    "url": "https://aws.amazon.com/caching/best-practices/"
+   }
+  ]
+ },
+ {
+  "slug": "redis-eviction-policies",
+  "def": "Redis 内存淘汰策略决定当内存使用达到 maxmemory 上限时，如何为新写入腾出空间：拒绝写入，还是按近似 LRU、LFU、随机或剩余 TTL 删除部分键。它与过期（TTL 到期删除）是两种不同机制。策略选择直接影响缓存命中率，以及 Redis 被当作存储使用时的数据安全。",
+  "how": [
+   "配置 maxmemory 设定内存上限；写入命令执行前检查是否超限。",
+   "超限时按 maxmemory-policy 选择淘汰对象：allkeys-* 在所有键中选，volatile-* 只在设置了 TTL 的键中选。",
+   "LRU 与 LFU 均为近似算法：每次随机采样若干键（maxmemory-samples，默认 5）选出最该淘汰的。",
+   "LFU 使用对数计数器记录访问频率，并随时间衰减，由 lfu-log-factor 与 lfu-decay-time 调节。",
+   "noeviction（默认）不淘汰，超限后写命令返回 OOM 错误，读命令仍可执行。"
+  ],
+  "terms": [
+   {
+    "t": "maxmemory",
+    "d": "Redis 可使用的最大内存，达到后触发淘汰策略。"
+   },
+   {
+    "t": "LRU",
+    "d": "最近最少使用，淘汰最久未被访问的键。"
+   },
+   {
+    "t": "LFU",
+    "d": "最不经常使用，淘汰访问频率最低的键。"
+   },
+   {
+    "t": "volatile-ttl",
+    "d": "在有 TTL 的键中优先淘汰剩余时间最短的。"
+   },
+   {
+    "t": "过期 (Expiration)",
+    "d": "键到达 TTL 后被删除，与内存是否满无关。"
+   },
+   {
+    "t": "evicted_keys",
+    "d": "INFO stats 中累计被淘汰的键数量。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "配置与观察淘汰行为",
+   "src": "#!/usr/bin/env bash\n# 纯缓存场景：设上限并在所有键中按访问频率淘汰\nredis-cli CONFIG SET maxmemory 2gb\nredis-cli CONFIG SET maxmemory-policy allkeys-lfu\nredis-cli CONFIG REWRITE            # 写回 redis.conf，重启后仍生效\n\n# 查看当前配置与内存\nredis-cli CONFIG GET 'maxmemory*'\nredis-cli INFO memory | grep -E '^(used_memory_human|maxmemory_human|maxmemory_policy):'\n\n# 淘汰与过期是两个计数\nredis-cli INFO stats | grep -E '^(evicted_keys|expired_keys):'\n\n# LFU 策略下可查看单个键的访问频率计数\nredis-cli OBJECT FREQ product:42\n\n# 估算某个键占用的内存（字节）\nredis-cli MEMORY USAGE product:42\n\n# 若 Redis 同时存放会话等不可丢数据，考虑拆实例或改用 volatile-*\n# noeviction 下写满会报：OOM command not allowed when used memory > 'maxmemory'",
+   "note": "evicted_keys 是被挤掉，expired_keys 是到期删除；OBJECT FREQ 需 LFU 策略。"
+  },
+  "table": {
+   "title": "淘汰策略速查",
+   "head": [
+    "策略",
+    "候选范围",
+    "规则",
+    "适用"
+   ],
+   "rows": [
+    [
+     "noeviction（默认）",
+     "—",
+     "不淘汰，写入报错",
+     "Redis 作为存储，不能丢数据"
+    ],
+    [
+     "allkeys-lru",
+     "全部键",
+     "最近最少使用",
+     "通用缓存"
+    ],
+    [
+     "allkeys-lfu",
+     "全部键",
+     "访问频率最低",
+     "热点稳定、长尾明显的缓存"
+    ],
+    [
+     "volatile-lru / volatile-lfu",
+     "有 TTL 的键",
+     "LRU / LFU",
+     "缓存与持久数据混存"
+    ],
+    [
+     "volatile-ttl",
+     "有 TTL 的键",
+     "剩余 TTL 最短",
+     "TTL 能反映重要性时"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "allkeys-lfu",
+    "pros": "抗偶发扫描，保留稳定热点",
+    "cons": "新热点需时间积累频率",
+    "when": "访问分布稳定的缓存"
+   },
+   {
+    "opt": "allkeys-lru",
+    "pros": "对访问模式变化反应快",
+    "cons": "一次全量扫描会冲掉热点",
+    "when": "热点快速变化"
+   },
+   {
+    "opt": "noeviction",
+    "pros": "绝不静默丢数据",
+    "cons": "写满即写入失败",
+    "when": "队列、会话、锁等关键数据"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "未设置 maxmemory，Redis 用尽系统内存被 OOM Killer 杀掉",
+    "fix": "设置 maxmemory，并为持久化 fork 留出余量"
+   },
+   {
+    "bad": "用 volatile-* 但大部分键没有 TTL，等同不淘汰",
+    "fix": "缓存键统一设置 TTL，或改用 allkeys-*"
+   },
+   {
+    "bad": "缓存与会话、队列共用实例并开 allkeys 淘汰",
+    "fix": "按用途拆分实例，关键数据用 noeviction"
+   },
+   {
+    "bad": "把 evicted_keys 增长当正常现象长期忽略",
+    "fix": "持续淘汰说明容量不足，评估扩容或缩短 TTL"
+   }
+  ],
+  "checklist": [
+   "已设置 maxmemory 并留有余量",
+   "淘汰策略与实例用途匹配",
+   "缓存键都有合理 TTL",
+   "关键数据与缓存分实例部署",
+   "监控 evicted_keys 与内存使用率",
+   "大键与热键定期排查"
+  ],
+  "interview": [
+   {
+    "q": "Redis 的 LRU 为什么是近似的？",
+    "a": "精确 LRU 需要维护全局访问链表，每次访问都调整，内存与 CPU 开销大。Redis 为每个键记录最近访问时间，淘汰时随机采样 maxmemory-samples 个键，淘汰其中最久未访问的，并维护候选池。增大采样数更接近精确 LRU，但更耗 CPU。"
+   },
+   {
+    "q": "LRU 和 LFU 怎么选？",
+    "a": "热点稳定、偶有批量扫描时选 LFU，扫描访问一次的键不会挤掉高频热点；热点变化快（如新闻、短期活动）时 LRU 对新热点反应更快。不确定时可在影子环境用真实流量对比命中率。"
+   },
+   {
+    "q": "淘汰和过期有什么区别？",
+    "a": "过期是键达到 TTL 后被删除，与内存是否充足无关，Redis 通过访问时惰性检查和后台定期抽样清理。淘汰只在内存超过 maxmemory 时发生，按策略删除可能尚未过期的键。两者分别计入 expired_keys 与 evicted_keys。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Redis: Key eviction",
+    "url": "https://redis.io/docs/latest/develop/reference/eviction/"
+   },
+   {
+    "title": "Redis: OBJECT FREQ",
+    "url": "https://redis.io/docs/latest/commands/object-freq/"
+   },
+   {
+    "title": "Redis: INFO 命令",
+    "url": "https://redis.io/docs/latest/commands/info/"
+   }
+  ]
+ },
+ {
+  "slug": "cache-control-headers",
+  "def": "Cache-Control 是 HTTP 中控制缓存行为的核心头部（RFC 9111），用一组指令告诉浏览器、CDN 和代理：响应能否被缓存、由谁缓存、保持新鲜多久、过期后是否必须先向源站验证。正确设置可大幅减少请求与带宽，设置错误则会导致用户看到旧版本或隐私数据被共享缓存。",
+  "how": [
+   "源站在响应中设置 Cache-Control，缓存据此判断是否存储以及新鲜期长短。",
+   "新鲜期内（max-age，共享缓存优先 s-maxage）直接使用缓存副本，不发请求。",
+   "过期后缓存带 If-None-Match 或 If-Modified-Since 向源站验证，未变则返回 304。",
+   "no-cache 表示可存储但每次使用前必须验证；no-store 表示完全不得存储。",
+   "private 只允许浏览器缓存，public 允许 CDN 等共享缓存；未设置时缓存可能按启发式规则自行决定。"
+  ],
+  "terms": [
+   {
+    "t": "max-age",
+    "d": "响应保持新鲜的秒数。"
+   },
+   {
+    "t": "s-maxage",
+    "d": "仅对共享缓存（CDN/代理）生效的新鲜期。"
+   },
+   {
+    "t": "no-cache",
+    "d": "可存储，但每次使用前必须向源站验证。"
+   },
+   {
+    "t": "no-store",
+    "d": "任何缓存都不得存储该响应。"
+   },
+   {
+    "t": "immutable",
+    "d": "新鲜期内内容不会变化，刷新页面也无需验证。"
+   },
+   {
+    "t": "stale-while-revalidate",
+    "d": "过期后的一段时间内先返回旧值，后台异步验证。"
+   }
+  ],
+  "code": {
+   "lang": "http",
+   "title": "按资源类型设置缓存",
+   "src": "# 1. 带内容哈希的静态资源：缓存一年，内容变了文件名就变\nGET /assets/app.3f9a1c.js HTTP/1.1\n\nHTTP/1.1 200 OK\nCache-Control: public, max-age=31536000, immutable\n\n# 2. HTML 入口：可存储但每次都验证，确保能拿到新版本引用\nGET /index.html HTTP/1.1\n\nHTTP/1.1 200 OK\nCache-Control: no-cache\nETag: \"v42\"\n\n# 3. 公共 API：CDN 缓存 60 秒，过期后 5 分钟内可先返回旧值再后台刷新\nHTTP/1.1 200 OK\nCache-Control: public, max-age=0, s-maxage=60, stale-while-revalidate=300\n\n# 4. 含个人信息的响应：禁止任何缓存存储\nGET /api/me HTTP/1.1\n\nHTTP/1.1 200 OK\nCache-Control: private, no-store",
+   "note": "哈希文件长缓存，HTML 每次验证，个人数据 no-store；s-maxage 只作用于 CDN。"
+  },
+  "table": {
+   "title": "常见资源的推荐策略",
+   "head": [
+    "资源",
+    "Cache-Control",
+    "原因"
+   ],
+   "rows": [
+    [
+     "带哈希的 JS/CSS/图片",
+     "public, max-age=31536000, immutable",
+     "改动即换文件名"
+    ],
+    [
+     "HTML 入口",
+     "no-cache（配合 ETag）",
+     "需要及时拿到新版本"
+    ],
+    [
+     "公共列表 API",
+     "public, s-maxage=60",
+     "CDN 短缓存削峰"
+    ],
+    [
+     "用户私有数据",
+     "private, no-store",
+     "防止共享缓存泄露"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "长 max-age + 文件名哈希",
+    "pros": "几乎零重复请求",
+    "cons": "依赖构建工具生成哈希名",
+    "when": "所有可构建的静态资源"
+   },
+   {
+    "opt": "no-cache + ETag",
+    "pros": "始终最新，未变时只回 304",
+    "cons": "每次仍有一次往返",
+    "when": "HTML 与频繁变化的内容"
+   },
+   {
+    "opt": "stale-while-revalidate",
+    "pros": "用户几乎感受不到回源延迟",
+    "cons": "短时间内可能看到旧数据",
+    "when": "可容忍秒级旧数据的接口"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "以为 no-cache 是“不缓存”",
+    "fix": "要完全禁止存储用 no-store；no-cache 是必须验证"
+   },
+   {
+    "bad": "HTML 设置长 max-age，发版后用户仍加载旧资源",
+    "fix": "HTML 用 no-cache，静态资源靠哈希文件名长缓存"
+   },
+   {
+    "bad": "带 Cookie 的个性化响应被 CDN 缓存给了别人",
+    "fix": "设置 private 或 no-store，并检查 CDN 规则"
+   },
+   {
+    "bad": "不写 Cache-Control，依赖缓存的启发式行为",
+    "fix": "每类响应显式声明缓存策略"
+   }
+  ],
+  "checklist": [
+   "静态资源使用哈希文件名并长缓存",
+   "HTML 入口为 no-cache",
+   "个人数据响应为 private 或 no-store",
+   "CDN 缓存规则与响应头一致",
+   "需要时配置 Vary 头",
+   "发版流程验证缓存是否正确更新"
+  ],
+  "interview": [
+   {
+    "q": "no-cache 和 no-store 有什么区别？",
+    "a": "no-cache 允许缓存存储，但每次使用前必须向源站验证（通常得到 304，省去传输正文）；no-store 禁止任何缓存存储响应，每次都完整请求。前者用于需要最新但可节省带宽的资源，后者用于敏感数据。"
+   },
+   {
+    "q": "为什么前端静态资源要用文件名哈希？",
+    "a": "哈希让 URL 随内容变化。这样可以给静态资源设置一年缓存加 immutable，用户永远不重复下载未变文件；发版时新 HTML 引用新文件名，自然拿到新资源，不需要清理浏览器或 CDN 缓存。"
+   },
+   {
+    "q": "s-maxage 和 max-age 同时存在时如何生效？",
+    "a": "共享缓存（CDN、代理）优先使用 s-maxage，忽略 max-age；浏览器等私有缓存只看 max-age。借此可以让 CDN 缓存较久、浏览器每次都回 CDN 验证，发版时只需清理 CDN。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 9111: HTTP Caching",
+    "url": "https://www.rfc-editor.org/rfc/rfc9111"
+   },
+   {
+    "title": "MDN: Cache-Control",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control"
+   },
+   {
+    "title": "MDN: HTTP caching",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching"
+   },
+   {
+    "title": "web.dev: Prevent unnecessary network requests with the HTTP Cache",
+    "url": "https://web.dev/articles/http-cache"
+   }
+  ]
+ },
+ {
+  "slug": "etags",
+  "def": "ETag（实体标签）是服务器为资源某个具体版本生成的不透明标识，放在响应头中。客户端之后带 If-None-Match 发起条件请求，若版本未变服务器返回 304 Not Modified 而不传正文，从而节省带宽；带 If-Match 写入时可实现乐观并发控制。它是 HTTP 协商缓存的核心机制（RFC 9110）。",
+  "how": [
+   "服务器返回资源时生成 ETag（内容哈希、版本号或修改时间与大小的组合）。",
+   "客户端缓存响应及其 ETag；缓存过期或要求验证时，请求带 If-None-Match: 该 ETag。",
+   "服务器比较当前 ETag：相同则返回 304 无正文，不同则返回 200 和新内容。",
+   "写请求带 If-Match: 该 ETag，版本不符时服务器返回 412，防止覆盖他人修改。",
+   "弱 ETag（W/ 前缀）表示语义等价即可，适合压缩等字节不同但内容相同的情况。"
+  ],
+  "terms": [
+   {
+    "t": "强 ETag (Strong ETag)",
+    "d": "字节级完全相同才匹配。"
+   },
+   {
+    "t": "弱 ETag (Weak ETag)",
+    "d": "以 W/ 开头，语义等价即视为相同。"
+   },
+   {
+    "t": "If-None-Match",
+    "d": "条件读：ETag 不匹配时才返回完整内容。"
+   },
+   {
+    "t": "304 Not Modified",
+    "d": "资源未变，客户端继续使用本地缓存。"
+   },
+   {
+    "t": "If-Match / 412",
+    "d": "条件写：版本不匹配时返回 412 Precondition Failed。"
+   },
+   {
+    "t": "Last-Modified",
+    "d": "基于修改时间的验证器，精度只到秒。"
+   }
+  ],
+  "code": {
+   "lang": "http",
+   "title": "条件读与条件写",
+   "src": "# 1. 首次请求：服务器返回 ETag\nGET /api/articles/7 HTTP/1.1\n\nHTTP/1.1 200 OK\nETag: \"a1b2c3\"\nCache-Control: no-cache\nContent-Type: application/json\n\n{\"id\": 7, \"title\": \"Hello\", \"version\": 3}\n\n# 2. 再次请求：带上 ETag 做验证，未变则无正文\nGET /api/articles/7 HTTP/1.1\nIf-None-Match: \"a1b2c3\"\n\nHTTP/1.1 304 Not Modified\nETag: \"a1b2c3\"\n\n# 3. 更新时带 If-Match，被他人抢先修改则失败\nPUT /api/articles/7 HTTP/1.1\nIf-Match: \"a1b2c3\"\nContent-Type: application/json\n\n{\"title\": \"Hello, world\"}\n\nHTTP/1.1 412 Precondition Failed",
+   "note": "If-None-Match 省带宽，If-Match 防覆盖；同一个 ETag 同时服务缓存与并发控制。"
+  },
+  "table": {
+   "title": "两种验证器对比",
+   "head": [
+    "验证器",
+    "请求头",
+    "精度",
+    "注意点"
+   ],
+   "rows": [
+    [
+     "ETag",
+     "If-None-Match / If-Match",
+     "任意（取决于生成方式）",
+     "多实例需生成规则一致"
+    ],
+    [
+     "Last-Modified",
+     "If-Modified-Since",
+     "秒级",
+     "一秒内多次修改无法区分"
+    ],
+    [
+     "弱 ETag",
+     "If-None-Match",
+     "语义等价",
+     "不能用于 If-Match 条件写"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "内容哈希 ETag",
+    "pros": "准确，与部署实例无关",
+    "cons": "需读取并计算整个内容",
+    "when": "中小响应、静态文件"
+   },
+   {
+    "opt": "版本号 ETag",
+    "pros": "无需计算，天然支持并发控制",
+    "cons": "需维护版本字段",
+    "when": "数据库资源的 API"
+   },
+   {
+    "opt": "修改时间+大小",
+    "pros": "计算便宜",
+    "cons": "多机时间或文件属性可能不一致",
+    "when": "单机静态文件服务"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "多台服务器生成的 ETag 不一致，验证总是失败",
+    "fix": "基于内容或版本生成，不依赖 inode 等本机属性"
+   },
+   {
+    "bad": "开启压缩后强 ETag 与原始内容不匹配",
+    "fix": "为不同编码使用不同 ETag，或使用弱 ETag"
+   },
+   {
+    "bad": "框架对动态响应自动生成哈希 ETag，仍要完整计算响应",
+    "fix": "对大响应用版本号提前判断，跳过生成正文"
+   },
+   {
+    "bad": "用弱 ETag 做 If-Match 并发控制",
+    "fix": "条件写使用强 ETag 或显式版本号"
+   }
+  ],
+  "checklist": [
+   "ETag 在多实例间生成一致",
+   "返回 304 时不带正文",
+   "写接口支持 If-Match 与 412",
+   "压缩与 ETag 的交互已验证",
+   "CDN 透传或正确处理 ETag",
+   "大响应能在生成正文前判断是否未变"
+  ],
+  "interview": [
+   {
+    "q": "ETag 和 Last-Modified 都有时用哪个？",
+    "a": "按 RFC 9110，服务器收到 If-None-Match 时应优先使用它，忽略 If-Modified-Since。ETag 更精确，能区分一秒内的多次修改，也能表达内容回滚到旧版本的情况；Last-Modified 作为兼容补充。"
+   },
+   {
+    "q": "强弱 ETag 的区别与用途？",
+    "a": "强 ETag 要求字节完全相同，可用于条件写、分段请求；弱 ETag 以 W/ 开头，只要语义等价即可匹配，适合压缩、空白差异等场景，只能用于缓存验证，不能用于 If-Match 写入。"
+   },
+   {
+    "q": "API 中如何用 ETag 防止并发覆盖？",
+    "a": "GET 返回基于版本号的 ETag；客户端 PUT/PATCH 带 If-Match；服务端在同一条 UPDATE 中校验版本，不符返回 412；客户端重新获取最新资源后合并修改再提交。缺少 If-Match 时可返回 428 强制要求。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 9110: HTTP Semantics",
+    "url": "https://www.rfc-editor.org/rfc/rfc9110"
+   },
+   {
+    "title": "MDN: ETag",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag"
+   },
+   {
+    "title": "MDN: If-None-Match",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-None-Match"
+   },
+   {
+    "title": "MDN: 304 Not Modified",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/304"
+   }
+  ]
+ }
+]

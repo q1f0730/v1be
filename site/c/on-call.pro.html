@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="工程师轮值待命 专业模式：值班（On-Call）是工程师按轮值表在规定时段内负责响应生产告警和事件的制度。它连接监控告警系统与事件响应流程，核心要素包括轮值排班、升级策略、告警质量、响应">
+<title>🎓 工程师轮值待命 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="on-call" data-answer="0" data-prev="incident-response.pro.html" data-next="runbooks.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sre">🔮 高级 · 🩺 高可用 SRE</a><span>›</span><a href="on-call.html">工程师轮值待命</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.304 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="incident-response.pro.html" rel="prev"><small>‹ 上一个</small><b>🚨 安全与故障事件响应</b></a><a class="pn next" href="runbooks.pro.html" rel="next"><small>下一个 ›</small><b>📒 标准化运维操作手册</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📟</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>工程师轮值待命</h1><p class="en">On-Call</p>
+    <div class="hbtns"><a class="prosw back" href="on-call.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">值班（On-Call）是工程师按轮值表在规定时段内负责响应生产告警和事件的制度。它连接监控告警系统与事件响应流程，核心要素包括轮值排班、升级策略、告警质量、响应时限和交接，以及对值班负担的控制与补偿。健康的值班依赖可执行的告警和完善的手册，否则会导致疲劳和人员流失。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>按轮值表排定主值班和备值班，常见周期为一周，通过工具自动路由告警。</p></li><li><span class="sn">2</span><p>高严重度告警即时呼叫，未在规定时间内确认则自动升级给备值班或上级。</p></li><li><span class="sn">3</span><p>值班人员确认告警、按手册排查与缓解，必要时宣告事件拉人协助。</p></li><li><span class="sn">4</span><p>轮班结束时向下一位交接未决问题和观察到的异常，并记录值班日志。</p></li><li><span class="sn">5</span><p>定期回顾告警数量与质量，清理噪声告警，度量值班负担并据此调整排班。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>升级策略 (Escalation Policy)</dt><dd>告警未确认时按顺序通知下一层人员的规则。</dd></div><div class="term"><dt>主/备值班 (Primary / Secondary)</dt><dd>主值班先响应，备值班兜底或协助。</dd></div><div class="term"><dt>确认时限 (Ack Timeout)</dt><dd>告警需要被确认的最长时间，超时触发升级。</dd></div><div class="term"><dt>跟随太阳 (Follow-the-Sun)</dt><dd>多时区团队按各自工作时间接力值班，减少夜间呼叫。</dd></div><div class="term"><dt>值班负担 (On-call Load)</dt><dd>每班事件数和夜间呼叫次数等，用于评估可持续性。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Alertmanager 分级路由</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code>route:
+  receiver: ticket-queue           # 默认：进工单，不叫醒人
+  group_by: [alertname, service]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    - matchers: [&#x27;severity=&quot;page&quot;&#x27;]
+      receiver: oncall-pager        # 只有需要人立即处理的才呼叫
+receivers:
+  - name: oncall-pager
+    pagerduty_configs:
+      - routing_key: &lt;pagerduty-integration-key&gt;
+  - name: ticket-queue
+    webhook_configs:
+      - url: https://tickets.example.com/hooks/alertmanager</code></pre></div><p class="cnote">按 severity 分流：可等的进工单，紧急的才呼叫值班，减少夜间打扰。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">值班健康度指标</h3><div class="tw"><table><thead><tr><th>指标</th><th>含义</th><th>关注点</th></tr></thead><tbody><tr><td data-h="指标">每班呼叫次数</td><td data-h="含义">被叫醒或打断的频次</td><td data-h="关注点">持续偏高说明告警或系统需治理</td></tr><tr><td data-h="指标">可执行告警占比</td><td data-h="含义">需要人工动作的告警比例</td><td data-h="关注点">低于多数即存在大量噪声</td></tr><tr><td data-h="指标">确认时间</td><td data-h="含义">从呼叫到确认</td><td data-h="关注点">过长说明排班或通知有问题</td></tr><tr><td data-h="指标">夜间呼叫次数</td><td data-h="含义">非工作时间打扰</td><td data-h="关注点">影响健康与留存</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>开发团队自己值班</h4><p><b class="k-p">优点</b>谁写谁负责，修复快，激励写稳代码</p><p><b class="k-c">代价</b>开发者负担增加</p><p><b class="k-w">适用</b>服务由单一团队拥有</p></div><div class="trd"><h4>专职 SRE/运维值班</h4><p><b class="k-p">优点</b>响应专业</p><p><b class="k-c">代价</b>与代码作者脱节</p><p><b class="k-w">适用</b>平台型共享基础设施</p></div><div class="trd"><h4>跟随太阳</h4><p><b class="k-p">优点</b>减少夜间值班</p><p><b class="k-c">代价</b>需要多时区团队与良好交接</p><p><b class="k-w">适用</b>团队分布全球</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>所有告警都呼叫值班，包括自愈的瞬时抖动。</p><p class="fix"><b>✓</b>只有需要立即人工动作的才呼叫，其余进工单或看板。</p></li><li><p class="bad"><b>✗</b>告警没有对应手册，值班人员半夜从零排查。</p><p class="fix"><b>✓</b>每条呼叫级告警链接到手册。</p></li><li><p class="bad"><b>✗</b>轮值人数过少，每人频繁值班导致倦怠。</p><p class="fix"><b>✓</b>保证轮值人数，控制每人值班频率并给予补偿。</p></li><li><p class="bad"><b>✗</b>值班时还要求完成满负荷的开发任务。</p><p class="fix"><b>✓</b>值班期间减少计划工作，用于处理告警和改进。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个生产服务有明确的值班轮值</span></label></li><li><label><input type="checkbox"><span>升级策略与确认时限已配置</span></label></li><li><label><input type="checkbox"><span>呼叫级告警都有手册链接</span></label></li><li><label><input type="checkbox"><span>定期回顾告警噪声并清理</span></label></li><li><label><input type="checkbox"><span>值班交接有记录</span></label></li><li><label><input type="checkbox"><span>值班负担有度量与补偿</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>如何判断一条告警该不该呼叫值班？</summary><p>问三个问题：是否正在或即将影响用户；是否需要人立刻采取动作；动作是否明确。三者都满足才呼叫。否则降为工单或仪表盘，或者用自动化处理。基于 SLO 燃烧率的告警通常比基于原因的告警更符合这个标准。</p></details><details class="iv"><summary>Google SRE 对值班负担有什么建议？</summary><p>SRE 书中建议 SRE 花在值班上的时间不超过约 25%，运维类工作总量不超过 50%；每个值班班次的事件数要有限，留出时间做事件处理与复盘。目的是让值班可持续，并保留工程改进时间。</p></details><details class="iv"><summary>AI 工具能如何减轻值班负担？</summary><p>可以聚合相关告警、检索相似历史事件和手册、生成初步诊断摘要和查询命令，缩短上下文收集时间；但处置决策仍应由人确认，并审计 Agent 执行的操作。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://sre.google/sre-book/being-on-call/" target="_blank" rel="noopener"><b>Google SRE Book：Being On-Call</b><small>sre.google ↗</small></a></li><li><a href="https://sre.google/workbook/on-call/" target="_blank" rel="noopener"><b>Google SRE Workbook：On-Call</b><small>sre.google ↗</small></a></li><li><a href="https://prometheus.io/docs/alerting/latest/configuration/" target="_blank" rel="noopener"><b>Prometheus Alertmanager 配置文档</b><small>prometheus.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="incident-response.pro.html" rel="prev"><small>‹ 上一个</small><b>🚨 安全与故障事件响应</b></a><a class="pn next" href="runbooks.pro.html" rel="next"><small>下一个 ›</small><b>📒 标准化运维操作手册</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

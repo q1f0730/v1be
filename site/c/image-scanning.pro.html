@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="容器镜像漏洞扫描 专业模式：容器镜像扫描（Image Scanning）是软件供应链安全的一环：解析镜像各层里的操作系统包与语言依赖，生成软件物料清单（SBOM），再与 CVE 等漏洞库比">
+<title>🎓 容器镜像漏洞扫描 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="image-scanning" data-answer="0" data-prev="non-root-containers.pro.html" data-next="reproducible-builds.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#devops">🔮 高级 · 🔭 可观测与交付</a><span>›</span><a href="image-scanning.html">容器镜像漏洞扫描</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.331 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="non-root-containers.pro.html" rel="prev"><small>‹ 上一个</small><b>🪪 非Root权限运行容器</b></a><a class="pn next" href="reproducible-builds.pro.html" rel="next"><small>下一个 ›</small><b>🍟 可复现构建</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔍</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>容器镜像漏洞扫描</h1><p class="en">Image Scanning</p>
+    <div class="hbtns"><a class="prosw back" href="image-scanning.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">容器镜像扫描（Image Scanning）是软件供应链安全的一环：解析镜像各层里的操作系统包与语言依赖，生成软件物料清单（SBOM），再与 CVE 等漏洞库比对，输出漏洞、严重级别和可修复版本，通常作为 CI 门禁和镜像仓库准入策略执行。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>解包镜像：按层读取文件系统，识别发行版（如 Debian、Alpine）及其包管理数据库。</p></li><li><span class="sn">2</span><p>盘点组件：解析 dpkg/apk/rpm 数据库和 package-lock、go.sum、jar 等语言清单，得到组件与版本列表（SBOM）。</p></li><li><span class="sn">3</span><p>匹配漏洞：用组件名+版本对照 NVD、发行版安全公告、GitHub Advisory 等数据源，得到 CVE 列表。</p></li><li><span class="sn">4</span><p>评级与过滤：按 CVSS/厂商严重级别分级，标记是否已有修复版本，并应用忽略清单（如 .trivyignore）。</p></li><li><span class="sn">5</span><p>策略执行：CI 中超过阈值即以非零退出码失败；仓库或准入控制器可拒绝未扫描或高危镜像。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>软件物料清单 (SBOM)</dt><dd>镜像内所有组件及版本的结构化清单，常见格式为 SPDX 与 CycloneDX。</dd></div><div class="term"><dt>CVE (Common Vulnerabilities and Exposures)</dt><dd>公开漏洞的统一编号体系，如 CVE-2021-44228。</dd></div><div class="term"><dt>CVSS</dt><dd>通用漏洞评分系统，0–10 分量化漏洞严重程度。</dd></div><div class="term"><dt>可修复 (Fixed Version)</dt><dd>上游已发布修复版本的漏洞，可通过升级包消除。</dd></div><div class="term"><dt>VEX</dt><dd>漏洞可利用性声明，说明某 CVE 在本产品中是否真正受影响。</dd></div><div class="term"><dt>准入控制 (Admission Control)</dt><dd>K8s 在创建资源前执行的策略校验，可拦截不合规镜像。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Trivy 扫描并设门禁</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 1) 只关心高危/严重，且仅统计已有修复版本的漏洞
+trivy image \
+  --severity HIGH,CRITICAL \
+  --ignore-unfixed \
+  --exit-code 1 \
+  myapp:1.4.2          # 有命中则退出码为 1，CI 失败
+
+# 2) 生成 SBOM（CycloneDX 格式）留档
+trivy image --format cyclonedx --output sbom.cdx.json myapp:1.4.2
+
+# 3) 之后数据库更新了，可直接对 SBOM 复扫，无需重新拉镜像
+trivy sbom sbom.cdx.json
+
+# 4) 用 Grype 交叉验证，达到 high 级别即失败
+grype myapp:1.4.2 --fail-on high</code></pre></div><p class="cnote">把扫描变成可失败的 CI 步骤，并保存 SBOM 以便漏洞库更新后复扫。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见扫描工具对比</h3><div class="tw"><table><thead><tr><th>工具</th><th>形态</th><th>特点</th></tr></thead><tbody><tr><td data-h="工具">Trivy</td><td data-h="形态">开源 CLI</td><td data-h="特点">镜像/文件系统/IaC/SBOM 一体，CI 集成简单</td></tr><tr><td data-h="工具">Grype + Syft</td><td data-h="形态">开源 CLI</td><td data-h="特点">Syft 生成 SBOM，Grype 负责匹配，可分开使用</td></tr><tr><td data-h="工具">仓库内置扫描</td><td data-h="形态">托管服务</td><td data-h="特点">如 ECR、Harbor、Docker Scout，推送即扫</td></tr><tr><td data-h="工具">商业平台</td><td data-h="形态">SaaS</td><td data-h="特点">可达性分析、优先级排序、合规报表</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>CI 构建时扫描</h4><p><b class="k-p">优点</b>问题在合并前暴露，修复成本低</p><p><b class="k-c">代价</b>只反映构建当天的漏洞库</p><p><b class="k-w">适用</b>所有项目的默认基线</p></div><div class="trd"><h4>仓库持续复扫</h4><p><b class="k-p">优点</b>新 CVE 公布后能发现存量镜像风险</p><p><b class="k-c">代价</b>告警量大，需要归属和处理流程</p><p><b class="k-w">适用</b>镜像长期在线运行</p></div><div class="trd"><h4>准入时强制拦截</h4><p><b class="k-p">优点</b>运行时兜底，防止绕过 CI</p><p><b class="k-c">代价</b>误拦会影响发布，需例外机制</p><p><b class="k-w">适用</b>生产集群、合规要求高</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>阈值设为任何漏洞都失败，团队很快学会跳过扫描</p><p class="fix"><b>✓</b>先只拦 CRITICAL/HIGH 且可修复，配合有到期时间的忽略清单</p></li><li><p class="bad"><b>✗</b>只在构建时扫一次，上线后不再关注</p><p class="fix"><b>✓</b>对仓库中在用镜像定期复扫或对 SBOM 复扫，新 CVE 触发工单</p></li><li><p class="bad"><b>✗</b>用 latest 标签扫描，扫的和部署的不是同一个镜像</p><p class="fix"><b>✓</b>按镜像 digest（sha256）扫描和部署，结果与制品一一对应</p></li><li><p class="bad"><b>✗</b>基础镜像臃肿，大量与业务无关的包贡献漏洞</p><p class="fix"><b>✓</b>换用 slim、distroless 等精简基础镜像，从源头减少攻击面</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>CI 中扫描步骤失败会阻断合并</span></label></li><li><label><input type="checkbox"><span>阈值与忽略清单入库并有负责人</span></label></li><li><label><input type="checkbox"><span>忽略项写明原因和到期日期</span></label></li><li><label><input type="checkbox"><span>每个发布镜像都有对应 SBOM 存档</span></label></li><li><label><input type="checkbox"><span>生产镜像按 digest 引用</span></label></li><li><label><input type="checkbox"><span>在用镜像有定期复扫与告警</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>扫描报 200 个漏洞，你怎么排优先级？</summary><p>先按严重级别和是否有修复版本过滤；再看组件是否在运行路径上被加载（可达性）、是否暴露在网络面；结合 EPSS/KEV 判断是否已被在野利用。升级基础镜像通常一次消掉大半。</p></details><details class="iv"><summary>镜像扫描和 SAST、依赖扫描有何区别？</summary><p>SAST 分析自研源码的缺陷；依赖扫描（SCA）看清单文件中的三方库；镜像扫描看最终制品，覆盖系统包和真正打进去的依赖，更贴近运行时，但看不到自研代码逻辑漏洞。</p></details><details class="iv"><summary>为什么有了 SBOM 还要 VEX？</summary><p>SBOM 只说明包含什么组件，匹配出的 CVE 未必可利用，比如漏洞函数没被调用或配置未开启。VEX 由供应方声明不受影响/已修复/调查中，用来降噪，让下游只处理真实风险。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://github.com/aquasecurity/trivy" target="_blank" rel="noopener"><b>Trivy (GitHub)</b><small>github.com ↗</small></a></li><li><a href="https://github.com/anchore/grype" target="_blank" rel="noopener"><b>Grype (GitHub)</b><small>github.com ↗</small></a></li><li><a href="https://www.cisa.gov/sbom" target="_blank" rel="noopener"><b>CISA: Software Bill of Materials</b><small>cisa.gov ↗</small></a></li><li><a href="https://cyclonedx.org/specification/overview/" target="_blank" rel="noopener"><b>CycloneDX Specification</b><small>cyclonedx.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="non-root-containers.pro.html" rel="prev"><small>‹ 上一个</small><b>🪪 非Root权限运行容器</b></a><a class="pn next" href="reproducible-builds.pro.html" rel="next"><small>下一个 ›</small><b>🍟 可复现构建</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

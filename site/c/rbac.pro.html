@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="基于角色的访问控制 专业模式：基于角色的访问控制（Role-Based Access Control, RBAC）把权限授予角色，再把角色分配给用户，用户通过所属角色获得权限。NIST 将其">
+<title>🎓 基于角色的访问控制 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="rbac" data-answer="0" data-prev="row-level-security.pro.html" data-next="secret-scanning.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sec">🔮 高级 · 🛡️ 安全防线</a><span>›</span><a href="rbac.html">基于角色的访问控制</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.225 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="row-level-security.pro.html" rel="prev"><small>‹ 上一个</small><b>🗂️ 行级安全策略 (RLS)</b></a><a class="pn next" href="secret-scanning.pro.html" rel="next"><small>下一个 ›</small><b>🕵️ 机密扫描</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🎫</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>基于角色的访问控制</h1><p class="en">RBAC</p>
+    <div class="hbtns"><a class="prosw back" href="rbac.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">基于角色的访问控制（Role-Based Access Control, RBAC）把权限授予角色，再把角色分配给用户，用户通过所属角色获得权限。NIST 将其标准化为核心、层级和约束（职责分离）模型。它属于授权层，用于在组织规模增长时简化权限管理与审计，是企业系统、云平台和 Kubernetes 的主流授权方式。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>定义权限为对资源的操作，如 invoice:read、invoice:approve。</p></li><li><span class="sn">2</span><p>按岗位职责定义角色，把一组权限绑定到角色，例如财务、审批人、管理员。</p></li><li><span class="sn">3</span><p>把角色分配给用户或用户组，用户的有效权限是其所有角色权限的并集。</p></li><li><span class="sn">4</span><p>请求到达时，授权层检查当前用户的有效权限是否包含所需权限，并结合资源归属判断。</p></li><li><span class="sn">5</span><p>通过角色层级继承减少重复配置，用职责分离约束防止同一人兼任冲突角色。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>权限 (Permission)</dt><dd>对某类资源执行某个操作的许可。</dd></div><div class="term"><dt>角色层级 (Role Hierarchy)</dt><dd>高级角色继承低级角色的权限。</dd></div><div class="term"><dt>职责分离 (SoD)</dt><dd>禁止同一用户同时拥有相互冲突的角色。</dd></div><div class="term"><dt>ABAC</dt><dd>基于属性的访问控制，按用户、资源、环境属性动态判断。</dd></div><div class="term"><dt>角色爆炸 (Role Explosion)</dt><dd>为细分场景不断新增角色导致难以管理。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>权限检查装饰器</span><em>python</em><button class="ccopy">复制</button></div><pre><code>from functools import wraps
+
+ROLE_PERMS = {
+    &quot;viewer&quot;:   {&quot;invoice:read&quot;},
+    &quot;accountant&quot;: {&quot;invoice:read&quot;, &quot;invoice:create&quot;},
+    &quot;approver&quot;: {&quot;invoice:read&quot;, &quot;invoice:approve&quot;},
+}
+SOD_CONFLICTS = [{&quot;accountant&quot;, &quot;approver&quot;}]   # 职责分离：不能既创建又审批
+
+def perms_of(user) -&gt; set[str]:
+    return set().union(*(ROLE_PERMS[r] for r in user[&quot;roles&quot;]))
+
+def assign_role(user, role):
+    new = set(user[&quot;roles&quot;]) | {role}
+    if any(c &lt;= new for c in SOD_CONFLICTS):
+        raise PermissionError(&quot;违反职责分离&quot;)
+    user[&quot;roles&quot;] = sorted(new)
+
+def require(perm):
+    def deco(fn):
+        @wraps(fn)
+        def wrapper(user, *args, **kwargs):
+            if perm not in perms_of(user):   # 检查权限，而不是检查角色名
+                raise PermissionError(f&quot;缺少权限 {perm}&quot;)
+            return fn(user, *args, **kwargs)
+        return wrapper
+    return deco
+
+@require(&quot;invoice:approve&quot;)
+def approve_invoice(user, invoice_id): pass</code></pre></div><p class="cnote">代码检查权限而非角色名，角色调整无需改代码；职责分离在分配角色时校验。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">授权模型对比</h3><div class="tw"><table><thead><tr><th>模型</th><th>判断依据</th><th>优点</th><th>不足</th></tr></thead><tbody><tr><td data-h="模型">ACL</td><td data-h="判断依据">资源上的用户列表</td><td data-h="优点">直观、粒度细</td><td data-h="不足">规模大时难管理</td></tr><tr><td data-h="模型">RBAC</td><td data-h="判断依据">用户的角色</td><td data-h="优点">易管理、易审计</td><td data-h="不足">难表达动态条件</td></tr><tr><td data-h="模型">ABAC</td><td data-h="判断依据">用户/资源/环境属性</td><td data-h="优点">灵活，可表达复杂规则</td><td data-h="不足">策略复杂难审计</td></tr><tr><td data-h="模型">ReBAC</td><td data-h="判断依据">用户与资源的关系图</td><td data-h="优点">适合共享与协作场景</td><td data-h="不足">需要专门的关系存储</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>纯 RBAC</h4><p><b class="k-p">优点</b>简单清晰，审计方便</p><p><b class="k-c">代价</b>无法表达「只能改自己的」</p><p><b class="k-w">适用</b>内部系统、后台管理</p></div><div class="trd"><h4>RBAC + 资源归属检查</h4><p><b class="k-p">优点</b>兼顾管理性与对象级控制</p><p><b class="k-c">代价</b>需在业务层实现归属判断</p><p><b class="k-w">适用</b>大多数 SaaS 应用</p></div><div class="trd"><h4>策略引擎（如 OPA）</h4><p><b class="k-p">优点</b>统一、可测试的授权策略</p><p><b class="k-c">代价</b>引入新组件与学习成本</p><p><b class="k-w">适用</b>多服务、规则复杂</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>代码里写 if role == &quot;admin&quot;</p><p class="fix"><b>✓</b>检查具体权限，角色与权限映射放在配置或数据库中</p></li><li><p class="bad"><b>✗</b>为每个特殊需求新建角色，角色数量失控</p><p class="fix"><b>✓</b>定期合并角色，动态条件交给属性或归属检查</p></li><li><p class="bad"><b>✗</b>只做功能级 RBAC，未检查资源归属</p><p class="fix"><b>✓</b>在权限检查之外校验用户是否有权访问该具体对象</p></li><li><p class="bad"><b>✗</b>只在前端隐藏按钮</p><p class="fix"><b>✓</b>每个后端接口都执行授权检查</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>权限按资源:操作命名</span></label></li><li><label><input type="checkbox"><span>代码检查权限而非角色名</span></label></li><li><label><input type="checkbox"><span>所有接口服务端授权</span></label></li><li><label><input type="checkbox"><span>对象级归属检查已实现</span></label></li><li><label><input type="checkbox"><span>冲突角色有职责分离约束</span></label></li><li><label><input type="checkbox"><span>定期进行权限复核</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>RBAC 和 ABAC 如何结合？</summary><p>用 RBAC 决定用户能做哪类操作，用属性条件进一步限制范围，例如审批人只能审批本部门且金额低于阈值的发票。实现上可由策略引擎统一评估角色与属性。</p></details><details class="iv"><summary>什么是最小权限原则在 RBAC 中的体现？</summary><p>角色只包含完成职责所需的权限；用户只分配当前需要的角色；临时提权有时限并留审计记录；定期复核并回收不再需要的角色，避免权限随时间累积。</p></details><details class="iv"><summary>Kubernetes 的 RBAC 有哪些核心对象？</summary><p>Role 与 ClusterRole 定义对资源的动词权限（命名空间级与集群级），RoleBinding 与 ClusterRoleBinding 把角色绑定到用户、组或 ServiceAccount。授权是纯允许式的，没有拒绝规则。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://csrc.nist.gov/projects/role-based-access-control" target="_blank" rel="noopener"><b>NIST CSRC：Role Based Access Control</b><small>csrc.nist.gov ↗</small></a></li><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html" target="_blank" rel="noopener"><b>OWASP Authorization Cheat Sheet</b><small>cheatsheetseries.owasp.org ↗</small></a></li><li><a href="https://kubernetes.io/docs/reference/access-authn-authz/rbac/" target="_blank" rel="noopener"><b>Kubernetes 文档：Using RBAC Authorization</b><small>kubernetes.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="row-level-security.pro.html" rel="prev"><small>‹ 上一个</small><b>🗂️ 行级安全策略 (RLS)</b></a><a class="pn next" href="secret-scanning.pro.html" rel="next"><small>下一个 ›</small><b>🕵️ 机密扫描</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

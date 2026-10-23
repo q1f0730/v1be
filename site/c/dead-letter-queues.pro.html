@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="死信队列 (DLQ) 专业模式：死信队列（Dead Letter Queue, DLQ）是消息系统中的旁路队列，用来收纳超过最大重试次数、过期或被显式拒绝的消息。它属于消息中间件的可靠性层，目">
+<title>🎓 死信队列 (DLQ) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="dead-letter-queues" data-answer="0" data-prev="etags.pro.html" data-next="poison-messages.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#cache">🔮 高级 · ⚡ 缓存与队列</a><span>›</span><a href="dead-letter-queues.html">死信队列 (DLQ)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.279 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="etags.pro.html" rel="prev"><small>‹ 上一个</small><b>🔖 实体标签与协商缓存</b></a><a class="pn next" href="poison-messages.pro.html" rel="next"><small>下一个 ›</small><b>☠️ 毒丸消息</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📮</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>⚡ 缓存与队列</span><span>⏱ 约 10 分钟</span></div>
+    <h1>死信队列 (DLQ)</h1><p class="en">Dead Letter Queues</p>
+    <div class="hbtns"><a class="prosw back" href="dead-letter-queues.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">死信队列（Dead Letter Queue, DLQ）是消息系统中的旁路队列，用来收纳超过最大重试次数、过期或被显式拒绝的消息。它属于消息中间件的可靠性层，目的是把失败消息从主流程隔离出来：主队列不被阻塞，失败数据也不丢失，可在排查后重放（redrive）。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>消费者拉取消息并处理，失败时不确认（nack）或可见性超时到期，消息回到队列等待再次投递。</p></li><li><span class="sn">2</span><p>中间件为每条消息累计投递次数，例如 SQS 的 ApproximateReceiveCount、RabbitMQ 的 x-delivery-count。</p></li><li><span class="sn">3</span><p>投递次数超过 redrive 策略中的阈值（SQS 叫 maxReceiveCount）后，消息被转移到配置好的 DLQ。</p></li><li><span class="sn">4</span><p>RabbitMQ 中消息被 reject 且 requeue=false、TTL 过期或队列超长时，会按死信交换机（DLX）规则路由。</p></li><li><span class="sn">5</span><p>运维对 DLQ 深度设告警，排查根因、修复代码后，把消息重放回源队列或人工处理后丢弃。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>重驱策略 (Redrive Policy)</dt><dd>SQS 中把源队列与 DLQ 关联，并设定最大接收次数的配置。</dd></div><div class="term"><dt>死信交换机 (DLX)</dt><dd>RabbitMQ 中接收死信并按路由键转发到死信队列的交换机。</dd></div><div class="term"><dt>可见性超时 (Visibility Timeout)</dt><dd>消息被取走后对其他消费者隐藏的时长，超时未删除就会再次可见。</dd></div><div class="term"><dt>消息重放 (Redrive / Replay)</dt><dd>把 DLQ 中的消息移回源队列重新处理的操作。</dd></div><div class="term"><dt>消息保留期 (Retention Period)</dt><dd>消息在队列中保存的最长时间，过期即被删除，DLQ 也受其约束。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>SQS 绑定死信队列</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import json
+import boto3
+
+sqs = boto3.client(&quot;sqs&quot;)
+
+# 1. 创建死信队列并取得它的 ARN
+dlq_url = sqs.create_queue(QueueName=&quot;orders-dlq&quot;)[&quot;QueueUrl&quot;]
+dlq_arn = sqs.get_queue_attributes(
+    QueueUrl=dlq_url, AttributeNames=[&quot;QueueArn&quot;]
+)[&quot;Attributes&quot;][&quot;QueueArn&quot;]
+
+# 2. 源队列：同一条消息被接收 5 次仍未删除，就转入 DLQ
+sqs.create_queue(
+    QueueName=&quot;orders&quot;,
+    Attributes={
+        &quot;RedrivePolicy&quot;: json.dumps({
+            &quot;deadLetterTargetArn&quot;: dlq_arn,
+            &quot;maxReceiveCount&quot;: &quot;5&quot;,
+        })
+    },
+)</code></pre></div><p class="cnote">用 boto3 为 SQS 标准队列配置 redrive 策略，超过 5 次接收即转入 DLQ。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">主流中间件的死信实现</h3><div class="tw"><table><thead><tr><th>系统</th><th>触发条件</th><th>关键配置</th></tr></thead><tbody><tr><td data-h="系统">Amazon SQS</td><td data-h="触发条件">接收次数超过阈值</td><td data-h="关键配置">RedrivePolicy.maxReceiveCount</td></tr><tr><td data-h="系统">RabbitMQ</td><td data-h="触发条件">reject 不重入队、TTL 过期、超长</td><td data-h="关键配置">x-dead-letter-exchange</td></tr><tr><td data-h="系统">Azure Service Bus</td><td data-h="触发条件">超过最大投递次数、过期等</td><td data-h="关键配置">MaxDeliveryCount（默认 10）</td></tr><tr><td data-h="系统">Kafka</td><td data-h="触发条件">无内置，由消费框架实现</td><td data-h="关键配置">如 Kafka Connect 的 errors.deadletterqueue.topic.name</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>重试 N 次后进 DLQ</h4><p><b class="k-p">优点</b>主队列不阻塞，失败可追溯</p><p><b class="k-c">代价</b>需要额外的告警和重放流程</p><p><b class="k-w">适用</b>绝大多数异步业务消息</p></div><div class="trd"><h4>失败直接丢弃</h4><p><b class="k-p">优点</b>实现最简单，无积压</p><p><b class="k-c">代价</b>数据静默丢失，难以排查</p><p><b class="k-w">适用</b>可丢的遥测、心跳类消息</p></div><div class="trd"><h4>无限重试</h4><p><b class="k-p">优点</b>不需要人工介入</p><p><b class="k-c">代价</b>坏消息会反复占用消费者</p><p><b class="k-w">适用</b>几乎不推荐，仅限确定会自愈的依赖</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>只配了 DLQ 却没有监控，几个月后才发现里面堆了上万条消息。</p><p class="fix"><b>✓</b>对 DLQ 可见消息数设告警阈值，大于 0 即通知负责人。</p></li><li><p class="bad"><b>✗</b>DLQ 保留期和源队列一样短，排查时消息已过期删除。</p><p class="fix"><b>✓</b>DLQ 保留期设得比源队列长，SQS 最长可设 14 天。</p></li><li><p class="bad"><b>✗</b>maxReceiveCount 设为 1，一次瞬时网络抖动就进死信。</p><p class="fix"><b>✓</b>给瞬时故障留余量，常见取 3–10 次并配合退避。</p></li><li><p class="bad"><b>✗</b>修完 bug 一次性重放全部死信，打爆下游。</p><p class="fix"><b>✓</b>分批、限速重放，并先用少量消息验证修复。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个业务队列都配置了 DLQ 和最大重试次数</span></label></li><li><label><input type="checkbox"><span>DLQ 深度有告警并指定了负责人</span></label></li><li><label><input type="checkbox"><span>DLQ 保留期长于源队列</span></label></li><li><label><input type="checkbox"><span>消息里带足排查所需的上下文和错误原因</span></label></li><li><label><input type="checkbox"><span>有文档化、可限速的重放流程</span></label></li><li><label><input type="checkbox"><span>FIFO 源队列对应的 DLQ 也是 FIFO 类型</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>DLQ 和重试的关系是什么？</summary><p>重试处理瞬时故障，DLQ 兜住重试也救不回来的消息。两者配合：先有限次数重试并退避，超过阈值转入 DLQ，避免坏消息无限占用消费者，同时保留数据用于排查和重放。</p></details><details class="iv"><summary>消息进了 DLQ 之后应该怎么处理？</summary><p>先告警通知；按错误类型分组定位根因；区分代码 bug、脏数据和下游故障；修复后小批量重放验证，再限速全量重放；无法修复的记录原因后归档或丢弃。</p></details><details class="iv"><summary>Kafka 没有内置 DLQ，怎么实现？</summary><p>在消费端捕获异常，超过重试次数后把原消息及错误信息写入单独的死信 topic，再提交位移继续消费。Kafka Connect、Spring Kafka 等框架提供了现成的死信配置。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html" target="_blank" rel="noopener"><b>Amazon SQS 死信队列</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Dead_letter_queue" target="_blank" rel="noopener"><b>Wikipedia：Dead letter queue</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://learn.microsoft.com/en-us/azure/service-bus-messaging/service-bus-dead-letter-queues" target="_blank" rel="noopener"><b>Azure Service Bus 死信队列概述</b><small>learn.microsoft.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="etags.pro.html" rel="prev"><small>‹ 上一个</small><b>🔖 实体标签与协商缓存</b></a><a class="pn next" href="poison-messages.pro.html" rel="next"><small>下一个 ›</small><b>☠️ 毒丸消息</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

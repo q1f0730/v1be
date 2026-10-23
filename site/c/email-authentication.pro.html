@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="邮件发信认证 (SPF / DKIM / DMARC) 专业模式：邮件发信认证是一组基于 DNS 的标准，用来证明邮件确实由声称的域名授权发出：SPF（RFC 7208）声明哪些服务器可以代表域名发信，DKIM（RFC 637">
+<title>🎓 邮件发信认证 (SPF / DKIM / DMARC) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="email-authentication" data-answer="0" data-prev="graphql.pro.html" data-next="sso-saml.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#net">🔮 高级 · 🌐 网络与 API</a><span>›</span><a href="email-authentication.html">邮件发信认证 (SPF / DKIM / DMARC)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.391 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="graphql.pro.html" rel="prev"><small>‹ 上一个</small><b>🕸️ GraphQL 查询语言</b></a><a class="pn next" href="sso-saml.pro.html" rel="next"><small>下一个 ›</small><b>🎫 单点登录 (SSO / SAML)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📧</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>邮件发信认证 (SPF / DKIM / DMARC)</h1><p class="en">Email Authentication</p>
+    <div class="hbtns"><a class="prosw back" href="email-authentication.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">邮件发信认证是一组基于 DNS 的标准，用来证明邮件确实由声称的域名授权发出：SPF（RFC 7208）声明哪些服务器可以代表域名发信，DKIM（RFC 6376）对邮件做加密签名，DMARC（RFC 7489）要求对齐并规定验证失败的处理策略与报告。它属于邮件投递与反钓鱼层，是事务邮件进入收件箱的前提。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>SPF：域名发布 TXT 记录列出允许的发信 IP 或第三方服务，收件方检查信封发件人（Return-Path）域名的 SPF。</p></li><li><span class="sn">2</span><p>DKIM：发信方用私钥对邮件头与正文签名，写入 DKIM-Signature 头；收件方从 selector._domainkey.域名 取公钥验证。</p></li><li><span class="sn">3</span><p>DMARC：收件方检查 SPF 或 DKIM 至少一项通过，且其域名与用户看到的 From 域名对齐。</p></li><li><span class="sn">4</span><p>未通过时按 DMARC 策略 p=none（仅监控）、quarantine（隔离/垃圾箱）或 reject（拒收）处理。</p></li><li><span class="sn">5</span><p>收件方把聚合报告发送到 rua 指定地址，域名所有者据此发现未授权或配置错误的发信源。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>SPF (Sender Policy Framework)</dt><dd>通过 DNS 列出允许代表域名发信的服务器。</dd></div><div class="term"><dt>DKIM (DomainKeys Identified Mail)</dt><dd>用私钥签名邮件，公钥发布在 DNS 供验证。</dd></div><div class="term"><dt>DMARC</dt><dd>基于 SPF/DKIM 的对齐要求、失败处理策略与报告机制。</dd></div><div class="term"><dt>对齐 (Alignment)</dt><dd>SPF 或 DKIM 验证的域名与 From 头域名一致（严格或宽松）。</dd></div><div class="term"><dt>Selector</dt><dd>DKIM 公钥的 DNS 名称前缀，便于多密钥并存与轮换。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>DNS 记录示例</span><em>text</em><button class="ccopy">复制</button></div><pre><code>; SPF：只允许 Google Workspace 和某发信服务代发；~all 表示其他来源软失败
+example.com.                 TXT &quot;v=spf1 include:_spf.google.com include:sendgrid.net ~all&quot;
+
+; DKIM：selector 为 s1，公钥由发信服务提供（此处截断）
+s1._domainkey.example.com.   TXT &quot;v=DKIM1; k=rsa; p=MIIBIjANBgkqh...&quot;
+
+; DMARC：先监控，报告发到指定邮箱；稳定后逐步改为 quarantine/reject
+_dmarc.example.com.          TXT &quot;v=DMARC1; p=none; rua=mailto:dmarc@example.com; adkim=r; aspf=r&quot;
+
+; 验证：
+;   dig +short TXT example.com
+;   dig +short TXT _dmarc.example.com
+; 发一封邮件到 Gmail，查看「显示原始邮件」中 SPF/DKIM/DMARC 是否为 PASS</code></pre></div><p class="cnote">include 的具体值以发信服务商文档为准；DMARC 建议从 p=none 观察报告后再收紧。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">三项标准对比</h3><div class="tw"><table><thead><tr><th>标准</th><th>验证对象</th><th>DNS 位置</th><th>主要局限</th></tr></thead><tbody><tr><td data-h="标准">SPF</td><td data-h="验证对象">信封发件人域名与发信 IP</td><td data-h="DNS 位置">域名 TXT</td><td data-h="主要局限">转发后常失效；DNS 查询上限 10 次</td></tr><tr><td data-h="标准">DKIM</td><td data-h="验证对象">邮件签名完整性</td><td data-h="DNS 位置">selector._domainkey</td><td data-h="主要局限">邮件被修改后签名失效</td></tr><tr><td data-h="标准">DMARC</td><td data-h="验证对象">与 From 域名对齐 + 策略</td><td data-h="DNS 位置">_dmarc 子域 TXT</td><td data-h="主要局限">依赖 SPF/DKIM 至少一项对齐通过</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>p=none</h4><p><b class="k-p">优点</b>不影响投递，收集报告</p><p><b class="k-c">代价</b>无法阻止仿冒</p><p><b class="k-w">适用</b>刚开始部署、梳理发信源</p></div><div class="trd"><h4>p=quarantine</h4><p><b class="k-p">优点</b>可疑邮件进垃圾箱</p><p><b class="k-c">代价</b>配置错误会误伤正常邮件</p><p><b class="k-w">适用</b>报告显示合法源已全部对齐</p></div><div class="trd"><h4>p=reject</h4><p><b class="k-p">优点</b>最强防仿冒</p><p><b class="k-c">代价</b>误配置直接导致退信</p><p><b class="k-w">适用</b>长期稳定、发信源清晰</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>一个域名发布多条 SPF 记录</p><p class="fix"><b>✓</b>合并为一条 v=spf1 记录，多条会导致 SPF 永久错误</p></li><li><p class="bad"><b>✗</b>SPF include 过多，超过 10 次 DNS 查询</p><p class="fix"><b>✓</b>精简 include，移除不再使用的服务</p></li><li><p class="bad"><b>✗</b>营销与事务邮件共用同一域名</p><p class="fix"><b>✓</b>用子域分开（如 mail.、notify.），隔离信誉</p></li><li><p class="bad"><b>✗</b>直接设 p=reject 而未检查报告</p><p class="fix"><b>✓</b>从 p=none 开始分析 rua 报告，逐步收紧</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>只有一条 SPF 记录且查询次数未超限</span></label></li><li><label><input type="checkbox"><span>每个发信服务都配置了 DKIM</span></label></li><li><label><input type="checkbox"><span>DMARC 已发布并接收报告</span></label></li><li><label><input type="checkbox"><span>测试邮件 SPF/DKIM/DMARC 均 PASS 且对齐</span></label></li><li><label><input type="checkbox"><span>事务邮件使用独立子域</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>SPF 通过了，DMARC 为什么还会失败？</summary><p>DMARC 要求对齐：SPF 检查的是信封发件人（Return-Path）域名，若它是发信服务商的域名，与 From 域名不一致，则 SPF 虽通过但不对齐。需配置自定义 Return-Path 或依靠对齐的 DKIM。</p></details><details class="iv"><summary>邮件转发为什么常导致认证失败？</summary><p>转发服务器以自己的 IP 重新投递，原域名的 SPF 不包含它；DKIM 若邮件未被修改仍可通过，所以 DKIM 对 DMARC 更可靠。ARC 协议用于在转发链中保留认证结果。</p></details><details class="iv"><summary>大型邮箱服务对批量发信有哪些要求？</summary><p>Gmail 与 Yahoo 自 2024 年起要求大批量发件人配置 SPF、DKIM 与 DMARC，并提供一键退订、控制垃圾投诉率。具体阈值以各家官方指南为准。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://datatracker.ietf.org/doc/html/rfc7208" target="_blank" rel="noopener"><b>RFC 7208：SPF</b><small>datatracker.ietf.org ↗</small></a></li><li><a href="https://datatracker.ietf.org/doc/html/rfc6376" target="_blank" rel="noopener"><b>RFC 6376：DKIM</b><small>datatracker.ietf.org ↗</small></a></li><li><a href="https://datatracker.ietf.org/doc/html/rfc7489" target="_blank" rel="noopener"><b>RFC 7489：DMARC</b><small>datatracker.ietf.org ↗</small></a></li><li><a href="https://support.google.com/mail/answer/81126" target="_blank" rel="noopener"><b>Google：Email sender guidelines</b><small>support.google.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="graphql.pro.html" rel="prev"><small>‹ 上一个</small><b>🕸️ GraphQL 查询语言</b></a><a class="pn next" href="sso-saml.pro.html" rel="next"><small>下一个 ›</small><b>🎫 单点登录 (SSO / SAML)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

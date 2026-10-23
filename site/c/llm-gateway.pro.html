@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="模型网关 (LiteLLM / OpenRouter) 专业模式：模型网关（LLM Gateway）是位于应用与多个模型提供方之间的代理层，对外提供统一（通常为 OpenAI 兼容）的接口，集中处理鉴权、密钥托管、路由、降级、">
+<title>🎓 模型网关 (LiteLLM / OpenRouter) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="llm-gateway" data-answer="0" data-prev="serverless-gpu.pro.html" data-next="graphql.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#llmops">🔮 高级 · 🧠 模型工程与推理部署</a><span>›</span><a href="llm-gateway.html">模型网关 (LiteLLM / OpenRouter)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.389 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="serverless-gpu.pro.html" rel="prev"><small>‹ 上一个</small><b>☁️ 无服务器 GPU 推理</b></a><a class="pn next" href="graphql.pro.html" rel="next"><small>下一个 ›</small><b>🕸️ GraphQL 查询语言</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🚦</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🧠 模型工程与推理部署</span><span>⏱ 约 10 分钟</span></div>
+    <h1>模型网关 (LiteLLM / OpenRouter)</h1><p class="en">LLM Gateway</p>
+    <div class="hbtns"><a class="prosw back" href="llm-gateway.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">模型网关（LLM Gateway）是位于应用与多个模型提供方之间的代理层，对外提供统一（通常为 OpenAI 兼容）的接口，集中处理鉴权、密钥托管、路由、降级、限流、缓存、日志与成本核算。它属于 AI 应用的基础设施层，开源自托管代表是 LiteLLM Proxy，托管聚合服务代表是 OpenRouter。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>应用使用网关签发的虚拟密钥，以统一格式发送请求，不直接持有各厂商的真实密钥。</p></li><li><span class="sn">2</span><p>网关校验虚拟密钥对应的团队、预算与速率限制，超额则拒绝或排队。</p></li><li><span class="sn">3</span><p>根据模型别名与路由策略（成本、延迟、负载、权重）选择具体提供方与部署，并转换为该厂商的 API 格式。</p></li><li><span class="sn">4</span><p>调用失败、超时或触发限流时，按配置重试或降级到备用模型。</p></li><li><span class="sn">5</span><p>记录请求的 Token 用量、费用、延迟与错误，发送到日志、可观测与计费系统。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>虚拟密钥 (Virtual Key)</dt><dd>网关签发给应用的密钥，可绑定预算、模型白名单与限额。</dd></div><div class="term"><dt>模型别名 (Model Alias)</dt><dd>应用使用的逻辑模型名，网关映射到具体厂商模型。</dd></div><div class="term"><dt>降级 (Fallback)</dt><dd>主模型失败时自动改用备用模型或提供方。</dd></div><div class="term"><dt>语义缓存 (Semantic Cache)</dt><dd>对语义相近的请求复用历史响应，降低成本。</dd></div><div class="term"><dt>OpenAI 兼容接口</dt><dd>沿用 OpenAI API 格式，现有 SDK 只需改 base_url。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>LiteLLM Proxy 配置</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code># config.yaml   启动：litellm --config config.yaml
+model_list:
+  - model_name: main            # 应用里使用的别名
+    litellm_params:
+      model: openai/gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY
+  - model_name: backup
+    litellm_params:
+      model: anthropic/claude-3-5-haiku-20241022   # 模型 ID 以厂商当前列表为准
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+litellm_settings:
+  num_retries: 2
+  fallbacks: [{&quot;main&quot;: [&quot;backup&quot;]}]   # main 失败后改用 backup
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY   # 管理与签发虚拟密钥
+# 应用侧：OpenAI SDK 设 base_url=http://网关地址:4000，model=&quot;main&quot;</code></pre></div><p class="cnote">真实密钥只在网关环境变量中；应用用别名调用，主模型失败自动切到备用。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">网关方案对比</h3><div class="tw"><table><thead><tr><th>方案</th><th>部署</th><th>特点</th></tr></thead><tbody><tr><td data-h="方案">LiteLLM Proxy</td><td data-h="部署">自托管（开源）</td><td data-h="特点">支持大量提供方，虚拟密钥与预算</td></tr><tr><td data-h="方案">OpenRouter</td><td data-h="部署">托管 SaaS</td><td data-h="特点">一个账号访问多家模型，统一计费</td></tr><tr><td data-h="方案">云厂商 AI 网关</td><td data-h="部署">托管</td><td data-h="特点">与自家云的日志、缓存、限流集成</td></tr><tr><td data-h="方案">自研代理</td><td data-h="部署">自托管</td><td data-h="特点">完全可控，维护成本高</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>自托管网关</h4><p><b class="k-p">优点</b>数据与密钥自控，可深度定制</p><p><b class="k-c">代价</b>需运维，网关本身成为关键依赖</p><p><b class="k-w">适用</b>合规要求高、多团队共用</p></div><div class="trd"><h4>托管聚合服务</h4><p><b class="k-p">优点</b>零运维，快速接入多模型</p><p><b class="k-c">代价</b>多一层数据经手方与加价/费用</p><p><b class="k-w">适用</b>原型与中小团队</p></div><div class="trd"><h4>应用内 SDK 直连</h4><p><b class="k-p">优点</b>最少组件、延迟最低</p><p><b class="k-c">代价</b>密钥分散，难统一计费与降级</p><p><b class="k-w">适用</b>单应用、单模型</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>网关单实例部署，挂了所有 AI 功能一起挂</p><p class="fix"><b>✓</b>多副本部署、健康检查，必要时客户端保留直连兜底</p></li><li><p class="bad"><b>✗</b>降级到能力差异大的模型却不评估</p><p class="fix"><b>✓</b>备用模型经过同一评测集验证，或对关键任务限制降级</p></li><li><p class="bad"><b>✗</b>日志记录完整提示与输出，含用户隐私</p><p class="fix"><b>✓</b>按需脱敏或只记录元数据，设置日志保留期</p></li><li><p class="bad"><b>✗</b>只设全局预算，不区分团队与用户</p><p class="fix"><b>✓</b>按虚拟密钥/团队设预算与速率限制，避免单个应用耗尽额度</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>厂商真实密钥只存在网关</span></label></li><li><label><input type="checkbox"><span>每个应用/团队独立虚拟密钥与预算</span></label></li><li><label><input type="checkbox"><span>主备模型及降级规则经过评测</span></label></li><li><label><input type="checkbox"><span>网关高可用并有监控告警</span></label></li><li><label><input type="checkbox"><span>日志脱敏与保留策略明确</span></label></li><li><label><input type="checkbox"><span>流式输出经网关验证正常</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>模型网关和普通 API 网关有何不同？</summary><p>除鉴权、限流等通用能力外，模型网关理解 LLM 语义：按 Token 计量计费、跨厂商格式转换、模型级降级与路由、流式响应处理、提示缓存与语义缓存、内容安全检查等。</p></details><details class="iv"><summary>降级策略要注意什么？</summary><p>区分可重试错误（超时、429、5xx）与不可重试错误（参数错误、内容拒绝）；备用模型需支持相同功能（工具调用、结构化输出、上下文长度）；记录降级次数并告警。</p></details><details class="iv"><summary>如何用网关控制 Agent 成本失控？</summary><p>为 Agent 使用的虚拟密钥设置预算与速率上限；按任务路由到合适大小的模型；开启缓存；监控每个任务的 Token 消耗，异常时熔断。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.litellm.ai/docs/simple_proxy" target="_blank" rel="noopener"><b>LiteLLM 文档：Proxy Server</b><small>docs.litellm.ai ↗</small></a></li><li><a href="https://docs.litellm.ai/docs/proxy/reliability" target="_blank" rel="noopener"><b>LiteLLM 文档：Fallbacks &amp; Reliability</b><small>docs.litellm.ai ↗</small></a></li><li><a href="https://openrouter.ai/docs/quickstart" target="_blank" rel="noopener"><b>OpenRouter 文档：Quickstart</b><small>openrouter.ai ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="serverless-gpu.pro.html" rel="prev"><small>‹ 上一个</small><b>☁️ 无服务器 GPU 推理</b></a><a class="pn next" href="graphql.pro.html" rel="next"><small>下一个 ›</small><b>🕸️ GraphQL 查询语言</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

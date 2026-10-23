@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="金丝雀发布 / 灰度发布 专业模式：金丝雀发布（Canary Release）是先把新版本发布给一小部分流量或用户，对比新旧版本的关键指标，确认无异常后再逐步扩大比例直至全量的渐进式发布策略。它属">
+<title>🎓 金丝雀发布 / 灰度发布 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="canary-releases" data-answer="0" data-prev="blue-green-deployments.pro.html" data-next="environment-parity.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#devops">🔮 高级 · 🔭 可观测与交付</a><span>›</span><a href="canary-releases.html">金丝雀发布 / 灰度发布</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.326 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="blue-green-deployments.pro.html" rel="prev"><small>‹ 上一个</small><b>🔵 蓝绿部署</b></a><a class="pn next" href="environment-parity.pro.html" rel="next"><small>下一个 ›</small><b>🪞 跨环境一致性</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🐤</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>金丝雀发布 / 灰度发布</h1><p class="en">Canary Releases</p>
+    <div class="hbtns"><a class="prosw back" href="canary-releases.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">金丝雀发布（Canary Release）是先把新版本发布给一小部分流量或用户，对比新旧版本的关键指标，确认无异常后再逐步扩大比例直至全量的渐进式发布策略。它属于发布与变更管理层，用小范围暴露降低坏版本的影响面，常与自动化指标分析配合，异常时自动中止并回滚。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>部署少量新版本实例，路由层按比例、请求头或用户分组把一部分流量导向新版本。</p></li><li><span class="sn">2</span><p>收集金丝雀与基线版本的错误率、延迟、业务指标，进行对比分析。</p></li><li><span class="sn">3</span><p>按预设步骤逐步提高流量比例，例如 5%、25%、50%、100%，每步停留观察。</p></li><li><span class="sn">4</span><p>任一阶段指标显著劣化，自动或手动中止发布，流量全部切回旧版本。</p></li><li><span class="sn">5</span><p>放量到 100% 后清理旧版本，并把本次结果和指标记录下来，用于改进后续的判定阈值。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>基线 (Baseline)</dt><dd>与金丝雀同时运行的旧版本对照组，用于公平比较。</dd></div><div class="term"><dt>流量权重 (Traffic Weight)</dt><dd>分配给新版本的流量比例。</dd></div><div class="term"><dt>自动金丝雀分析 (Automated Canary Analysis)</dt><dd>按指标统计比较自动判定发布是否继续。</dd></div><div class="term"><dt>渐进式交付 (Progressive Delivery)</dt><dd>金丝雀、功能开关等逐步放量的交付方法总称。</dd></div><div class="term"><dt>服务网格 (Service Mesh)</dt><dd>如 Istio，可按比例精细拆分服务间流量。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Argo Rollouts 金丝雀</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code>apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata: { name: api }
+spec:
+  replicas: 10
+  selector: { matchLabels: { app: api } }
+  template:
+    metadata: { labels: { app: api } }
+    spec:
+      containers:
+        - name: api
+          image: example/api:1.5.0
+  strategy:
+    canary:
+      steps:
+        - setWeight: 10            # 先放 10% 流量
+        - pause: { duration: 10m } # 观察 10 分钟
+        - setWeight: 50
+        - pause: {}                # 无限期暂停，人工确认后继续
+        - setWeight: 100</code></pre></div><p class="cnote">按步骤放量与暂停；可再挂 AnalysisTemplate 按指标自动中止。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">流量拆分方式</h3><div class="tw"><table><thead><tr><th>方式</th><th>精度</th><th>适用场景</th></tr></thead><tbody><tr><td data-h="方式">按副本比例</td><td data-h="精度">粗，受副本数限制</td><td data-h="适用场景">无网格的简单集群</td></tr><tr><td data-h="方式">网关/服务网格权重</td><td data-h="精度">精确百分比</td><td data-h="适用场景">需要精细控制</td></tr><tr><td data-h="方式">按用户或请求头</td><td data-h="精度">定向到特定人群</td><td data-h="适用场景">内部员工、测试用户先用</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>自动分析放量</h4><p><b class="k-p">优点</b>快速、客观，减少人工盯盘</p><p><b class="k-c">代价</b>需要可靠指标与阈值</p><p><b class="k-w">适用</b>指标体系成熟</p></div><div class="trd"><h4>人工审批放量</h4><p><b class="k-p">优点</b>可结合业务判断</p><p><b class="k-c">代价</b>慢，依赖值守</p><p><b class="k-w">适用</b>重大或首次变更</p></div><div class="trd"><h4>按用户分组</h4><p><b class="k-p">优点</b>体验一致，便于排查</p><p><b class="k-c">代价</b>样本可能不具代表性</p><p><b class="k-w">适用</b>先给内部或低风险用户</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>金丝雀流量太小或时间太短，指标没有统计意义。</p><p class="fix"><b>✓</b>确保每步有足够请求量与观察时间。</p></li><li><p class="bad"><b>✗</b>把金丝雀与历史数据比较，被流量周期误导。</p><p class="fix"><b>✓</b>与同时段的基线版本对比。</p></li><li><p class="bad"><b>✗</b>同一用户请求在新旧版本间跳来跳去，体验不一致。</p><p class="fix"><b>✓</b>需要时按用户粘性路由。</p></li><li><p class="bad"><b>✗</b>数据库迁移在金丝雀开始前就破坏了兼容性。</p><p class="fix"><b>✓</b>迁移保持向后兼容，与代码发布解耦。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>有明确的放量步骤与观察时长</span></label></li><li><label><input type="checkbox"><span>对比指标包含错误率、延迟和业务指标</span></label></li><li><label><input type="checkbox"><span>与同期基线对比</span></label></li><li><label><input type="checkbox"><span>中止与回滚可自动触发</span></label></li><li><label><input type="checkbox"><span>数据库变更向后兼容</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>金丝雀分析应看哪些指标？</summary><p>技术指标如错误率、p99 延迟、资源使用和崩溃次数；业务指标如下单转化率、支付成功率。应与同时运行的基线比较，设统计显著性和阈值，并留足样本量，避免小流量下的随机波动误判。</p></details><details class="iv"><summary>金丝雀和 A/B 测试有何区别？</summary><p>金丝雀关注新版本是否安全稳定，目标是尽快全量或回滚；A/B 测试关注不同方案对用户行为的影响，需要长期分组和统计实验设计。两者都拆分流量，但目的和持续时间不同。</p></details><details class="iv"><summary>没有服务网格能做金丝雀吗？</summary><p>可以。通过调整新旧版本副本数比例粗略拆分；或在 Ingress、云负载均衡上配置权重；也可在应用层用功能开关按用户启用。精度和控制能力不如网格，但足够起步。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://martinfowler.com/bliki/CanaryRelease.html" target="_blank" rel="noopener"><b>Martin Fowler：CanaryRelease</b><small>martinfowler.com ↗</small></a></li><li><a href="https://sre.google/workbook/canarying-releases/" target="_blank" rel="noopener"><b>Google SRE Workbook：Canarying Releases</b><small>sre.google ↗</small></a></li><li><a href="https://argo-rollouts.readthedocs.io/en/stable/features/canary/" target="_blank" rel="noopener"><b>Argo Rollouts：Canary Deployment Strategy</b><small>argo-rollouts.readthedocs.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="blue-green-deployments.pro.html" rel="prev"><small>‹ 上一个</small><b>🔵 蓝绿部署</b></a><a class="pn next" href="environment-parity.pro.html" rel="next"><small>下一个 ›</small><b>🪞 跨环境一致性</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

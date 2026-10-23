@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="重排序模型 (Reranker) 专业模式：重排序模型（Reranker）是检索流程中的第二阶段精排组件：对第一阶段（向量检索、BM25 等）召回的候选文档，逐一与查询联合编码并计算相关性分数，再按分数重">
+<title>🎓 重排序模型 (Reranker) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="reranker" data-answer="0" data-prev="reproducible-builds.pro.html" data-next="hybrid-search.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#ai">🔮 高级 · 🤖 AI 与提示词</a><span>›</span><a href="reranker.html">重排序模型 (Reranker)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.333 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="reproducible-builds.pro.html" rel="prev"><small>‹ 上一个</small><b>🍟 可复现构建</b></a><a class="pn next" href="hybrid-search.pro.html" rel="next"><small>下一个 ›</small><b>🔀 混合检索 (BM25 + 向量)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🥇</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>重排序模型 (Reranker)</h1><p class="en">Reranker</p>
+    <div class="hbtns"><a class="prosw back" href="reranker.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">重排序模型（Reranker）是检索流程中的第二阶段精排组件：对第一阶段（向量检索、BM25 等）召回的候选文档，逐一与查询联合编码并计算相关性分数，再按分数重新排序，只保留前若干条交给大模型。它通常采用交叉编码器（Cross-Encoder），准确率明显高于双塔检索，但计算成本更高，因此只用于小规模候选集。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>第一阶段用双编码器或 BM25 快速召回较多候选（如几十到上百条），优先保证召回率。</p></li><li><span class="sn">2</span><p>重排模型把“查询 + 候选文档”拼成一个输入，经 Transformer 让两者的 token 充分交互，输出一个相关性分数。</p></li><li><span class="sn">3</span><p>对所有候选打分后降序排列，可配合阈值过滤掉低相关文档。</p></li><li><span class="sn">4</span><p>取前 K 条（常见 3–10 条）放入大模型上下文，减少噪声与 token 消耗。</p></li><li><span class="sn">5</span><p>可选用开源模型本地部署（如 BGE、Jina 系列）或托管 API（如 Cohere Rerank），按延迟与成本选择。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>交叉编码器 (Cross-Encoder)</dt><dd>查询与文档拼接后共同编码，直接输出相关性分数。</dd></div><div class="term"><dt>双编码器 (Bi-Encoder)</dt><dd>查询与文档分别编码成向量再比相似度，可预先建索引。</dd></div><div class="term"><dt>两阶段检索 (Retrieve-then-Rerank)</dt><dd>先快速召回，再精排的检索架构。</dd></div><div class="term"><dt>召回率 (Recall@K)</dt><dd>相关文档出现在前 K 个结果中的比例。</dd></div><div class="term"><dt>nDCG</dt><dd>考虑排名位置的排序质量指标，越靠前的相关结果权重越高。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>用 Cross-Encoder 重排候选</span><em>python</em><button class="ccopy">复制</button></div><pre><code>from sentence_transformers import CrossEncoder
+
+# 开源英文重排模型；中文可选 BAAI/bge-reranker 系列（以模型卡为准）
+model = CrossEncoder(&quot;cross-encoder/ms-marco-MiniLM-L-6-v2&quot;)
+
+query = &quot;How do I get a refund for return shipping?&quot;
+candidates = [  # 第一阶段召回的候选（实际可能有几十条）
+    &quot;Orders ship within 2 business days.&quot;,
+    &quot;Return shipping is refunded if the item is defective.&quot;,
+    &quot;You can track your package in the app.&quot;,
+    &quot;Refunds are issued to the original payment method.&quot;,
+]
+
+scores = model.predict([(query, doc) for doc in candidates])
+ranked = sorted(zip(candidates, scores), key=lambda x: x[1], reverse=True)
+
+TOP_K = 2
+for doc, s in ranked[:TOP_K]:          # 只把前 K 条交给大模型
+    print(f&quot;{s:.2f}  {doc}&quot;)</code></pre></div><p class="cnote">交叉编码器对每个“查询-文档”对打分；候选越多越慢，所以只在召回之后使用。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">双编码器 vs 交叉编码器</h3><div class="tw"><table><thead><tr><th>维度</th><th>双编码器（检索）</th><th>交叉编码器（重排）</th></tr></thead><tbody><tr><td data-h="维度">计算方式</td><td data-h="双编码器（检索）">分别编码，向量相似度</td><td data-h="交叉编码器（重排）">拼接联合编码</td></tr><tr><td data-h="维度">能否预建索引</td><td data-h="双编码器（检索）">能</td><td data-h="交叉编码器（重排）">不能，需实时计算</td></tr><tr><td data-h="维度">适用规模</td><td data-h="双编码器（检索）">百万级文档</td><td data-h="交叉编码器（重排）">几十到上百条候选</td></tr><tr><td data-h="维度">准确度</td><td data-h="双编码器（检索）">较好</td><td data-h="交叉编码器（重排）">通常更高</td></tr><tr><td data-h="维度">延迟</td><td data-h="双编码器（检索）">毫秒级（有索引）</td><td data-h="交叉编码器（重排）">随候选数线性增长</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>不加重排</h4><p><b class="k-p">优点</b>架构简单、延迟最低</p><p><b class="k-c">代价</b>排序噪声大，易答非所问</p><p><b class="k-w">适用</b>原型或数据量很小</p></div><div class="trd"><h4>开源重排模型自部署</h4><p><b class="k-p">优点</b>数据不出域，单次成本低</p><p><b class="k-c">代价</b>需要 GPU/CPU 资源与运维</p><p><b class="k-w">适用</b>有隐私要求、调用量大</p></div><div class="trd"><h4>托管重排 API</h4><p><b class="k-p">优点</b>接入快、效果稳定</p><p><b class="k-c">代价</b>按调用付费，数据需外发</p><p><b class="k-w">适用</b>快速上线、调用量中等</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>召回数量太少（如只取 5 条）再重排</p><p class="fix"><b>✓</b>召回阶段多取一些（几十条），给重排留选择空间</p></li><li><p class="bad"><b>✗</b>对全库文档跑交叉编码器</p><p class="fix"><b>✓</b>只对召回候选重排，全库检索用双编码器或 BM25</p></li><li><p class="bad"><b>✗</b>中文场景用纯英文重排模型</p><p class="fix"><b>✓</b>选择支持中文或多语言的重排模型并做评测</p></li><li><p class="bad"><b>✗</b>没有评测集就判断“加了重排更好”</p><p class="fix"><b>✓</b>用标注问答对比较 Recall@K、nDCG 和最终答案准确率</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>召回候选数与重排后 Top-K 已调优</span></label></li><li><label><input type="checkbox"><span>重排模型支持业务语言</span></label></li><li><label><input type="checkbox"><span>评估重排带来的延迟</span></label></li><li><label><input type="checkbox"><span>有评测集量化效果</span></label></li><li><label><input type="checkbox"><span>长文档按模型最大长度截断或切块</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么不直接用交叉编码器做检索？</summary><p>交叉编码器必须把查询和每个文档一起计算，无法预先离线编码建索引；对百万文档逐一打分延迟和成本都不可接受。因此用双编码器或 BM25 先召回小候选集，再用交叉编码器精排，兼顾速度和精度。</p></details><details class="iv"><summary>重排模型如何影响 RAG 的整体效果？</summary><p>它提升送入上下文的文档质量：相关内容排到前面，无关内容被过滤，减少大模型被干扰和“中段遗忘”的概率，同时降低 token 成本。但它无法补救召回阶段漏掉的文档，召回率仍是上限。</p></details><details class="iv"><summary>怎样选择召回数和重排后的 K？</summary><p>召回数越大，越不易漏掉相关文档，但重排延迟线性增加；K 越大，上下文越完整，但噪声和成本上升。应在评测集上网格搜索，在可接受延迟内找最优组合。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.sbert.net/docs/cross_encoder/usage/usage.html" target="_blank" rel="noopener"><b>Sentence Transformers：Cross-Encoder</b><small>sbert.net ↗</small></a></li><li><a href="https://docs.cohere.com/docs/rerank-overview" target="_blank" rel="noopener"><b>Cohere Rerank 文档</b><small>docs.cohere.com ↗</small></a></li><li><a href="https://huggingface.co/BAAI/bge-reranker-v2-m3" target="_blank" rel="noopener"><b>BAAI/bge-reranker-v2-m3 模型卡</b><small>huggingface.co ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="reproducible-builds.pro.html" rel="prev"><small>‹ 上一个</small><b>🍟 可复现构建</b></a><a class="pn next" href="hybrid-search.pro.html" rel="next"><small>下一个 ›</small><b>🔀 混合检索 (BM25 + 向量)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="采样策略 (Top-p / Top-k) 专业模式：采样策略是 LLM 解码时从下一个 Token 的概率分布中选取输出的方法。Top-k 只保留概率最高的 k 个候选；Top-p（核采样，Nucleus Sam">
+<title>🎓 采样策略 (Top-p / Top-k) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="sampling-top-p-top-k" data-answer="0" data-prev="tokenizer.pro.html" data-next="prompt-chaining.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#ai">🌊 中级 · 🤖 AI 与提示词</a><span>›</span><a href="sampling-top-p-top-k.html">采样策略 (Top-p / Top-k)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.154 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="tokenizer.pro.html" rel="prev"><small>‹ 上一个</small><b>🔪 分词器 (Tokenizer / BPE)</b></a><a class="pn next" href="prompt-chaining.pro.html" rel="next"><small>下一个 ›</small><b>🔗 提示链 (Prompt Chaining)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🎲</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>采样策略 (Top-p / Top-k)</h1><p class="en">Top-p / Top-k Sampling</p>
+    <div class="hbtns"><a class="prosw back" href="sampling-top-p-top-k.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">采样策略是 LLM 解码时从下一个 Token 的概率分布中选取输出的方法。Top-k 只保留概率最高的 k 个候选；Top-p（核采样，Nucleus Sampling）保留累积概率达到 p 的最小候选集合；二者常与温度（temperature）配合，在确定性与多样性之间调节，属于推理参数层。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>模型为词表中每个 Token 输出一个 logit（未归一化分数）。</p></li><li><span class="sn">2</span><p>温度缩放：logits 除以 T，T&lt;1 使分布更尖锐，T&gt;1 使分布更平坦，T 趋近 0 接近贪心解码。</p></li><li><span class="sn">3</span><p>Top-k 截断只保留分数最高的 k 个 Token；Top-p 按概率降序累加，保留到总和首次达到 p 为止。</p></li><li><span class="sn">4</span><p>对保留的候选重新归一化，按概率随机抽取一个 Token，追加到序列后继续下一步。</p></li><li><span class="sn">5</span><p>参数支持因厂商与模型而异：部分 API 不提供 top_k，部分推理模型不支持自定义这些参数。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>Logits</dt><dd>模型输出层的原始分数，经 softmax 变为概率。</dd></div><div class="term"><dt>贪心解码 (Greedy Decoding)</dt><dd>每步都选概率最高的 Token，结果确定但易重复。</dd></div><div class="term"><dt>核采样 (Nucleus / Top-p)</dt><dd>从累积概率达 p 的最小候选集中采样，候选数随分布动态变化。</dd></div><div class="term"><dt>Min-p 采样</dt><dd>保留概率不低于最高概率乘以系数的候选，部分开源引擎支持。</dd></div><div class="term"><dt>种子 (Seed)</dt><dd>固定随机数种子以提高可复现性，但多数服务不保证完全一致。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>手写一次采样流程</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import numpy as np
+
+def sample(logits, temperature=1.0, top_k=None, top_p=None, rng=np.random.default_rng(0)):
+    logits = np.asarray(logits, dtype=float) / max(temperature, 1e-6)
+    probs = np.exp(logits - logits.max())
+    probs /= probs.sum()                      # softmax
+
+    order = np.argsort(probs)[::-1]           # 概率从高到低
+    keep = np.ones_like(probs, dtype=bool)
+    if top_k is not None:                     # Top-k：只留前 k 个
+        keep[order[top_k:]] = False
+    if top_p is not None:                     # Top-p：累积到 p 为止
+        cum = np.cumsum(probs[order])
+        cutoff = np.searchsorted(cum, top_p) + 1
+        keep[order[cutoff:]] = False
+
+    probs = np.where(keep, probs, 0.0)
+    probs /= probs.sum()                      # 重新归一化
+    return rng.choice(len(probs), p=probs)
+
+logits = [2.0, 1.5, 0.3, -1.0, -2.0]          # 5 个候选 Token 的分数
+print(sample(logits, temperature=0.7, top_p=0.9))
+print(sample(logits, top_k=1))                # 等价于贪心：总是选 0</code></pre></div><p class="cnote">推理引擎的实现细节（处理顺序、并列值）可能不同，这里只演示原理。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">参数组合参考</h3><div class="tw"><table><thead><tr><th>场景</th><th>常见设置思路</th><th>说明</th></tr></thead><tbody><tr><td data-h="场景">代码、抽取、分类</td><td data-h="常见设置思路">低温度或贪心</td><td data-h="说明">追求稳定可复现</td></tr><tr><td data-h="场景">通用对话</td><td data-h="常见设置思路">使用厂商默认值</td><td data-h="说明">默认值通常已调优</td></tr><tr><td data-h="场景">创意写作、头脑风暴</td><td data-h="常见设置思路">适当提高温度或 top_p</td><td data-h="说明">多样性更高，风险也更高</td></tr><tr><td data-h="场景">自一致性投票</td><td data-h="常见设置思路">较高温度多次采样</td><td data-h="说明">用多样答案做投票</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>Top-k</h4><p><b class="k-p">优点</b>实现简单，候选数固定</p><p><b class="k-c">代价</b>分布尖锐或平坦时 k 不合适</p><p><b class="k-w">适用</b>开源引擎中配合其他参数</p></div><div class="trd"><h4>Top-p</h4><p><b class="k-p">优点</b>候选数随置信度自适应</p><p><b class="k-c">代价</b>分布很平时仍可能纳入长尾</p><p><b class="k-w">适用</b>多数 API 的主选项</p></div><div class="trd"><h4>低温/贪心</h4><p><b class="k-p">优点</b>确定性强、利于测试</p><p><b class="k-c">代价</b>易重复、缺乏多样性</p><p><b class="k-w">适用</b>结构化、事实性任务</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>同时大幅调整 temperature 与 top_p，难以归因</p><p class="fix"><b>✓</b>一次只调一个，多数厂商建议二者择一调整</p></li><li><p class="bad"><b>✗</b>以为 temperature=0 就完全可复现</p><p class="fix"><b>✓</b>批处理、硬件差异仍可能导致输出不同，测试需容忍差异</p></li><li><p class="bad"><b>✗</b>对推理模型传入不支持的采样参数</p><p class="fix"><b>✓</b>查阅该模型文档，按其支持的参数调用</p></li><li><p class="bad"><b>✗</b>用高温度掩盖提示词不清晰</p><p class="fix"><b>✓</b>先改进提示与上下文，再微调采样参数</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>按任务类型设定采样参数</span></label></li><li><label><input type="checkbox"><span>参数写入配置并版本化</span></label></li><li><label><input type="checkbox"><span>只调一个参数并有评测对比</span></label></li><li><label><input type="checkbox"><span>确认目标模型支持这些参数</span></label></li><li><label><input type="checkbox"><span>关键流程不依赖输出完全一致</span></label></li><li><label><input type="checkbox"><span>评测时固定参数与种子</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Top-p 相比 Top-k 的优势？</summary><p>Top-k 候选数固定：模型很确定时仍保留 k 个低质候选，不确定时又可能截掉合理选项。Top-p 按累积概率截断，候选数随分布形状自适应，这是核采样论文提出的主要动机。</p></details><details class="iv"><summary>temperature 和 top_p 的作用顺序？</summary><p>常见实现先用温度缩放 logits 改变分布形状，再在新分布上做 top-k/top-p 截断，最后归一化采样。因此温度会改变 top-p 截断后保留的候选数量，二者存在交互。</p></details><details class="iv"><summary>为什么写代码时通常建议低随机性？</summary><p>代码对精确性要求高，一个错 Token 就可能导致语法或逻辑错误；低随机性让模型倾向最可能的写法，结果更稳定、便于复现和测试。需要多方案时可多次采样再用测试筛选。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://arxiv.org/abs/1904.09751" target="_blank" rel="noopener"><b>Holtzman et al. 2019：The Curious Case of Neural Text Degeneration</b><small>arxiv.org ↗</small></a></li><li><a href="https://huggingface.co/blog/how-to-generate" target="_blank" rel="noopener"><b>Hugging Face：How to generate text</b><small>huggingface.co ↗</small></a></li><li><a href="https://huggingface.co/docs/transformers/generation_strategies" target="_blank" rel="noopener"><b>Transformers：Generation strategies</b><small>huggingface.co ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="tokenizer.pro.html" rel="prev"><small>‹ 上一个</small><b>🔪 分词器 (Tokenizer / BPE)</b></a><a class="pn next" href="prompt-chaining.pro.html" rel="next"><small>下一个 ›</small><b>🔗 提示链 (Prompt Chaining)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

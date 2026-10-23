@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="精确一次语义 (EOS) 专业模式：精确一次语义（Exactly-Once Semantics，EOS）指每条消息对最终结果的影响恰好发生一次，既不丢也不重复。网络与故障下「投递」本身难以只发生一">
+<title>🎓 精确一次语义 (EOS) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="exactly-once-semantics" data-answer="0" data-prev="ingress-controllers.pro.html" data-next="message-ordering.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#cache">🔥 进阶 · ⚡ 缓存与队列</a><span>›</span><a href="exactly-once-semantics.html">精确一次语义 (EOS)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.424 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="ingress-controllers.pro.html" rel="prev"><small>‹ 上一个</small><b>🏥 K8s入口控制器</b></a><a class="pn next" href="message-ordering.pro.html" rel="next"><small>下一个 ›</small><b>🔢 消息顺序性保证</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">1️⃣</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>⚡ 缓存与队列</span><span>⏱ 约 10 分钟</span></div>
+    <h1>精确一次语义 (EOS)</h1><p class="en">Exactly-Once Semantics</p>
+    <div class="hbtns"><a class="prosw back" href="exactly-once-semantics.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">精确一次语义（Exactly-Once Semantics，EOS）指每条消息对最终结果的影响恰好发生一次，既不丢也不重复。网络与故障下「投递」本身难以只发生一次，因此实践中靠至少一次投递加幂等或事务实现「效果上的精确一次」。Kafka 通过幂等生产者与事务在其内部读-处理-写链路上提供该保证。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>幂等生产者：broker 按生产者 ID 与序列号去重，生产者重试不会产生重复写入。</p></li><li><span class="sn">2</span><p>事务写入：生产者以 transactional.id 开启事务，把多分区写入原子提交或中止。</p></li><li><span class="sn">3</span><p>偏移量入事务：消费位点通过 sendOffsetsToTransaction 与输出消息一起提交。</p></li><li><span class="sn">4</span><p>隔离读取：下游消费者设置 isolation.level=read_committed，只读已提交事务的消息。</p></li><li><span class="sn">5</span><p>外部系统：写数据库等外部系统时，需用幂等写入或把位点与结果存入同一事务。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>至少一次 (At-least-once)</dt><dd>失败会重试，保证不丢但可能重复。</dd></div><div class="term"><dt>至多一次 (At-most-once)</dt><dd>不重试，保证不重复但可能丢失。</dd></div><div class="term"><dt>幂等生产者 (Idempotent Producer)</dt><dd>通过 PID 与序列号让 broker 丢弃重复的重试写入。</dd></div><div class="term"><dt>transactional.id</dt><dd>跨重启稳定的事务标识，用于隔离旧实例（僵尸实例）。</dd></div><div class="term"><dt>read_committed</dt><dd>消费者隔离级别，跳过未提交或已中止事务的消息。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Kafka 事务性读-处理-写</span><em>python</em><button class="ccopy">复制</button></div><pre><code>from confluent_kafka import Consumer, Producer
+
+consumer = Consumer({&quot;bootstrap.servers&quot;: &quot;kafka:9092&quot;, &quot;group.id&quot;: &quot;enricher&quot;,
+                     &quot;enable.auto.commit&quot;: False,
+                     &quot;isolation.level&quot;: &quot;read_committed&quot;})
+producer = Producer({&quot;bootstrap.servers&quot;: &quot;kafka:9092&quot;,
+                     &quot;transactional.id&quot;: &quot;enricher-1&quot;})  # 隐含开启幂等
+consumer.subscribe([&quot;orders&quot;])
+producer.init_transactions()
+
+while True:
+    msg = consumer.poll(1.0)
+    if msg is None or msg.error():
+        continue
+    producer.begin_transaction()
+    producer.produce(&quot;orders-enriched&quot;, key=msg.key(), value=msg.value().upper())
+    # 把消费位点与输出放进同一事务，原子提交
+    producer.send_offsets_to_transaction(
+        consumer.position(consumer.assignment()),
+        consumer.consumer_group_metadata())
+    producer.commit_transaction()      # 异常时应 abort_transaction() 并重处理</code></pre></div><p class="cnote">输出消息与消费位点同事务提交，崩溃重启后不会出现输出了却未记位点的重复。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">三种投递语义</h3><div class="tw"><table><thead><tr><th>语义</th><th>实现方式</th><th>风险</th></tr></thead><tbody><tr><td data-h="语义">至多一次</td><td data-h="实现方式">先提交位点再处理</td><td data-h="风险">处理失败即丢消息</td></tr><tr><td data-h="语义">至少一次</td><td data-h="实现方式">处理完再提交位点</td><td data-h="风险">崩溃后重复处理</td></tr><tr><td data-h="语义">精确一次（效果）</td><td data-h="实现方式">至少一次 + 幂等/事务</td><td data-h="风险">实现复杂，有性能开销</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>Kafka 事务</h4><p><b class="k-p">优点</b>Kafka 内部链路端到端精确一次</p><p><b class="k-c">代价</b>吞吐下降、延迟增加，不覆盖外部系统</p><p><b class="k-w">适用</b>Kafka 到 Kafka 的流处理</p></div><div class="trd"><h4>至少一次 + 幂等消费</h4><p><b class="k-p">优点</b>通用、简单，适用任何下游</p><p><b class="k-c">代价</b>需要设计幂等键与去重存储</p><p><b class="k-w">适用</b>写数据库、调第三方 API</p></div><div class="trd"><h4>位点与结果同库事务</h4><p><b class="k-p">优点</b>对数据库下游实现精确一次</p><p><b class="k-c">代价</b>消费者需自管位点</p><p><b class="k-w">适用</b>结果写入关系型数据库</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>以为开启 Kafka 事务后，写数据库和调外部 API 也只会一次</p><p class="fix"><b>✓</b>事务仅覆盖 Kafka 内部，外部副作用需幂等或同库事务</p></li><li><p class="bad"><b>✗</b>下游消费者仍用默认 read_uncommitted，读到中止事务数据</p><p class="fix"><b>✓</b>消费事务性主题时设置 isolation.level=read_committed</p></li><li><p class="bad"><b>✗</b>transactional.id 随机生成，重启后无法隔离僵尸实例</p><p class="fix"><b>✓</b>按实例或分区使用稳定的 transactional.id</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>明确精确一次的边界范围</span></label></li><li><label><input type="checkbox"><span>生产者开启幂等</span></label></li><li><label><input type="checkbox"><span>下游 read_committed</span></label></li><li><label><input type="checkbox"><span>外部写入幂等或同事务</span></label></li><li><label><input type="checkbox"><span>transactional.id 稳定</span></label></li><li><label><input type="checkbox"><span>压测评估事务开销</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>真正的「精确一次投递」可能吗？</summary><p>在不可靠网络中，发送方无法区分消息丢失还是确认丢失，只能重试，因此投递层面最多做到至少一次。所谓精确一次是处理效果层面：通过去重、幂等或原子事务，使重复投递不产生重复影响。</p></details><details class="iv"><summary>Kafka 幂等生产者怎么去重？</summary><p>每个生产者获得 PID，发往每个分区的消息带递增序列号；broker 记录各 PID 在该分区最近的序列号，收到重复或乱序序列号即拒绝或丢弃，从而消除重试带来的重复写入。</p></details><details class="iv"><summary>消费 Kafka 写 MySQL 如何做到效果上一次？</summary><p>方式一：业务写入幂等，如用消息唯一 ID 做唯一键或 upsert；方式二：把消费位点存进 MySQL，与业务数据同一事务提交，启动时从库中读取位点继续消费。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://kafka.apache.org/documentation/" target="_blank" rel="noopener"><b>Apache Kafka Documentation</b><small>kafka.apache.org ↗</small></a></li><li><a href="https://cwiki.apache.org/confluence/display/KAFKA/KIP-98+-+Exactly+Once+Delivery+and+Transactional+Messaging" target="_blank" rel="noopener"><b>KIP-98: Exactly Once Delivery and Transactional Messaging</b><small>cwiki.apache.org ↗</small></a></li><li><a href="https://www.confluent.io/blog/exactly-once-semantics-are-possible-heres-how-apache-kafka-does-it/" target="_blank" rel="noopener"><b>Exactly-Once Semantics in Kafka (Confluent)</b><small>confluent.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="ingress-controllers.pro.html" rel="prev"><small>‹ 上一个</small><b>🏥 K8s入口控制器</b></a><a class="pn next" href="message-ordering.pro.html" rel="next"><small>下一个 ›</small><b>🔢 消息顺序性保证</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

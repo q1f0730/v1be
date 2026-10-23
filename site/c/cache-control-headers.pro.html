@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="HTTP缓存控制头 专业模式：Cache-Control 是 HTTP 中控制缓存行为的核心头部（RFC 9111），用一组指令告诉浏览器、CDN 和代理：响应能否被缓存、由谁缓存、保持新鲜">
+<title>🎓 HTTP缓存控制头 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="cache-control-headers" data-answer="0" data-prev="redis-eviction-policies.pro.html" data-next="etags.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#cache">🔮 高级 · ⚡ 缓存与队列</a><span>›</span><a href="cache-control-headers.html">HTTP缓存控制头</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.277 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="redis-eviction-policies.pro.html" rel="prev"><small>‹ 上一个</small><b>🗑️ Redis内存淘汰策略</b></a><a class="pn next" href="etags.pro.html" rel="next"><small>下一个 ›</small><b>🔖 实体标签与协商缓存</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🏷️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>⚡ 缓存与队列</span><span>⏱ 约 10 分钟</span></div>
+    <h1>HTTP缓存控制头</h1><p class="en">Cache-Control Headers</p>
+    <div class="hbtns"><a class="prosw back" href="cache-control-headers.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">Cache-Control 是 HTTP 中控制缓存行为的核心头部（RFC 9111），用一组指令告诉浏览器、CDN 和代理：响应能否被缓存、由谁缓存、保持新鲜多久、过期后是否必须先向源站验证。正确设置可大幅减少请求与带宽，设置错误则会导致用户看到旧版本或隐私数据被共享缓存。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>源站在响应中设置 Cache-Control，缓存据此判断是否存储以及新鲜期长短。</p></li><li><span class="sn">2</span><p>新鲜期内（max-age，共享缓存优先 s-maxage）直接使用缓存副本，不发请求。</p></li><li><span class="sn">3</span><p>过期后缓存带 If-None-Match 或 If-Modified-Since 向源站验证，未变则返回 304。</p></li><li><span class="sn">4</span><p>no-cache 表示可存储但每次使用前必须验证；no-store 表示完全不得存储。</p></li><li><span class="sn">5</span><p>private 只允许浏览器缓存，public 允许 CDN 等共享缓存；未设置时缓存可能按启发式规则自行决定。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>max-age</dt><dd>响应保持新鲜的秒数。</dd></div><div class="term"><dt>s-maxage</dt><dd>仅对共享缓存（CDN/代理）生效的新鲜期。</dd></div><div class="term"><dt>no-cache</dt><dd>可存储，但每次使用前必须向源站验证。</dd></div><div class="term"><dt>no-store</dt><dd>任何缓存都不得存储该响应。</dd></div><div class="term"><dt>immutable</dt><dd>新鲜期内内容不会变化，刷新页面也无需验证。</dd></div><div class="term"><dt>stale-while-revalidate</dt><dd>过期后的一段时间内先返回旧值，后台异步验证。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>按资源类型设置缓存</span><em>http</em><button class="ccopy">复制</button></div><pre><code># 1. 带内容哈希的静态资源：缓存一年，内容变了文件名就变
+GET /assets/app.3f9a1c.js HTTP/1.1
+
+HTTP/1.1 200 OK
+Cache-Control: public, max-age=31536000, immutable
+
+# 2. HTML 入口：可存储但每次都验证，确保能拿到新版本引用
+GET /index.html HTTP/1.1
+
+HTTP/1.1 200 OK
+Cache-Control: no-cache
+ETag: &quot;v42&quot;
+
+# 3. 公共 API：CDN 缓存 60 秒，过期后 5 分钟内可先返回旧值再后台刷新
+HTTP/1.1 200 OK
+Cache-Control: public, max-age=0, s-maxage=60, stale-while-revalidate=300
+
+# 4. 含个人信息的响应：禁止任何缓存存储
+GET /api/me HTTP/1.1
+
+HTTP/1.1 200 OK
+Cache-Control: private, no-store</code></pre></div><p class="cnote">哈希文件长缓存，HTML 每次验证，个人数据 no-store；s-maxage 只作用于 CDN。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见资源的推荐策略</h3><div class="tw"><table><thead><tr><th>资源</th><th>Cache-Control</th><th>原因</th></tr></thead><tbody><tr><td data-h="资源">带哈希的 JS/CSS/图片</td><td data-h="Cache-Control">public, max-age=31536000, immutable</td><td data-h="原因">改动即换文件名</td></tr><tr><td data-h="资源">HTML 入口</td><td data-h="Cache-Control">no-cache（配合 ETag）</td><td data-h="原因">需要及时拿到新版本</td></tr><tr><td data-h="资源">公共列表 API</td><td data-h="Cache-Control">public, s-maxage=60</td><td data-h="原因">CDN 短缓存削峰</td></tr><tr><td data-h="资源">用户私有数据</td><td data-h="Cache-Control">private, no-store</td><td data-h="原因">防止共享缓存泄露</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>长 max-age + 文件名哈希</h4><p><b class="k-p">优点</b>几乎零重复请求</p><p><b class="k-c">代价</b>依赖构建工具生成哈希名</p><p><b class="k-w">适用</b>所有可构建的静态资源</p></div><div class="trd"><h4>no-cache + ETag</h4><p><b class="k-p">优点</b>始终最新，未变时只回 304</p><p><b class="k-c">代价</b>每次仍有一次往返</p><p><b class="k-w">适用</b>HTML 与频繁变化的内容</p></div><div class="trd"><h4>stale-while-revalidate</h4><p><b class="k-p">优点</b>用户几乎感受不到回源延迟</p><p><b class="k-c">代价</b>短时间内可能看到旧数据</p><p><b class="k-w">适用</b>可容忍秒级旧数据的接口</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>以为 no-cache 是“不缓存”</p><p class="fix"><b>✓</b>要完全禁止存储用 no-store；no-cache 是必须验证</p></li><li><p class="bad"><b>✗</b>HTML 设置长 max-age，发版后用户仍加载旧资源</p><p class="fix"><b>✓</b>HTML 用 no-cache，静态资源靠哈希文件名长缓存</p></li><li><p class="bad"><b>✗</b>带 Cookie 的个性化响应被 CDN 缓存给了别人</p><p class="fix"><b>✓</b>设置 private 或 no-store，并检查 CDN 规则</p></li><li><p class="bad"><b>✗</b>不写 Cache-Control，依赖缓存的启发式行为</p><p class="fix"><b>✓</b>每类响应显式声明缓存策略</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>静态资源使用哈希文件名并长缓存</span></label></li><li><label><input type="checkbox"><span>HTML 入口为 no-cache</span></label></li><li><label><input type="checkbox"><span>个人数据响应为 private 或 no-store</span></label></li><li><label><input type="checkbox"><span>CDN 缓存规则与响应头一致</span></label></li><li><label><input type="checkbox"><span>需要时配置 Vary 头</span></label></li><li><label><input type="checkbox"><span>发版流程验证缓存是否正确更新</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>no-cache 和 no-store 有什么区别？</summary><p>no-cache 允许缓存存储，但每次使用前必须向源站验证（通常得到 304，省去传输正文）；no-store 禁止任何缓存存储响应，每次都完整请求。前者用于需要最新但可节省带宽的资源，后者用于敏感数据。</p></details><details class="iv"><summary>为什么前端静态资源要用文件名哈希？</summary><p>哈希让 URL 随内容变化。这样可以给静态资源设置一年缓存加 immutable，用户永远不重复下载未变文件；发版时新 HTML 引用新文件名，自然拿到新资源，不需要清理浏览器或 CDN 缓存。</p></details><details class="iv"><summary>s-maxage 和 max-age 同时存在时如何生效？</summary><p>共享缓存（CDN、代理）优先使用 s-maxage，忽略 max-age；浏览器等私有缓存只看 max-age。借此可以让 CDN 缓存较久、浏览器每次都回 CDN 验证，发版时只需清理 CDN。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.rfc-editor.org/rfc/rfc9111" target="_blank" rel="noopener"><b>RFC 9111: HTTP Caching</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control" target="_blank" rel="noopener"><b>MDN: Cache-Control</b><small>developer.mozilla.org ↗</small></a></li><li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching" target="_blank" rel="noopener"><b>MDN: HTTP caching</b><small>developer.mozilla.org ↗</small></a></li><li><a href="https://web.dev/articles/http-cache" target="_blank" rel="noopener"><b>web.dev: Prevent unnecessary network requests with the HTTP Cache</b><small>web.dev ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="redis-eviction-policies.pro.html" rel="prev"><small>‹ 上一个</small><b>🗑️ Redis内存淘汰策略</b></a><a class="pn next" href="etags.pro.html" rel="next"><small>下一个 ›</small><b>🔖 实体标签与协商缓存</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

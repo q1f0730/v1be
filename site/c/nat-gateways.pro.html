@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="网络地址转换网关 专业模式：NAT 网关（NAT Gateway）是网络层组件，对私有子网发出的流量做源地址转换（SNAT），把内网 IP 替换为公网 IP，让无公网地址的服务器能主动访问">
+<title>🎓 网络地址转换网关 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="nat-gateways" data-answer="0" data-prev="outbox-pattern.pro.html" data-next="service-mesh.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#net">🔥 进阶 · 🌐 网络与 API</a><span>›</span><a href="nat-gateways.html">网络地址转换网关</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.421 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="outbox-pattern.pro.html" rel="prev"><small>‹ 上一个</small><b>📮 事务性发件箱模式</b></a><a class="pn next" href="service-mesh.pro.html" rel="next"><small>下一个 ›</small><b>🕸️ 服务网格</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🚪</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>网络地址转换网关</h1><p class="en">NAT Gateways</p>
+    <div class="hbtns"><a class="prosw back" href="nat-gateways.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">NAT 网关（NAT Gateway）是网络层组件，对私有子网发出的流量做源地址转换（SNAT），把内网 IP 替换为公网 IP，让无公网地址的服务器能主动访问互联网（拉依赖、调外部 API），同时外部无法主动发起连接进入。云上通常是托管服务，按小时和流量计费。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>私有子网路由：默认路由 0.0.0.0/0 指向 NAT 网关，而非互联网网关。</p></li><li><span class="sn">2</span><p>源地址转换：NAT 把数据包源 IP 改为自己的公网 IP，并分配源端口。</p></li><li><span class="sn">3</span><p>连接跟踪：记录内网地址端口与外网端口的映射，回包据此转发回原主机。</p></li><li><span class="sn">4</span><p>拒绝入站：没有映射记录的外部主动连接被丢弃，形成单向出站访问。</p></li><li><span class="sn">5</span><p>出口固定：所有出站流量使用 NAT 的公网 IP，便于第三方配置 IP 白名单。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>SNAT</dt><dd>源地址转换，改写出站包的源 IP，用于共享公网地址出网。</dd></div><div class="term"><dt>私有子网 (Private Subnet)</dt><dd>路由表中没有直接指向互联网网关的子网。</dd></div><div class="term"><dt>弹性公网 IP (Elastic IP)</dt><dd>可固定分配给 NAT 网关的静态公网地址。</dd></div><div class="term"><dt>端口耗尽 (Port Exhaustion)</dt><dd>到同一目标的并发连接过多，可用源端口不足导致连接失败。</dd></div><div class="term"><dt>VPC 端点 (VPC Endpoint)</dt><dd>私网直连云服务的通道，不经 NAT 和公网。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>AWS 创建 NAT 网关</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 1) 申请一个弹性公网 IP
+aws ec2 allocate-address --domain vpc
+# → 记下 AllocationId，例如 eipalloc-0abc...
+
+# 2) 在「公有子网」中创建 NAT 网关
+aws ec2 create-nat-gateway \
+  --subnet-id subnet-0public123 \
+  --allocation-id eipalloc-0abc123
+
+# 3) 私有子网路由表：默认路由指向 NAT 网关
+aws ec2 create-route \
+  --route-table-id rtb-0private456 \
+  --destination-cidr-block 0.0.0.0/0 \
+  --nat-gateway-id nat-0def789
+
+# Linux 自建 NAT 的等价规则（需开启 ip_forward）：
+# iptables -t nat -A POSTROUTING -s 10.0.1.0/24 -o eth0 -j MASQUERADE</code></pre></div><p class="cnote">NAT 网关放公有子网，私有子网的默认路由指向它；ID 为示例占位。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">出网方案对比</h3><div class="tw"><table><thead><tr><th>方案</th><th>入站可达</th><th>典型用途</th></tr></thead><tbody><tr><td data-h="方案">公网 IP 直连</td><td data-h="入站可达">是</td><td data-h="典型用途">需对外提供服务的主机</td></tr><tr><td data-h="方案">NAT 网关</td><td data-h="入站可达">否</td><td data-h="典型用途">私有服务器出网拉包、调 API</td></tr><tr><td data-h="方案">VPC 端点</td><td data-h="入站可达">不涉及公网</td><td data-h="典型用途">访问对象存储等云服务</td></tr><tr><td data-h="方案">出站代理</td><td data-h="入站可达">否</td><td data-h="典型用途">需要按域名审计和过滤出站流量</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>托管 NAT 网关</h4><p><b class="k-p">优点</b>高可用、免运维、自动扩展</p><p><b class="k-c">代价</b>按小时+按 GB 计费，流量大时昂贵</p><p><b class="k-w">适用</b>大多数生产 VPC</p></div><div class="trd"><h4>自建 NAT 实例</h4><p><b class="k-p">优点</b>成本可控，可自定义规则</p><p><b class="k-c">代价</b>需自己做高可用与补丁</p><p><b class="k-w">适用</b>流量大且预算敏感</p></div><div class="trd"><h4>VPC 端点替代</h4><p><b class="k-p">优点</b>省 NAT 流量费，流量不出公网</p><p><b class="k-c">代价</b>只覆盖支持的云服务</p><p><b class="k-w">适用</b>大量访问对象存储等服务</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>只在一个可用区建 NAT，该区故障时所有私有子网断网</p><p class="fix"><b>✓</b>每个可用区各建一个 NAT，路由指向本区 NAT</p></li><li><p class="bad"><b>✗</b>大量流量访问对象存储也走 NAT，费用暴涨</p><p class="fix"><b>✓</b>为对象存储等服务配置 VPC 端点</p></li><li><p class="bad"><b>✗</b>高并发访问同一外部 API 时出现连接失败</p><p class="fix"><b>✓</b>复用长连接/连接池，或增加 NAT 公网 IP 分散端口</p></li><li><p class="bad"><b>✗</b>以为 NAT 等同于防火墙，忽略安全组配置</p><p class="fix"><b>✓</b>NAT 只阻止未请求的入站，仍需安全组与出站策略</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个可用区有独立 NAT</span></label></li><li><label><input type="checkbox"><span>私有子网默认路由正确</span></label></li><li><label><input type="checkbox"><span>云服务流量走 VPC 端点</span></label></li><li><label><input type="checkbox"><span>NAT 流量与费用有监控</span></label></li><li><label><input type="checkbox"><span>第三方白名单使用 NAT 固定 IP</span></label></li><li><label><input type="checkbox"><span>有端口耗尽/错误指标告警</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>NAT 网关和互联网网关有什么区别？</summary><p>互联网网关为拥有公网 IP 的实例提供双向互联网访问；NAT 网关让只有私网 IP 的实例共享公网地址主动出站，不接受外部主动发起的入站连接。NAT 网关本身部署在公有子网并经互联网网关出网。</p></details><details class="iv"><summary>为什么会出现 NAT 端口耗尽？</summary><p>NAT 用源 IP+源端口区分连接，到同一目标 IP 和端口时可用的源端口有限。大量短连接或不复用连接会迅速占满，加上 TIME_WAIT 延迟释放。解决：连接复用、增加 NAT IP、分散目标。</p></details><details class="iv"><summary>怎么降低 NAT 网关费用？</summary><p>先看流量去向：访问对象存储、容器镜像仓库等云服务改走 VPC 端点；镜像与依赖使用私有仓库缓存；避免跨可用区访问 NAT 产生额外流量费；非生产环境评估自建 NAT 实例。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html" target="_blank" rel="noopener"><b>AWS: NAT gateways</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://cloud.google.com/nat/docs/overview" target="_blank" rel="noopener"><b>Google Cloud NAT overview</b><small>cloud.google.com ↗</small></a></li><li><a href="https://www.rfc-editor.org/rfc/rfc3022" target="_blank" rel="noopener"><b>RFC 3022: Traditional NAT</b><small>rfc-editor.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="outbox-pattern.pro.html" rel="prev"><small>‹ 上一个</small><b>📮 事务性发件箱模式</b></a><a class="pn next" href="service-mesh.pro.html" rel="next"><small>下一个 ›</small><b>🕸️ 服务网格</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

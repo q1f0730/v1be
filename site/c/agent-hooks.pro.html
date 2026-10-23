@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="智能体钩子 (Hooks) 专业模式：智能体钩子（Agent Hooks）是编程 Agent 在生命周期特定节点（如工具调用前后、会话开始、任务结束）自动执行的用户自定义命令。与写在提示词里的“软约">
+<title>🎓 智能体钩子 (Hooks) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="agent-hooks" data-answer="0" data-prev="background-agents.pro.html" data-next="agent-sdk-headless.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#ai">🔮 高级 · 🤖 AI 与提示词</a><span>›</span><a href="agent-hooks.html">智能体钩子 (Hooks)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.343 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="background-agents.pro.html" rel="prev"><small>‹ 上一个</small><b>🌙 后台 / 云端智能体</b></a><a class="pn next" href="agent-sdk-headless.pro.html" rel="next"><small>下一个 ›</small><b>🧰 智能体 SDK 与无头模式</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🪝</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>智能体钩子 (Hooks)</h1><p class="en">Agent Hooks</p>
+    <div class="hbtns"><a class="prosw back" href="agent-hooks.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">智能体钩子（Agent Hooks）是编程 Agent 在生命周期特定节点（如工具调用前后、会话开始、任务结束）自动执行的用户自定义命令。与写在提示词里的“软约束”不同，钩子由运行时确定性地执行，可阻止危险操作、改文件后自动格式化、注入上下文。Claude Code、Cursor 等均提供（细节以官方文档为准）。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>在配置文件（如 Claude Code 的 .claude/settings.json）中为事件注册钩子，并可用 matcher 匹配特定工具名。</p></li><li><span class="sn">2</span><p>Agent 准备调用工具时触发 PreToolUse 类事件，运行时把工具名与参数以 JSON 通过标准输入传给钩子命令。</p></li><li><span class="sn">3</span><p>钩子返回决定：以 Claude Code 为例，退出码 0 表示放行，退出码 2 表示阻止并把 stderr 反馈给模型；也可输出 JSON 精细控制。</p></li><li><span class="sn">4</span><p>工具执行成功后触发 PostToolUse 类事件，常用于对刚改动的文件运行格式化、lint 或测试。</p></li><li><span class="sn">5</span><p>其他事件如 UserPromptSubmit、SessionStart、Stop 可用于注入上下文、校验提示或在任务结束时做检查与通知。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>PreToolUse</dt><dd>工具调用前触发，可放行、拒绝或要求确认。</dd></div><div class="term"><dt>PostToolUse</dt><dd>工具调用成功后触发，常用于格式化与校验。</dd></div><div class="term"><dt>matcher</dt><dd>按工具名匹配钩子适用范围，如 Bash、Edit|Write。</dd></div><div class="term"><dt>退出码 2 (Exit Code 2)</dt><dd>Claude Code 约定的阻止信号，stderr 会反馈给模型。</dd></div><div class="term"><dt>确定性控制 (Deterministic Control)</dt><dd>不依赖模型自觉、由程序保证执行的约束。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>拦截危险命令的 PreToolUse 钩子</span><em>python</em><button class="ccopy">复制</button></div><pre><code>#!/usr/bin/env python3
+# .claude/hooks/block_dangerous.py  （需 chmod +x）
+# 在 .claude/settings.json 中注册（格式以官方文档为准）：
+# {&quot;hooks&quot;: {&quot;PreToolUse&quot;: [{&quot;matcher&quot;: &quot;Bash&quot;,
+#   &quot;hooks&quot;: [{&quot;type&quot;: &quot;command&quot;,
+#              &quot;command&quot;: &quot;.claude/hooks/block_dangerous.py&quot;}]}]}}
+import json, re, sys
+
+event = json.load(sys.stdin)                    # 运行时通过 stdin 传入 JSON
+cmd = event.get(&quot;tool_input&quot;, {}).get(&quot;command&quot;, &quot;&quot;)
+
+RULES = [
+    (r&quot;\brm\s+-rf\s+(/|~|\*)&quot;, &quot;禁止递归删除根目录、家目录或通配&quot;),
+    (r&quot;git\s+push\b.*\b(main|master)\b&quot;, &quot;禁止直接推送主分支，请提 PR&quot;),
+    (r&quot;--no-verify&quot;, &quot;禁止跳过 Git 钩子&quot;),
+]
+for pattern, reason in RULES:
+    if re.search(pattern, cmd):
+        print(f&quot;已拦截：{reason}&quot;, file=sys.stderr)  # 反馈给模型
+        sys.exit(2)                              # 退出码 2 = 阻止该工具调用
+sys.exit(0)                                      # 放行</code></pre></div><p class="cnote">钩子读取工具参数并按规则阻止；正则黑名单只是示例，生产中应结合权限白名单使用。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见钩子事件与用途（以 Claude Code 为例）</h3><div class="tw"><table><thead><tr><th>事件</th><th>触发时机</th><th>典型用途</th></tr></thead><tbody><tr><td data-h="事件">PreToolUse</td><td data-h="触发时机">工具调用前</td><td data-h="典型用途">拦截危险命令、保护敏感文件</td></tr><tr><td data-h="事件">PostToolUse</td><td data-h="触发时机">工具调用成功后</td><td data-h="典型用途">格式化、lint、运行相关测试</td></tr><tr><td data-h="事件">UserPromptSubmit</td><td data-h="触发时机">用户提交提示时</td><td data-h="典型用途">注入上下文、过滤敏感信息</td></tr><tr><td data-h="事件">SessionStart</td><td data-h="触发时机">会话开始时</td><td data-h="典型用途">加载项目状态、环境信息</td></tr><tr><td data-h="事件">Stop</td><td data-h="触发时机">Agent 结束回复时</td><td data-h="典型用途">检查任务完成度、发送通知</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>钩子强制执行</h4><p><b class="k-p">优点</b>确定性，模型无法绕过</p><p><b class="k-c">代价</b>需编写维护脚本，规则过严会妨碍工作</p><p><b class="k-w">适用</b>安全底线、格式规范</p></div><div class="trd"><h4>提示词/规则文件约束</h4><p><b class="k-p">优点</b>编写简单、灵活</p><p><b class="k-c">代价</b>模型可能忽略</p><p><b class="k-w">适用</b>风格偏好、一般建议</p></div><div class="trd"><h4>权限白名单配置</h4><p><b class="k-p">优点</b>声明式、易审计</p><p><b class="k-c">代价</b>粒度有限</p><p><b class="k-w">适用</b>控制可用工具与命令范围</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>只靠正则黑名单防危险命令</p><p class="fix"><b>✓</b>黑名单易被变形绕过，应结合权限白名单与沙箱</p></li><li><p class="bad"><b>✗</b>PostToolUse 钩子运行全量测试，每次改文件等很久</p><p class="fix"><b>✓</b>只针对改动文件运行快速检查，全量测试放到 Stop 或 CI</p></li><li><p class="bad"><b>✗</b>钩子脚本出错时静默放行或卡死</p><p class="fix"><b>✓</b>处理异常并设置超时，失败时给出明确信息</p></li><li><p class="bad"><b>✗</b>使用来源不明的钩子配置</p><p class="fix"><b>✓</b>钩子以用户权限执行任意命令，配置需代码审查</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>不可逆操作有 PreToolUse 拦截</span></label></li><li><label><input type="checkbox"><span>改文件后自动格式化或 lint</span></label></li><li><label><input type="checkbox"><span>钩子脚本有超时与错误处理</span></label></li><li><label><input type="checkbox"><span>钩子配置纳入版本控制并经审查</span></label></li><li><label><input type="checkbox"><span>与权限白名单、沙箱配合使用</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>钩子和提示词里的规则有什么本质区别？</summary><p>提示词规则是对模型的请求，模型可能误解、遗忘或在压力下忽略；钩子是运行时在固定事件上执行的程序，结果由退出码或返回值决定，模型无法绕过。硬性约束应放在钩子或权限配置里，提示词用于表达偏好与背景。</p></details><details class="iv"><summary>钩子会带来哪些安全风险？</summary><p>钩子以当前用户权限自动执行任意命令，恶意或有缺陷的配置可能泄露数据或破坏文件。因此要审查钩子来源、把配置纳入版本控制、避免执行不可信输入拼接的命令，并注意项目级配置可能被他人提交修改。</p></details><details class="iv"><summary>PostToolUse 钩子如何提升 Agent 的代码质量？</summary><p>每次编辑后自动运行格式化、类型检查或相关测试，并把错误反馈给模型，让 Agent 立即修复，而不是等到最后才发现。这把“写完再检查”变成持续的快速反馈循环，减少人工返工。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.anthropic.com/en/docs/claude-code/hooks" target="_blank" rel="noopener"><b>Claude Code：Hooks 参考</b><small>docs.anthropic.com ↗</small></a></li><li><a href="https://cursor.com/docs/agent/hooks" target="_blank" rel="noopener"><b>Cursor：Hooks</b><small>cursor.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="background-agents.pro.html" rel="prev"><small>‹ 上一个</small><b>🌙 后台 / 云端智能体</b></a><a class="pn next" href="agent-sdk-headless.pro.html" rel="next"><small>下一个 ›</small><b>🧰 智能体 SDK 与无头模式</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

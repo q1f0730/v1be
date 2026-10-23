@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="无冲突复制数据类型 (CRDT) 专业模式：无冲突复制数据类型（CRDT）是一类特殊设计的数据结构，各副本可以在无协调、甚至离线的情况下独立修改，之后以任意顺序、任意次数交换并合并，最终都收敛到相同状态（">
+<title>🎓 无冲突复制数据类型 (CRDT) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="crdts" data-answer="0" data-prev="saga-pattern.pro.html" data-next="durable-execution.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#dist">🔥 进阶 · 🕸️ 分布式</a><span>›</span><a href="crdts.html">无冲突复制数据类型 (CRDT)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.475 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="saga-pattern.pro.html" rel="prev"><small>‹ 上一个</small><b>🧾 Saga 分布式事务模式</b></a><a class="pn next" href="durable-execution.pro.html" rel="next"><small>下一个 ›</small><b>💾 持久化执行 (Temporal)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🧶</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>无冲突复制数据类型 (CRDT)</h1><p class="en">CRDTs</p>
+    <div class="hbtns"><a class="prosw back" href="crdts.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">无冲突复制数据类型（CRDT）是一类特殊设计的数据结构，各副本可以在无协调、甚至离线的情况下独立修改，之后以任意顺序、任意次数交换并合并，最终都收敛到相同状态（强最终一致）。Shapiro 等人于 2011 年对其系统化。CRDT 是实时协同编辑、离线优先应用与多主复制的基础。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>基于状态的 CRDT（CvRDT）在副本间发送完整或增量状态，合并函数满足交换律、结合律和幂等律。</p></li><li><span class="sn">2</span><p>基于操作的 CRDT（CmRDT）广播操作，要求并发操作可交换，并依赖可靠的因果有序投递。</p></li><li><span class="sn">3</span><p>计数器类：G-Counter 为每个副本单独计数后求和，PN-Counter 用两个 G-Counter 支持减法。</p></li><li><span class="sn">4</span><p>集合与寄存器：LWW-Register 按时间戳保留最后写入；OR-Set 给每次添加打唯一标签以正确处理并发增删。</p></li><li><span class="sn">5</span><p>文本序列：为每个字符分配全局唯一且可排序的标识（如 RGA、Yjs 的 YATA），并发插入按规则确定先后，删除用墓碑标记。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>强最终一致 (Strong Eventual Consistency)</dt><dd>收到相同更新集合的副本必然处于相同状态，无需冲突解决。</dd></div><div class="term"><dt>半格合并 (Join-semilattice)</dt><dd>状态型 CRDT 的数学基础：合并取最小上界，满足三条代数律。</dd></div><div class="term"><dt>OR-Set (Observed-Remove Set)</dt><dd>只删除已观察到的添加标签，使并发添加优先于删除。</dd></div><div class="term"><dt>墓碑 (Tombstone)</dt><dd>被删除元素保留的标记，用于正确合并，需垃圾回收控制体积。</dd></div><div class="term"><dt>Yjs / Automerge</dt><dd>两个主流开源 CRDT 库，常用于协同文档、白板和本地优先应用。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Yjs 两副本并发编辑合并</span><em>javascript</em><button class="ccopy">复制</button></div><pre><code>// npm install yjs
+import * as Y from &#x27;yjs&#x27;
+
+const a = new Y.Doc()
+const b = new Y.Doc()
+
+a.getText(&#x27;note&#x27;).insert(0, &#x27;Hello&#x27;)
+Y.applyUpdate(b, Y.encodeStateAsUpdate(a))     // 同步初始内容
+
+// 断网状态下两端在同一位置并发插入
+a.getText(&#x27;note&#x27;).insert(5, &#x27; from A&#x27;)
+b.getText(&#x27;note&#x27;).insert(5, &#x27; from B&#x27;)
+
+// 恢复网络后互相交换更新（顺序与次数都不影响结果）
+Y.applyUpdate(a, Y.encodeStateAsUpdate(b))
+Y.applyUpdate(b, Y.encodeStateAsUpdate(a))
+
+console.log(a.getText(&#x27;note&#x27;).toString())
+console.log(a.getText(&#x27;note&#x27;).toString() === b.getText(&#x27;note&#x27;).toString()) // true</code></pre></div><p class="cnote">两端都保留了各自的插入，并按确定性规则排列；实际传输可用 y-websocket 等 provider。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">协同编辑方案对比</h3><div class="tw"><table><thead><tr><th>方案</th><th>原理</th><th>优势</th><th>代价</th></tr></thead><tbody><tr><td data-h="方案">CRDT</td><td data-h="原理">数据结构保证合并收敛</td><td data-h="优势">支持离线与点对点</td><td data-h="代价">元数据与墓碑占空间</td></tr><tr><td data-h="方案">OT（操作转换）</td><td data-h="原理">服务端转换并发操作</td><td data-h="优势">文档体积小，久经验证</td><td data-h="代价">通常需中心服务器，算法复杂</td></tr><tr><td data-h="方案">最后写入获胜</td><td data-h="原理">按时间戳覆盖</td><td data-h="优势">实现最简单</td><td data-h="代价">并发修改会静默丢失</td></tr><tr><td data-h="方案">加锁编辑</td><td data-h="原理">同一时间只允许一人改</td><td data-h="优势">无冲突</td><td data-h="代价">协作体验差</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>成熟 CRDT 库</h4><p><b class="k-p">优点</b>离线优先、实时协作开箱可用</p><p><b class="k-c">代价</b>文档历史与元数据增长，需压缩</p><p><b class="k-w">适用</b>协同文档、白板、本地优先应用</p></div><div class="trd"><h4>服务端 OT</h4><p><b class="k-p">优点</b>存储紧凑，权限集中控制</p><p><b class="k-c">代价</b>依赖中心服务器，实现难度大</p><p><b class="k-w">适用</b>始终在线的集中式编辑器</p></div><div class="trd"><h4>简单字段级 LWW</h4><p><b class="k-p">优点</b>易实现，存储开销小</p><p><b class="k-c">代价</b>并发编辑同字段会丢数据</p><p><b class="k-w">适用</b>冲突极少的设置类数据</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>以为 CRDT 能保证业务语义正确</p><p class="fix"><b>✓</b>CRDT 只保证收敛；如余额不能为负等约束仍需协调或校验</p></li><li><p class="bad"><b>✗</b>自行实现序列 CRDT</p><p class="fix"><b>✓</b>优先使用 Yjs、Automerge 等经过验证的库</p></li><li><p class="bad"><b>✗</b>墓碑与历史无限增长，文档越来越慢</p><p class="fix"><b>✓</b>启用库提供的垃圾回收或快照压缩，归档旧历史</p></li><li><p class="bad"><b>✗</b>依赖本机时间戳做 LWW</p><p class="fix"><b>✓</b>使用逻辑时钟或混合逻辑时钟，避免时钟偏差导致错误覆盖</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>明确哪些数据需要协同，哪些需要强一致</span></label></li><li><label><input type="checkbox"><span>选用成熟 CRDT 库并锁定版本</span></label></li><li><label><input type="checkbox"><span>有离线后重连合并的端到端测试</span></label></li><li><label><input type="checkbox"><span>文档体积与加载耗时被监控</span></label></li><li><label><input type="checkbox"><span>权限校验在服务端完成</span></label></li><li><label><input type="checkbox"><span>定义持久化与快照策略</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>状态型 CRDT 的合并为什么要满足交换、结合、幂等？</summary><p>网络中消息可能乱序、重复、经不同路径到达。交换律保证顺序无关，结合律保证分组无关，幂等律保证重复投递无害。三者合起来，任意副本只要收到相同的更新集合，就一定合并成同一状态。</p></details><details class="iv"><summary>CRDT 和 OT 怎么选？</summary><p>需要离线编辑、点对点或多数据中心多主写入时，CRDT 更合适，因为不依赖中心转换。全程在线、已有中心服务、对文档体积敏感时，OT 也成熟可用。现代协作产品越来越多采用 CRDT 库以简化同步层。</p></details><details class="iv"><summary>OR-Set 如何处理并发的添加和删除？</summary><p>每次添加元素都生成唯一标签，删除只移除当时观察到的标签。若一端删除元素的同时另一端重新添加，新添加带新标签不在删除集合中，合并后元素依然存在，即「添加获胜」语义，避免了简单集合的歧义。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://crdt.tech/" target="_blank" rel="noopener"><b>crdt.tech</b><small>crdt.tech ↗</small></a></li><li><a href="https://inria.hal.science/inria-00609399" target="_blank" rel="noopener"><b>Shapiro et al.: Conflict-free Replicated Data Types (2011)</b><small>inria.hal.science ↗</small></a></li><li><a href="https://docs.yjs.dev/" target="_blank" rel="noopener"><b>Yjs Docs</b><small>docs.yjs.dev ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="saga-pattern.pro.html" rel="prev"><small>‹ 上一个</small><b>🧾 Saga 分布式事务模式</b></a><a class="pn next" href="durable-execution.pro.html" rel="next"><small>下一个 ›</small><b>💾 持久化执行 (Temporal)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

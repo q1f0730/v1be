@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="智能体记忆 专业模式：智能体记忆（Agent Memory）是让 LLM 智能体在单次上下文之外保存并检索信息的机制，使其跨会话记住用户偏好、项目约定和过往经验。通常分为短期记忆（当">
+<title>🎓 智能体记忆 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="agent-memory" data-answer="0" data-prev="context-compaction.pro.html" data-next="guardrails.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#ai">🔮 高级 · 🤖 AI 与提示词</a><span>›</span><a href="agent-memory.html">智能体记忆</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.209 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="context-compaction.pro.html" rel="prev"><small>‹ 上一个</small><b>🗜️ 上下文压缩</b></a><a class="pn next" href="guardrails.pro.html" rel="next"><small>下一个 ›</small><b>🚧 护栏 (Guardrails)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🧠</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>智能体记忆</h1><p class="en">Agent Memory</p>
+    <div class="hbtns"><a class="prosw back" href="agent-memory.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">智能体记忆（Agent Memory）是让 LLM 智能体在单次上下文之外保存并检索信息的机制，使其跨会话记住用户偏好、项目约定和过往经验。通常分为短期记忆（当前上下文）和长期记忆（文件、数据库、向量库），由检索或按需读取注入上下文。它位于 Agent 架构的状态管理层。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>短期记忆即当前对话的消息历史，受上下文窗口限制，会话结束即消失。</p></li><li><span class="sn">2</span><p>长期记忆写入外部存储：Markdown 文件、键值库、关系库或向量数据库。</p></li><li><span class="sn">3</span><p>写入时机由规则或模型决定：用户明确要求、任务结束总结、检测到稳定偏好。</p></li><li><span class="sn">4</span><p>读取方式包括固定加载（如项目说明文件）、关键词或向量检索、由 Agent 调用工具查询。</p></li><li><span class="sn">5</span><p>定期整理记忆：合并重复条目、更新过时内容、删除用户要求遗忘的信息。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>短期记忆 (Working Memory)</dt><dd>当前上下文窗口中的信息。</dd></div><div class="term"><dt>情景记忆 (Episodic Memory)</dt><dd>过去具体交互或任务经历的记录。</dd></div><div class="term"><dt>语义记忆 (Semantic Memory)</dt><dd>提炼出的事实与偏好，如用户使用的技术栈。</dd></div><div class="term"><dt>程序性记忆 (Procedural Memory)</dt><dd>做事的方法与规则，如团队的提交规范。</dd></div><div class="term"><dt>记忆投毒 (Memory Poisoning)</dt><dd>恶意内容被写入记忆，持续影响后续行为。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>CLAUDE.md 项目记忆示例</span><em>text</em><button class="ccopy">复制</button></div><pre><code># 文件：./CLAUDE.md（项目级，随仓库共享；Claude Code 启动时自动加载）
+
+## 项目约定
+- 包管理用 pnpm，不要使用 npm 或 yarn
+- 测试命令：pnpm test；提交前必须通过 pnpm lint
+- 数据库变更只能通过 prisma migrate 生成迁移文件
+
+## 代码风格
+- TypeScript 严格模式，禁止 any
+- 组件放在 src/components，按功能分目录
+
+## 注意事项
+- payments/ 目录改动需人工审查，不要自动提交
+- 环境变量见 .env.example，切勿写入真实密钥
+
+# 个人偏好可放在 ~/.claude/CLAUDE.md（用户级，所有项目生效）</code></pre></div><p class="cnote">固定加载的记忆文件是最简单可靠的长期记忆；内容应短而具体，并可被审查。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">长期记忆存储方式</h3><div class="tw"><table><thead><tr><th>方式</th><th>检索方式</th><th>优点</th><th>缺点</th></tr></thead><tbody><tr><td data-h="方式">Markdown 文件</td><td data-h="检索方式">固定加载或读取</td><td data-h="优点">透明、可编辑、可版本控制</td><td data-h="缺点">规模大时占上下文</td></tr><tr><td data-h="方式">键值/关系库</td><td data-h="检索方式">精确查询</td><td data-h="优点">结构清晰，易更新删除</td><td data-h="缺点">需要设计 schema</td></tr><tr><td data-h="方式">向量数据库</td><td data-h="检索方式">语义相似度检索</td><td data-h="优点">适合大量非结构化内容</td><td data-h="缺点">召回不稳定，难以审计</td></tr><tr><td data-h="方式">知识图谱</td><td data-h="检索方式">关系查询</td><td data-h="优点">表达实体关系</td><td data-h="缺点">构建维护成本高</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>固定加载记忆文件</h4><p><b class="k-p">优点</b>确定、透明、易审查</p><p><b class="k-c">代价</b>内容多时挤占上下文</p><p><b class="k-w">适用</b>项目约定、少量稳定偏好</p></div><div class="trd"><h4>检索式记忆</h4><p><b class="k-p">优点</b>可扩展到大量记录</p><p><b class="k-c">代价</b>可能取错或漏取</p><p><b class="k-w">适用</b>历史对话、知识积累</p></div><div class="trd"><h4>Agent 自主读写记忆</h4><p><b class="k-p">优点</b>灵活，能自我积累经验</p><p><b class="k-c">代价</b>可能写入错误或被投毒</p><p><b class="k-w">适用</b>需配合审查与可删除机制</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>把一次性的临时信息写成长期规则</p><p class="fix"><b>✓</b>只记录稳定且会复用的事实，并注明适用条件</p></li><li><p class="bad"><b>✗</b>记忆文件越积越长，充满过时规则</p><p class="fix"><b>✓</b>定期整理，更新或删除过时条目</p></li><li><p class="bad"><b>✗</b>把网页或工具返回的内容直接写入记忆</p><p class="fix"><b>✓</b>外部内容视为不可信，写入前过滤并标注来源</p></li><li><p class="bad"><b>✗</b>记忆中保存密钥或个人隐私</p><p class="fix"><b>✓</b>禁止写入敏感信息，并提供查看与删除入口</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>区分项目级与用户级记忆</span></label></li><li><label><input type="checkbox"><span>记忆内容简短、具体、可执行</span></label></li><li><label><input type="checkbox"><span>有更新与删除机制</span></label></li><li><label><input type="checkbox"><span>外部来源内容不直接入记忆</span></label></li><li><label><input type="checkbox"><span>敏感信息禁止写入</span></label></li><li><label><input type="checkbox"><span>记忆对行为的影响有评测</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>记忆和 RAG 有什么区别？</summary><p>RAG 检索的是外部知识库，通常相对静态、与具体用户无关；记忆是 Agent 在交互中积累的、与用户或项目相关的状态，需要写入、更新和遗忘。两者可共用检索技术，但生命周期与治理要求不同。</p></details><details class="iv"><summary>如何防止记忆投毒？</summary><p>把来自网页、文件、工具的内容视为不可信数据，不允许其直接写入长期记忆；写入需经用户确认或规则过滤；记忆条目记录来源与时间，可审计与回滚。</p></details><details class="iv"><summary>记忆过多会有什么问题？</summary><p>占用上下文、引入过时或冲突信息，导致模型遵循错误规则。应控制总量、按相关性检索，冲突时以最新且用户明确的信息为准，并定期清理。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.claude.com/en/docs/claude-code/memory" target="_blank" rel="noopener"><b>Claude Code 文档：Manage Claude&#x27;s memory</b><small>docs.claude.com ↗</small></a></li><li><a href="https://arxiv.org/abs/2310.08560" target="_blank" rel="noopener"><b>MemGPT 论文 (arXiv:2310.08560)</b><small>arxiv.org ↗</small></a></li><li><a href="https://docs.langchain.com/oss/python/langgraph/memory" target="_blank" rel="noopener"><b>LangGraph 文档：Memory</b><small>docs.langchain.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="context-compaction.pro.html" rel="prev"><small>‹ 上一个</small><b>🗜️ 上下文压缩</b></a><a class="pn next" href="guardrails.pro.html" rel="next"><small>下一个 ›</small><b>🚧 护栏 (Guardrails)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

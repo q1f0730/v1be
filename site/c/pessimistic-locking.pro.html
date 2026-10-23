@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="悲观并发控制 专业模式：悲观锁（Pessimistic Locking）是在读取数据时就加锁，阻止其他事务并发修改，直到本事务提交或回滚才释放。数据库中通常通过 SELECT … FO">
+<title>🎓 悲观并发控制 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="pessimistic-locking" data-answer="0" data-prev="optimistic-locking.pro.html" data-next="normalization.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#db">🔮 高级 · 🗄️ 数据库</a><span>›</span><a href="pessimistic-locking.html">悲观并发控制</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.243 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="optimistic-locking.pro.html" rel="prev"><small>‹ 上一个</small><b>📝 乐观并发控制</b></a><a class="pn next" href="normalization.pro.html" rel="next"><small>下一个 ›</small><b>🗂️ 数据库范式化</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🚪</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>悲观并发控制</h1><p class="en">Pessimistic Locking</p>
+    <div class="hbtns"><a class="prosw back" href="pessimistic-locking.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">悲观锁（Pessimistic Locking）是在读取数据时就加锁，阻止其他事务并发修改，直到本事务提交或回滚才释放。数据库中通常通过 SELECT … FOR UPDATE 等加锁读实现。它用排队等待换取正确性，适合冲突频繁、必须串行处理的短事务。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>事务开始后，用加锁读（如 SELECT … FOR UPDATE）锁定目标行。</p></li><li><span class="sn">2</span><p>其他事务对这些行的加锁读或写入会阻塞，直到锁被释放；普通 MVCC 读不受影响。</p></li><li><span class="sn">3</span><p>持锁事务基于已锁定的最新数据完成计算并写入，然后提交，锁随之释放。</p></li><li><span class="sn">4</span><p>可用 NOWAIT 立即失败、SKIP LOCKED 跳过已锁行，或设置锁超时，避免无限等待。</p></li><li><span class="sn">5</span><p>跨请求或跨服务的场景可用数据库咨询锁或分布式锁，但需处理持有者崩溃。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>FOR UPDATE</dt><dd>排他行锁，阻止他人修改和加锁读取这些行。</dd></div><div class="term"><dt>FOR SHARE</dt><dd>共享行锁，允许他人读但阻止修改。</dd></div><div class="term"><dt>NOWAIT</dt><dd>遇到已被锁的行立即报错，不等待。</dd></div><div class="term"><dt>SKIP LOCKED</dt><dd>跳过已被锁的行，常用于数据库任务队列。</dd></div><div class="term"><dt>咨询锁 (Advisory Lock)</dt><dd>PostgreSQL 提供的由应用定义含义的锁。</dd></div><div class="term"><dt>锁粒度 (Lock Granularity)</dt><dd>锁覆盖范围：行、页、表，粒度越粗并发越低。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>扣库存与任务领取</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- 场景一：扣库存，锁住商品行后再判断
+BEGIN;
+SET LOCAL lock_timeout = &#x27;3s&#x27;;          -- 等锁最多 3 秒（PostgreSQL）
+SELECT stock FROM products WHERE id = 42 FOR UPDATE;
+-- 应用判断 stock &gt;= 1 后：
+UPDATE products SET stock = stock - 1 WHERE id = 42;
+INSERT INTO orders (product_id, qty) VALUES (42, 1);
+COMMIT;
+
+-- 场景二：多个 worker 并发领取任务，互不阻塞
+BEGIN;
+SELECT id, payload FROM jobs
+WHERE status = &#x27;pending&#x27;
+ORDER BY id
+LIMIT 1
+FOR UPDATE SKIP LOCKED;
+-- 拿到 id 后：
+UPDATE jobs SET status = &#x27;running&#x27;, started_at = now() WHERE id = $1;
+COMMIT;</code></pre></div><p class="cnote">FOR UPDATE 串行化同一行的修改；SKIP LOCKED 让多个消费者各取一行。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">加锁读选项</h3><div class="tw"><table><thead><tr><th>写法</th><th>遇到已锁行</th><th>典型用途</th></tr></thead><tbody><tr><td data-h="写法">FOR UPDATE</td><td data-h="遇到已锁行">等待</td><td data-h="典型用途">扣库存、改余额</td></tr><tr><td data-h="写法">FOR UPDATE NOWAIT</td><td data-h="遇到已锁行">立即报错</td><td data-h="典型用途">交互式操作快速失败</td></tr><tr><td data-h="写法">FOR UPDATE SKIP LOCKED</td><td data-h="遇到已锁行">跳过该行</td><td data-h="典型用途">任务队列并发领取</td></tr><tr><td data-h="写法">FOR SHARE</td><td data-h="遇到已锁行">等待写锁释放</td><td data-h="典型用途">校验父记录存在且不被改</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>行级悲观锁</h4><p><b class="k-p">优点</b>冲突时排队，结果确定</p><p><b class="k-c">代价</b>持锁期间阻塞，可能死锁</p><p><b class="k-w">适用</b>热点行高频写入</p></div><div class="trd"><h4>SKIP LOCKED 队列</h4><p><b class="k-p">优点</b>无需额外中间件即可并发消费</p><p><b class="k-c">代价</b>高吞吐下不如专用消息队列</p><p><b class="k-w">适用</b>中小规模后台任务</p></div><div class="trd"><h4>分布式锁（Redis 等）</h4><p><b class="k-p">优点</b>可跨服务、跨数据库</p><p><b class="k-c">代价</b>需处理过期、时钟与持有者崩溃</p><p><b class="k-w">适用</b>无法用单库锁表达时</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>加锁读放在事务外（自动提交），锁立即释放</p><p class="fix"><b>✓</b>确保 FOR UPDATE 与后续写在同一事务中</p></li><li><p class="bad"><b>✗</b>持锁期间调用支付等外部接口</p><p class="fix"><b>✓</b>外部调用移出事务，或改为状态机异步处理</p></li><li><p class="bad"><b>✗</b>条件列无索引，锁住大量无关行</p><p class="fix"><b>✓</b>为加锁条件建索引，缩小锁范围</p></li><li><p class="bad"><b>✗</b>多行加锁顺序不定，引发死锁</p><p class="fix"><b>✓</b>按主键排序加锁，并配置锁超时</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>加锁读与写入在同一事务内</span></label></li><li><label><input type="checkbox"><span>事务尽可能短，无外部调用</span></label></li><li><label><input type="checkbox"><span>设置了锁超时或 NOWAIT</span></label></li><li><label><input type="checkbox"><span>多行加锁按固定顺序</span></label></li><li><label><input type="checkbox"><span>加锁条件命中索引</span></label></li><li><label><input type="checkbox"><span>监控锁等待时间与阻塞会话</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>SKIP LOCKED 适合做消息队列吗？</summary><p>适合中小规模：利用已有数据库、与业务数据同事务提交、无需新组件。局限是高吞吐下轮询与行锁开销大、缺少消息队列的路由与重投机制。PostgreSQL 9.5 和 MySQL 8.0 起支持该语法。</p></details><details class="iv"><summary>为什么不直接用原子 UPDATE 扣库存？</summary><p>能用就优先用：UPDATE … SET stock = stock - 1 WHERE id = ? AND stock &gt; 0，看受影响行数即可。需要先读出数据做复杂判断（多表校验、计算优惠）时，才需要 FOR UPDATE 锁住再算。</p></details><details class="iv"><summary>分布式锁的主要风险是什么？</summary><p>持有者因 GC 停顿或网络分区超过租期，锁被他人获取，导致两方同时操作。缓解方法是使用单调递增的 fencing token，让存储端拒绝旧 token 的写入，并缩短临界区。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.postgresql.org/docs/current/sql-select.html#SQL-FOR-UPDATE-SHARE" target="_blank" rel="noopener"><b>PostgreSQL: SELECT 锁定子句</b><small>postgresql.org ↗</small></a></li><li><a href="https://dev.mysql.com/doc/refman/8.0/en/innodb-locking-reads.html" target="_blank" rel="noopener"><b>MySQL: Locking Reads</b><small>dev.mysql.com ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/explicit-locking.html" target="_blank" rel="noopener"><b>PostgreSQL: Explicit Locking</b><small>postgresql.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="optimistic-locking.pro.html" rel="prev"><small>‹ 上一个</small><b>📝 乐观并发控制</b></a><a class="pn next" href="normalization.pro.html" rel="next"><small>下一个 ›</small><b>🗂️ 数据库范式化</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

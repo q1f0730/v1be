@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="事件流平台 (Kafka) 专业模式：事件流平台（Event Streaming Platform）以持久化、只追加的分布式日志存储事件流，支持多个消费者按各自进度读取和回放历史数据。Apache ">
+<title>🎓 事件流平台 (Kafka) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="event-streaming" data-answer="0" data-prev="semantic-caching.pro.html" data-next="etl-vs-elt.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#cache">🔮 高级 · ⚡ 缓存与队列</a><span>›</span><a href="event-streaming.html">事件流平台 (Kafka)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.357 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="semantic-caching.pro.html" rel="prev"><small>‹ 上一个</small><b>🧠 语义缓存</b></a><a class="pn next" href="etl-vs-elt.pro.html" rel="next"><small>下一个 ›</small><b>🚚 ETL 与 ELT</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🌊</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>⚡ 缓存与队列</span><span>⏱ 约 10 分钟</span></div>
+    <h1>事件流平台 (Kafka)</h1><p class="en">Event Streaming</p>
+    <div class="hbtns"><a class="prosw back" href="event-streaming.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">事件流平台（Event Streaming Platform）以持久化、只追加的分布式日志存储事件流，支持多个消费者按各自进度读取和回放历史数据。Apache Kafka 是代表：事件写入主题（topic）的分区（partition），按偏移量（offset）有序存储并按保留策略保存；消费者组实现并行消费与扩展。它是实时数据管道与流处理的中枢。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>生产者把事件写入主题，按消息键（key）哈希选择分区；相同键的事件进入同一分区，保证该键内的顺序。</p></li><li><span class="sn">2</span><p>每个分区是只追加的有序日志，事件获得递增的偏移量，并复制到多个 broker 以实现容错。</p></li><li><span class="sn">3</span><p>事件按保留策略（时间、大小，或按键压缩）保存，被消费后不会立即删除。</p></li><li><span class="sn">4</span><p>消费者以消费者组为单位订阅，组内各消费者分配不同分区并行处理；不同组彼此独立，各自维护偏移量。</p></li><li><span class="sn">5</span><p>消费者提交偏移量记录进度，故障恢复或需要重算时可从指定偏移量或时间点回放。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>主题 (Topic)</dt><dd>事件的逻辑分类，由一个或多个分区组成。</dd></div><div class="term"><dt>分区 (Partition)</dt><dd>有序、只追加的日志，是并行与顺序保证的基本单位。</dd></div><div class="term"><dt>偏移量 (Offset)</dt><dd>事件在分区中的位置序号，消费者用它记录进度。</dd></div><div class="term"><dt>消费者组 (Consumer Group)</dt><dd>共享订阅的一组消费者，分区在组内分配。</dd></div><div class="term"><dt>日志压缩 (Log Compaction)</dt><dd>按键只保留最新值的保留策略，用于状态快照。</dd></div><div class="term"><dt>副本因子 (Replication Factor)</dt><dd>每个分区的副本数量，决定容错能力。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>confluent-kafka 生产与消费</span><em>python</em><button class="ccopy">复制</button></div><pre><code>from confluent_kafka import Producer, Consumer
+
+conf = {&quot;bootstrap.servers&quot;: &quot;localhost:9092&quot;}
+
+# 生产者：同一 order_id 作为 key，保证该订单事件有序
+p = Producer(conf)
+for status in [&quot;created&quot;, &quot;paid&quot;, &quot;shipped&quot;]:
+    p.produce(&quot;orders&quot;, key=&quot;order-42&quot;, value=f&#x27;{{&quot;status&quot;:&quot;{status}&quot;}}&#x27;)
+p.flush()                                   # 等待全部送达
+
+# 消费者：组名决定独立进度；不同组可各自完整读取同一主题
+c = Consumer({**conf, &quot;group.id&quot;: &quot;analytics&quot;,
+              &quot;auto.offset.reset&quot;: &quot;earliest&quot;,   # 无进度时从头读（可回放）
+              &quot;enable.auto.commit&quot;: False})
+c.subscribe([&quot;orders&quot;])
+for _ in range(10):
+    msg = c.poll(1.0)
+    if msg is None or msg.error():
+        continue
+    print(msg.partition(), msg.offset(), msg.key(), msg.value())
+    c.commit(message=msg)                   # 处理成功后再提交偏移量
+c.close()</code></pre></div><p class="cnote">键决定分区与顺序，消费者组决定独立进度；处理后手动提交偏移量，实现至少一次语义。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">消息队列与事件流对比</h3><div class="tw"><table><thead><tr><th>维度</th><th>传统消息队列</th><th>事件流平台</th></tr></thead><tbody><tr><td data-h="维度">消费后</td><td data-h="传统消息队列">消息通常被删除</td><td data-h="事件流平台">按保留策略保留</td></tr><tr><td data-h="维度">回放</td><td data-h="传统消息队列">一般不支持</td><td data-h="事件流平台">可从任意偏移量回放</td></tr><tr><td data-h="维度">多消费方</td><td data-h="传统消息队列">需额外配置交换机/广播</td><td data-h="事件流平台">多个消费者组各自独立读取</td></tr><tr><td data-h="维度">顺序</td><td data-h="传统消息队列">队列级或无保证</td><td data-h="事件流平台">分区内有序</td></tr><tr><td data-h="维度">典型产品</td><td data-h="传统消息队列">RabbitMQ、SQS</td><td data-h="事件流平台">Kafka、Redpanda、Pulsar、Kinesis</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>自建 Kafka 集群</h4><p><b class="k-p">优点</b>完全可控、生态丰富</p><p><b class="k-c">代价</b>运维复杂（容量、升级、监控）</p><p><b class="k-w">适用</b>有平台团队的大规模场景</p></div><div class="trd"><h4>托管事件流服务</h4><p><b class="k-p">优点</b>免运维、弹性扩展</p><p><b class="k-c">代价</b>成本较高，存在厂商绑定</p><p><b class="k-w">适用</b>中小团队、云原生</p></div><div class="trd"><h4>轻量队列（SQS、Redis Streams）</h4><p><b class="k-p">优点</b>简单便宜</p><p><b class="k-c">代价</b>回放与生态能力有限</p><p><b class="k-w">适用</b>吞吐不高、无需回放</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>业务量很小就引入 Kafka 集群</p><p class="fix"><b>✓</b>先评估队列或托管服务，确有回放与高吞吐需求再引入</p></li><li><p class="bad"><b>✗</b>需要全局顺序却使用多个分区</p><p class="fix"><b>✓</b>顺序只在分区内保证，按业务键分区，必要时接受单分区吞吐上限</p></li><li><p class="bad"><b>✗</b>处理前提交偏移量，崩溃导致消息丢失</p><p class="fix"><b>✓</b>处理成功后提交，并让消费者幂等</p></li><li><p class="bad"><b>✗</b>分区数设置过少，后期扩展消费者无效</p><p class="fix"><b>✓</b>按预期峰值吞吐规划分区数，增加分区会改变键到分区的映射</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>确认确有回放或高吞吐需求</span></label></li><li><label><input type="checkbox"><span>分区键按业务顺序需求选择</span></label></li><li><label><input type="checkbox"><span>副本因子与 min.insync.replicas 已配置</span></label></li><li><label><input type="checkbox"><span>消费者幂等并在处理后提交偏移量</span></label></li><li><label><input type="checkbox"><span>监控消费者延迟（lag）</span></label></li><li><label><input type="checkbox"><span>事件 schema 有版本与兼容规则</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Kafka 如何保证消息顺序？</summary><p>Kafka 只保证单个分区内的顺序。生产者用业务键（如订单 ID）分区，同一键的事件进入同一分区，从而保证该键的事件有序。若需要全局顺序只能用单分区，牺牲并行度；同时需注意生产者重试可能导致乱序，可开启幂等生产者。</p></details><details class="iv"><summary>消费者组的分区分配规则是什么？</summary><p>一个分区在同一时刻只分配给组内一个消费者，一个消费者可处理多个分区。因此组内消费者数超过分区数时，多余的消费者会空闲。不同消费者组相互独立，各自完整消费同一主题。</p></details><details class="iv"><summary>事件流平台为什么适合做 CDC 和数据管道？</summary><p>它持久保存有序事件，多个下游（搜索索引、数据仓库、缓存失效）可各自按进度消费，互不影响；新系统上线时可从头回放历史事件补齐数据；出错时也能重置偏移量重新处理。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://kafka.apache.org/intro" target="_blank" rel="noopener"><b>Apache Kafka：Introduction</b><small>kafka.apache.org ↗</small></a></li><li><a href="https://docs.confluent.io/kafka-clients/python/current/overview.html" target="_blank" rel="noopener"><b>Confluent Kafka Python 客户端</b><small>docs.confluent.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="semantic-caching.pro.html" rel="prev"><small>‹ 上一个</small><b>🧠 语义缓存</b></a><a class="pn next" href="etl-vs-elt.pro.html" rel="next"><small>下一个 ›</small><b>🚚 ETL 与 ELT</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

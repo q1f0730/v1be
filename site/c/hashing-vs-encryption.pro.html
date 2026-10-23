@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="哈希与加密的分野 专业模式：哈希（Hashing）是把任意数据映射为固定长度摘要的单向函数，无法从摘要还原原文；加密（Encryption）是用密钥把明文变成密文的可逆变换，持有密钥即可解">
+<title>🎓 哈希与加密的分野 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="hashing-vs-encryption" data-answer="0" data-prev="api-key-rotation.pro.html" data-next="password-salting.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#sec">🌊 中级 · 🛡️ 安全防线</a><span>›</span><a href="hashing-vs-encryption.html">哈希与加密的分野</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.112 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="api-key-rotation.pro.html" rel="prev"><small>‹ 上一个</small><b>🔄 API密钥定期轮换</b></a><a class="pn next" href="password-salting.pro.html" rel="next"><small>下一个 ›</small><b>🧂 密码加盐</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🥔</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>哈希与加密的分野</h1><p class="en">Hashing vs Encryption</p>
+    <div class="hbtns"><a class="prosw back" href="hashing-vs-encryption.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">哈希（Hashing）是把任意数据映射为固定长度摘要的单向函数，无法从摘要还原原文；加密（Encryption）是用密钥把明文变成密文的可逆变换，持有密钥即可解密。二者同属密码学基础层，但用途截然不同：哈希用于完整性校验和密码存储，加密用于保密传输和存储需要还原的数据。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>哈希：同一输入始终得到同一摘要，输入微小变化导致摘要大幅变化，且难以找到碰撞。</p></li><li><span class="sn">2</span><p>密码存储使用专门的慢哈希（Argon2、bcrypt、scrypt）并加盐，提高暴力破解成本。</p></li><li><span class="sn">3</span><p>对称加密（如 AES-GCM）用同一密钥加解密，速度快，适合大量数据。</p></li><li><span class="sn">4</span><p>非对称加密用公钥加密、私钥解密，常用于密钥交换与数字签名，TLS 结合两者使用。</p></li><li><span class="sn">5</span><p>HMAC 结合哈希与密钥生成消息认证码，可同时验证完整性和来源。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>SHA-256</dt><dd>SHA-2 家族的通用哈希函数，输出 256 位，速度快。</dd></div><div class="term"><dt>AES-GCM</dt><dd>带认证的对称加密模式，同时提供保密性和完整性。</dd></div><div class="term"><dt>HMAC</dt><dd>基于哈希和密钥的消息认证码，用于签名校验。</dd></div><div class="term"><dt>Nonce/IV</dt><dd>加密时使用的一次性随机数，同一密钥下不得重复。</dd></div><div class="term"><dt>编码 (Encoding)</dt><dd>如 Base64，只是格式转换，无任何安全性。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>哈希、HMAC 与加密对比</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import hashlib, hmac, os
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+data = b&quot;order:1024:paid&quot;
+
+# 1. 哈希：单向，用于完整性校验（文件校验和等）
+print(hashlib.sha256(data).hexdigest())
+
+# 2. HMAC：带密钥的哈希，验证消息未被篡改且来自持钥方
+key = os.urandom(32)
+tag = hmac.new(key, data, hashlib.sha256).digest()
+print(hmac.compare_digest(tag, hmac.new(key, data, hashlib.sha256).digest()))
+
+# 3. 对称加密：可逆，持有密钥才能解密
+aes_key = AESGCM.generate_key(bit_length=256)
+nonce = os.urandom(12)                 # 同一密钥下 nonce 绝不能重复
+ct = AESGCM(aes_key).encrypt(nonce, data, None)
+print(AESGCM(aes_key).decrypt(nonce, ct, None))   # b&#x27;order:1024:paid&#x27;
+
+# 注意：密码存储不要用 sha256，应使用 argon2/bcrypt 等慢哈希</code></pre></div><p class="cnote">依赖 cryptography 库；三段代码分别对应完整性、来源认证和保密性。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">哈希、加密、编码对比</h3><div class="tw"><table><thead><tr><th>维度</th><th>哈希</th><th>加密</th><th>编码</th></tr></thead><tbody><tr><td data-h="维度">可逆性</td><td data-h="哈希">不可逆</td><td data-h="加密">有密钥可逆</td><td data-h="编码">任何人可逆</td></tr><tr><td data-h="维度">需要密钥</td><td data-h="哈希">否（HMAC 需要）</td><td data-h="加密">是</td><td data-h="编码">否</td></tr><tr><td data-h="维度">主要用途</td><td data-h="哈希">完整性、密码存储</td><td data-h="加密">保密性</td><td data-h="编码">数据格式转换</td></tr><tr><td data-h="维度">示例</td><td data-h="哈希">SHA-256、Argon2</td><td data-h="加密">AES-GCM、RSA-OAEP</td><td data-h="编码">Base64、URL 编码</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>慢哈希存密码</h4><p><b class="k-p">优点</b>泄露后难以批量破解</p><p><b class="k-c">代价</b>登录验证消耗 CPU/内存</p><p><b class="k-w">适用</b>用户密码存储</p></div><div class="trd"><h4>加密存储敏感字段</h4><p><b class="k-p">优点</b>可还原业务所需数据</p><p><b class="k-c">代价</b>需要密钥管理</p><p><b class="k-w">适用</b>身份证号、第三方令牌</p></div><div class="trd"><h4>快速哈希</h4><p><b class="k-p">优点</b>性能高</p><p><b class="k-c">代价</b>不适合保护低熵秘密</p><p><b class="k-w">适用</b>文件校验、去重、缓存键</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>用 SHA-256 或 MD5 直接存密码</p><p class="fix"><b>✓</b>使用 Argon2id、bcrypt 或 scrypt 并加盐</p></li><li><p class="bad"><b>✗</b>把 Base64 当成加密</p><p class="fix"><b>✓</b>Base64 只是编码，敏感数据需真正加密</p></li><li><p class="bad"><b>✗</b>加密密钥与密文存放在同一数据库</p><p class="fix"><b>✓</b>密钥放密钥管理服务，与数据分离</p></li><li><p class="bad"><b>✗</b>自己设计加密算法或模式</p><p class="fix"><b>✓</b>使用成熟库的高层 API，如 AES-GCM、libsodium</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>密码使用专用慢哈希</span></label></li><li><label><input type="checkbox"><span>需还原的敏感数据才加密</span></label></li><li><label><input type="checkbox"><span>使用带认证的加密模式</span></label></li><li><label><input type="checkbox"><span>nonce 不重复且由安全随机数生成</span></label></li><li><label><input type="checkbox"><span>密钥与数据分离存储并可轮换</span></label></li><li><label><input type="checkbox"><span>签名比较使用恒定时间函数</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么密码要哈希而不是加密？</summary><p>系统只需验证用户输入的密码是否正确，不需要知道原文。加密意味着存在能还原所有密码的密钥，密钥一旦泄露所有密码暴露。慢哈希加盐后即使数据库泄露，攻击者也只能逐个高成本暴力猜测。</p></details><details class="iv"><summary>为什么不能用 SHA-256 存密码？</summary><p>SHA-256 设计目标是快，GPU 每秒可计算海量次，对低熵的人类密码可快速字典攻击。Argon2、bcrypt 等专门设计为可调节的慢，Argon2 还消耗大量内存，使 GPU/ASIC 并行破解成本大幅上升。</p></details><details class="iv"><summary>HMAC 和普通哈希的区别？</summary><p>普通哈希任何人都能计算，攻击者篡改数据后可重新计算哈希；HMAC 需要密钥，只有持钥方能生成有效标签，因此能同时证明完整性和来源。Webhook 签名、Cookie 签名常用 HMAC，比较时需用恒定时间函数防时序攻击。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html" target="_blank" rel="noopener"><b>OWASP Cryptographic Storage Cheat Sheet</b><small>cheatsheetseries.owasp.org ↗</small></a></li><li><a href="https://cryptography.io/en/latest/hazmat/primitives/aead/" target="_blank" rel="noopener"><b>cryptography Docs: AEAD</b><small>cryptography.io ↗</small></a></li><li><a href="https://www.rfc-editor.org/rfc/rfc2104" target="_blank" rel="noopener"><b>RFC 2104: HMAC</b><small>rfc-editor.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="api-key-rotation.pro.html" rel="prev"><small>‹ 上一个</small><b>🔄 API密钥定期轮换</b></a><a class="pn next" href="password-salting.pro.html" rel="next"><small>下一个 ›</small><b>🧂 密码加盐</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="Docker多阶段构建 专业模式：多阶段构建（Multi-Stage Builds）是 Dockerfile 中使用多个 FROM 指令划分阶段的技术：前面的阶段安装编译工具、下载依赖并构建，最">
+<title>🎓 Docker多阶段构建 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="multi-stage-builds" data-answer="0" data-prev="12-factor-apps.pro.html" data-next="non-root-containers.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#devops">🔮 高级 · 🔭 可观测与交付</a><span>›</span><a href="multi-stage-builds.html">Docker多阶段构建</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.329 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="12-factor-apps.pro.html" rel="prev"><small>‹ 上一个</small><b>📦 十二要素云原生应用</b></a><a class="pn next" href="non-root-containers.pro.html" rel="next"><small>下一个 ›</small><b>🪪 非Root权限运行容器</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🎂</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>Docker多阶段构建</h1><p class="en">Multi-Stage Builds</p>
+    <div class="hbtns"><a class="prosw back" href="multi-stage-builds.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">多阶段构建（Multi-Stage Builds）是 Dockerfile 中使用多个 FROM 指令划分阶段的技术：前面的阶段安装编译工具、下载依赖并构建，最后一个阶段只从前面阶段复制运行所需的产物。它属于镜像构建层，能显著减小最终镜像体积、减少攻击面，并把构建依赖与运行环境分离，同时利用层缓存加速构建。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>第一个阶段基于含 SDK 的镜像，用 AS 命名，例如 FROM golang AS build。</p></li><li><span class="sn">2</span><p>先复制依赖清单并安装依赖，再复制源码构建，使依赖层能被缓存复用。</p></li><li><span class="sn">3</span><p>最终阶段基于精简基础镜像，如 distroless、alpine 或 scratch。</p></li><li><span class="sn">4</span><p>用 COPY --from=build 只复制编译产物和必要文件，编译器与源码不进入最终镜像。</p></li><li><span class="sn">5</span><p>BuildKit 会跳过最终目标不依赖的阶段，也可用 --target 只构建某个阶段用于测试。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>构建阶段 (Build Stage)</dt><dd>Dockerfile 中一个 FROM 开始的段落，可用 AS 命名。</dd></div><div class="term"><dt>COPY --from</dt><dd>从其他阶段或镜像复制文件到当前阶段。</dd></div><div class="term"><dt>Distroless 镜像</dt><dd>只含应用与运行时依赖、没有 shell 和包管理器的基础镜像。</dd></div><div class="term"><dt>BuildKit</dt><dd>Docker 的现代构建后端，支持并行阶段、缓存挂载等特性。</dd></div><div class="term"><dt>层缓存 (Layer Cache)</dt><dd>未变化的指令复用之前的层结果，加速重建。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Go 应用多阶段 Dockerfile</span><em>text</em><button class="ccopy">复制</button></div><pre><code># syntax=docker/dockerfile:1
+# ---- 阶段 1：构建 ----
+FROM golang:1.23 AS build
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download            # 依赖层：go.mod 不变就命中缓存
+COPY . .
+RUN CGO_ENABLED=0 go build -o /out/app ./cmd/app
+
+# ---- 阶段 2：运行 ----
+FROM gcr.io/distroless/static-debian12:nonroot
+COPY --from=build /out/app /app
+USER nonroot:nonroot           # 以非 root 用户运行
+EXPOSE 8080
+ENTRYPOINT [&quot;/app&quot;]
+
+# 构建：docker build -t example/app:1.0 .
+# 只跑到构建阶段：docker build --target build .</code></pre></div><p class="cnote">编译器和源码留在 build 阶段，最终镜像只有静态二进制，且默认非 root。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见最终基础镜像</h3><div class="tw"><table><thead><tr><th>基础镜像</th><th>特点</th><th>注意点</th></tr></thead><tbody><tr><td data-h="基础镜像">scratch</td><td data-h="特点">完全空白，体积最小</td><td data-h="注意点">无 CA 证书、时区等，需要自行复制</td></tr><tr><td data-h="基础镜像">distroless</td><td data-h="特点">含运行时依赖，无 shell</td><td data-h="注意点">排障需用调试变体或临时容器</td></tr><tr><td data-h="基础镜像">alpine</td><td data-h="特点">体积小，有包管理器</td><td data-h="注意点">基于 musl libc，可能有兼容差异</td></tr><tr><td data-h="基础镜像">debian-slim</td><td data-h="特点">兼容性好</td><td data-h="注意点">体积相对较大</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>distroless/scratch</h4><p><b class="k-p">优点</b>攻击面最小，镜像小</p><p><b class="k-c">代价</b>无 shell，现场排障不便</p><p><b class="k-w">适用</b>生产环境的编译型语言服务</p></div><div class="trd"><h4>slim 发行版镜像</h4><p><b class="k-p">优点</b>兼容性好，便于调试</p><p><b class="k-c">代价</b>体积和漏洞面更大</p><p><b class="k-w">适用</b>解释型语言、依赖系统库</p></div><div class="trd"><h4>单阶段构建</h4><p><b class="k-p">优点</b>Dockerfile 简单</p><p><b class="k-c">代价</b>镜像含编译工具和源码</p><p><b class="k-w">适用</b>仅本地开发</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>先 COPY . . 再安装依赖，每次改代码都重装依赖。</p><p class="fix"><b>✓</b>先复制依赖清单安装，再复制源码。</p></li><li><p class="bad"><b>✗</b>最终阶段用 scratch，但程序需要 CA 证书访问 HTTPS 而失败。</p><p class="fix"><b>✓</b>复制证书文件，或改用 distroless/static。</p></li><li><p class="bad"><b>✗</b>在构建阶段用 ARG 传入密钥，被写入镜像历史。</p><p class="fix"><b>✓</b>使用 BuildKit 的 --mount=type=secret。</p></li><li><p class="bad"><b>✗</b>动态链接的二进制放进 scratch，运行时找不到 libc。</p><p class="fix"><b>✓</b>静态编译或选用含 libc 的基础镜像。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>最终镜像不含编译工具与源码</span></label></li><li><label><input type="checkbox"><span>依赖安装层位于源码复制之前</span></label></li><li><label><input type="checkbox"><span>使用 .dockerignore 排除无关文件</span></label></li><li><label><input type="checkbox"><span>构建密钥通过 secret 挂载</span></label></li><li><label><input type="checkbox"><span>基础镜像固定版本并定期更新</span></label></li><li><label><input type="checkbox"><span>最终阶段以非 root 运行</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>多阶段构建如何减小镜像体积？</summary><p>把编译器、构建工具、源码和中间产物留在前面的阶段，最终阶段从精简基础镜像开始，只复制运行所需的二进制或打包结果。最终镜像只包含最后阶段的层，前面阶段的内容不会被带入。</p></details><details class="iv"><summary>多阶段构建对安全有什么帮助？</summary><p>最终镜像不含 shell、包管理器和编译工具时，攻击者即使进入容器也缺少可用工具，镜像扫描出的漏洞也更少。配合非 root 用户和只读文件系统效果更好。</p></details><details class="iv"><summary>解释型语言能用多阶段构建吗？</summary><p>可以。例如 Node.js 在构建阶段安装全部依赖并打包，最终阶段只安装生产依赖或复制构建产物；Python 可在构建阶段编译依赖为 wheel 或虚拟环境，再复制到精简运行镜像中。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.docker.com/build/building/multi-stage/" target="_blank" rel="noopener"><b>Docker 文档：Multi-stage builds</b><small>docs.docker.com ↗</small></a></li><li><a href="https://docs.docker.com/build/building/best-practices/" target="_blank" rel="noopener"><b>Docker 文档：Building best practices</b><small>docs.docker.com ↗</small></a></li><li><a href="https://github.com/GoogleContainerTools/distroless" target="_blank" rel="noopener"><b>Distroless 镜像（GitHub）</b><small>github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="12-factor-apps.pro.html" rel="prev"><small>‹ 上一个</small><b>📦 十二要素云原生应用</b></a><a class="pn next" href="non-root-containers.pro.html" rel="next"><small>下一个 ›</small><b>🪪 非Root权限运行容器</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

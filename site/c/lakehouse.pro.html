@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="湖仓一体 (Iceberg / Delta Lake) 专业模式：湖仓一体（Lakehouse）是在对象存储上的开放文件（通常为 Parquet）之上，增加一层事务性表格式元数据，使数据湖具备数据仓库的 ACID 事务、模式管">
+<title>🎓 湖仓一体 (Iceberg / Delta Lake) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="lakehouse" data-answer="0" data-prev="multi-tenancy.pro.html" data-next="stream-processing.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#data">🔥 进阶 · 📊 数据工程</a><span>›</span><a href="lakehouse.html">湖仓一体 (Iceberg / Delta Lake)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.462 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="multi-tenancy.pro.html" rel="prev"><small>‹ 上一个</small><b>🏢 多租户架构</b></a><a class="pn next" href="stream-processing.pro.html" rel="next"><small>下一个 ›</small><b>🌊 流处理 (Flink)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🏞️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>📊 数据工程</span><span>⏱ 约 10 分钟</span></div>
+    <h1>湖仓一体 (Iceberg / Delta Lake)</h1><p class="en">Lakehouse</p>
+    <div class="hbtns"><a class="prosw back" href="lakehouse.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">湖仓一体（Lakehouse）是在对象存储上的开放文件（通常为 Parquet）之上，增加一层事务性表格式元数据，使数据湖具备数据仓库的 ACID 事务、模式管理、时间旅行和高效查询能力。主流开放表格式包括 Apache Iceberg、Delta Lake 和 Apache Hudi，多种计算引擎可共享同一份数据。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>数据文件以列式格式（如 Parquet）存放在对象存储，存储与计算分离，按量付费。</p></li><li><span class="sn">2</span><p>表格式维护元数据：Iceberg 用元数据文件、清单列表和清单文件描述快照；Delta Lake 用 _delta_log 中的提交日志与检查点。</p></li><li><span class="sn">3</span><p>写入先生成新数据文件，再通过原子操作提交新快照（如目录服务中的指针替换），读者看到完整的旧版或新版。</p></li><li><span class="sn">4</span><p>查询时引擎读元数据中的分区与列统计信息做文件裁剪，只扫描相关文件。</p></li><li><span class="sn">5</span><p>保留历史快照以支持时间旅行与回滚；通过快照过期和小文件合并等维护任务控制存储与性能。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>开放表格式 (Open Table Format)</dt><dd>定义如何用元数据把一组文件组织成可事务读写的表，如 Iceberg、Delta。</dd></div><div class="term"><dt>快照 (Snapshot)</dt><dd>表在某次提交后的完整状态，支持按快照 ID 或时间读取。</dd></div><div class="term"><dt>目录 (Catalog)</dt><dd>记录表名到当前元数据位置的服务，如 Hive Metastore、REST Catalog。</dd></div><div class="term"><dt>隐藏分区 (Hidden Partitioning)</dt><dd>Iceberg 由列值变换派生分区，查询无需显式写分区列。</dd></div><div class="term"><dt>合并 (Compaction)</dt><dd>把大量小文件重写为较大的文件，降低元数据和读取开销。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Spark SQL 操作 Iceberg 表</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- 假设已在 Spark 中配置名为 demo 的 Iceberg catalog
+CREATE TABLE demo.db.events (
+  id      BIGINT,
+  user_id BIGINT,
+  kind    STRING,
+  ts      TIMESTAMP
+) USING iceberg
+PARTITIONED BY (days(ts));          -- 隐藏分区
+
+INSERT INTO demo.db.events VALUES (1, 42, &#x27;click&#x27;, current_timestamp());
+
+-- 模式演进：加列只改元数据，不重写数据文件
+ALTER TABLE demo.db.events ADD COLUMN device STRING;
+
+-- 查看快照并时间旅行
+SELECT snapshot_id, committed_at FROM demo.db.events.snapshots;
+SELECT * FROM demo.db.events TIMESTAMP AS OF &#x27;2026-10-01 00:00:00&#x27;;
+
+-- 维护：合并小文件、过期旧快照
+CALL demo.system.rewrite_data_files(table =&gt; &#x27;db.events&#x27;);
+CALL demo.system.expire_snapshots(table =&gt; &#x27;db.events&#x27;,
+     older_than =&gt; TIMESTAMP &#x27;2026-09-01 00:00:00&#x27;);</code></pre></div><p class="cnote">时间旅行语法需 Spark 3.3 及以上；过期快照后，更早的时间点将无法回溯。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">数据湖、仓库与湖仓</h3><div class="tw"><table><thead><tr><th>维度</th><th>数据湖</th><th>数据仓库</th><th>湖仓一体</th></tr></thead><tbody><tr><td data-h="维度">存储</td><td data-h="数据湖">对象存储开放文件</td><td data-h="数据仓库">专有存储格式</td><td data-h="湖仓一体">对象存储开放文件</td></tr><tr><td data-h="维度">事务</td><td data-h="数据湖">无</td><td data-h="数据仓库">完整 ACID</td><td data-h="湖仓一体">表格式提供 ACID</td></tr><tr><td data-h="维度">引擎</td><td data-h="数据湖">多引擎直读文件</td><td data-h="数据仓库">通常绑定自家引擎</td><td data-h="湖仓一体">多引擎共享表</td></tr><tr><td data-h="维度">模式管理</td><td data-h="数据湖">读时解析，易漂移</td><td data-h="数据仓库">严格写时校验</td><td data-h="湖仓一体">支持演进与校验</td></tr><tr><td data-h="维度">数据类型</td><td data-h="数据湖">结构化与非结构化</td><td data-h="数据仓库">以结构化为主</td><td data-h="湖仓一体">两者兼顾</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>Apache Iceberg</h4><p><b class="k-p">优点</b>引擎中立，隐藏分区与分区演进</p><p><b class="k-c">代价</b>需要选型和运维 Catalog</p><p><b class="k-w">适用</b>多引擎共享、避免厂商锁定</p></div><div class="trd"><h4>Delta Lake</h4><p><b class="k-p">优点</b>与 Spark/Databricks 集成深</p><p><b class="k-c">代价</b>部分高级特性依赖特定生态</p><p><b class="k-w">适用</b>以 Spark 为主的团队</p></div><div class="trd"><h4>托管云数据仓库</h4><p><b class="k-p">优点</b>开箱即用，运维最少</p><p><b class="k-c">代价</b>存储格式与计费受厂商约束</p><p><b class="k-w">适用</b>团队小、追求简单的分析需求</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>流式高频小批写入，产生海量小文件</p><p class="fix"><b>✓</b>调大提交间隔并定期执行 rewrite_data_files 合并</p></li><li><p class="bad"><b>✗</b>从不过期快照，存储成本持续增长</p><p class="fix"><b>✓</b>按保留策略定期 expire_snapshots，并清理孤儿文件</p></li><li><p class="bad"><b>✗</b>多个写入方绕过 Catalog 直接改文件</p><p class="fix"><b>✓</b>所有写入都经表格式 API 提交，保证并发控制与原子性</p></li><li><p class="bad"><b>✗</b>按高基数字段分区导致分区过多</p><p class="fix"><b>✓</b>按时间等低基数维度分区，必要时用分桶变换</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>选定表格式与 Catalog，并验证多引擎兼容</span></label></li><li><label><input type="checkbox"><span>分区策略基于主要查询过滤条件</span></label></li><li><label><input type="checkbox"><span>定时任务覆盖合并、快照过期与孤儿文件清理</span></label></li><li><label><input type="checkbox"><span>快照保留期满足审计与回滚需求</span></label></li><li><label><input type="checkbox"><span>模式变更遵守兼容规则并有评审</span></label></li><li><label><input type="checkbox"><span>对象存储权限按表或命名空间最小授权</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>表格式如何在对象存储上实现 ACID？</summary><p>数据文件一旦写入不再修改；每次提交生成新的元数据描述新快照，最后通过原子操作切换当前元数据指针（Catalog 的比较并交换，或 Delta 日志的原子创建）。并发写入采用乐观并发：提交时发现冲突则基于新版本重试或失败。</p></details><details class="iv"><summary>为什么湖仓表要定期合并小文件？</summary><p>每个文件都有打开开销和元数据条目，海量小文件会让查询规划变慢、扫描效率下降、对象存储请求费用上升。合并把小文件重写为目标大小的文件，同时可按排序或聚簇优化数据布局。</p></details><details class="iv"><summary>时间旅行有哪些实际用途和限制？</summary><p>用途：误写后回滚、复现历史报表、机器学习训练集按快照固定版本、审计。限制：依赖快照保留，过期后无法回溯；保留越久存储成本越高；且时间旅行回看的是表状态，不等同于业务时间。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://iceberg.apache.org/docs/latest/" target="_blank" rel="noopener"><b>Apache Iceberg Documentation</b><small>iceberg.apache.org ↗</small></a></li><li><a href="https://docs.delta.io/latest/index.html" target="_blank" rel="noopener"><b>Delta Lake Documentation</b><small>docs.delta.io ↗</small></a></li><li><a href="https://www.cidrdb.org/cidr2021/papers/cidr2021_paper17.pdf" target="_blank" rel="noopener"><b>Armbrust et al.: Lakehouse (CIDR 2021)</b><small>cidrdb.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="multi-tenancy.pro.html" rel="prev"><small>‹ 上一个</small><b>🏢 多租户架构</b></a><a class="pn next" href="stream-processing.pro.html" rel="next"><small>下一个 ›</small><b>🌊 流处理 (Flink)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="文件上传验证 专业模式：文件上传验证（File Upload Validation）是在服务端对用户上传文件的类型、内容、大小、名称和存储方式进行多层校验与处置的安全实践。上传功能可能">
+<title>🎓 文件上传验证 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="file-upload-validation" data-answer="0" data-prev="brute-force-protection.pro.html" data-next="hsts.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#sec">🌊 中级 · 🛡️ 安全防线</a><span>›</span><a href="file-upload-validation.html">文件上传验证</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.118 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="brute-force-protection.pro.html" rel="prev"><small>‹ 上一个</small><b>🚧 暴力破解防护</b></a><a class="pn next" href="hsts.pro.html" rel="next"><small>下一个 ›</small><b>🚓 HTTP严格传输安全</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📦</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>文件上传验证</h1><p class="en">File Upload Validation</p>
+    <div class="hbtns"><a class="prosw back" href="file-upload-validation.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">文件上传验证（File Upload Validation）是在服务端对用户上传文件的类型、内容、大小、名称和存储方式进行多层校验与处置的安全实践。上传功能可能导致远程代码执行、存储型 XSS、路径穿越、恶意软件分发和资源耗尽，因此不能只依赖前端限制或客户端声明的 Content-Type。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>在网关与应用层同时限制请求体大小和单次文件数量，防止资源耗尽。</p></li><li><span class="sn">2</span><p>用扩展名白名单校验，并读取文件头魔数（Magic Bytes）确认真实类型。</p></li><li><span class="sn">3</span><p>丢弃用户提供的文件名，由服务端生成随机名称，防止路径穿越和覆盖。</p></li><li><span class="sn">4</span><p>存储在 Web 根目录之外或对象存储中，不赋予执行权限，下载时设置正确的 Content-Type 与 Content-Disposition。</p></li><li><span class="sn">5</span><p>对图片重新编码以去除嵌入内容，必要时进行病毒扫描，并对 SVG、HTML 等可执行内容特殊处理。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>魔数 (Magic Bytes)</dt><dd>文件开头标识格式的固定字节，如 PNG 以 89 50 4E 47 开头。</dd></div><div class="term"><dt>路径穿越 (Path Traversal)</dt><dd>利用 ../ 等在文件名中跳出目标目录。</dd></div><div class="term"><dt>Content-Disposition: attachment</dt><dd>强制浏览器下载而非内联渲染文件。</dd></div><div class="term"><dt>预签名 URL (Presigned URL)</dt><dd>限时限权的上传或下载地址，让客户端直传对象存储。</dd></div><div class="term"><dt>多语言文件 (Polyglot File)</dt><dd>同时是多种合法格式的文件，可绕过单一检查。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>FastAPI 上传多层校验</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import uuid
+from pathlib import Path
+from fastapi import FastAPI, UploadFile, HTTPException
+
+app = FastAPI()
+UPLOAD_DIR = Path(&quot;/srv/uploads&quot;)          # Web 根目录之外
+MAX_BYTES = 5 * 1024 * 1024
+SIGNATURES = {b&quot;\x89PNG\r\n\x1a\n&quot;: &quot;.png&quot;, b&quot;\xff\xd8\xff&quot;: &quot;.jpg&quot;,
+              b&quot;%PDF-&quot;: &quot;.pdf&quot;}
+
+@app.post(&quot;/upload&quot;)
+async def upload(file: UploadFile):
+    data = await file.read(MAX_BYTES + 1)
+    if len(data) &gt; MAX_BYTES:
+        raise HTTPException(413, &quot;文件过大&quot;)
+    # 按魔数判断真实类型，不信任文件名与 Content-Type
+    ext = next((e for sig, e in SIGNATURES.items() if data.startswith(sig)), None)
+    if ext is None:
+        raise HTTPException(415, &quot;不支持的文件类型&quot;)
+    name = f&quot;{uuid.uuid4().hex}{ext}&quot;       # 服务端生成文件名
+    (UPLOAD_DIR / name).write_bytes(data)
+    return {&quot;id&quot;: name}</code></pre></div><p class="cnote">演示大小、魔数、重命名、隔离存储四层；生产还应加病毒扫描并考虑图片重编码。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">上传风险与对策</h3><div class="tw"><table><thead><tr><th>风险</th><th>攻击方式</th><th>对策</th></tr></thead><tbody><tr><td data-h="风险">远程代码执行</td><td data-h="攻击方式">上传 .php 等脚本并访问执行</td><td data-h="对策">白名单、存储不可执行</td></tr><tr><td data-h="风险">存储型 XSS</td><td data-h="攻击方式">上传 HTML/SVG 被同域渲染</td><td data-h="对策">独立域名托管、attachment 下载</td></tr><tr><td data-h="风险">路径穿越</td><td data-h="攻击方式">文件名含 ../</td><td data-h="对策">服务端生成文件名</td></tr><tr><td data-h="风险">资源耗尽</td><td data-h="攻击方式">超大文件或解压炸弹</td><td data-h="对策">大小限制、解压前检查</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>客户端直传对象存储</h4><p><b class="k-p">优点</b>减轻服务器负载</p><p><b class="k-c">代价</b>校验需在上传后异步进行</p><p><b class="k-w">适用</b>大文件、高并发上传</p></div><div class="trd"><h4>经服务器中转校验</h4><p><b class="k-p">优点</b>落盘前完成校验</p><p><b class="k-c">代价</b>占用带宽和内存</p><p><b class="k-w">适用</b>小文件、强校验需求</p></div><div class="trd"><h4>独立域名托管用户文件</h4><p><b class="k-p">优点</b>隔离 Cookie 与同源风险</p><p><b class="k-c">代价</b>需额外域名配置</p><p><b class="k-w">适用</b>允许用户上传可渲染内容</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>只检查客户端传来的 Content-Type</p><p class="fix"><b>✓</b>该值由客户端控制，需读取文件内容判断</p></li><li><p class="bad"><b>✗</b>扩展名黑名单拦截 .php</p><p class="fix"><b>✓</b>使用白名单，黑名单易被 .phtml 等变体绕过</p></li><li><p class="bad"><b>✗</b>直接使用用户上传的原始文件名保存</p><p class="fix"><b>✓</b>生成随机文件名，原名仅作元数据并转义展示</p></li><li><p class="bad"><b>✗</b>允许上传 SVG 并在主域名内联展示</p><p class="fix"><b>✓</b>SVG 可含脚本，需清洗或作为附件下载</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>服务端限制文件大小与数量</span></label></li><li><label><input type="checkbox"><span>扩展名白名单 + 魔数校验</span></label></li><li><label><input type="checkbox"><span>服务端生成文件名</span></label></li><li><label><input type="checkbox"><span>存储位置不可执行、不在 Web 根</span></label></li><li><label><input type="checkbox"><span>下载响应设置 nosniff 与合适的 Disposition</span></label></li><li><label><input type="checkbox"><span>高风险场景接入病毒扫描</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么不能只靠扩展名或 Content-Type？</summary><p>两者都由客户端决定，攻击者可以随意伪造。扩展名白名单仍是必要的一层，但必须结合文件内容的魔数检测；对于图片等格式，重新解码再编码能进一步去除隐藏的恶意载荷。</p></details><details class="iv"><summary>用户上传的文件为什么建议放在独立域名？</summary><p>如果用户上传的 HTML、SVG 在主域名下被浏览器渲染，其中的脚本就会以主站身份执行，能访问主站 Cookie 和接口，形成存储型 XSS。使用独立域名（不共享 Cookie 的源）托管，可把这种风险隔离出去。</p></details><details class="iv"><summary>直传对象存储时如何校验？</summary><p>后端签发限定路径、大小、类型和有效期的预签名 URL；文件先上传到隔离区，由事件触发的后台任务检查魔数、扫描病毒、处理图片，通过后再移到正式位置并标记可用，未通过则删除。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html" target="_blank" rel="noopener"><b>OWASP File Upload Cheat Sheet</b><small>cheatsheetseries.owasp.org ↗</small></a></li><li><a href="https://cwe.mitre.org/data/definitions/434.html" target="_blank" rel="noopener"><b>CWE-434: Unrestricted Upload of File with Dangerous Type</b><small>cwe.mitre.org ↗</small></a></li><li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition" target="_blank" rel="noopener"><b>MDN: Content-Disposition</b><small>developer.mozilla.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="brute-force-protection.pro.html" rel="prev"><small>‹ 上一个</small><b>🚧 暴力破解防护</b></a><a class="pn next" href="hsts.pro.html" rel="next"><small>下一个 ›</small><b>🚓 HTTP严格传输安全</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

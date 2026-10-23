@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="日志轮转与清理 专业模式：日志轮转（Log Rotation）是按大小或时间把正在写入的日志归档成新文件，并压缩、限量保留、删除过期文件的机制。它属于主机与运行时的运维层，防止日志写满磁">
+<title>🎓 日志轮转与清理 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="log-rotation" data-answer="0" data-prev="kubernetes.pro.html" data-next="distributed-tracing.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#devops">🔮 高级 · 🔭 可观测与交付</a><span>›</span><a href="log-rotation.html">日志轮转与清理</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.316 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="kubernetes.pro.html" rel="prev"><small>‹ 上一个</small><b>☸️ Kubernetes (K8s)</b></a><a class="pn next" href="distributed-tracing.pro.html" rel="next"><small>下一个 ›</small><b>🛰️ 分布式链路追踪</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🎞️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>日志轮转与清理</h1><p class="en">Log Rotation</p>
+    <div class="hbtns"><a class="prosw back" href="log-rotation.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">日志轮转（Log Rotation）是按大小或时间把正在写入的日志归档成新文件，并压缩、限量保留、删除过期文件的机制。它属于主机与运行时的运维层，防止日志写满磁盘，并满足保留与合规要求。常见实现有 logrotate、journald 容量限制、Docker 日志驱动选项和 kubelet 容器日志轮转。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>轮转工具按计划检查日志文件，满足时间（每日、每周）或大小阈值即触发。</p></li><li><span class="sn">2</span><p>把当前文件重命名为带序号或日期的归档文件，再创建新文件供程序继续写入。</p></li><li><span class="sn">3</span><p>程序仍持有旧文件句柄时，需要发信号让其重新打开文件，或使用复制后截断。</p></li><li><span class="sn">4</span><p>旧归档按策略进行压缩，超过保留份数或保留天数的归档文件会被自动删除。</p></li><li><span class="sn">5</span><p>在容器环境中，应用写 stdout，由运行时或 kubelet 负责轮转，再由采集器发送到集中日志系统。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>logrotate</dt><dd>Linux 常用的日志轮转工具，通过配置文件定义规则。</dd></div><div class="term"><dt>copytruncate</dt><dd>先复制日志再截断原文件，适用于无法重开文件的程序，可能丢少量日志。</dd></div><div class="term"><dt>postrotate 脚本</dt><dd>轮转后执行的命令，常用于通知进程重新打开日志。</dd></div><div class="term"><dt>json-file 驱动</dt><dd>Docker 默认日志驱动，需配置 max-size 和 max-file 才会轮转。</dd></div><div class="term"><dt>保留策略 (Retention Policy)</dt><dd>日志保存多长时间或多少份，兼顾排查、成本与合规。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>logrotate 配置示例</span><em>text</em><button class="ccopy">复制</button></div><pre><code># /etc/logrotate.d/myapp
+/var/log/myapp/*.log {
+    daily                # 每天轮转
+    maxsize 100M         # 不到一天但超过 100M 也轮转
+    rotate 14            # 保留 14 份
+    compress             # gzip 压缩归档
+    delaycompress        # 最近一份暂不压缩，便于查看
+    missingok            # 文件不存在不报错
+    notifempty           # 空文件不轮转
+    create 0640 myapp myapp
+    sharedscripts
+    postrotate
+        # 通知进程重新打开日志文件（进程需支持 SIGHUP 或 USR1）
+        systemctl kill -s HUP myapp.service
+    endscript
+}</code></pre></div><p class="cnote">轮转后通过信号让进程重开文件；不支持重开的程序可改用 copytruncate。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">不同环境的轮转方式</h3><div class="tw"><table><thead><tr><th>环境</th><th>默认行为</th><th>配置要点</th></tr></thead><tbody><tr><td data-h="环境">传统主机文件日志</td><td data-h="默认行为">需自行配置</td><td data-h="配置要点">logrotate 规则与 postrotate</td></tr><tr><td data-h="环境">systemd-journald</td><td data-h="默认行为">按磁盘占用自动限制</td><td data-h="配置要点">journald.conf 中 SystemMaxUse 等</td></tr><tr><td data-h="环境">Docker json-file</td><td data-h="默认行为">默认不轮转</td><td data-h="配置要点">log-opts 设置 max-size、max-file</td></tr><tr><td data-h="环境">Kubernetes</td><td data-h="默认行为">kubelet 轮转容器日志</td><td data-h="配置要点">containerLogMaxSize、containerLogMaxFiles</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>按时间轮转</h4><p><b class="k-p">优点</b>归档按日期，便于查找</p><p><b class="k-c">代价</b>突发日志可能单文件过大</p><p><b class="k-w">适用</b>日志量稳定</p></div><div class="trd"><h4>按大小轮转</h4><p><b class="k-p">优点</b>磁盘占用可预测</p><p><b class="k-c">代价</b>文件时间范围不规则</p><p><b class="k-w">适用</b>日志量波动大</p></div><div class="trd"><h4>本地少量保留加集中日志</h4><p><b class="k-p">优点</b>本地磁盘压力小，检索方便</p><p><b class="k-c">代价</b>依赖日志采集链路</p><p><b class="k-w">适用</b>多实例和容器环境</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>Docker 使用默认 json-file 不设上限，容器日志写满宿主机磁盘。</p><p class="fix"><b>✓</b>在 daemon.json 或运行参数中设置 max-size 与 max-file。</p></li><li><p class="bad"><b>✗</b>轮转后没通知进程，程序继续写已被重命名或删除的文件。</p><p class="fix"><b>✓</b>用 postrotate 发信号重开，或改用 copytruncate。</p></li><li><p class="bad"><b>✗</b>删除了仍被进程打开的大日志，磁盘空间不释放。</p><p class="fix"><b>✓</b>用 lsof 找到持有者并重启或截断，规范轮转流程。</p></li><li><p class="bad"><b>✗</b>日志中含个人敏感信息且保留过久。</p><p class="fix"><b>✓</b>脱敏，并按合规要求设置保留期。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有日志路径都有轮转规则</span></label></li><li><label><input type="checkbox"><span>容器运行时设置了日志大小上限</span></label></li><li><label><input type="checkbox"><span>轮转后进程能正确写入新文件</span></label></li><li><label><input type="checkbox"><span>保留期满足排查与合规要求</span></label></li><li><label><input type="checkbox"><span>磁盘使用率有告警</span></label></li><li><label><input type="checkbox"><span>日志集中采集，本地只做缓冲</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>copytruncate 和 create 模式有何区别？</summary><p>create 模式重命名旧文件并新建文件，需要程序重新打开日志，否则会继续写旧文件；copytruncate 复制内容后截断原文件，程序无需配合，但复制与截断之间写入的日志可能丢失。能发信号重开时优先 create。</p></details><details class="iv"><summary>为什么删了日志文件磁盘空间还是没释放？</summary><p>在 Linux 中，文件被删除后若仍有进程持有打开的句柄，数据块不会释放。可用 lsof 查看已删除但打开的文件，让进程重开文件或重启，规范地通过轮转工具处理。</p></details><details class="iv"><summary>容器化后还需要关心日志轮转吗？</summary><p>需要。应用应写 stdout/stderr，但运行时仍会把日志落到节点磁盘，Docker json-file 默认不轮转，kubelet 有自己的大小和份数配置。同时需要采集器把日志发到集中系统，避免节点磁盘成为唯一存储。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://man7.org/linux/man-pages/man8/logrotate.8.html" target="_blank" rel="noopener"><b>logrotate(8) 手册页</b><small>man7.org ↗</small></a></li><li><a href="https://docs.docker.com/engine/logging/drivers/json-file/" target="_blank" rel="noopener"><b>Docker 文档：JSON File logging driver</b><small>docs.docker.com ↗</small></a></li><li><a href="https://kubernetes.io/docs/concepts/cluster-administration/logging/" target="_blank" rel="noopener"><b>Kubernetes：Logging Architecture</b><small>kubernetes.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="kubernetes.pro.html" rel="prev"><small>‹ 上一个</small><b>☸️ Kubernetes (K8s)</b></a><a class="pn next" href="distributed-tracing.pro.html" rel="next"><small>下一个 ›</small><b>🛰️ 分布式链路追踪</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

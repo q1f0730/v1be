@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="并发与并行 专业模式：并发（Concurrency）是指程序结构上能同时处理多个任务，任务在时间上交错推进，单核也能实现；并行（Parallelism）是指多个任务在同一时刻真正同时">
+<title>🎓 并发与并行 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="concurrency-vs-parallelism" data-answer="0" data-prev="processes-and-threads.pro.html" data-next="cache-aside.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#base">🔮 高级 · 💻 电脑与网页地基</a><span>›</span><a href="concurrency-vs-parallelism.html">并发与并行</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.351 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="processes-and-threads.pro.html" rel="prev"><small>‹ 上一个</small><b>🧵 进程与线程</b></a><a class="pn next" href="cache-aside.pro.html" rel="next"><small>下一个 ›</small><b>🗄️ 旁路缓存 (Cache-Aside)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🤹</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>💻 电脑与网页地基</span><span>⏱ 约 10 分钟</span></div>
+    <h1>并发与并行</h1><p class="en">Concurrency vs Parallelism</p>
+    <div class="hbtns"><a class="prosw back" href="concurrency-vs-parallelism.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">并发（Concurrency）是指程序结构上能同时处理多个任务，任务在时间上交错推进，单核也能实现；并行（Parallelism）是指多个任务在同一时刻真正同时执行，需要多核或多机。Rob Pike 的概括是：并发关乎“处理”多件事，并行关乎“执行”多件事。区分二者是选择异步、多线程还是多进程等优化手段的前提。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>先判断瓶颈：任务大部分时间在等待 I/O（网络、磁盘、数据库）还是在占用 CPU 计算。</p></li><li><span class="sn">2</span><p>I/O 密集任务适合并发：在等待期间切换到其他任务，常用事件循环（async/await）或线程实现。</p></li><li><span class="sn">3</span><p>CPU 密集任务需要并行：把计算拆分到多个核心或机器上同时执行，如多进程、线程池（无 GIL 语言）或分布式计算。</p></li><li><span class="sn">4</span><p>并行加速受阿姆达尔定律限制：程序中不可并行的串行部分决定了加速比的上限。</p></li><li><span class="sn">5</span><p>两者可以组合：例如多个工作进程（并行），每个进程内运行异步事件循环处理大量连接（并发）。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>I/O 密集 (I/O-bound)</dt><dd>耗时主要在等待外部输入输出的任务。</dd></div><div class="term"><dt>CPU 密集 (CPU-bound)</dt><dd>耗时主要在计算、受 CPU 速度限制的任务。</dd></div><div class="term"><dt>事件循环 (Event Loop)</dt><dd>单线程调度大量异步任务、在 I/O 就绪时恢复执行的机制。</dd></div><div class="term"><dt>阿姆达尔定律 (Amdahl&#x27;s Law)</dt><dd>加速比上限由程序中串行部分所占比例决定。</dd></div><div class="term"><dt>协程 (Coroutine)</dt><dd>可在等待点暂停并恢复的函数，是异步并发的基础单元。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>asyncio 并发 vs 多进程并行</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import asyncio, time
+from concurrent.futures import ProcessPoolExecutor
+
+async def fake_io(i):          # 模拟网络请求：大部分时间在等待
+    await asyncio.sleep(1)
+    return i
+
+async def concurrent_io():
+    t = time.perf_counter()
+    await asyncio.gather(*(fake_io(i) for i in range(100)))
+    print(f&quot;100 个 I/O 任务并发：{time.perf_counter() - t:.1f}s&quot;)  # 约 1 秒
+
+def crunch(n):                 # CPU 密集：只有多核并行能加速
+    return sum(i * i for i in range(n))
+
+if __name__ == &quot;__main__&quot;:
+    asyncio.run(concurrent_io())
+    t = time.perf_counter()
+    with ProcessPoolExecutor() as ex:
+        list(ex.map(crunch, [3_000_000] * 8))
+    print(f&quot;8 个计算任务并行：{time.perf_counter() - t:.1f}s&quot;)</code></pre></div><p class="cnote">100 个各等 1 秒的任务并发只需约 1 秒，单线程即可；计算任务则要靠多进程使用多核。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">并发与并行对比</h3><div class="tw"><table><thead><tr><th>维度</th><th>并发</th><th>并行</th></tr></thead><tbody><tr><td data-h="维度">核心含义</td><td data-h="并发">交错推进多个任务</td><td data-h="并行">同一时刻同时执行</td></tr><tr><td data-h="维度">硬件要求</td><td data-h="并发">单核即可</td><td data-h="并行">多核或多机</td></tr><tr><td data-h="维度">适合瓶颈</td><td data-h="并发">I/O 等待</td><td data-h="并行">CPU 计算</td></tr><tr><td data-h="维度">典型手段</td><td data-h="并发">async/await、线程</td><td data-h="并行">多进程、GPU、分布式</td></tr><tr><td data-h="维度">主要风险</td><td data-h="并发">共享状态竞态、阻塞事件循环</td><td data-h="并行">通信与同步开销、负载不均</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>异步并发（asyncio、Node.js）</h4><p><b class="k-p">优点</b>单线程即可处理大量连接，开销低</p><p><b class="k-c">代价</b>CPU 密集代码会阻塞全部任务</p><p><b class="k-w">适用</b>网络服务、爬虫、调用 LLM API</p></div><div class="trd"><h4>多线程</h4><p><b class="k-p">优点</b>编程模型直观，可共享内存</p><p><b class="k-c">代价</b>竞态、死锁；CPython 受 GIL 限制</p><p><b class="k-w">适用</b>阻塞式 I/O 库、GUI</p></div><div class="trd"><h4>多进程 / 分布式并行</h4><p><b class="k-p">优点</b>真正利用多核或多机</p><p><b class="k-c">代价</b>通信与序列化开销</p><p><b class="k-w">适用</b>数据处理、模型推理、编码转码</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>在 async 函数里调用阻塞的同步库</p><p class="fix"><b>✓</b>使用异步客户端，或用 asyncio.to_thread 放到线程中</p></li><li><p class="bad"><b>✗</b>CPU 密集任务用 asyncio 期望变快</p><p class="fix"><b>✓</b>用多进程或把计算交给原生扩展</p></li><li><p class="bad"><b>✗</b>无限制并发请求，触发限流或耗尽连接</p><p class="fix"><b>✓</b>用信号量或连接池控制并发上限</p></li><li><p class="bad"><b>✗</b>并行任务粒度过细，调度开销超过收益</p><p class="fix"><b>✓</b>合并为较大块，减少进程间通信次数</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>已确认瓶颈是 I/O 还是 CPU</span></label></li><li><label><input type="checkbox"><span>异步代码中无阻塞调用</span></label></li><li><label><input type="checkbox"><span>并发数有上限控制</span></label></li><li><label><input type="checkbox"><span>并行任务粒度合理</span></label></li><li><label><input type="checkbox"><span>用基准测试验证优化效果</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>并发和并行能否同时存在？</summary><p>可以，而且很常见。例如 Web 服务器启动与 CPU 核数相同的工作进程实现并行，每个进程内用事件循环并发处理数千个连接。并发是程序结构，并行是执行方式，二者正交。</p></details><details class="iv"><summary>批量调用 LLM API 应该用并发还是并行？</summary><p>调用 API 时程序主要在等待网络响应，是典型的 I/O 密集任务，使用 asyncio 等异步并发即可显著提速，无需多进程。同时要用信号量限制并发数，遵守速率限制并处理 429 重试。</p></details><details class="iv"><summary>阿姆达尔定律说明了什么？</summary><p>若程序中比例为 p 的部分可并行，使用 N 个处理器的加速比为 1/((1-p)+p/N)。即使无限增加处理器，加速比也不超过 1/(1-p)。例如 90% 可并行，最多加速 10 倍。优化应先减少串行部分。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://go.dev/blog/waza-talk" target="_blank" rel="noopener"><b>Rob Pike：Concurrency is not Parallelism</b><small>go.dev ↗</small></a></li><li><a href="https://docs.python.org/3/library/asyncio.html" target="_blank" rel="noopener"><b>Python：asyncio</b><small>docs.python.org ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Amdahl%27s_law" target="_blank" rel="noopener"><b>Wikipedia: Amdahl&#x27;s law</b><small>en.wikipedia.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="processes-and-threads.pro.html" rel="prev"><small>‹ 上一个</small><b>🧵 进程与线程</b></a><a class="pn next" href="cache-aside.pro.html" rel="next"><small>下一个 ›</small><b>🗄️ 旁路缓存 (Cache-Aside)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

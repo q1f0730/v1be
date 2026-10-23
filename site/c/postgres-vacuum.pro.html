@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="PostgreSQL空间回收 专业模式：VACUUM 是 PostgreSQL 的空间回收与维护机制。由于 MVCC 下 UPDATE/DELETE 不原地修改而是留下旧版本行（死元组），VACUUM">
+<title>🎓 PostgreSQL空间回收 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="postgres-vacuum" data-answer="0" data-prev="hot-partitions.pro.html" data-next="change-data-capture.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#db">🔥 进阶 · 🗄️ 数据库</a><span>›</span><a href="postgres-vacuum.html">PostgreSQL空间回收</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.418 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="hot-partitions.pro.html" rel="prev"><small>‹ 上一个</small><b>🔥 热点分区 / 数据倾斜</b></a><a class="pn next" href="change-data-capture.pro.html" rel="next"><small>下一个 ›</small><b>📸 变更数据捕获 (CDC)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🧹</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>PostgreSQL空间回收</h1><p class="en">Postgres VACUUM</p>
+    <div class="hbtns"><a class="prosw back" href="postgres-vacuum.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">VACUUM 是 PostgreSQL 的空间回收与维护机制。由于 MVCC 下 UPDATE/DELETE 不原地修改而是留下旧版本行（死元组），VACUUM 负责标记这些空间可复用、更新可见性映射和统计信息，并冻结旧事务 ID 以防事务 ID 回卷。日常由 autovacuum 后台进程自动执行。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>MVCC 写入：UPDATE 生成新行版本，旧版本在所有事务都不再需要前不能清理。</p></li><li><span class="sn">2</span><p>判定可回收：VACUUM 检查死元组是否已对所有活跃事务不可见，可见则标记空间可复用。</p></li><li><span class="sn">3</span><p>更新元数据：维护空闲空间映射（FSM）和可见性映射（VM），后者支撑仅索引扫描。</p></li><li><span class="sn">4</span><p>冻结事务 ID：把足够旧的行标记为冻结，防止 32 位事务 ID 回卷导致数据可见性错误。</p></li><li><span class="sn">5</span><p>自动触发：死元组超过阈值（默认 50 行 + 表行数 20%）时 autovacuum 自动执行。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>死元组 (Dead Tuple)</dt><dd>已被更新或删除、对所有事务都不可见的旧行版本。</dd></div><div class="term"><dt>表膨胀 (Bloat)</dt><dd>死元组和空闲空间过多导致表和索引体积远大于实际数据。</dd></div><div class="term"><dt>事务 ID 回卷 (XID Wraparound)</dt><dd>32 位事务 ID 耗尽循环，不冻结旧行会导致数据被误判不可见。</dd></div><div class="term"><dt>VACUUM FULL</dt><dd>重写整张表彻底回收空间，期间持有排他锁阻塞读写。</dd></div><div class="term"><dt>可见性映射 (Visibility Map)</dt><dd>标记哪些页全部可见，加速仅索引扫描并减少 VACUUM 工作。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>排查与调优 VACUUM</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- 1) 哪些表死元组最多、上次 autovacuum 是什么时候
+SELECT relname, n_live_tup, n_dead_tup, last_autovacuum
+FROM pg_stat_user_tables
+ORDER BY n_dead_tup DESC LIMIT 10;
+
+-- 2) 是否有长事务阻止清理（xact_start 很早的会话）
+SELECT pid, state, xact_start, left(query, 60)
+FROM pg_stat_activity
+WHERE xact_start IS NOT NULL ORDER BY xact_start LIMIT 5;
+
+-- 3) 各数据库距离回卷还有多远（年龄越大越危险）
+SELECT datname, age(datfrozenxid) FROM pg_database ORDER BY 2 DESC;
+
+-- 4) 大表单独调低触发比例，让 autovacuum 更早更频繁运行
+ALTER TABLE orders SET (autovacuum_vacuum_scale_factor = 0.02);
+
+-- 5) 手动执行（不锁表读写），并更新统计信息
+VACUUM (VERBOSE, ANALYZE) orders;</code></pre></div><p class="cnote">先看死元组和长事务，再针对大表调 autovacuum；普通 VACUUM 不阻塞读写。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">VACUUM 变体对比</h3><div class="tw"><table><thead><tr><th>命令</th><th>锁级别</th><th>效果</th></tr></thead><tbody><tr><td data-h="命令">VACUUM</td><td data-h="锁级别">不阻塞读写</td><td data-h="效果">标记空间可复用，一般不缩小文件</td></tr><tr><td data-h="命令">VACUUM ANALYZE</td><td data-h="锁级别">不阻塞读写</td><td data-h="效果">同上并更新优化器统计信息</td></tr><tr><td data-h="命令">VACUUM FULL</td><td data-h="锁级别">排他锁，阻塞读写</td><td data-h="效果">重写表，空间归还操作系统</td></tr><tr><td data-h="命令">pg_repack（扩展）</td><td data-h="锁级别">仅短暂锁</td><td data-h="效果">在线重建表与索引，消除膨胀</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>调优 autovacuum</h4><p><b class="k-p">优点</b>持续自动，避免膨胀积累</p><p><b class="k-c">代价</b>需理解参数，过激会占 I/O</p><p><b class="k-w">适用</b>所有生产库的默认做法</p></div><div class="trd"><h4>定期手动 VACUUM</h4><p><b class="k-p">优点</b>可安排在低峰时段</p><p><b class="k-c">代价</b>间隔内仍会膨胀，依赖运维</p><p><b class="k-w">适用</b>批量导入或大批量删除后</p></div><div class="trd"><h4>VACUUM FULL / pg_repack</h4><p><b class="k-p">优点</b>彻底回收已膨胀空间</p><p><b class="k-c">代价</b>FULL 锁表；repack 需额外空间</p><p><b class="k-w">适用</b>已严重膨胀需要缩表</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>关闭 autovacuum 以减少 I/O 抖动</p><p class="fix"><b>✓</b>保持开启，按表调参数，必要时提高 autovacuum 的 I/O 配额</p></li><li><p class="bad"><b>✗</b>长时间空闲在事务中的连接，导致死元组无法清理</p><p class="fix"><b>✓</b>设置 idle_in_transaction_session_timeout，并监控长事务</p></li><li><p class="bad"><b>✗</b>生产高峰直接执行 VACUUM FULL</p><p class="fix"><b>✓</b>评估锁影响，优先用 pg_repack 在线处理</p></li><li><p class="bad"><b>✗</b>忽视事务 ID 年龄，直到数据库进入保护性只读</p><p class="fix"><b>✓</b>监控 age(datfrozenxid)，确保冻结持续进行</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>autovacuum 已开启</span></label></li><li><label><input type="checkbox"><span>大表单独设置触发比例</span></label></li><li><label><input type="checkbox"><span>监控死元组与表膨胀</span></label></li><li><label><input type="checkbox"><span>监控长事务和空闲事务</span></label></li><li><label><input type="checkbox"><span>监控事务 ID 年龄</span></label></li><li><label><input type="checkbox"><span>复制槽未长期滞留</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么 PostgreSQL 需要 VACUUM？</summary><p>MVCC 实现中更新和删除都保留旧版本以支持并发读，旧版本不会自动消失。VACUUM 在确认没有事务需要后回收这些空间，同时更新可见性映射和冻结旧事务 ID，后者关系到数据正确性。</p></details><details class="iv"><summary>表一直膨胀，autovacuum 也在跑，可能是什么原因？</summary><p>常见是长事务、空闲事务、滞留的复制槽或备库 hot_standby_feedback 拖住了清理边界；也可能是大表 20% 比例阈值过高、vacuum 速度受 cost limit 限制跟不上写入速度。</p></details><details class="iv"><summary>VACUUM 和 VACUUM FULL 怎么选？</summary><p>日常用普通 VACUUM，不阻塞读写，空间留给表内复用。只有表已严重膨胀且需要把空间还给操作系统时才考虑 FULL，它会重写表并持有排他锁；生产上常用 pg_repack 替代。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.postgresql.org/docs/current/routine-vacuuming.html" target="_blank" rel="noopener"><b>PostgreSQL: Routine Vacuuming</b><small>postgresql.org ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/sql-vacuum.html" target="_blank" rel="noopener"><b>PostgreSQL: VACUUM</b><small>postgresql.org ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/runtime-config-autovacuum.html" target="_blank" rel="noopener"><b>PostgreSQL: Automatic Vacuuming 参数</b><small>postgresql.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="hot-partitions.pro.html" rel="prev"><small>‹ 上一个</small><b>🔥 热点分区 / 数据倾斜</b></a><a class="pn next" href="change-data-capture.pro.html" rel="next"><small>下一个 ›</small><b>📸 变更数据捕获 (CDC)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

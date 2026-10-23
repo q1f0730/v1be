@@ -1,0 +1,3472 @@
+[
+ {
+  "slug": "open-weight-models",
+  "def": "开放权重模型（Open-Weight Model）指公开发布训练后参数文件、允许下载并自行推理部署的模型，如 Llama、Qwen、DeepSeek、Mistral 等系列。它属于模型供给层：与只能经 API 访问的闭源模型相对。注意「开放权重」不等于「开源」：训练数据与训练代码常不公开，使用条款由各自许可证决定。",
+  "how": [
+   "厂商完成预训练与对齐后，把权重（通常为 safetensors 等格式）与分词器、配置文件发布到 Hugging Face 等平台。",
+   "用户按许可证下载权重，选择推理方式：transformers 直接加载、vLLM 等推理引擎服务化，或 Ollama/llama.cpp 跑量化版本。",
+   "显存需求约等于参数量 × 每参数字节数（FP16 为 2 字节）再加 KV Cache 与运行开销，决定能否在本机运行。",
+   "可在本地做量化、LoRA 微调、蒸馏等二次加工，并通过 OpenAI 兼容接口暴露给上层应用或编程 Agent。",
+   "数据全程留在自有环境，适合合规敏感场景；代价是运维、硬件与效果调优都由自己承担。"
+  ],
+  "terms": [
+   {
+    "t": "权重 (Weights)",
+    "d": "训练得到的模型参数张量，推理时加载到显存或内存参与计算。"
+   },
+   {
+    "t": "开放权重 vs 开源 (Open Weights vs Open Source)",
+    "d": "前者只公开参数；按 OSI 定义，开源 AI 还需提供足够的数据信息与代码。"
+   },
+   {
+    "t": "社区许可证 (Community License)",
+    "d": "如 Llama 系列的自定义许可，可能限制用户规模、用途或要求署名。"
+   },
+   {
+    "t": "Instruct / Base 版本",
+    "d": "Base 只做过预训练续写；Instruct 经指令微调，适合对话与工具调用。"
+   },
+   {
+    "t": "safetensors",
+    "d": "Hugging Face 推出的张量存储格式，加载时不执行任意代码，比 pickle 安全。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "用 transformers 本地推理",
+   "src": "# pip install transformers torch accelerate\nfrom transformers import AutoModelForCausalLM, AutoTokenizer\n\nmodel_id = \"Qwen/Qwen2.5-0.5B-Instruct\"  # 小模型，CPU 也能跑\ntok = AutoTokenizer.from_pretrained(model_id)\nmodel = AutoModelForCausalLM.from_pretrained(\n    model_id, torch_dtype=\"auto\", device_map=\"auto\"\n)\n\nmessages = [{\"role\": \"user\", \"content\": \"用一句话解释什么是 API\"}]\n# 用模型自带的对话模板拼接提示，避免格式错位\ntext = tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)\ninputs = tok([text], return_tensors=\"pt\").to(model.device)\n\nout = model.generate(**inputs, max_new_tokens=128)\n# 只解码新生成的部分\nprint(tok.decode(out[0][inputs.input_ids.shape[1]:], skip_special_tokens=True))",
+   "note": "权重首次运行时从 Hugging Face 下载并缓存；对话模型必须套用其 chat template。"
+  },
+  "table": {
+   "title": "常见部署方式对比",
+   "head": [
+    "方式",
+    "典型工具",
+    "适合场景"
+   ],
+   "rows": [
+    [
+     "库内直接加载",
+     "transformers",
+     "实验、微调、研究"
+    ],
+    [
+     "本地桌面运行",
+     "Ollama、LM Studio",
+     "个人电脑、离线使用"
+    ],
+    [
+     "高吞吐服务化",
+     "vLLM、SGLang",
+     "多用户线上推理"
+    ],
+    [
+     "托管推理",
+     "云厂商/推理平台",
+     "不想管 GPU 的团队"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "自部署开放权重",
+    "pros": "数据可控、无按量费用、可微调",
+    "cons": "需 GPU 与运维，效果调优靠自己",
+    "when": "合规敏感、调用量大且稳定"
+   },
+   {
+    "opt": "闭源商业 API",
+    "pros": "能力通常更强，开箱即用",
+    "cons": "数据出域、按 Token 计费、受限流",
+    "when": "早期验证、追求最强效果"
+   },
+   {
+    "opt": "托管的开放权重模型",
+    "pros": "免运维又能换模型",
+    "cons": "数据仍出域，平台锁定",
+    "when": "想用开放模型但无 GPU"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把「开放权重」当成可随意商用",
+    "fix": "逐条读许可证：用户规模、用途限制、署名与再分发要求"
+   },
+   {
+    "bad": "只按参数量估显存，忽略 KV Cache 与长上下文",
+    "fix": "按精度算权重占用后，再为上下文和并发预留余量"
+   },
+   {
+    "bad": "下载 Base 版本却拿来做对话",
+    "fix": "对话与工具调用选 Instruct/Chat 版本，并使用官方模板"
+   },
+   {
+    "bad": "从来路不明的仓库下载 pickle 权重",
+    "fix": "优先官方组织与 safetensors 格式，核对哈希"
+   }
+  ],
+  "checklist": [
+   "许可证允许当前用途与用户规模",
+   "已按精度与上下文长度估算显存",
+   "选用 Instruct 版本并套用 chat template",
+   "权重来源为官方组织，格式为 safetensors",
+   "推理服务有鉴权，不直接暴露公网",
+   "与闭源基线做过同任务效果对比"
+  ],
+  "interview": [
+   {
+    "q": "开放权重模型和开源模型有什么区别？",
+    "a": "开放权重只公开参数，用户可推理和微调；开源（按 OSI 的开源 AI 定义）还要求公开足够的训练数据信息和训练/推理代码，并给予使用、研究、修改、分享自由。很多模型附带限制性许可证，因此只能称开放权重。"
+   },
+   {
+    "q": "什么情况下你会建议自部署而不是调 API？",
+    "a": "数据不能出域的合规场景；调用量大且稳定、按量计费明显更贵；需要深度定制（微调、约束解码）；需要离线或低延迟内网部署。反之，量小、追求最强效果、团队无 GPU 运维能力时用 API 更划算。"
+   },
+   {
+    "q": "7B 模型 FP16 推理大致要多少显存？",
+    "a": "权重约 7×10⁹×2 字节≈14 GB，再加 KV Cache（随上下文长度和并发增长）与框架开销，单卡通常需 16 GB 以上较稳。4-bit 量化后权重约 4 GB 左右，可在消费级显卡运行，但有一定精度损失。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Hugging Face Transformers 文档",
+    "url": "https://huggingface.co/docs/transformers/index"
+   },
+   {
+    "title": "OSI：The Open Source AI Definition",
+    "url": "https://opensource.org/ai/open-source-ai-definition"
+   },
+   {
+    "title": "safetensors 文档",
+    "url": "https://huggingface.co/docs/safetensors/index"
+   }
+  ]
+ },
+ {
+  "slug": "knowledge-cutoff",
+  "def": "知识截止日期（Knowledge / Training Data Cutoff）是模型训练语料所覆盖的最晚时间点。模型参数里只编码了此前的信息，对之后发布的库版本、API 变更、新闻一无所知，却可能以旧知识自信作答。它是模型能力边界的一部分，需在应用层通过检索、工具或上下文注入弥补。",
+  "how": [
+   "厂商在某时间点冻结训练语料，此后的数据不会进入预训练；不少厂商会在模型文档中标注截止时间。",
+   "截止前的最后一段时间往往数据稀疏，模型对「临近截止」的事件掌握也可能不完整。",
+   "推理时模型默认把训练分布当成「现在」，遇到新版本库会输出旧 API，属于一类可预期的幻觉。",
+   "应用层用 RAG、联网搜索、MCP 文档工具或把官方文档贴进上下文，为模型提供截止后的事实。",
+   "编程场景里，锁文件和本地安装版本是事实来源，应让 Agent 先读版本再写代码。"
+  ],
+  "terms": [
+   {
+    "t": "训练数据截止 (Training Data Cutoff)",
+    "d": "语料覆盖的最晚日期，模型文档中常单独列出。"
+   },
+   {
+    "t": "参数化知识 (Parametric Knowledge)",
+    "d": "存储在权重中的知识，更新只能靠再训练或微调。"
+   },
+   {
+    "t": "上下文知识 (In-context Knowledge)",
+    "d": "推理时通过提示注入的信息，优先级通常高于参数化知识。"
+   },
+   {
+    "t": "API 漂移 (API Drift)",
+    "d": "库或服务接口随版本变化，导致模型记忆中的写法失效。"
+   },
+   {
+    "t": "检索增强 (RAG)",
+    "d": "先检索外部资料再生成，用于补足截止后与私有的知识。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "以本地版本为准约束 AI",
+   "src": "# 1. 查项目里实际安装的版本（以本地为准，不信模型记忆）\nnpm ls next                      # Node 项目\npip show pydantic | grep Version  # Python 项目\n\n# 2. 查包注册表上的最新版本\nnpm view next version\npip index versions pydantic       # pip 的实验性子命令\n\n# 3. 把版本约束写进 Agent 规则文件，每次会话自动加载\ncat >> CLAUDE.md <<'EOF'\n## 版本约束\n- 本项目使用 pydantic v2：用 model_dump()，不要用 .dict()\n- 不确定 API 时，先查阅 https://docs.pydantic.dev/latest/\nEOF",
+   "note": "把「真实版本 + 官方文档入口」放进规则文件，让 Agent 不再凭训练记忆写旧 API。"
+  },
+  "table": {
+   "title": "补足新知识的手段",
+   "head": [
+    "手段",
+    "时效性",
+    "成本",
+    "适用"
+   ],
+   "rows": [
+    [
+     "上下文贴文档",
+     "即时",
+     "占 Token",
+     "单次任务、小文档"
+    ],
+    [
+     "联网搜索工具",
+     "即时",
+     "有调用延迟",
+     "开放问题、新闻"
+    ],
+    [
+     "RAG 知识库",
+     "取决于更新频率",
+     "需建索引",
+     "私有或大量文档"
+    ],
+    [
+     "微调",
+     "训练时为止",
+     "高",
+     "风格、领域习惯"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "依赖模型记忆",
+    "pros": "零额外成本，响应最快",
+    "cons": "新版本 API 易出错",
+    "when": "稳定多年的基础知识"
+   },
+   {
+    "opt": "每次注入官方文档",
+    "pros": "准确、可指定版本",
+    "cons": "占上下文，需维护链接",
+    "when": "频繁变化的框架与 SDK"
+   },
+   {
+    "opt": "接入文档检索工具",
+    "pros": "按需拉取，不占常驻上下文",
+    "cons": "依赖工具质量与网络",
+    "when": "Agent 长任务、多库项目"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "直接问模型「某库最新版本是多少」并采信",
+    "fix": "以 npm view / pip index 或官方发布页为准"
+   },
+   {
+    "bad": "以为模型会主动说明自己不知道",
+    "fix": "在提示中要求其标注不确定之处并引用文档"
+   },
+   {
+    "bad": "Agent 生成依赖文件时随手写版本号",
+    "fix": "用包管理器命令安装，由锁文件记录真实版本"
+   }
+  ],
+  "checklist": [
+   "知道所用模型的训练数据截止时间",
+   "关键依赖版本写入规则文件或 README",
+   "新框架/SDK 任务附上官方文档链接",
+   "Agent 可用联网或文档检索工具",
+   "依赖版本由包管理器安装，不手写",
+   "生成代码在当前版本上实测通过"
+  ],
+  "interview": [
+   {
+    "q": "为什么模型会自信地写出已废弃的 API？",
+    "a": "训练语料里旧写法出现频率远高于新写法，且模型不知道当前日期之后的变化；生成按概率选最常见模式，没有内在机制判断「是否过时」。缓解：注入版本信息与官方文档、提供检索工具、用测试与类型检查兜底。"
+   },
+   {
+    "q": "RAG 和微调哪个更适合解决知识过时？",
+    "a": "通常是 RAG：更新只需重建索引，可引用来源、成本低。微调把知识写进权重，更新慢、难溯源，更适合学习风格、格式或领域习惯，而非频繁变化的事实。"
+   },
+   {
+    "q": "怎样让 Agent 在多依赖项目里少踩版本坑？",
+    "a": "规则文件写清关键依赖与版本；要求先读 package.json/锁文件；提供 MCP 文档或联网工具；写完必须跑构建、类型检查和测试；把常见迁移要点（如 v1→v2 改名）列成清单。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Anthropic：Models overview（含训练数据截止）",
+    "url": "https://docs.anthropic.com/en/docs/about-claude/models/overview"
+   },
+   {
+    "title": "Lewis et al. 2020：Retrieval-Augmented Generation",
+    "url": "https://arxiv.org/abs/2005.11401"
+   },
+   {
+    "title": "Pydantic 文档：Migration Guide",
+    "url": "https://docs.pydantic.dev/latest/migration/"
+   }
+  ]
+ },
+ {
+  "slug": "zero-shot-prompting",
+  "def": "零样本提示（Zero-shot Prompting）指只给任务说明、不提供任何输入输出示例，依赖模型预训练与指令微调获得的泛化能力完成任务。它是提示工程的基线方法：成本最低、最易维护；当输出格式或判定标准模糊时，再升级为少样本（Few-shot）、思维链或结构化输出约束。",
+  "how": [
+   "提示只包含角色/上下文、任务描述、约束与输出格式，不含示例对。",
+   "指令微调（Instruction Tuning）与 RLHF 让模型学会遵循自然语言指令，这是零样本可行的前提。",
+   "模型依据任务描述在其已学分布中匹配最相近的任务模式并生成结果。",
+   "可叠加零样本思维链（如加入「请逐步思考」）提升推理类任务表现，推理模型则通常内置此过程。",
+   "评估零样本基线后，若格式漂移或边界判定不稳，再引入示例、JSON Schema 或拆分任务。"
+  ],
+  "terms": [
+   {
+    "t": "少样本 (Few-shot)",
+    "d": "在提示中给出若干输入输出示例，让模型照样模仿。"
+   },
+   {
+    "t": "上下文学习 (In-context Learning)",
+    "d": "不更新权重，仅凭提示中的信息适应新任务的能力。"
+   },
+   {
+    "t": "零样本思维链 (Zero-shot CoT)",
+    "d": "不给示例，仅加入逐步推理指令以引导中间推理。"
+   },
+   {
+    "t": "指令微调 (Instruction Tuning)",
+    "d": "用大量指令-回答数据微调，使模型更会遵循指令。"
+   },
+   {
+    "t": "基线 (Baseline)",
+    "d": "最简单方案的效果，用于衡量后续复杂改进是否值得。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "零样本分类 + 固定格式",
+   "src": "# pip install openai\nfrom openai import OpenAI\n\nclient = OpenAI()  # 读取环境变量 OPENAI_API_KEY\n\nreview = \"物流很快，但包装有点破\"\nresp = client.chat.completions.create(\n    model=\"gpt-4o-mini\",  # 换成你在用的模型\n    temperature=0,        # 分类任务降低随机性\n    messages=[\n        {\"role\": \"system\", \"content\": \"你是电商评价分类器。\"},\n        {\"role\": \"user\", \"content\": (\n            \"把评价分为 正面/中性/负面 之一。\\n\"\n            \"判定标准：同时有褒贬时选 中性。\\n\"\n            \"只输出类别，不要解释。\\n\"\n            f\"评价：{review}\"\n        )},\n    ],\n)\nprint(resp.choices[0].message.content)",
+   "note": "零样本靠写清判定标准和输出格式取胜；没有示例时，边界规则必须用文字说明。"
+  },
+  "table": {
+   "title": "提示方式选型",
+   "head": [
+    "方式",
+    "Token 成本",
+    "稳定性",
+    "典型用途"
+   ],
+   "rows": [
+    [
+     "零样本",
+     "最低",
+     "依赖指令清晰度",
+     "通用问答、常见分类"
+    ],
+    [
+     "少样本",
+     "中",
+     "格式更稳",
+     "特殊格式、风格模仿"
+    ],
+    [
+     "零样本 + CoT",
+     "中（输出变长）",
+     "推理更好",
+     "数学、多步推理"
+    ],
+    [
+     "结构化输出",
+     "低",
+     "格式可保证",
+     "需机器解析的结果"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "纯零样本",
+    "pros": "提示短、易维护、成本低",
+    "cons": "边界与格式可能漂移",
+    "when": "任务常见、标准清晰"
+   },
+   {
+    "opt": "加少量示例",
+    "pros": "格式与判定更一致",
+    "cons": "占 Token，示例偏差会被放大",
+    "when": "零样本评估不达标时"
+   },
+   {
+    "opt": "零样本 + Schema 约束",
+    "pros": "格式由 API 保证",
+    "cons": "只管结构不管内容对错",
+    "when": "结果要被程序解析"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "任务描述含糊（如「整理一下」）却期待特定格式",
+    "fix": "明确输出格式、字段与长度，必要时给 Schema"
+   },
+   {
+    "bad": "没测零样本基线就堆示例和复杂提示",
+    "fix": "先建小评测集测零样本，再按收益逐步加料"
+   },
+   {
+    "bad": "边界情况全靠模型猜",
+    "fix": "用规则写出边界判定（如褒贬并存归中性）"
+   }
+  ],
+  "checklist": [
+   "任务、约束、输出格式三者都写明",
+   "边界情况有文字判定规则",
+   "确定性任务已调低 temperature",
+   "用小评测集测过零样本基线",
+   "需解析的输出使用结构化输出",
+   "提示已版本化，便于对比改动"
+  ],
+  "interview": [
+   {
+    "q": "零样本能力从何而来？",
+    "a": "预训练让模型见过海量任务形态；指令微调与人类反馈对齐让它学会把自然语言指令映射到相应行为。因此无需示例也能执行常见任务，但对罕见格式或私有标准仍需示例或约束。"
+   },
+   {
+    "q": "什么时候从零样本升级到少样本？",
+    "a": "评测发现格式不稳定、边界判定不一致，或任务带有难以用文字描述的风格时。升级后要对比准确率与 Token 成本，并注意示例的分布、顺序和标签平衡，避免模型偏向某类。"
+   },
+   {
+    "q": "对推理模型还需要「请逐步思考」吗？",
+    "a": "通常收益有限：推理模型已内置思考过程，部分厂商文档也建议直接给清晰目标而非手动写思维链。更有效的是给足上下文、明确约束和验收标准。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Brown et al. 2020：Language Models are Few-Shot Learners",
+    "url": "https://arxiv.org/abs/2005.14165"
+   },
+   {
+    "title": "Kojima et al. 2022：LLMs are Zero-Shot Reasoners",
+    "url": "https://arxiv.org/abs/2205.11916"
+   },
+   {
+    "title": "Prompt Engineering Guide：Zero-shot",
+    "url": "https://www.promptingguide.ai/techniques/zeroshot"
+   }
+  ]
+ },
+ {
+  "slug": "max-output-tokens",
+  "def": "最大输出长度（max_tokens / max_output_tokens / max_completion_tokens）是 LLM API 的生成上限参数：模型生成的 Token 数达到该值即强制停止。它位于推理请求层，用于控制成本、延迟与响应体积；设得过小会导致回答或 JSON 被截断，是「输出不完整」的首要排查点。",
+  "how": [
+   "请求中指定上限；输入 Token 与输出上限之和通常不能超过模型上下文窗口，且输出上限还受模型自身最大输出限制。",
+   "模型逐 Token 解码，遇到结束符、stop 序列或达到上限之一即停止。",
+   "响应通过停止原因字段告知结果：OpenAI 为 finish_reason=\"length\"，Anthropic 为 stop_reason=\"max_tokens\"。",
+   "推理模型的思考 Token 也计入输出额度与费用；Anthropic 扩展思考要求 budget_tokens 小于 max_tokens。",
+   "应用层据停止原因决定：提高上限、让模型续写，或把任务拆小分段生成。"
+  ],
+  "terms": [
+   {
+    "t": "max_tokens",
+    "d": "Anthropic Messages API 必填参数；OpenAI Chat Completions 中旧参数名。"
+   },
+   {
+    "t": "max_completion_tokens",
+    "d": "OpenAI Chat Completions 的新参数，包含推理 Token，推理模型需用它。"
+   },
+   {
+    "t": "max_output_tokens",
+    "d": "OpenAI Responses API 与 Gemini 中对应的输出上限参数名。"
+   },
+   {
+    "t": "停止原因 (finish_reason / stop_reason)",
+    "d": "说明生成为何结束：自然结束、命中上限、调用工具等。"
+   },
+   {
+    "t": "截断 (Truncation)",
+    "d": "输出达到上限被切断，常造成 JSON 不闭合、代码缺尾。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "检测截断并提示",
+   "src": "# pip install anthropic\nimport anthropic\n\nclient = anthropic.Anthropic()  # 读取 ANTHROPIC_API_KEY\n\nmsg = client.messages.create(\n    model=\"claude-sonnet-4-5\",  # 换成你在用的模型\n    max_tokens=1024,             # 输出上限，Anthropic 必填\n    messages=[{\"role\": \"user\", \"content\": \"写一个完整的 Todo 应用后端\"}],\n)\n\ntext = \"\".join(b.text for b in msg.content if b.type == \"text\")\nif msg.stop_reason == \"max_tokens\":\n    # 被截断：不要把半截 JSON/代码直接交给下游\n    print(\"输出被截断，已用\", msg.usage.output_tokens, \"tokens\")\n    # 处理办法：调大 max_tokens，或把任务拆成多步\nelse:\n    print(text)",
+   "note": "上线代码必须检查停止原因；命中上限时的半截结果不能当成功处理。"
+  },
+  "table": {
+   "title": "各家参数名对照",
+   "head": [
+    "接口",
+    "上限参数",
+    "截断信号"
+   ],
+   "rows": [
+    [
+     "Anthropic Messages",
+     "max_tokens（必填）",
+     "stop_reason=max_tokens"
+    ],
+    [
+     "OpenAI Chat Completions",
+     "max_completion_tokens",
+     "finish_reason=length"
+    ],
+    [
+     "OpenAI Responses",
+     "max_output_tokens",
+     "status=incomplete"
+    ],
+    [
+     "Gemini API",
+     "maxOutputTokens",
+     "finishReason=MAX_TOKENS"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "上限设得紧",
+    "pros": "成本与延迟可控，防止跑飞",
+    "cons": "长回答易被截断",
+    "when": "分类、抽取等短输出任务"
+   },
+   {
+    "opt": "上限设得宽",
+    "pros": "完整输出长代码与文档",
+    "cons": "失控时费用高、响应慢",
+    "when": "代码生成、长文写作"
+   },
+   {
+    "opt": "分段生成",
+    "pros": "每段可校验，失败重试代价小",
+    "cons": "需编排与拼接逻辑",
+    "when": "超出单次输出上限的任务"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只看返回文本，不检查停止原因",
+    "fix": "判断 finish_reason/stop_reason，截断时重试或报错"
+   },
+   {
+    "bad": "推理模型沿用很小的上限，结果回答为空",
+    "fix": "为思考 Token 预留额度，查阅该模型的最大输出限制"
+   },
+   {
+    "bad": "以为调大上限会让回答更长更好",
+    "fix": "上限只是天花板；长度应由提示要求控制"
+   },
+   {
+    "bad": "结构化输出被截断后仍尝试 json.loads",
+    "fix": "先确认正常结束，再解析并做 Schema 校验"
+   }
+  ],
+  "checklist": [
+   "每类任务都设了合理的输出上限",
+   "代码检查停止原因并处理截断",
+   "推理模型为思考 Token 预留空间",
+   "输入加输出不超过上下文窗口",
+   "超长任务已拆分为多步生成",
+   "监控输出 Token 用量与费用"
+  ],
+  "interview": [
+   {
+    "q": "max_tokens 和上下文窗口是什么关系？",
+    "a": "上下文窗口是单次请求输入与输出 Token 的总容量；max_tokens 是输出部分的上限，还受模型自身最大输出限制。长输入会挤占可用输出空间，部分 API 在两者之和超限时直接报错。"
+   },
+   {
+    "q": "生成 JSON 时被截断，系统层面怎么兜底？",
+    "a": "检查停止原因；截断则提高上限或缩小单次任务；使用结构化输出功能；解析前做 Schema 校验，失败时重试并记录；对超大结果改为分页或逐项生成。"
+   },
+   {
+    "q": "推理模型为什么会出现「花了 Token 却没有回答」？",
+    "a": "推理 Token 计入输出额度，若上限过小，思考阶段就耗尽额度，最终可见回答为空或不完整。应按厂商建议预留足够输出空间，并监控推理 Token 用量。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Anthropic API：Messages",
+    "url": "https://docs.anthropic.com/en/api/messages"
+   },
+   {
+    "title": "Anthropic：Extended thinking",
+    "url": "https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking"
+   },
+   {
+    "title": "Gemini API：Text generation",
+    "url": "https://ai.google.dev/gemini-api/docs/text-generation"
+   }
+  ]
+ },
+ {
+  "slug": "yaml",
+  "def": "YAML（YAML Ain't Markup Language）是以缩进表达层级、面向人类可读的数据序列化格式，是 JSON 的超集（YAML 1.2）。它是配置层的事实标准：GitHub Actions、Kubernetes、Docker Compose、OpenAPI 等都用它。灵活的隐式类型与缩进语义也带来一类常见配置错误。",
+  "how": [
+   "文档由映射（键值对）、序列（- 开头的列表）和标量（字符串、数字、布尔等）三类节点组成。",
+   "层级完全由空格缩进决定，同级元素缩进必须一致，规范禁止用 Tab 缩进。",
+   "未加引号的标量会被解析器隐式推断类型，YAML 1.1 解析器会把 yes/no/on/off 当布尔值。",
+   "支持锚点（&）与别名（*）复用节点、| 与 > 书写多行文本、--- 分隔同一文件中的多个文档。",
+   "程序用库（如 PyYAML、js-yaml）解析为原生数据结构；不可信输入必须用安全加载函数。"
+  ],
+  "terms": [
+   {
+    "t": "映射 (Mapping)",
+    "d": "键值对集合，对应 JSON 对象或 Python dict。"
+   },
+   {
+    "t": "序列 (Sequence)",
+    "d": "以 - 开头的有序列表，对应 JSON 数组。"
+   },
+   {
+    "t": "锚点与别名 (Anchor & Alias)",
+    "d": "&name 标记节点，*name 引用它，用于复用配置块。"
+   },
+   {
+    "t": "块标量 (Block Scalar)",
+    "d": "| 保留换行，> 把换行折叠为空格，用于多行文本。"
+   },
+   {
+    "t": "Norway 问题",
+    "d": "YAML 1.1 中未加引号的 NO 被解析为 false，国家代码因此出错。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "常见陷阱与正确写法",
+   "src": "# 字符串最好加引号，避免隐式类型转换\ncountry: \"NO\"        # 不加引号时 YAML 1.1 解析器视为 false\nversion: \"3.10\"      # 不加引号会变成浮点数 3.1\nport: 8080            # 数字\n\n# 锚点复用公共配置\ndefaults: &defaults\n  retries: 3\n  timeout: 30\n\nservice_a:\n  <<: *defaults       # 合并键：部分解析器支持\n  timeout: 60         # 覆盖默认值\n\n# 多行文本：| 保留换行\nscript: |\n  npm ci\n  npm test\n\n# 列表：短横后需一个空格，缩进只能用空格\nbranches:\n  - main\n  - \"release/*\"",
+   "note": "版本号、国家代码、带通配符的字符串一律加引号；<< 合并键并非所有工具都支持。"
+  },
+  "table": {
+   "title": "YAML 与其他配置格式",
+   "head": [
+    "格式",
+    "注释",
+    "层级表达",
+    "常见场景"
+   ],
+   "rows": [
+    [
+     "YAML",
+     "支持 #",
+     "缩进",
+     "CI、K8s、Compose"
+    ],
+    [
+     "JSON",
+     "不支持",
+     "括号",
+     "API 数据、package.json"
+    ],
+    [
+     "TOML",
+     "支持 #",
+     "表头 [section]",
+     "pyproject、Cargo"
+    ],
+    [
+     ".env",
+     "支持 #",
+     "无层级",
+     "环境变量"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "YAML",
+    "pros": "可读性好、支持注释与复用",
+    "cons": "缩进与隐式类型易出错",
+    "when": "人工维护的复杂配置"
+   },
+   {
+    "opt": "JSON",
+    "pros": "语法严格、解析一致",
+    "cons": "无注释、括号多",
+    "when": "机器生成与交换的数据"
+   },
+   {
+    "opt": "TOML",
+    "pros": "类型明确、歧义少",
+    "cons": "深层嵌套较啰嗦",
+    "when": "工具与包的元数据配置"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用 yaml.load 解析不可信输入",
+    "fix": "PyYAML 用 yaml.safe_load，防止构造任意 Python 对象"
+   },
+   {
+    "bad": "版本号 3.10 不加引号被解析成 3.1",
+    "fix": "版本号、邮编、以 0 开头的编码都加引号"
+   },
+   {
+    "bad": "从网页复制配置混入 Tab 或全角空格",
+    "fix": "编辑器显示空白字符，提交前用 yamllint 检查"
+   },
+   {
+    "bad": "以为所有工具都支持锚点合并键",
+    "fix": "查目标工具文档，必要时展开写全"
+   }
+  ],
+  "checklist": [
+   "通过 yamllint 或编辑器 Schema 校验",
+   "易歧义字符串均已加引号",
+   "解析代码使用安全加载函数",
+   "CI/K8s 文件已用官方 Schema 校验",
+   "敏感值未明文写进 YAML",
+   "AI 生成的配置已逐项核对键名"
+  ],
+  "interview": [
+   {
+    "q": "为什么说 YAML 是 JSON 的超集？",
+    "a": "YAML 1.2 规范的目标之一是与 JSON 兼容，合法 JSON 基本都能被 YAML 1.2 解析器读取。但很多常用库仍实现 YAML 1.1（如 PyYAML），在布尔值等细节上与 1.2 不同。"
+   },
+   {
+    "q": "yaml.load 为什么危险？",
+    "a": "PyYAML 的完整加载器支持特定标签构造任意 Python 对象，恶意文档可借此执行代码。应使用 safe_load，只解析基本类型；PyYAML 5.1 起不带 Loader 调用会警告，6.0 起必须显式指定 Loader。"
+   },
+   {
+    "q": "如何降低 CI 配置写错的概率？",
+    "a": "编辑器启用 YAML Language Server 与官方 JSON Schema；提交前跑 yamllint 和 actionlint 等工具；复用部分抽成可复用工作流或模板；改动后在分支上先跑一遍。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "YAML 1.2.2 规范",
+    "url": "https://yaml.org/spec/1.2.2/"
+   },
+   {
+    "title": "PyYAML 文档",
+    "url": "https://pyyaml.org/wiki/PyYAMLDocumentation"
+   },
+   {
+    "title": "yamllint 文档",
+    "url": "https://yamllint.readthedocs.io/"
+   }
+  ]
+ },
+ {
+  "slug": "python-virtual-environments",
+  "def": "Python 虚拟环境（Virtual Environment）是带独立 site-packages 目录与解释器链接的隔离运行环境，由标准库 venv（PEP 405）提供，uv、virtualenv、conda 等工具也可创建。它属于开发环境层，解决多项目依赖版本冲突和污染系统 Python 的问题，是可复现构建的起点。",
+  "how": [
+   "创建时生成 pyvenv.cfg、bin（Windows 为 Scripts）与独立的 site-packages 目录，并链接或复制基础解释器。",
+   "激活脚本把环境的 bin 目录放到 PATH 最前面，使 python/pip 指向环境内的版本。",
+   "此后 pip install 只写入该环境的 site-packages，不影响系统和其他项目。",
+   "依赖用 requirements.txt 或 pyproject.toml 声明，锁文件（如 uv.lock）固定完整依赖树以便复现。",
+   "PEP 668 允许发行版把系统 Python 标记为「外部管理」，此时直接 pip install 会被拒绝，需改用虚拟环境。"
+  ],
+  "terms": [
+   {
+    "t": "venv",
+    "d": "Python 3.3 起内置的虚拟环境模块，python -m venv 创建。"
+   },
+   {
+    "t": "uv",
+    "d": "Astral 用 Rust 编写的包与项目管理器，兼容 pip 接口且速度快。"
+   },
+   {
+    "t": "site-packages",
+    "d": "第三方包的安装目录，每个虚拟环境各有一份。"
+   },
+   {
+    "t": "锁文件 (Lockfile)",
+    "d": "记录精确版本与哈希的完整依赖树，如 uv.lock。"
+   },
+   {
+    "t": "外部管理环境 (PEP 668)",
+    "d": "系统 Python 拒绝 pip 直接安装，提示使用虚拟环境。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "venv 与 uv 两种做法",
+   "src": "# 方式一：标准库 venv\npython3 -m venv .venv\nsource .venv/bin/activate        # Windows: .venv\\Scripts\\activate\npip install requests\npip freeze > requirements.txt    # 记录当前依赖\ndeactivate\n\n# 方式二：uv 项目工作流\nuv init my-app && cd my-app      # 生成 pyproject.toml\nuv add requests                  # 写入依赖并更新 uv.lock\nuv run python main.py            # 自动在 .venv 中运行\nuv sync                          # 新机器上按锁文件还原环境\n\n# 别把环境目录提交到 Git\necho \".venv/\" >> .gitignore",
+   "note": "环境目录不入库，入库的是依赖声明与锁文件；uv run 免去手动激活。"
+  },
+  "table": {
+   "title": "环境管理工具对比",
+   "head": [
+    "工具",
+    "定位",
+    "锁文件",
+    "备注"
+   ],
+   "rows": [
+    [
+     "venv + pip",
+     "标准库自带",
+     "无原生锁",
+     "最通用，零依赖"
+    ],
+    [
+     "uv",
+     "包与项目管理",
+     "uv.lock",
+     "速度快，可管 Python 版本"
+    ],
+    [
+     "Poetry",
+     "项目管理",
+     "poetry.lock",
+     "成熟的打包发布流程"
+    ],
+    [
+     "conda",
+     "跨语言包管理",
+     "环境导出文件",
+     "适合科学计算二进制依赖"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "venv + requirements.txt",
+    "pros": "标准、无需额外工具",
+    "cons": "间接依赖不锁定，复现性弱",
+    "when": "脚本与小项目"
+   },
+   {
+    "opt": "uv 项目模式",
+    "pros": "快、自带锁文件与版本管理",
+    "cons": "团队需统一工具",
+    "when": "新项目、CI 加速"
+   },
+   {
+    "opt": "容器/Dev Container",
+    "pros": "连系统库一起隔离",
+    "cons": "镜像构建与资源开销",
+    "when": "依赖系统库或团队协作"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "未激活环境就 pip install，装进了全局",
+    "fix": "用 which python 确认路径，或统一用 uv run / python -m pip"
+   },
+   {
+    "bad": "把 .venv 目录提交到仓库",
+    "fix": "加入 .gitignore，只提交声明与锁文件"
+   },
+   {
+    "bad": "requirements.txt 只写顶层包且不固定版本",
+    "fix": "使用锁文件，或用 pip-tools/uv 生成固定版本清单"
+   },
+   {
+    "bad": "编辑器或 Agent 用的解释器与终端不一致",
+    "fix": "在 IDE 中选择 .venv 解释器，规则文件写明运行命令"
+   }
+  ],
+  "checklist": [
+   "每个项目都有独立虚拟环境",
+   ".venv 已加入 .gitignore",
+   "依赖声明与锁文件已提交",
+   "README 写明创建与还原环境的命令",
+   "IDE 与 Agent 使用同一解释器",
+   "CI 按锁文件安装依赖"
+  ],
+  "interview": [
+   {
+    "q": "激活虚拟环境实际上做了什么？",
+    "a": "主要是修改 PATH，把环境的 bin/Scripts 放在最前面，并设置 VIRTUAL_ENV 等变量和提示符。不激活也能用：直接调用 .venv/bin/python 即可，激活只是便利。"
+   },
+   {
+    "q": "requirements.txt 和锁文件的区别？",
+    "a": "requirements.txt 常只列直接依赖、版本范围宽松，不同时间安装可能得到不同间接依赖；锁文件记录完整依赖树的精确版本与哈希，保证各环境安装结果一致。"
+   },
+   {
+    "q": "为什么新系统上 pip install 报 externally-managed-environment？",
+    "a": "PEP 668 允许发行版把系统 Python 标记为外部管理，防止 pip 破坏系统包管理器安装的包。正确做法是创建虚拟环境，或用 pipx 安装命令行工具，而不是加 --break-system-packages。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Python 文档：venv",
+    "url": "https://docs.python.org/3/library/venv.html"
+   },
+   {
+    "title": "uv 文档",
+    "url": "https://docs.astral.sh/uv/"
+   },
+   {
+    "title": "PEP 668：Externally Managed Environments",
+    "url": "https://peps.python.org/pep-0668/"
+   }
+  ]
+ },
+ {
+  "slug": "code-editor-ide",
+  "def": "代码编辑器（Code Editor）是面向源码的文本编辑工具，IDE（集成开发环境）在其上集成语言智能、调试、构建、测试与版本控制。VS Code 一类可扩展编辑器借助语言服务器协议（LSP）获得接近 IDE 的能力；Cursor、Windsurf 等则在 VS Code 基础上深度集成 AI Agent。它是开发者与代码交互的主界面层。",
+  "how": [
+   "编辑器负责文本缓冲、语法高亮（如 TextMate 语法或 Tree-sitter）、多光标与搜索替换等基础编辑能力。",
+   "语言服务器以独立进程运行，通过 LSP 提供补全、跳转定义、查找引用、重命名与诊断信息。",
+   "调试通过调试适配器协议（DAP）对接各语言调试器，实现断点、单步与变量查看。",
+   "扩展、工作区设置与任务配置（.vscode/ 目录）把格式化、Lint、测试串入保存与运行流程。",
+   "AI 编辑器在此之上读取打开文件、项目索引与终端输出作为上下文，生成补全、编辑与多文件改动。"
+  ],
+  "terms": [
+   {
+    "t": "LSP (Language Server Protocol)",
+    "d": "编辑器与语言服务器之间的 JSON-RPC 协议，一次实现多编辑器复用。"
+   },
+   {
+    "t": "DAP (Debug Adapter Protocol)",
+    "d": "编辑器与调试器之间的通用协议，统一断点与单步等操作。"
+   },
+   {
+    "t": "工作区设置 (Workspace Settings)",
+    "d": "存于项目 .vscode/settings.json，对团队成员统一生效。"
+   },
+   {
+    "t": "推荐扩展 (Recommended Extensions)",
+    "d": ".vscode/extensions.json 中列出，打开项目时提示安装。"
+   },
+   {
+    "t": "代码索引 (Codebase Indexing)",
+    "d": "AI 编辑器为检索相关代码建立的索引，影响上下文质量。"
+   }
+  ],
+  "code": {
+   "lang": "json",
+   "title": "团队共享的工作区设置",
+   "src": "// .vscode/settings.json（JSONC，允许注释）\n{\n  \"editor.formatOnSave\": true,\n  \"editor.defaultFormatter\": \"esbenp.prettier-vscode\",\n  \"editor.codeActionsOnSave\": {\n    \"source.fixAll.eslint\": \"explicit\"\n  },\n  \"files.trimTrailingWhitespace\": true,\n  \"files.insertFinalNewline\": true,\n  // 让编辑器与 Agent 使用项目虚拟环境\n  \"python.defaultInterpreterPath\": \"${workspaceFolder}/.venv/bin/python\",\n  \"[python]\": {\n    \"editor.defaultFormatter\": \"charliermarsh.ruff\"\n  }\n}",
+   "note": "把格式化与 Lint 规则放进仓库，人和 AI 改出的代码风格才一致；扩展需另行安装。"
+  },
+  "table": {
+   "title": "编辑器类型对比",
+   "head": [
+    "类型",
+    "代表",
+    "强项",
+    "注意"
+   ],
+   "rows": [
+    [
+     "轻量可扩展编辑器",
+     "VS Code",
+     "生态大、免费",
+     "能力取决于扩展"
+    ],
+    [
+     "AI 原生编辑器",
+     "Cursor、Windsurf",
+     "多文件 Agent 编辑",
+     "注意隐私与代码上传设置"
+    ],
+    [
+     "全功能 IDE",
+     "JetBrains 系列",
+     "重构与静态分析强",
+     "资源占用较高"
+    ],
+    [
+     "终端编辑器",
+     "Vim、Neovim",
+     "远程、键盘高效",
+     "学习曲线陡"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "VS Code + 扩展",
+    "pros": "免费、跨语言、团队易统一",
+    "cons": "扩展质量参差，需自行组合",
+    "when": "多语言项目与大多数团队"
+   },
+   {
+    "opt": "AI 原生编辑器",
+    "pros": "Agent 集成深、上下文检索好",
+    "cons": "订阅费用，代码会发给模型服务",
+    "when": "重度使用 AI 编码"
+   },
+   {
+    "opt": "JetBrains IDE",
+    "pros": "语言深度支持与重构可靠",
+    "cons": "商业授权、较重",
+    "when": "大型 Java/Kotlin 等工程"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "格式化规则只存在个人设置里",
+    "fix": "提交 .vscode/settings.json 与格式化配置文件，CI 中也执行检查"
+   },
+   {
+    "bad": "编辑器选错解释器或 Node 版本，报错与终端不一致",
+    "fix": "在工作区设置中固定解释器路径，配合 .nvmrc 等版本文件"
+   },
+   {
+    "bad": "在 AI 编辑器中打开含密钥的目录未做排除",
+    "fix": "配置忽略文件（如 .cursorignore），密钥放环境变量"
+   },
+   {
+    "bad": "安装来路不明的扩展",
+    "fix": "核对发布者与下载量，团队维护推荐扩展清单"
+   }
+  ],
+  "checklist": [
+   "工作区设置与推荐扩展已入库",
+   "保存时自动格式化并运行 Lint",
+   "解释器/运行时版本与终端一致",
+   "AI 编辑器已配置忽略敏感文件",
+   "了解所用 AI 工具的数据保留策略",
+   "调试配置（launch.json）可一键启动"
+  ],
+  "interview": [
+   {
+    "q": "LSP 解决了什么问题？",
+    "a": "过去每个编辑器要为每种语言单独实现补全、跳转等功能，是 M×N 的工作量。LSP 把语言智能放进独立服务器，编辑器只实现协议客户端，变成 M+N，使 VS Code、Neovim 等共享同一语言服务器。"
+   },
+   {
+    "q": "团队如何保证人和 AI 写出的代码风格一致？",
+    "a": "格式化器与 Linter 配置入库；工作区设置启用保存时格式化；pre-commit 钩子与 CI 再次检查；规则文件向 Agent 说明代码约定与常用命令，让其改完自行运行检查。"
+   },
+   {
+    "q": "选 AI 编辑器时要评估哪些安全点？",
+    "a": "代码与上下文是否上传、保留多久、是否用于训练；能否本地或私有模型；忽略文件机制；Agent 执行终端命令的权限与确认策略；企业版的审计与 SSO 能力。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "VS Code 官方文档",
+    "url": "https://code.visualstudio.com/docs"
+   },
+   {
+    "title": "Language Server Protocol 官网",
+    "url": "https://microsoft.github.io/language-server-protocol/"
+   },
+   {
+    "title": "Debug Adapter Protocol 官网",
+    "url": "https://microsoft.github.io/debug-adapter-protocol/"
+   }
+  ]
+ },
+ {
+  "slug": "cron-jobs",
+  "def": "Cron 是类 Unix 系统中按时间表周期执行命令的守护进程，Cron 表达式用分、时、日、月、周五个字段描述触发时间。它属于运维调度层，常用于备份、清理、报表与同步。云平台、Kubernetes CronJob、GitHub Actions schedule 等都沿用这套表达式，但时区与可靠性语义各不相同。",
+  "how": [
+   "每个用户有一份 crontab，cron 守护进程每分钟检查一次，匹配当前时间的条目就派生进程执行。",
+   "五个字段依次为分钟、小时、日、月、星期，支持 *、逗号列表、- 范围与 / 步长。",
+   "日与星期字段同时受限时，标准 cron 按「或」处理，只要其一匹配就执行。",
+   "任务在极简环境中运行：PATH 很短、无交互 shell 配置，输出默认发邮件或被丢弃。",
+   "cron 不处理重叠、补跑与失败重试；这些要靠 flock、幂等脚本或更上层的调度器解决。"
+  ],
+  "terms": [
+   {
+    "t": "crontab",
+    "d": "存放定时任务条目的表，crontab -e 编辑，crontab -l 查看。"
+   },
+   {
+    "t": "Cron 表达式",
+    "d": "五字段时间规则；部分系统扩展出秒或年字段。"
+   },
+   {
+    "t": "flock",
+    "d": "Linux 文件锁命令，常用于防止同一任务重叠执行。"
+   },
+   {
+    "t": "systemd timer",
+    "d": "systemd 的定时单元，支持日志、依赖与 Persistent 补跑。"
+   },
+   {
+    "t": "Kubernetes CronJob",
+    "d": "按 Cron 表达式创建 Job，可设并发策略与时区字段。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "健壮的 crontab 条目",
+   "src": "# crontab -e 编辑当前用户的任务\n# 环境变量：cron 下 PATH 很短，显式设置\nPATH=/usr/local/bin:/usr/bin:/bin\nMAILTO=\"\"\n\n# 每天 03:00 备份；flock -n 防止上一次没跑完又启动\n0 3 * * * cd /srv/app && flock -n /tmp/backup.lock ./backup.sh >> /var/log/backup.log 2>&1\n\n# 每 5 分钟健康检查（curl -f 遇 HTTP 错误返回非零）\n*/5 * * * * curl -fsS -m 10 https://example.com/health > /dev/null || logger \"health check failed\"\n\n# 注意：crontab 中 % 是特殊字符，需写成 \\%\n0 0 * * * tar czf /backup/db-$(date +\\%F).tgz /srv/data\n\n# 时间按服务器时区计算，先用 timedatectl 确认",
+   "note": "绝对路径、日志重定向、防重叠锁与时区确认，是 cron 任务最常缺的四件事。"
+  },
+  "table": {
+   "title": "调度方式对比",
+   "head": [
+    "方式",
+    "时区",
+    "补跑/重试",
+    "适合"
+   ],
+   "rows": [
+    [
+     "系统 crontab",
+     "服务器时区",
+     "无",
+     "单机简单任务"
+    ],
+    [
+     "systemd timer",
+     "可在规则中指定",
+     "Persistent 可补跑",
+     "现代 Linux 服务器"
+    ],
+    [
+     "Kubernetes CronJob",
+     "默认控制器时区，可设 timeZone",
+     "Job 级重试",
+     "容器化集群"
+    ],
+    [
+     "GitHub Actions schedule",
+     "UTC",
+     "高负载时可能延迟",
+     "仓库维护类任务"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "系统 cron",
+    "pros": "随处可用、零依赖",
+    "cons": "无监控、无补跑、单点",
+    "when": "单机、低重要性任务"
+   },
+   {
+    "opt": "托管/集群调度",
+    "pros": "有日志、重试与并发控制",
+    "cons": "引入平台依赖与配置复杂度",
+    "when": "生产业务任务"
+   },
+   {
+    "opt": "工作流编排器",
+    "pros": "依赖关系、回填、可视化",
+    "cons": "组件重、学习成本高",
+    "when": "多步骤数据管道"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "脚本手动跑正常，cron 下找不到命令",
+    "fix": "使用绝对路径或在 crontab 顶部设置 PATH"
+   },
+   {
+    "bad": "没有日志，任务失败数周无人发现",
+    "fix": "重定向输出，并接入心跳监控（如任务结束时 ping 一个地址）"
+   },
+   {
+    "bad": "多台实例都配了同一个 cron，任务重复执行",
+    "fix": "只在一处调度，或使用分布式锁与幂等设计"
+   },
+   {
+    "bad": "忽视时区与夏令时导致执行时间漂移",
+    "fix": "服务器统一 UTC，必要时用支持时区的调度器"
+   }
+  ],
+  "checklist": [
+   "表达式已用工具核对含义",
+   "确认调度器所用时区",
+   "命令使用绝对路径并有日志",
+   "有防重叠机制，脚本幂等",
+   "失败可告警或有心跳监控",
+   "多实例部署时只调度一次"
+  ],
+  "interview": [
+   {
+    "q": "0 0 1 * 1 会在什么时候执行？",
+    "a": "标准 cron 中日与星期都受限时取「或」：每月 1 号零点，以及每个周一零点都会执行，而不是「既是 1 号又是周一」。这是常见误解，需要交集时应在脚本内判断。"
+   },
+   {
+    "q": "如何保证定时任务在多副本服务中只执行一次？",
+    "a": "把调度从应用副本中剥离，交给单一调度器（K8s CronJob、云调度服务）；或用分布式锁（如 Redis SET NX 带过期）抢占执行权；任务本身做幂等，重复执行也无副作用。"
+   },
+   {
+    "q": "服务器宕机错过了执行时间怎么办？",
+    "a": "标准 cron 不补跑。可用 systemd timer 的 Persistent=true，在启动后补跑错过的一次；K8s CronJob 有 startingDeadlineSeconds 控制错过后多久内仍可启动；关键任务用工作流编排器支持回填。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "crontab(5) Linux man page",
+    "url": "https://man7.org/linux/man-pages/man5/crontab.5.html"
+   },
+   {
+    "title": "Kubernetes 文档：CronJob",
+    "url": "https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/"
+   },
+   {
+    "title": "crontab.guru 表达式解释器",
+    "url": "https://crontab.guru/"
+   }
+  ]
+ },
+ {
+  "slug": "dom",
+  "def": "DOM（Document Object Model，文档对象模型）是浏览器把 HTML/XML 文档解析成的节点树，以及操作这棵树的编程接口，由 WHATWG DOM 标准定义。它位于前端运行时层：JavaScript 通过 DOM 读取和修改结构、样式与内容，浏览器据此重新计算样式、布局并绘制，React 等框架也最终落到 DOM 操作上。",
+  "how": [
+   "浏览器边下载边解析 HTML，生成 Document 根下的元素、文本、注释等节点树。",
+   "同步脚本会阻塞解析；DOMContentLoaded 在 DOM 构建完成时触发，load 要等图片等资源加载完。",
+   "JS 通过 querySelector、createElement、append 等 API 查询与修改节点，通过 addEventListener 订阅事件。",
+   "事件按捕获、目标、冒泡三个阶段传播，可在父节点统一处理子节点事件（事件委托）。",
+   "DOM 变更触发样式重算、布局与绘制；频繁读写布局属性会造成强制同步布局，影响性能。"
+  ],
+  "terms": [
+   {
+    "t": "节点 (Node) / 元素 (Element)",
+    "d": "Node 是树中所有对象的基类，Element 是对应 HTML 标签的节点。"
+   },
+   {
+    "t": "事件冒泡 (Bubbling)",
+    "d": "事件从目标节点逐层向上传给祖先节点的过程。"
+   },
+   {
+    "t": "事件委托 (Event Delegation)",
+    "d": "在父元素上监听，依据 event.target 处理子元素事件。"
+   },
+   {
+    "t": "回流/重排 (Reflow / Layout)",
+    "d": "几何信息变化后重新计算布局，开销较大。"
+   },
+   {
+    "t": "Shadow DOM",
+    "d": "附着在元素上的隔离子树，Web Components 用于封装样式。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "安全高效地操作 DOM",
+   "src": "// DOM 构建完成后再查询元素（或给 script 加 defer）\ndocument.addEventListener(\"DOMContentLoaded\", () => {\n  const list = document.querySelector(\"#todo-list\");\n  const items = [\"买牛奶\", \"<img src=x onerror=alert(1)>\"];\n\n  // 批量插入：先放进 DocumentFragment，只触发一次插入\n  const frag = document.createDocumentFragment();\n  for (const text of items) {\n    const li = document.createElement(\"li\");\n    li.textContent = text; // 用 textContent，不解析 HTML，防 XSS\n    frag.append(li);\n  }\n  list.append(frag);\n\n  // 事件委托：一个监听器处理所有 li，包括后来新增的\n  list.addEventListener(\"click\", (e) => {\n    const li = e.target.closest(\"li\");\n    if (li) li.classList.toggle(\"done\");\n  });\n});",
+   "note": "用户数据用 textContent 插入；批量插入用片段；动态列表用事件委托。"
+  },
+  "table": {
+   "title": "常用 DOM API 对比",
+   "head": [
+    "API",
+    "作用",
+    "注意"
+   ],
+   "rows": [
+    [
+     "textContent",
+     "读写纯文本",
+     "不解析 HTML，安全"
+    ],
+    [
+     "innerHTML",
+     "读写 HTML 字符串",
+     "插入用户数据有 XSS 风险"
+    ],
+    [
+     "querySelectorAll",
+     "按选择器查多个",
+     "返回静态 NodeList"
+    ],
+    [
+     "getBoundingClientRect",
+     "读取尺寸位置",
+     "可能触发同步布局"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "原生 DOM 操作",
+    "pros": "无依赖、性能可控",
+    "cons": "状态与视图同步需手写",
+    "when": "小交互、静态站增强"
+   },
+   {
+    "opt": "声明式框架（React/Vue）",
+    "pros": "状态驱动视图，组件化",
+    "cons": "运行时开销与构建链",
+    "when": "交互复杂的应用"
+   },
+   {
+    "opt": "轻量增强库（htmx/Alpine）",
+    "pros": "贴近 HTML，学习成本低",
+    "cons": "复杂状态管理能力有限",
+    "when": "服务端渲染为主的站点"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "脚本放在 head 且无 defer，查询元素得到 null",
+    "fix": "使用 defer、type=module 或在 DOMContentLoaded 后执行"
+   },
+   {
+    "bad": "用 innerHTML 拼接用户输入",
+    "fix": "用 textContent 或 createElement；必须插 HTML 时先做净化"
+   },
+   {
+    "bad": "循环中交替读取布局属性和修改样式",
+    "fix": "先批量读、再批量写，或用 requestAnimationFrame 合并"
+   },
+   {
+    "bad": "在 React 组件中直接改 DOM 与框架状态打架",
+    "fix": "通过状态驱动渲染，必要时用 ref 并限定范围"
+   }
+  ],
+  "checklist": [
+   "脚本在 DOM 就绪后执行",
+   "用户内容不经 innerHTML 插入",
+   "动态列表使用事件委托",
+   "无循环内读写布局的抖动",
+   "移除元素时同时清理监听器",
+   "框架项目中避免直接改 DOM"
+  ],
+  "interview": [
+   {
+    "q": "DOMContentLoaded 和 load 有什么区别？",
+    "a": "DOMContentLoaded 在 HTML 解析完成、DOM 树建好且 defer 脚本执行后触发，不等图片、样式表等资源；load 在页面所有依赖资源加载完成后触发。需要操作 DOM 用前者，需要图片尺寸等用后者。"
+   },
+   {
+    "q": "为什么说虚拟 DOM 不一定比直接操作 DOM 快？",
+    "a": "虚拟 DOM 需要先在 JS 中生成新树并比对，再把差异应用到真实 DOM，本身有开销。它的价值在于用声明式写法换取「足够快」和可维护性；精心手写的最少 DOM 操作理论上更快。"
+   },
+   {
+    "q": "事件委托的原理和局限？",
+    "a": "利用冒泡在祖先上统一监听，用 target/closest 定位源元素，减少监听器数量并自动覆盖新增元素。局限：不冒泡的事件（如 focus，可改用 focusin）无法直接委托，且需注意 stopPropagation 会截断。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "MDN：Document Object Model (DOM)",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model"
+   },
+   {
+    "title": "WHATWG DOM Standard",
+    "url": "https://dom.spec.whatwg.org/"
+   },
+   {
+    "title": "MDN：Event bubbling",
+    "url": "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/Event_bubbling"
+   }
+  ]
+ },
+ {
+  "slug": "responsive-design",
+  "def": "响应式设计（Responsive Web Design）是让同一份 HTML/CSS 根据视口尺寸、像素密度和输入方式自适应布局的做法，核心手段是流式布局、弹性媒体与媒体查询。它属于前端表现层，取代了维护独立移动站的方案；移动端体验也是搜索引擎评估页面的重要因素。",
+  "how": [
+   "通过 viewport meta 标签让移动浏览器按设备宽度渲染，而不是按桌面宽度缩小显示。",
+   "布局使用 Flexbox、Grid 与相对单位（%、rem、fr），让元素随容器伸缩。",
+   "媒体查询在断点处切换布局；移动优先写法先写小屏样式，再用 min-width 逐级增强。",
+   "图片用 max-width:100%、srcset/sizes 或 picture 按屏幕提供合适尺寸，避免溢出与浪费流量。",
+   "容器查询（@container）让组件依据自身容器宽度而非整个视口调整，更适合组件化开发。"
+  ],
+  "terms": [
+   {
+    "t": "视口 (Viewport)",
+    "d": "浏览器中显示页面的可视区域，移动端需 meta 标签设定。"
+   },
+   {
+    "t": "断点 (Breakpoint)",
+    "d": "布局发生切换的宽度阈值，应依据内容而非具体机型。"
+   },
+   {
+    "t": "移动优先 (Mobile First)",
+    "d": "默认写小屏样式，用 min-width 媒体查询向大屏增强。"
+   },
+   {
+    "t": "容器查询 (Container Query)",
+    "d": "按父容器尺寸应用样式，组件可在不同位置自适应。"
+   },
+   {
+    "t": "clamp()",
+    "d": "CSS 函数，在最小值与最大值间按视口流式取值，常用于字号。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "移动优先的 HTML + CSS",
+   "src": "<!-- HTML：没有这一行，手机会按桌面宽度缩放显示 -->\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n\n/* CSS：默认是手机单列 */\n.grid { display: grid; gap: 1rem; grid-template-columns: 1fr; }\nimg { max-width: 100%; height: auto; }\nh1 { font-size: clamp(1.5rem, 4vw, 2.5rem); } /* 流式字号 */\n\n/* 平板及以上：两列 */\n@media (min-width: 640px) {\n  .grid { grid-template-columns: repeat(2, 1fr); }\n}\n/* 桌面：三列 */\n@media (min-width: 1024px) {\n  .grid { grid-template-columns: repeat(3, 1fr); }\n}\n\n/* 组件按自身容器宽度调整 */\n.card-wrap { container-type: inline-size; }\n@container (min-width: 400px) {\n  .card { display: flex; }\n}",
+   "note": "viewport 标签 + 流式网格 + min-width 断点是骨架；容器查询处理组件级自适应。"
+  },
+  "table": {
+   "title": "自适应手段对比",
+   "head": [
+    "手段",
+    "依据",
+    "适用"
+   ],
+   "rows": [
+    [
+     "媒体查询",
+     "视口宽度/特性",
+     "页面整体布局切换"
+    ],
+    [
+     "容器查询",
+     "父容器尺寸",
+     "可复用组件"
+    ],
+    [
+     "Grid auto-fit",
+     "可用空间自动排列",
+     "卡片列表"
+    ],
+    [
+     "srcset / picture",
+     "屏幕尺寸与像素密度",
+     "响应式图片"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "单一响应式站点",
+    "pros": "一套代码、URL 统一、利于 SEO",
+    "cons": "样式复杂度上升",
+    "when": "绝大多数网站"
+   },
+   {
+    "opt": "独立移动站 (m. 站)",
+    "pros": "可为移动端深度定制",
+    "cons": "两套维护，需处理跳转与重复内容",
+    "when": "历史遗留或极端差异需求"
+   },
+   {
+    "opt": "原生 App",
+    "pros": "体验与设备能力最好",
+    "cons": "开发与发布成本高",
+    "when": "高频重度使用场景"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "按具体机型设置断点",
+    "fix": "依据内容何时「挤坏」设置断点，并用 rem 等相对单位"
+   },
+   {
+    "bad": "只在开发者工具模拟，不测真机",
+    "fix": "至少在一台 iOS 与一台 Android 真机上检查触控与字体"
+   },
+   {
+    "bad": "固定宽度元素或长链接撑破布局导致横向滚动",
+    "fix": "设置 max-width、min-width:0 与 overflow-wrap 处理长文本"
+   },
+   {
+    "bad": "用 hover 承载关键交互",
+    "fix": "触屏无 hover，关键操作需可点击，可用 @media (hover: hover) 区分"
+   }
+  ],
+  "checklist": [
+   "存在正确的 viewport meta 标签",
+   "320px 宽度下无横向滚动",
+   "触控目标足够大且间距充足",
+   "图片按屏幕提供合适尺寸",
+   "关键交互不依赖 hover",
+   "真机检查过主要页面"
+  ],
+  "interview": [
+   {
+    "q": "移动优先和桌面优先在 CSS 上有什么区别？",
+    "a": "移动优先默认写小屏样式，用 min-width 媒体查询叠加大屏规则，小屏设备加载的覆盖样式更少、心智上从简到繁；桌面优先用 max-width 向下覆盖，容易积累大量重置规则。"
+   },
+   {
+    "q": "容器查询解决了媒体查询的什么问题？",
+    "a": "媒体查询只看视口，同一组件放在侧栏和主区时宽度不同却拿到相同样式；容器查询让组件依据父容器尺寸调整，组件真正可移植，更契合组件化设计系统。"
+   },
+   {
+    "q": "响应式图片如何兼顾清晰与流量？",
+    "a": "用 srcset 提供多种宽度并配 sizes 告诉浏览器显示尺寸，由浏览器按像素密度选择；需要不同裁切时用 picture 的 source 媒体条件；配合 loading=lazy 和现代格式（WebP/AVIF）。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "MDN：Responsive design",
+    "url": "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/CSS_layout/Responsive_Design"
+   },
+   {
+    "title": "web.dev：Responsive web design basics",
+    "url": "https://web.dev/articles/responsive-web-design-basics"
+   },
+   {
+    "title": "MDN：CSS container queries",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_containment/Container_queries"
+   }
+  ]
+ },
+ {
+  "slug": "ui-components",
+  "def": "组件（Component）是把 UI 的结构、样式与行为封装成可复用、可组合单元的前端设计方式，React、Vue、Svelte 与 Web Components 都以此为核心。组件通过属性（props）接收输入、通过事件或回调向外通知，内部管理局部状态。它属于前端架构层，决定代码复用度、可测试性与 AI 修改时的上下文边界。",
+  "how": [
+   "把页面按职责拆成组件树：页面组件组合区块组件，区块组件组合基础组件（按钮、输入框）。",
+   "父组件通过 props 向下传数据，子组件通过回调或事件向上通知，形成单向数据流。",
+   "组件内部用局部状态管理交互细节，跨组件共享的状态上提到共同父级或交给状态管理方案。",
+   "框架在状态或 props 变化时重新渲染组件，并把差异同步到 DOM。",
+   "通过组合（children、插槽）而非继承扩展组件，使同一外壳能容纳不同内容。"
+  ],
+  "terms": [
+   {
+    "t": "属性 (Props)",
+    "d": "父组件传给子组件的只读输入参数。"
+   },
+   {
+    "t": "状态 (State)",
+    "d": "组件内部可变数据，变化会触发重新渲染。"
+   },
+   {
+    "t": "状态提升 (Lifting State Up)",
+    "d": "把多个组件共享的状态移到它们最近的共同父组件。"
+   },
+   {
+    "t": "组合 (Composition)",
+    "d": "通过 children 或插槽嵌入内容，而不是继承扩展。"
+   },
+   {
+    "t": "受控组件 (Controlled Component)",
+    "d": "表单值由父级状态决定并通过回调更新的组件。"
+   }
+  ],
+  "code": {
+   "lang": "typescript",
+   "title": "可复用的 React 组件",
+   "src": "// Button.tsx：基础组件，只关心外观与点击\ntype ButtonProps = {\n  variant?: \"primary\" | \"ghost\";\n  onClick?: () => void;\n  children: React.ReactNode; // 组合：内容由外部决定\n};\n\nexport function Button({ variant = \"primary\", onClick, children }: ButtonProps) {\n  return (\n    <button className={`btn btn-${variant}`} onClick={onClick}>\n      {children}\n    </button>\n  );\n}\n\n// Counter.tsx：业务组件，持有状态，组合基础组件\nimport { useState } from \"react\";\n\nexport function Counter() {\n  const [count, setCount] = useState(0);\n  return (\n    <div>\n      <span>已点击 {count} 次</span>\n      <Button onClick={() => setCount((c) => c + 1)}>+1</Button>\n    </div>\n  );\n}",
+   "note": "基础组件无业务状态、靠 props 与 children 定制；业务组件持有状态并组合它们。"
+  },
+  "table": {
+   "title": "组件分层与职责",
+   "head": [
+    "层级",
+    "例子",
+    "是否持有业务状态"
+   ],
+   "rows": [
+    [
+     "基础组件",
+     "Button、Input",
+     "否，仅 props"
+    ],
+    [
+     "复合组件",
+     "表单、卡片列表",
+     "少量 UI 状态"
+    ],
+    [
+     "页面/容器组件",
+     "订单页",
+     "是，负责取数与编排"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "细粒度组件",
+    "pros": "复用高、易测试、AI 改动范围小",
+    "cons": "文件多、props 传递层级深",
+    "when": "设计系统、长期维护项目"
+   },
+   {
+    "opt": "粗粒度组件",
+    "pros": "上手快、跳转少",
+    "cons": "难复用，改动牵一发动全身",
+    "when": "原型与一次性页面"
+   },
+   {
+    "opt": "Web Components",
+    "pros": "框架无关、可跨技术栈",
+    "cons": "与框架状态集成较繁琐",
+    "when": "多框架共存的组织"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "props 逐层透传五六层（prop drilling）",
+    "fix": "用组合传入子组件，或改用 Context/状态库"
+   },
+   {
+    "bad": "基础组件里写死业务逻辑和接口请求",
+    "fix": "基础组件保持纯展示，数据与副作用放到容器层"
+   },
+   {
+    "bad": "把可由 props 推导的值复制进 state",
+    "fix": "渲染时直接计算派生值，避免两份数据不同步"
+   },
+   {
+    "bad": "让 AI 在超大单文件组件中修改",
+    "fix": "先拆分组件，再按文件给 AI 最小上下文"
+   }
+  ],
+  "checklist": [
+   "组件职责单一，文件规模可读",
+   "props 有类型定义与默认值",
+   "基础组件不含业务请求",
+   "无冗余的派生状态",
+   "关键组件有单元或可视测试",
+   "命名与目录约定写入规则文件"
+  ],
+  "interview": [
+   {
+    "q": "为什么 React 推荐组合而不是继承？",
+    "a": "组合通过 props 与 children 注入内容和行为，依赖关系显式、可替换；继承形成脆弱的层级耦合，父类改动影响所有子类。官方文档也指出用组合即可覆盖绝大多数复用场景。"
+   },
+   {
+    "q": "什么时候该把状态提升，什么时候引入状态库？",
+    "a": "两个兄弟组件需共享数据时先提升到共同父级；当共享跨越很多层、多个远距离组件读写同一数据，或需要缓存服务端数据时，再考虑 Context、Zustand 或 TanStack Query 等方案。"
+   },
+   {
+    "q": "组件拆分对 AI 辅助开发有什么影响？",
+    "a": "小而清晰的组件让 Agent 只需读少量文件即可改动，降低上下文消耗和误改风险；明确的 props 类型充当契约，类型检查能及时发现 AI 改坏的调用点。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "React 文档：Your First Component",
+    "url": "https://react.dev/learn/your-first-component"
+   },
+   {
+    "title": "React 文档：Thinking in React",
+    "url": "https://react.dev/learn/thinking-in-react"
+   },
+   {
+    "title": "Vue 文档：Components Basics",
+    "url": "https://vuejs.org/guide/essentials/component-basics.html"
+   }
+  ]
+ },
+ {
+  "slug": "browser-storage",
+  "def": "浏览器本地存储指 Web 平台提供的客户端持久化机制，主要有 localStorage、sessionStorage、IndexedDB、Cache API 与 Cookie。它们按源（origin）隔离，属于前端数据层，用于保存偏好、离线数据与缓存。各机制在容量、同步/异步、生命周期与安全性上差异明显，选错会带来性能或安全问题。",
+  "how": [
+   "所有存储按协议 + 域名 + 端口组成的源隔离，一个源无法读取另一个源的数据。",
+   "Web Storage 是同步的键值对接口，只能存字符串，容量通常为每源数 MB，大量读写会阻塞主线程。",
+   "IndexedDB 是异步的事务型对象数据库，支持索引与结构化克隆，可存 Blob 等大量数据。",
+   "浏览器按配额管理存储，空间紧张时可能清除尽力而为（best-effort）的数据；可申请持久化存储。",
+   "同源页面脚本都能读取这些存储，因此遭遇 XSS 时其中内容会被窃取。"
+  ],
+  "terms": [
+   {
+    "t": "同源策略 (Same-Origin Policy)",
+    "d": "以协议、主机、端口划分边界，隔离存储与脚本访问。"
+   },
+   {
+    "t": "localStorage",
+    "d": "同步键值存储，除非清除否则长期保留，同源各标签页共享。"
+   },
+   {
+    "t": "sessionStorage",
+    "d": "按标签页隔离，标签页关闭后清空。"
+   },
+   {
+    "t": "IndexedDB",
+    "d": "异步事务型数据库，适合大量结构化数据与离线应用。"
+   },
+   {
+    "t": "存储配额 (Storage Quota)",
+    "d": "浏览器为每个源分配的可用空间，可用 StorageManager 查询。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "安全地读写本地偏好",
+   "src": "// localStorage 只存字符串，对象需序列化；读写都可能抛错\nfunction savePrefs(prefs) {\n  try {\n    localStorage.setItem(\"prefs:v1\", JSON.stringify(prefs));\n  } catch (e) {\n    console.warn(\"存储失败（配额满或被禁用）\", e);\n  }\n}\n\nfunction loadPrefs() {\n  try {\n    return JSON.parse(localStorage.getItem(\"prefs:v1\")) ?? { theme: \"light\" };\n  } catch {\n    return { theme: \"light\" }; // 数据损坏时回退默认值\n  }\n}\n\n// 其他标签页修改时同步界面\nwindow.addEventListener(\"storage\", (e) => {\n  if (e.key === \"prefs:v1\") applyTheme(loadPrefs().theme);\n});\n\n// 查询配额，并申请持久化（浏览器可能拒绝）\nconst { usage, quota } = await navigator.storage.estimate();\nconst persisted = await navigator.storage.persist();",
+   "note": "键名带版本便于迁移；读写包 try/catch；顶层 await 需在 ES 模块中运行。"
+  },
+  "table": {
+   "title": "客户端存储机制对比",
+   "head": [
+    "机制",
+    "接口",
+    "生命周期",
+    "典型用途"
+   ],
+   "rows": [
+    [
+     "localStorage",
+     "同步键值",
+     "长期，直到清除",
+     "主题、语言偏好"
+    ],
+    [
+     "sessionStorage",
+     "同步键值",
+     "标签页关闭即清",
+     "单次流程临时数据"
+    ],
+    [
+     "IndexedDB",
+     "异步事务",
+     "长期，受配额管理",
+     "离线数据、大文件"
+    ],
+    [
+     "Cookie",
+     "随请求发送",
+     "可设过期时间",
+     "会话标识（配 HttpOnly）"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "localStorage",
+    "pros": "API 简单，同步易用",
+    "cons": "阻塞主线程、仅字符串、容量小",
+    "when": "少量非敏感偏好"
+   },
+   {
+    "opt": "IndexedDB",
+    "pros": "容量大、异步、支持索引",
+    "cons": "原生 API 繁琐，常需封装库",
+    "when": "离线优先、本地缓存数据集"
+   },
+   {
+    "opt": "HttpOnly Cookie",
+    "pros": "JS 读不到，降低 XSS 窃取风险",
+    "cons": "每次请求携带，需防 CSRF",
+    "when": "登录会话标识"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把访问令牌或 API 密钥存进 localStorage",
+    "fix": "会话用 HttpOnly + Secure + SameSite Cookie，密钥只放服务端"
+   },
+   {
+    "bad": "在 localStorage 中存放大量数据并频繁读写",
+    "fix": "大数据改用 IndexedDB，并在必要时放入 Web Worker 处理"
+   },
+   {
+    "bad": "假设本地数据永远存在",
+    "fix": "数据可能被用户或浏览器清除，需有回退默认值与服务端来源"
+   },
+   {
+    "bad": "数据结构升级后旧数据解析崩溃",
+    "fix": "键名带版本号，读取时校验并迁移"
+   }
+  ],
+  "checklist": [
+   "本地存储中无令牌、密钥与敏感个人信息",
+   "读写有异常处理与默认值",
+   "键名带版本，可做数据迁移",
+   "大数据使用 IndexedDB",
+   "退出登录时清理用户相关数据",
+   "已考虑隐私模式与存储被清除"
+  ],
+  "interview": [
+   {
+    "q": "JWT 放 localStorage 还是 Cookie？",
+    "a": "localStorage 可被任何同源脚本读取，XSS 时直接泄露；HttpOnly Cookie 脚本读不到，但会自动随请求发送，需配合 SameSite 与 CSRF 防护。多数安全建议倾向 HttpOnly Cookie 承载会话，同时仍要根治 XSS。"
+   },
+   {
+    "q": "IndexedDB 和 localStorage 在性能上有何本质区别？",
+    "a": "localStorage 是同步 API，读写会阻塞主线程，数据量大时造成卡顿；IndexedDB 是异步事务模型，不阻塞渲染，支持索引查询与二进制数据，适合大量数据，代价是 API 更复杂。"
+   },
+   {
+    "q": "浏览器什么时候会清除本地存储？",
+    "a": "用户手动清除；存储空间紧张时按策略淘汰非持久化的源；部分浏览器的隐私策略会清理长期无交互站点的脚本可写存储。可调用 navigator.storage.persist() 申请持久化，但关键数据仍应以服务端为准。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "MDN：Web Storage API",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API"
+   },
+   {
+    "title": "MDN：IndexedDB API",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API"
+   },
+   {
+    "title": "MDN：Storage quotas and eviction criteria",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria"
+   }
+  ]
+ },
+ {
+  "slug": "component-library",
+  "def": "UI 组件库是预先实现好的一组界面组件与设计规范的集合，按形态可分为带样式的成品库（Ant Design、MUI）、只提供行为与无障碍逻辑的无头库（Radix UI、React Aria），以及 shadcn/ui 这类「复制源码到项目」的组件集。它属于前端设计系统层，决定开发效率、视觉一致性与可定制程度。",
+  "how": [
+   "组件库把按钮、表单、弹窗、表格等常见交互封装好，并处理键盘操作、焦点管理与 ARIA 属性。",
+   "成品库以 npm 依赖形式引入，通过主题令牌（颜色、圆角、间距）统一定制外观。",
+   "无头库只输出状态与交互逻辑，样式完全由使用者用 CSS 或 Tailwind 自定义。",
+   "shadcn/ui 通过 CLI 把基于 Radix 与 Tailwind 的组件源码复制进项目，代码归你所有，可直接修改。",
+   "AI 生成界面时，若规则文件指定了组件库，模型会复用其组件与命名，输出更一致。"
+  ],
+  "terms": [
+   {
+    "t": "设计令牌 (Design Tokens)",
+    "d": "颜色、字号、间距等设计变量，主题定制的基础。"
+   },
+   {
+    "t": "无头组件 (Headless UI)",
+    "d": "只提供逻辑与无障碍行为、不带样式的组件。"
+   },
+   {
+    "t": "Radix UI Primitives",
+    "d": "React 无头组件库，shadcn/ui 的大部分交互组件基于它。"
+   },
+   {
+    "t": "components.json",
+    "d": "shadcn/ui 的项目配置，记录样式风格、路径别名等。"
+   },
+   {
+    "t": "WAI-ARIA 模式",
+    "d": "W3C 给出的常见控件无障碍交互规范，组件库应遵循。"
+   }
+  ],
+  "code": {
+   "lang": "typescript",
+   "title": "用 shadcn/ui 组装弹窗",
+   "src": "// 先在终端初始化并添加组件（源码会复制到 components/ui/）：\n//   npx shadcn@latest init\n//   npx shadcn@latest add button dialog\nimport { Button } from \"@/components/ui/button\";\nimport {\n  Dialog, DialogContent, DialogDescription,\n  DialogHeader, DialogTitle, DialogTrigger,\n} from \"@/components/ui/dialog\";\n\nexport function DeleteConfirm({ onConfirm }: { onConfirm: () => void }) {\n  return (\n    <Dialog>\n      <DialogTrigger asChild>\n        <Button variant=\"destructive\">删除项目</Button>\n      </DialogTrigger>\n      <DialogContent>\n        <DialogHeader>\n          <DialogTitle>确定删除？</DialogTitle>\n          <DialogDescription>此操作无法撤销。</DialogDescription>\n        </DialogHeader>\n        <Button onClick={onConfirm}>确认删除</Button>\n      </DialogContent>\n    </Dialog>\n  );\n}",
+   "note": "焦点锁定、Esc 关闭、ARIA 标注由底层 Radix 处理；源码在项目中，可直接改样式。"
+  },
+  "table": {
+   "title": "组件库形态对比",
+   "head": [
+    "形态",
+    "代表",
+    "定制自由度",
+    "升级方式"
+   ],
+   "rows": [
+    [
+     "成品样式库",
+     "Ant Design、MUI",
+     "中，靠主题",
+     "升级 npm 包"
+    ],
+    [
+     "无头库",
+     "Radix、React Aria",
+     "高，样式全自写",
+     "升级 npm 包"
+    ],
+    [
+     "源码复制式",
+     "shadcn/ui",
+     "最高，直接改源码",
+     "手动对比合并"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "成品样式库",
+    "pros": "组件全、开箱即用，适合后台",
+    "cons": "风格辨识度强，深度定制难",
+    "when": "中后台、内部工具"
+   },
+   {
+    "opt": "shadcn/ui 源码式",
+    "pros": "完全掌控代码，AI 生态示例多",
+    "cons": "升级需自行合并，维护责任在己",
+    "when": "面向用户的产品、需品牌化"
+   },
+   {
+    "opt": "无头库 + 自研样式",
+    "pros": "设计自由与无障碍兼得",
+    "cons": "样式工作量大",
+    "when": "有设计团队的设计系统"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "同一项目混用多个组件库",
+    "fix": "规则文件中指定唯一组件库，Code Review 时拦截"
+   },
+   {
+    "bad": "直接覆盖组件内部类名做定制",
+    "fix": "通过主题令牌或组件暴露的 props/变体定制"
+   },
+   {
+    "bad": "以为用了组件库就自动满足无障碍",
+    "fix": "仍需补 label、alt 和焦点顺序，并用工具与键盘实测"
+   },
+   {
+    "bad": "随意修改 shadcn 组件后无法追溯",
+    "fix": "改动集中在 variants，提交信息注明定制原因"
+   }
+  ],
+  "checklist": [
+   "项目只使用一套组件库",
+   "主题令牌集中定义",
+   "规则文件写明组件库与导入路径",
+   "表单与弹窗已做键盘可用性测试",
+   "评估了包体积与按需引入",
+   "定制改动有记录，便于升级"
+  ],
+  "interview": [
+   {
+    "q": "shadcn/ui 与传统 npm 组件库的核心区别？",
+    "a": "传统库作为依赖安装，源码在 node_modules，通过 props 与主题定制，升级即换版本；shadcn/ui 用 CLI 把组件源码复制进项目，开发者拥有并直接修改代码，灵活但上游更新要手动合并。"
+   },
+   {
+    "q": "为什么无头组件库越来越流行？",
+    "a": "复杂控件的难点在于键盘交互、焦点管理和 ARIA 语义，而非外观。无头库把这些难点封装好，样式交给团队，使品牌化设计与无障碍兼得，也能与 Tailwind 等方案自然配合。"
+   },
+   {
+    "q": "如何让 AI 生成的界面风格稳定？",
+    "a": "在规则文件中固定组件库、导入路径、主题令牌与禁用写法；提供一两个标准页面作为参照；让 Agent 优先复用现有组件；结合 Lint 规则和视觉回归测试拦截偏离。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "shadcn/ui 文档",
+    "url": "https://ui.shadcn.com/docs"
+   },
+   {
+    "title": "Radix Primitives 介绍",
+    "url": "https://www.radix-ui.com/primitives/docs/overview/introduction"
+   },
+   {
+    "title": "W3C ARIA Authoring Practices Guide",
+    "url": "https://www.w3.org/WAI/ARIA/apg/"
+   }
+  ]
+ },
+ {
+  "slug": "fork",
+  "def": "Fork（派生）是代码托管平台（GitHub、GitLab 等）提供的服务端仓库复制功能：在你的账号下创建一个与上游仓库共享历史的独立副本。它属于协作流程层，是开源贡献的标准模型——贡献者无需上游写权限，在自己的 Fork 中开发，再通过 Pull Request 提议合并。",
+  "how": [
+   "在平台上点击 Fork，服务端创建一个属于你的新仓库，包含上游的提交历史与分支（可选仅默认分支）。",
+   "把 Fork 克隆到本地，origin 指向你的 Fork，再添加 upstream 远程指向原仓库。",
+   "在功能分支上开发并推送到 origin，然后从 Fork 的分支向上游发起 Pull Request。",
+   "上游持续前进，需定期 fetch upstream 并合并或变基到本地，保持 Fork 同步、减少冲突。",
+   "PR 合并后可删除功能分支；Fork 的权限、Actions 与密钥设置与上游相互独立。"
+  ],
+  "terms": [
+   {
+    "t": "上游 (Upstream)",
+    "d": "被 Fork 的原仓库，约定用名为 upstream 的远程指向它。"
+   },
+   {
+    "t": "origin",
+    "d": "克隆时默认的远程名，在 Fork 工作流中指向你自己的副本。"
+   },
+   {
+    "t": "跨仓库 PR (Cross-repo PR)",
+    "d": "从 Fork 的分支向上游分支发起的拉取请求。"
+   },
+   {
+    "t": "同步 Fork (Sync fork)",
+    "d": "把上游新提交合入你的 Fork，GitHub 网页与 gh CLI 都支持。"
+   },
+   {
+    "t": "维护者可编辑 (Allow edits by maintainers)",
+    "d": "允许上游维护者直接向你的 PR 分支推送修改。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "标准 Fork 贡献流程",
+   "src": "# 用 GitHub CLI 一步完成 Fork + 克隆 + 配置 upstream\ngh repo fork owner/project --clone\ncd project\ngit remote -v            # origin=你的 Fork，upstream=原仓库\n\n# 每次开工前先同步上游\ngit fetch upstream\ngit switch main\ngit merge --ff-only upstream/main\ngit push origin main\n\n# 在功能分支上开发\ngit switch -c fix-typo\ngit commit -am \"docs: fix typo in README\"\ngit push -u origin fix-typo\n\n# 向上游发起 PR\ngh pr create --repo owner/project --fill",
+   "note": "不在 Fork 的 main 上直接开发；main 只用于跟随上游，改动都放功能分支。"
+  },
+  "table": {
+   "title": "协作模型对比",
+   "head": [
+    "模型",
+    "是否需写权限",
+    "适合"
+   ],
+   "rows": [
+    [
+     "Fork + PR",
+     "否",
+     "开源项目、外部贡献者"
+    ],
+    [
+     "共享仓库 + 分支",
+     "是",
+     "公司内部团队"
+    ],
+    [
+     "长期硬分叉",
+     "否",
+     "项目方向分歧、独立维护"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Fork 工作流",
+    "pros": "上游无需授权，安全隔离",
+    "cons": "需维护同步，CI 密钥对 Fork PR 受限",
+    "when": "开源与外部协作"
+   },
+   {
+    "opt": "同仓库分支工作流",
+    "pros": "流程简单，CI 与权限统一",
+    "cons": "需给成员写权限",
+    "when": "信任边界内的团队"
+   },
+   {
+    "opt": "硬分叉独立发展",
+    "pros": "完全自主决定方向",
+    "cons": "难以合入上游修复",
+    "when": "上游停止维护或方向不合"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "长期不同步，PR 时冲突巨大",
+    "fix": "开工前 fetch upstream，PR 前变基到最新上游"
+   },
+   {
+    "bad": "在 Fork 的 main 分支上直接提交",
+    "fix": "main 只跟随上游，每个改动独立功能分支"
+   },
+   {
+    "bad": "为 Fork PR 的 CI 随意开放仓库密钥",
+    "fix": "谨慎使用 pull_request_target，不在其中检出并运行不可信代码"
+   },
+   {
+    "bad": "Fork 后忽略原项目许可证义务",
+    "fix": "保留版权声明与许可证，按条款处理再分发"
+   }
+  ],
+  "checklist": [
+   "已配置 upstream 远程",
+   "PR 前已同步并变基到上游最新",
+   "改动在独立功能分支",
+   "遵循上游 CONTRIBUTING 规范",
+   "保留许可证与版权声明",
+   "未在 CI 中向不可信代码暴露密钥"
+  ],
+  "interview": [
+   {
+    "q": "Fork 和 Clone 的本质区别？",
+    "a": "Clone 是 Git 操作，把仓库复制到本地；Fork 是托管平台功能，在服务端为你创建一个保留上游关联的仓库副本，使你无写权限也能推送并发起跨仓库 PR。典型流程是先 Fork 再 Clone 自己的 Fork。"
+   },
+   {
+    "q": "为什么 Fork 发来的 PR 默认拿不到仓库密钥？",
+    "a": "PR 代码不可信，若 CI 运行时能读取密钥，攻击者可在 PR 中改脚本窃取。GitHub 对来自 Fork 的 pull_request 事件默认不提供密钥且令牌只读；pull_request_target 有密钥但运行在基础分支上下文，误用会造成严重漏洞。"
+   },
+   {
+    "q": "同步 Fork 用 merge 还是 rebase？",
+    "a": "Fork 的 main 应与上游保持一致，用 fast-forward 合并即可；个人功能分支在提 PR 前可 rebase 到最新上游得到线性历史，但已被他人基于其工作的分支不宜改写历史。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "GitHub Docs：About forks",
+    "url": "https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/about-forks"
+   },
+   {
+    "title": "GitHub Docs：Syncing a fork",
+    "url": "https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/syncing-a-fork"
+   },
+   {
+    "title": "GitHub CLI：gh repo fork",
+    "url": "https://cli.github.com/manual/gh_repo_fork"
+   }
+  ]
+ },
+ {
+  "slug": "tags-and-releases",
+  "def": "Tag（标签）是 Git 中指向特定提交的命名引用，常用于标记版本号；Release（发行版）是 GitHub 等平台在标签之上提供的发布对象，附带说明、更新日志与二进制附件。二者属于版本管理与交付层，配合语义化版本，为回滚、审计和自动化发布提供稳定锚点。",
+  "how": [
+   "轻量标签只是指向提交的引用；附注标签是独立对象，包含作者、日期、说明，并可 GPG/SSH 签名。",
+   "git push 默认不推送标签，需显式推送单个标签或使用 --tags / --follow-tags。",
+   "平台基于标签创建 Release，可自动生成两版之间的变更说明并上传构建产物。",
+   "CI 可监听标签推送（如 tags: ['v*']）触发构建、打包、发布到包仓库或部署。",
+   "回滚或排查时，可直接检出或比较两个标签，定位版本间的差异。"
+  ],
+  "terms": [
+   {
+    "t": "附注标签 (Annotated Tag)",
+    "d": "带作者、日期与说明的标签对象，发布版本推荐使用。"
+   },
+   {
+    "t": "轻量标签 (Lightweight Tag)",
+    "d": "仅是指向提交的名字，不含额外元数据。"
+   },
+   {
+    "t": "签名标签 (Signed Tag)",
+    "d": "用 GPG 或 SSH 密钥签名，可验证发布者身份。"
+   },
+   {
+    "t": "预发布 (Pre-release)",
+    "d": "如 v2.0.0-rc.1，SemVer 中优先级低于正式版。"
+   },
+   {
+    "t": "变更日志 (Changelog)",
+    "d": "按版本记录新增、修复与破坏性变更的文档。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "打标签并发布 Release",
+   "src": "# 确认在要发布的提交上（通常是 main 最新且 CI 通过）\ngit switch main && git pull --ff-only\n\n# 创建附注标签（推荐），-m 写版本说明\ngit tag -a v1.2.0 -m \"v1.2.0: 新增导出功能\"\n\n# 标签不会随 git push 自动推送，需单独推送\ngit push origin v1.2.0\n\n# 用 GitHub CLI 创建 Release，自动生成变更说明\ngh release create v1.2.0 --generate-notes ./dist/app.zip\n\n# 查看与比较\ngit tag --list \"v1.*\"\ngit log --oneline v1.1.0..v1.2.0\n\n# 发布前打错了：删除本地与远程标签（已被他人使用则不要这样做）\ngit tag -d v1.2.0 && git push origin --delete v1.2.0",
+   "note": "版本标签用附注标签并单独推送；已公开的标签不要移动或复用。"
+  },
+  "table": {
+   "title": "标签类型对比",
+   "head": [
+    "类型",
+    "元数据",
+    "可验证",
+    "推荐用途"
+   ],
+   "rows": [
+    [
+     "轻量标签",
+     "无",
+     "否",
+     "本地临时标记"
+    ],
+    [
+     "附注标签",
+     "作者、日期、说明",
+     "否",
+     "正式版本"
+    ],
+    [
+     "签名标签",
+     "附注 + 签名",
+     "是",
+     "开源发布、供应链要求"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "手动打标签发布",
+    "pros": "简单直观，完全可控",
+    "cons": "易漏步骤，说明质量不稳",
+    "when": "小项目、低频发布"
+   },
+   {
+    "opt": "基于提交规范自动发布",
+    "pros": "版本号与日志自动生成",
+    "cons": "依赖提交信息纪律与工具配置",
+    "when": "高频发布的库与服务"
+   },
+   {
+    "opt": "标签触发 CI 部署",
+    "pros": "可追溯、可重复",
+    "cons": "需保护标签防误触发",
+    "when": "生产发布流程"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "以为 git push 会带上标签",
+    "fix": "显式推送标签，或配置 push.followTags=true"
+   },
+   {
+    "bad": "修改已公开的标签指向新提交",
+    "fix": "标签不可变，出错就发布新的补丁版本号"
+   },
+   {
+    "bad": "在未通过 CI 的提交上打发布标签",
+    "fix": "只在主干 CI 通过的提交上打标签，并开启标签保护规则"
+   },
+   {
+    "bad": "版本号随意，破坏性变更只升补丁位",
+    "fix": "遵循语义化版本，破坏性变更升主版本"
+   }
+  ],
+  "checklist": [
+   "使用附注或签名标签",
+   "版本号符合语义化版本",
+   "标签所在提交 CI 全部通过",
+   "Release 说明含破坏性变更提示",
+   "构建产物与标签一一对应",
+   "已开启标签保护，防止误删改"
+  ],
+  "interview": [
+   {
+    "q": "附注标签和轻量标签有何区别？",
+    "a": "轻量标签只是一个指向提交的引用；附注标签是 Git 中独立存储的对象，包含打标者、时间、说明，可签名。git describe 默认只考虑附注标签，正式发布推荐附注或签名标签。"
+   },
+   {
+    "q": "为什么不能移动已发布的标签？",
+    "a": "他人和缓存（包仓库、CI、依赖锁定）已记录该标签对应的提交，移动后不同人拿到的同名版本内容不同，破坏可复现与审计，甚至被用于供应链攻击。正确做法是发布新版本号。"
+   },
+   {
+    "q": "如何用标签驱动自动化发布？",
+    "a": "CI 监听 v* 标签推送：检出该标签、构建测试、生成产物与校验和、创建 Release 并发布到包仓库或部署。配合标签保护规则限制谁能创建，产物签名与 SBOM 增强可信度。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Pro Git：Tagging",
+    "url": "https://git-scm.com/book/en/v2/Git-Basics-Tagging"
+   },
+   {
+    "title": "GitHub Docs：About releases",
+    "url": "https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases"
+   },
+   {
+    "title": "Semantic Versioning 2.0.0",
+    "url": "https://semver.org/"
+   }
+  ]
+ },
+ {
+  "slug": "hugging-face",
+  "def": "Hugging Face Hub 是托管机器学习模型、数据集与演示应用（Spaces）的平台，每个资源都是带版本历史的 Git 仓库，并配有模型卡片与许可证信息。它是开放模型生态的分发中心，配套 transformers、datasets、huggingface_hub 等库，覆盖从下载、推理到微调和部署的工作流。",
+  "how": [
+   "模型、数据集、Space 都以仓库形式存在，大文件通过平台的大文件存储机制管理，支持按分支、标签或提交哈希引用。",
+   "模型卡片（README.md 及其元数据）描述用途、训练数据、局限性、许可证与评测结果。",
+   "huggingface_hub 库与 hf 命令行工具负责搜索、下载、上传与缓存，文件默认缓存在本地缓存目录。",
+   "门控（gated）模型需在网页上同意条款，并用访问令牌（HF_TOKEN）认证后才能下载。",
+   "Spaces 用 Gradio、Streamlit 或 Docker 托管 Demo；平台也提供推理相关的托管服务。"
+  ],
+  "terms": [
+   {
+    "t": "模型卡片 (Model Card)",
+    "d": "说明模型用途、局限、训练数据与许可证的文档。"
+   },
+   {
+    "t": "门控模型 (Gated Model)",
+    "d": "需同意条款或获批后才能下载的模型仓库。"
+   },
+   {
+    "t": "revision",
+    "d": "下载时指定的分支、标签或提交哈希，用于锁定版本。"
+   },
+   {
+    "t": "Spaces",
+    "d": "托管在 Hub 上的交互式 ML 应用，常用 Gradio 构建。"
+   },
+   {
+    "t": "HF_ENDPOINT",
+    "d": "环境变量，可把 huggingface_hub 指向镜像或私有端点。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "搜索并锁定版本下载",
+   "src": "# pip install huggingface_hub\nfrom huggingface_hub import HfApi, snapshot_download\n\napi = HfApi()\n# 按下载量搜索模型\nfor m in api.list_models(search=\"Qwen2.5\", sort=\"downloads\", limit=5):\n    print(m.id)\n\n# 只下载需要的文件；生产环境建议把 revision 固定为提交哈希\npath = snapshot_download(\n    repo_id=\"Qwen/Qwen2.5-0.5B-Instruct\",\n    revision=\"main\",\n    allow_patterns=[\"*.json\", \"*.safetensors\", \"*.txt\"],\n)\nprint(\"已缓存到:\", path)\n\n# 门控模型：先在网页同意条款，再设置环境变量 HF_TOKEN\n# 网络受限时可设置 HF_ENDPOINT 指向可用的镜像地址",
+   "note": "allow_patterns 避免下载多余格式；固定 revision 保证每次拿到同一份权重。"
+  },
+  "table": {
+   "title": "Hub 资源类型",
+   "head": [
+    "资源",
+    "内容",
+    "常用工具"
+   ],
+   "rows": [
+    [
+     "Models",
+     "权重、配置、分词器",
+     "transformers、hf CLI"
+    ],
+    [
+     "Datasets",
+     "训练与评测数据",
+     "datasets 库"
+    ],
+    [
+     "Spaces",
+     "交互式 Demo",
+     "Gradio、Streamlit、Docker"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "运行时从 Hub 下载",
+    "pros": "部署包小，换模型方便",
+    "cons": "依赖网络与上游可用性",
+    "when": "开发与实验环境"
+   },
+   {
+    "opt": "预下载并打包/内网镜像",
+    "pros": "启动稳定、可离线、可审计",
+    "cons": "镜像体积大，需管理存储",
+    "when": "生产与受限网络"
+   },
+   {
+    "opt": "使用托管推理服务",
+    "pros": "免 GPU 运维",
+    "cons": "数据出域、按量计费",
+    "when": "快速验证或低并发"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只看下载量不看许可证与模型卡",
+    "fix": "核对许可证、预期用途与已知局限后再选型"
+   },
+   {
+    "bad": "不固定 revision，上游更新导致行为变化",
+    "fix": "生产环境固定到提交哈希"
+   },
+   {
+    "bad": "加载需 trust_remote_code 的仓库未审查代码",
+    "fix": "审阅仓库中的 Python 文件，或选择无需远程代码的模型"
+   },
+   {
+    "bad": "把访问令牌写进代码或 Notebook",
+    "fix": "用环境变量或密钥管理，按需授予只读权限"
+   }
+  ],
+  "checklist": [
+   "许可证与使用场景匹配",
+   "revision 已固定为提交哈希",
+   "优先 safetensors 格式",
+   "令牌只读且不入库",
+   "生产环境有本地缓存或镜像",
+   "未盲目启用 trust_remote_code"
+  ],
+  "interview": [
+   {
+    "q": "生产环境如何稳定地使用 Hub 上的模型？",
+    "a": "固定提交哈希；构建时预下载进镜像或对象存储，运行时离线加载；校验文件；使用只读令牌；必要时设内网镜像；监控上游许可证变更。避免每次启动都实时拉取。"
+   },
+   {
+    "q": "trust_remote_code=True 有什么风险？",
+    "a": "它允许执行模型仓库中的自定义 Python 代码，相当于运行第三方脚本，可能包含恶意行为。应审查代码并固定 revision，防止仓库更新后代码被替换，或优先选用已被库原生支持的架构。"
+   },
+   {
+    "q": "模型卡片里你最先看什么？",
+    "a": "许可证与使用限制、预期用途与不适用场景、训练数据说明、评测方法与结果、已知偏差。还要看是 Base 还是 Instruct 版本、上下文长度、推荐推理参数与对话模板。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Hugging Face Hub 文档",
+    "url": "https://huggingface.co/docs/hub/index"
+   },
+   {
+    "title": "huggingface_hub 库文档",
+    "url": "https://huggingface.co/docs/huggingface_hub/index"
+   },
+   {
+    "title": "Hub 文档：Model Cards",
+    "url": "https://huggingface.co/docs/hub/model-cards"
+   }
+  ]
+ },
+ {
+  "slug": "gpu-vram",
+  "def": "显存（VRAM）是 GPU 板载的高带宽内存，LLM 推理时需容纳模型权重、KV Cache、激活值与框架开销。它是本地与自建推理的首要约束：决定可运行的模型规模、量化精度、上下文长度与并发数。显存带宽同样关键，解码阶段速度往往受限于读取权重的带宽。",
+  "how": [
+   "权重占用 ≈ 参数量 × 每参数字节数：FP16/BF16 为 2 字节，INT8 约 1 字节，4-bit 约 0.5 字节（另有少量量化元数据）。",
+   "KV Cache 每 Token 占用 ≈ 2 × 层数 × KV 头数 × 头维度 × 字节数，随上下文长度与并发线性增长。",
+   "激活值、CUDA 上下文与推理引擎预分配也需要空间；vLLM 等会按比例预留显存给 KV Cache。",
+   "显存不足时可量化、换小模型、缩短上下文、降低并发，或把部分层卸载到 CPU（速度显著下降）。",
+   "多卡可用张量并行切分权重；Apple 芯片等统一内存架构由 CPU 与 GPU 共享内存。"
+  ],
+  "terms": [
+   {
+    "t": "KV Cache",
+    "d": "缓存已处理 Token 的 Key/Value，避免重复计算，占用随上下文增长。"
+   },
+   {
+    "t": "GQA (Grouped-Query Attention)",
+    "d": "多个查询头共享 KV 头，显著减少 KV Cache 占用。"
+   },
+   {
+    "t": "显存带宽 (Memory Bandwidth)",
+    "d": "每秒可读写的数据量，常是解码速度瓶颈。"
+   },
+   {
+    "t": "CPU 卸载 (Offloading)",
+    "d": "把部分层放到内存由 CPU 计算，能跑但更慢。"
+   },
+   {
+    "t": "OOM (Out of Memory)",
+    "d": "显存分配失败，进程报错退出。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "估算推理所需显存",
+   "src": "def estimate_vram_gb(params_b, bytes_per_param, layers, kv_heads,\n                     head_dim, ctx_len, batch=1, kv_bytes=2, overhead=1.2):\n    \"\"\"粗略估算：权重 + KV Cache，再乘开销系数\"\"\"\n    weights = params_b * 1e9 * bytes_per_param\n    # 每个 Token 的 KV：K 和 V 两份 × 层数 × KV 头数 × 头维度 × 字节数\n    kv_per_token = 2 * layers * kv_heads * head_dim * kv_bytes\n    kv_total = kv_per_token * ctx_len * batch\n    return (weights + kv_total) * overhead / 1024**3\n\n# 以 Llama 3 8B 的公开配置为例：32 层、8 个 KV 头、头维度 128\nfor name, bpp in [(\"BF16\", 2), (\"INT8\", 1), (\"4-bit\", 0.5)]:\n    gb = estimate_vram_gb(8, bpp, layers=32, kv_heads=8,\n                          head_dim=128, ctx_len=8192)\n    print(f\"{name}: 约 {gb:.1f} GB\")\n\n# 实际占用用 nvidia-smi 查看：\n#   nvidia-smi --query-gpu=memory.used,memory.total --format=csv",
+   "note": "该配置下每 Token KV 为 128 KiB，8K 上下文约 1 GiB；开销系数是经验假设，需实测校准。"
+  },
+  "table": {
+   "title": "显存占用构成",
+   "head": [
+    "组成",
+    "决定因素",
+    "如何压缩"
+   ],
+   "rows": [
+    [
+     "权重",
+     "参数量 × 精度",
+     "量化、换小模型"
+    ],
+    [
+     "KV Cache",
+     "层数、KV 头、上下文、并发",
+     "GQA、KV 量化、缩短上下文"
+    ],
+    [
+     "激活值",
+     "批大小、序列长度",
+     "减小批次、分块计算"
+    ],
+    [
+     "运行时开销",
+     "框架与 CUDA 上下文",
+     "调整预分配比例"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "高精度 (BF16)",
+    "pros": "效果最接近原模型",
+    "cons": "显存需求最大",
+    "when": "显存充足、追求质量"
+   },
+   {
+    "opt": "4-bit 量化",
+    "pros": "权重约降为 1/4，可上消费卡",
+    "cons": "有精度损失，部分任务明显",
+    "when": "本地运行、资源受限"
+   },
+   {
+    "opt": "CPU/内存卸载",
+    "pros": "小显存也能跑大模型",
+    "cons": "速度显著下降",
+    "when": "偶尔使用、可容忍慢"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只按权重估算显存，长上下文时 OOM",
+    "fix": "把 KV Cache 按最大上下文与并发计入预算"
+   },
+   {
+    "bad": "忽略显存带宽，只看容量选卡",
+    "fix": "解码速度主要看带宽，同时比较容量与带宽"
+   },
+   {
+    "bad": "同机其他进程占着显存不自知",
+    "fix": "部署前用 nvidia-smi 检查已用显存"
+   },
+   {
+    "bad": "推理引擎默认预占大部分显存，与其他服务冲突",
+    "fix": "调整引擎的显存占用比例参数"
+   }
+  ],
+  "checklist": [
+   "已估算权重 + KV Cache + 开销",
+   "按最大上下文与并发留余量",
+   "量化方案经过任务级评测",
+   "部署前检查显存占用与其他进程",
+   "监控显存使用与 OOM 事件",
+   "评估过带宽对速度的影响"
+  ],
+  "interview": [
+   {
+    "q": "为什么长上下文推理显存会暴涨？",
+    "a": "KV Cache 与上下文长度和并发数成正比：每个 Token 在每层都要缓存 K 和 V。长上下文或高并发下 KV Cache 可超过权重本身。缓解手段有 GQA/MQA、KV 量化、分页式 KV 管理、限制最大长度与前缀共享。"
+   },
+   {
+    "q": "解码阶段为什么常被称为带宽受限？",
+    "a": "单请求自回归解码每生成一个 Token 都要读取全部权重，计算量相对数据搬运很小，瓶颈在显存带宽。因此批处理多个请求能提升吞吐，量化减少读取字节也能提速。"
+   },
+   {
+    "q": "24 GB 显卡能否跑 32B 模型？",
+    "a": "BF16 权重约 64 GB，不行；4-bit 量化权重约 16 GB 出头，加上 KV Cache 与开销，短上下文下可能勉强可行，长上下文需进一步压缩或卸载。最终以实测为准。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Transformers：Optimizing LLMs for Speed and Memory",
+    "url": "https://huggingface.co/docs/transformers/llm_tutorial_optimization"
+   },
+   {
+    "title": "vLLM 文档",
+    "url": "https://docs.vllm.ai/"
+   },
+   {
+    "title": "NVIDIA：nvidia-smi 文档",
+    "url": "https://docs.nvidia.com/deploy/nvidia-smi/index.html"
+   }
+  ]
+ },
+ {
+  "slug": "ip-address",
+  "def": "IP 地址是网络层（IP 协议）用于标识和寻址网络接口的数字标识：IPv4 为 32 位，IPv6 为 128 位。路由器依据目标地址逐跳转发数据包。地址分公网与私有（RFC 1918）、回环、链路本地等类别，配合 CIDR、NAT 与 DNS，构成服务部署、访问控制与安全防护的基础。",
+  "how": [
+   "IPv4 写作点分十进制（如 203.0.113.5），IPv6 写作冒号分隔的十六进制（如 2001:db8::1），连续零段可省略。",
+   "CIDR 用前缀长度划分网段，如 10.0.0.0/24 表示前 24 位为网络号，共 256 个地址。",
+   "私有地址不能在公网路由，家庭与云 VPC 内部用它们，出网时经 NAT 转换为公网地址。",
+   "域名经 DNS 解析为 A（IPv4）或 AAAA（IPv6）记录，客户端再向该地址建立连接。",
+   "服务监听 127.0.0.1 只接受本机访问，监听 0.0.0.0 则接受所有网卡上的连接。"
+  ],
+  "terms": [
+   {
+    "t": "CIDR",
+    "d": "无类别域间路由，用「地址/前缀长度」表示网段。"
+   },
+   {
+    "t": "RFC 1918 私有地址",
+    "d": "10.0.0.0/8、172.16.0.0/12、192.168.0.0/16，仅内网使用。"
+   },
+   {
+    "t": "NAT",
+    "d": "网络地址转换，多台内网设备共享公网地址出网。"
+   },
+   {
+    "t": "回环地址 (Loopback)",
+    "d": "IPv4 的 127.0.0.0/8 与 IPv6 的 ::1，指向本机。"
+   },
+   {
+    "t": "X-Forwarded-For",
+    "d": "代理追加的请求头，记录原始客户端 IP，可被伪造。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "用 ipaddress 判断地址类型",
+   "src": "import ipaddress\n\nsamples = [\"192.168.1.10\", \"8.8.8.8\", \"127.0.0.1\", \"::1\", \"169.254.169.254\"]\nfor s in samples:\n    ip = ipaddress.ip_address(s)\n    print(f\"{s:18} v{ip.version} private={ip.is_private} \"\n          f\"loopback={ip.is_loopback} link_local={ip.is_link_local}\")\n\n# 网段计算\nnet = ipaddress.ip_network(\"10.0.0.0/24\")\nprint(net.num_addresses, net.netmask)          # 256 255.255.255.0\nprint(ipaddress.ip_address(\"10.0.0.42\") in net)  # True\n\n# 防 SSRF：服务端代用户请求 URL 前，拒绝非公网地址\ndef is_safe_target(addr: str) -> bool:\n    ip = ipaddress.ip_address(addr)\n    return ip.is_global  # 排除私有、回环、链路本地等\n\nprint(is_safe_target(\"169.254.169.254\"))  # False：云元数据地址",
+   "note": "is_global 可作为 SSRF 防护的一环，但需对 DNS 解析后的实际地址校验，并防重绑定。"
+  },
+  "table": {
+   "title": "常见地址范围",
+   "head": [
+    "范围",
+    "类别",
+    "用途"
+   ],
+   "rows": [
+    [
+     "10.0.0.0/8 等",
+     "RFC 1918 私有",
+     "内网、云 VPC"
+    ],
+    [
+     "127.0.0.0/8、::1",
+     "回环",
+     "本机服务"
+    ],
+    [
+     "169.254.0.0/16",
+     "链路本地",
+     "云元数据服务等"
+    ],
+    [
+     "100.64.0.0/10",
+     "共享地址空间",
+     "运营商级 NAT"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "直接暴露公网 IP",
+    "pros": "简单直连",
+    "cons": "攻击面大，换机即变地址",
+    "when": "临时测试，配合防火墙"
+   },
+   {
+    "opt": "反向代理/负载均衡入口",
+    "pros": "统一 TLS、限流与隐藏后端",
+    "cons": "多一层组件，需正确传递客户端 IP",
+    "when": "生产服务"
+   },
+   {
+    "opt": "内网 + 隧道/VPN 访问",
+    "pros": "不暴露公网端口",
+    "cons": "需配置访问通道",
+    "when": "管理后台、数据库"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "开发服务监听 0.0.0.0 并暴露在公网机器上",
+    "fix": "默认监听 127.0.0.1，确需对外再配合防火墙"
+   },
+   {
+    "bad": "直接信任 X-Forwarded-For 做限流或风控",
+    "fix": "只信任已知代理追加的部分，按可信跳数取值"
+   },
+   {
+    "bad": "按 IP 白名单作为唯一鉴权",
+    "fix": "IP 只作补充，仍需身份认证；注意 NAT 下多人共享 IP"
+   },
+   {
+    "bad": "SSRF 防护只检查 URL 字符串",
+    "fix": "解析后校验实际 IP，并处理重定向与 DNS 重绑定"
+   }
+  ],
+  "checklist": [
+   "服务监听地址符合预期",
+   "数据库等不对公网开放",
+   "代理后能正确获取客户端 IP",
+   "外发请求校验目标地址",
+   "已考虑 IPv6 访问路径与防火墙",
+   "安全组规则遵循最小开放"
+  ],
+  "interview": [
+   {
+    "q": "127.0.0.1 和 0.0.0.0 监听有什么区别？",
+    "a": "监听 127.0.0.1 只接受来自本机回环接口的连接；监听 0.0.0.0 表示绑定所有 IPv4 接口，外部可经网卡访问。容器内服务常需监听 0.0.0.0 才能被端口映射访问，但在宿主机上暴露要谨慎。"
+   },
+   {
+    "q": "为什么 IPv6 普及后 NAT 的意义变了？",
+    "a": "IPv4 地址稀缺，NAT 让多设备共享公网地址，并顺带提供「外部无法主动连入」的效果。IPv6 地址充足，设备可有全局地址，访问控制必须依赖防火墙策略，而不是 NAT 带来的隐式隔离。"
+   },
+   {
+    "q": "如何在反向代理后安全获取用户真实 IP？",
+    "a": "由最外层可信代理设置或追加 X-Forwarded-For/Forwarded 头；应用只信任来自已知代理网段的请求，从右往左跳过可信代理取第一个不可信地址；框架里配置受信代理列表。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 1918：Address Allocation for Private Internets",
+    "url": "https://www.rfc-editor.org/rfc/rfc1918"
+   },
+   {
+    "title": "RFC 8200：IPv6 Specification",
+    "url": "https://www.rfc-editor.org/rfc/rfc8200"
+   },
+   {
+    "title": "Python 文档：ipaddress",
+    "url": "https://docs.python.org/3/library/ipaddress.html"
+   }
+  ]
+ },
+ {
+  "slug": "paas",
+  "def": "PaaS（Platform as a Service，平台即服务）是由云厂商托管运行时、构建、扩缩容、TLS 与日志的应用托管模式，开发者只提交代码或镜像。它介于 IaaS（租虚拟机）与 SaaS（直接用软件）之间。Vercel、Netlify、Railway、Render 等是 AI 编程项目最常见的上线路径。",
+  "how": [
+   "连接 Git 仓库后，平台在每次推送时拉取代码，自动识别框架并执行构建（或使用 Dockerfile）。",
+   "构建产物被部署到平台管理的运行环境：容器、无服务器函数或边缘网络，并分配域名与 TLS 证书。",
+   "环境变量与密钥在平台控制台按环境（预览/生产）配置，运行时注入进程。",
+   "平台按流量或配置自动扩缩容、做健康检查，并提供日志、指标与一键回滚。",
+   "数据库、缓存等有状态服务通常以附加组件或外部托管服务接入，应用本身保持无状态。"
+  ],
+  "terms": [
+   {
+    "t": "IaaS / PaaS / SaaS",
+    "d": "云服务三层：租基础设施、租运行平台、直接用软件。"
+   },
+   {
+    "t": "预览部署 (Preview Deployment)",
+    "d": "每个分支或 PR 自动生成独立可访问的部署地址。"
+   },
+   {
+    "t": "构建包 (Buildpack)",
+    "d": "自动检测语言并完成依赖安装与构建的脚本集合。"
+   },
+   {
+    "t": "无状态 (Stateless)",
+    "d": "实例不在本地保存持久数据，可随时被替换或扩容。"
+   },
+   {
+    "t": "平台锁定 (Vendor Lock-in)",
+    "d": "依赖平台专有功能，迁移到别处成本高。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "用 Vercel CLI 部署",
+   "src": "# 安装并登录\nnpm i -g vercel\nvercel login\n\n# 在项目目录中关联到 Vercel 项目\nvercel link\n\n# 按环境添加密钥（交互式输入值，不写进代码）\nvercel env add DATABASE_URL production\nvercel env pull .env.local     # 拉取开发环境变量到本地\n\n# 部署预览版本（返回一个独立 URL）\nvercel\n\n# 确认无误后发布到生产\nvercel --prod\n\n# 查看某次部署的运行日志\nvercel logs <deployment-url>",
+   "note": "也可直接连 GitHub 自动部署；CLI 适合首次配置与排错。.env.local 不要提交。"
+  },
+  "table": {
+   "title": "托管模式对比",
+   "head": [
+    "模式",
+    "你负责",
+    "平台负责",
+    "代表"
+   ],
+   "rows": [
+    [
+     "IaaS / VPS",
+     "系统、运行时、应用",
+     "硬件与虚拟化",
+     "云服务器"
+    ],
+    [
+     "PaaS",
+     "应用代码与配置",
+     "运行时、扩缩容、TLS",
+     "Vercel、Railway、Render"
+    ],
+    [
+     "Serverless 函数",
+     "函数代码",
+     "按请求调度执行",
+     "云函数服务"
+    ],
+    [
+     "BaaS",
+     "前端与业务规则",
+     "数据库、认证、存储",
+     "Supabase、Firebase"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "PaaS",
+    "pros": "上线快、免运维、自带预览与回滚",
+    "cons": "规模大时单价高，受平台限制",
+    "when": "MVP、小团队、前端为主项目"
+   },
+   {
+    "opt": "VPS 自运维",
+    "pros": "成本可控、完全自由",
+    "cons": "安全、更新、监控都要自己做",
+    "when": "长期稳定负载、需特殊软件"
+   },
+   {
+    "opt": "Kubernetes",
+    "pros": "可移植、可大规模编排",
+    "cons": "复杂度与人力成本高",
+    "when": "多服务、有平台团队"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "未设预算与用量告警，遭刷流量后账单暴涨",
+    "fix": "开启消费上限或告警，并为公开接口加限流"
+   },
+   {
+    "bad": "把文件写到实例本地磁盘当持久存储",
+    "fix": "使用对象存储或数据库，实例保持无状态"
+   },
+   {
+    "bad": "预览环境连接生产数据库",
+    "fix": "为预览/开发配置独立数据库与密钥"
+   },
+   {
+    "bad": "重度依赖平台专有 API，迁移困难",
+    "fix": "核心逻辑保持框架通用，专有能力加一层封装"
+   }
+  ],
+  "checklist": [
+   "生产与预览环境变量分离",
+   "已设置消费告警或上限",
+   "应用无状态，持久数据在外部服务",
+   "自定义域名与 HTTPS 已生效",
+   "会用一键回滚与查看日志",
+   "评估过函数超时与冷启动限制"
+  ],
+  "interview": [
+   {
+    "q": "PaaS 和 Serverless 有什么区别？",
+    "a": "边界在模糊化。传统 PaaS 以常驻进程或容器运行应用、按实例计费；Serverless 函数按请求调度、空闲可缩到零、按调用和时长计费，但有执行时长、冷启动等限制。许多平台同时提供两种形态。"
+   },
+   {
+    "q": "什么时候应该从 PaaS 迁出？",
+    "a": "费用随规模显著高于自建；需要平台不支持的长连接、GPU、特殊系统依赖；合规要求数据驻留或专有网络；对延迟和网络拓扑有精细要求。迁移前先量化成本与运维人力。"
+   },
+   {
+    "q": "为什么 PaaS 要求应用无状态？",
+    "a": "平台会随时扩缩容、替换或重启实例，本地内存与磁盘不保证保留，多实例间也不共享。会话、上传文件、任务状态需放到数据库、缓存或对象存储，才能正确水平扩展与回滚。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Vercel 文档",
+    "url": "https://vercel.com/docs"
+   },
+   {
+    "title": "Railway 文档",
+    "url": "https://docs.railway.com/"
+   },
+   {
+    "title": "The Twelve-Factor App",
+    "url": "https://12factor.net/"
+   }
+  ]
+ },
+ {
+  "slug": "vps",
+  "def": "VPS（Virtual Private Server，虚拟专用服务器）是在物理主机上通过虚拟化切分出的独立虚拟机，拥有自己的操作系统与 root 权限；阿里云 ECS、AWS EC2 等云服务器属于同一类 IaaS 产品。它给予最大的控制自由，代价是系统安全、更新、备份与监控全部由使用者负责。",
+  "how": [
+   "云厂商用 KVM 等虚拟化技术把物理机资源切分给多台虚拟机，各自分配 vCPU、内存与磁盘。",
+   "创建实例时选择镜像（如 Ubuntu）、规格、地域与网络，获得公网 IP 并通过 SSH 登录。",
+   "首次登录后需做安全初始化：创建普通用户、配置 SSH 密钥、禁用密码与 root 登录、启用防火墙。",
+   "部署时自行安装运行时、反向代理（Nginx/Caddy）、TLS 证书，并用 systemd 或 Docker 托管进程。",
+   "运维阶段需持续打补丁、备份或快照、监控资源与日志，必要时升级规格或增加实例。"
+  ],
+  "terms": [
+   {
+    "t": "vCPU",
+    "d": "分配给虚拟机的虚拟处理器，可能与其他租户共享物理核心。"
+   },
+   {
+    "t": "快照 (Snapshot)",
+    "d": "磁盘某一时刻的完整副本，用于回滚或克隆。"
+   },
+   {
+    "t": "安全组 (Security Group)",
+    "d": "云平台层面的实例防火墙规则，控制进出流量。"
+   },
+   {
+    "t": "SSH 密钥认证",
+    "d": "用公私钥对代替密码登录，抗暴力破解。"
+   },
+   {
+    "t": "systemd",
+    "d": "Linux 服务管理器，负责开机自启、重启与日志收集。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "Ubuntu 服务器安全初始化",
+   "src": "# 以 root 登录后：创建日常使用的普通用户\nadduser deploy\nusermod -aG sudo deploy\n\n# 在【本地电脑】上传公钥，之后用密钥登录\n#   ssh-copy-id deploy@<服务器IP>\n\n# 关闭密码与 root 登录（注意 sshd_config.d 下的文件可能覆盖主配置）\nsudo sed -i 's/^#\\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config\nsudo sed -i 's/^#\\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config\ngrep -r PasswordAuthentication /etc/ssh/sshd_config.d/ 2>/dev/null\nsudo sshd -t && sudo systemctl restart ssh   # 先校验配置再重启\n\n# 防火墙：只放行 SSH 与 Web\nsudo ufw allow OpenSSH\nsudo ufw allow 80/tcp\nsudo ufw allow 443/tcp\nsudo ufw enable\n\n# 自动安装安全更新\nsudo apt update && sudo apt install -y unattended-upgrades\nsudo dpkg-reconfigure -plow unattended-upgrades",
+   "note": "重启 SSH 前保持当前会话不断开，新开窗口确认能用密钥登录，避免把自己锁在外面。"
+  },
+  "table": {
+   "title": "VPS 上线必做项",
+   "head": [
+    "领域",
+    "措施",
+    "常用工具"
+   ],
+   "rows": [
+    [
+     "访问控制",
+     "密钥登录、禁 root",
+     "OpenSSH"
+    ],
+    [
+     "网络",
+     "最小开放端口",
+     "ufw、云安全组"
+    ],
+    [
+     "补丁",
+     "自动安全更新",
+     "unattended-upgrades"
+    ],
+    [
+     "进程托管",
+     "崩溃自动重启",
+     "systemd、Docker"
+    ],
+    [
+     "数据",
+     "定期快照与异地备份",
+     "云快照、restic"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "VPS 自运维",
+    "pros": "价格低、可装任何软件",
+    "cons": "安全与可用性全靠自己",
+    "when": "长期稳定负载、学习运维"
+   },
+   {
+    "opt": "VPS + 容器化部署",
+    "pros": "环境可复现、迁移方便",
+    "cons": "多一层 Docker 运维知识",
+    "when": "多服务部署在同一机器"
+   },
+   {
+    "opt": "改用 PaaS",
+    "pros": "省去系统运维",
+    "cons": "成本随规模上升，自由度低",
+    "when": "团队无运维精力"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "保留密码登录且用弱密码",
+    "fix": "启用密钥认证、禁用密码登录，可加 fail2ban"
+   },
+   {
+    "bad": "只改了 sshd_config，云镜像的 drop-in 配置又把密码登录打开",
+    "fix": "检查 /etc/ssh/sshd_config.d/ 并用 sshd -T 查看最终生效值"
+   },
+   {
+    "bad": "数据库端口对公网开放",
+    "fix": "数据库只监听内网或本机，经 SSH 隧道管理"
+   },
+   {
+    "bad": "只在同一台机器上备份",
+    "fix": "备份存到异地或对象存储，并定期演练恢复"
+   }
+  ],
+  "checklist": [
+   "SSH 仅密钥登录，禁用 root",
+   "防火墙与安全组只开必要端口",
+   "已启用自动安全更新",
+   "应用由 systemd/Docker 托管并自启",
+   "有异地备份且演练过恢复",
+   "配置了资源与可用性监控"
+  ],
+  "interview": [
+   {
+    "q": "VPS 被入侵挖矿，你会怎么处置？",
+    "a": "先隔离（安全组断网或快照留证），排查入口（弱口令、暴露服务、未打补丁），检查持久化手段（crontab、systemd、authorized_keys）。最稳妥是用干净镜像重建，轮换所有密钥，从可信备份恢复数据，再补齐加固项。"
+   },
+   {
+    "q": "安全组和系统防火墙有何区别？",
+    "a": "安全组在云平台网络层生效，流量到达实例前即被过滤，且可统一管理多台实例；ufw/iptables 在操作系统内生效。两者叠加形成纵深防御，任何一层放行过宽都会扩大攻击面。"
+   },
+   {
+    "q": "单台 VPS 如何提高可用性？",
+    "a": "进程级：systemd 自动重启、健康检查；数据级：定期快照与异地备份；部署级：用容器或配置管理工具保证可快速重建；架构级：最终需多实例 + 负载均衡，消除单点。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Ubuntu Server 文档",
+    "url": "https://ubuntu.com/server/docs"
+   },
+   {
+    "title": "sshd_config(5) 手册",
+    "url": "https://man.openbsd.org/sshd_config"
+   },
+   {
+    "title": "Ubuntu 社区文档：UFW",
+    "url": "https://help.ubuntu.com/community/UFW"
+   }
+  ]
+ },
+ {
+  "slug": "tokenizer",
+  "def": "分词器（Tokenizer）把文本映射为模型词表中的整数 ID 序列，并能反向解码。主流 LLM 使用子词算法：BPE（字节对编码）及其字节级变体、SentencePiece 的 Unigram/BPE 等。它决定了 Token 计数、计费、上下文占用与多语言效率，每个模型族的分词器各不相同，不能混用。",
+  "how": [
+   "训练阶段：从字节或字符起步，BPE 反复合并语料中最高频的相邻符号对，直到达到目标词表大小。",
+   "字节级 BPE 以 UTF-8 字节为基本单元，任何文本都能编码，不存在未登录词。",
+   "编码时先做预切分（按空格、标点、数字等规则），再按合并规则把片段转为 Token ID。",
+   "高频片段（常见英文单词、代码关键字）成为单个 Token；低频文字被拆成多个子词或字节。",
+   "特殊 Token（如对话角色分隔符、结束符）由对话模板插入，标记消息边界。"
+  ],
+  "terms": [
+   {
+    "t": "BPE (Byte Pair Encoding)",
+    "d": "迭代合并高频符号对构建子词词表的算法。"
+   },
+   {
+    "t": "词表 (Vocabulary)",
+    "d": "分词器可输出的全部 Token 集合，大小影响压缩率与嵌入层参数。"
+   },
+   {
+    "t": "SentencePiece",
+    "d": "Google 的分词库，直接处理原始文本，支持 Unigram 与 BPE。"
+   },
+   {
+    "t": "特殊 Token (Special Tokens)",
+    "d": "表示开始、结束、角色等控制信息的保留 Token。"
+   },
+   {
+    "t": "Token 生育率 (Fertility)",
+    "d": "平均每个词或字被切成的 Token 数，衡量语言效率。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "用 tiktoken 观察切分",
+   "src": "# pip install tiktoken\nimport tiktoken\n\n# o200k_base 是 OpenAI 较新模型使用的编码之一\nenc = tiktoken.get_encoding(\"o200k_base\")\n\nsamples = {\n    \"英文\": \"Hello, how are you today?\",\n    \"中文\": \"你好，今天过得怎么样？\",\n    \"代码\": \"def add(a, b): return a + b\",\n    \"长数字\": \"3.14159265358979323846\",\n}\nfor name, text in samples.items():\n    ids = enc.encode(text)\n    # 单个 Token 可能是不完整的 UTF-8 字节，用 bytes 形式查看\n    pieces = [enc.decode_single_token_bytes(i) for i in ids]\n    print(f\"{name}: {len(text)} 字符 -> {len(ids)} tokens\")\n    print(\"   \", pieces[:8])\n\nassert enc.decode(enc.encode(\"往返测试\")) == \"往返测试\"",
+   "note": "tiktoken 只对应 OpenAI 模型；Claude、Gemini 等需用各自的计数接口或分词器。"
+  },
+  "table": {
+   "title": "主流分词方案对比",
+   "head": [
+    "方案",
+    "基本单元",
+    "代表使用者"
+   ],
+   "rows": [
+    [
+     "字节级 BPE",
+     "UTF-8 字节",
+     "GPT 系列（tiktoken）"
+    ],
+    [
+     "SentencePiece BPE",
+     "Unicode 字符，可回退字节",
+     "Llama 2 等"
+    ],
+    [
+     "SentencePiece Unigram",
+     "概率子词模型",
+     "T5 等"
+    ],
+    [
+     "WordPiece",
+     "子词（## 前缀）",
+     "BERT"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "大词表",
+    "pros": "序列更短，多语言更高效",
+    "cons": "嵌入与输出层参数增大",
+    "when": "多语言、长上下文模型"
+   },
+   {
+    "opt": "小词表",
+    "pros": "参数少，训练更易收敛",
+    "cons": "序列更长，推理与计费更贵",
+    "when": "小模型或单语言场景"
+   },
+   {
+    "opt": "字节级回退",
+    "pros": "无未登录词，任何输入可编码",
+    "cons": "罕见文字被拆得很碎",
+    "when": "通用开放域模型"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用 tiktoken 估算非 OpenAI 模型的 Token 与费用",
+    "fix": "使用目标模型官方的计数 API 或其分词器"
+   },
+   {
+    "bad": "按「字数 ≈ Token 数」做预算",
+    "fix": "用真实分词器在样本数据上统计比例"
+   },
+   {
+    "bad": "截断文本时按字符切，破坏 Token 或 UTF-8 边界",
+    "fix": "在 Token 层截断后再解码，或按句子边界切"
+   },
+   {
+    "bad": "把 Base64、长日志、压缩 JSON 直接塞进提示",
+    "fix": "先摘要或抽取关键字段，图片走多模态接口"
+   }
+  ],
+  "checklist": [
+   "Token 预算用目标模型的分词器计算",
+   "长输入在 Token 层截断",
+   "已统计业务语料的平均 Token 比例",
+   "对话模板与特殊 Token 由官方模板生成",
+   "日志与大数据不直接进入提示",
+   "费用监控按输入/输出 Token 分开"
+  ],
+  "interview": [
+   {
+    "q": "为什么同样内容中文可能比英文更费 Token？",
+    "a": "分词器词表由训练语料统计得出。若英文占比高，英文常见词被合并为单个 Token，而中文字符 UTF-8 为 3 字节，合并不足时一个字占一个或多个 Token。较新的大词表分词器（如 o200k_base）中文效率明显改善，差距因模型而异，应实测。"
+   },
+   {
+    "q": "BPE 是怎么构建词表的？",
+    "a": "从基础符号（字符或字节）开始，统计语料中相邻符号对的频率，把最高频的一对合并为新符号并记录规则，重复直到词表达到预设大小。编码时按学到的合并顺序应用规则。"
+   },
+   {
+    "q": "分词器对模型能力有什么影响？",
+    "a": "影响算术与字符级任务（数字被不规则切分、模型难以数字母），影响多语言效率与有效上下文长度，也影响代码缩进、空格的表达。换分词器通常意味着需要重新训练嵌入层乃至整个模型。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Sennrich et al. 2016：Subword Units (BPE)",
+    "url": "https://arxiv.org/abs/1508.07909"
+   },
+   {
+    "title": "tiktoken（GitHub）",
+    "url": "https://github.com/openai/tiktoken"
+   },
+   {
+    "title": "SentencePiece（GitHub）",
+    "url": "https://github.com/google/sentencepiece"
+   },
+   {
+    "title": "Hugging Face Tokenizers 文档",
+    "url": "https://huggingface.co/docs/tokenizers/index"
+   }
+  ]
+ },
+ {
+  "slug": "sampling-top-p-top-k",
+  "def": "采样策略是 LLM 解码时从下一个 Token 的概率分布中选取输出的方法。Top-k 只保留概率最高的 k 个候选；Top-p（核采样，Nucleus Sampling）保留累积概率达到 p 的最小候选集合；二者常与温度（temperature）配合，在确定性与多样性之间调节，属于推理参数层。",
+  "how": [
+   "模型为词表中每个 Token 输出一个 logit（未归一化分数）。",
+   "温度缩放：logits 除以 T，T<1 使分布更尖锐，T>1 使分布更平坦，T 趋近 0 接近贪心解码。",
+   "Top-k 截断只保留分数最高的 k 个 Token；Top-p 按概率降序累加，保留到总和首次达到 p 为止。",
+   "对保留的候选重新归一化，按概率随机抽取一个 Token，追加到序列后继续下一步。",
+   "参数支持因厂商与模型而异：部分 API 不提供 top_k，部分推理模型不支持自定义这些参数。"
+  ],
+  "terms": [
+   {
+    "t": "Logits",
+    "d": "模型输出层的原始分数，经 softmax 变为概率。"
+   },
+   {
+    "t": "贪心解码 (Greedy Decoding)",
+    "d": "每步都选概率最高的 Token，结果确定但易重复。"
+   },
+   {
+    "t": "核采样 (Nucleus / Top-p)",
+    "d": "从累积概率达 p 的最小候选集中采样，候选数随分布动态变化。"
+   },
+   {
+    "t": "Min-p 采样",
+    "d": "保留概率不低于最高概率乘以系数的候选，部分开源引擎支持。"
+   },
+   {
+    "t": "种子 (Seed)",
+    "d": "固定随机数种子以提高可复现性，但多数服务不保证完全一致。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "手写一次采样流程",
+   "src": "import numpy as np\n\ndef sample(logits, temperature=1.0, top_k=None, top_p=None, rng=np.random.default_rng(0)):\n    logits = np.asarray(logits, dtype=float) / max(temperature, 1e-6)\n    probs = np.exp(logits - logits.max())\n    probs /= probs.sum()                      # softmax\n\n    order = np.argsort(probs)[::-1]           # 概率从高到低\n    keep = np.ones_like(probs, dtype=bool)\n    if top_k is not None:                     # Top-k：只留前 k 个\n        keep[order[top_k:]] = False\n    if top_p is not None:                     # Top-p：累积到 p 为止\n        cum = np.cumsum(probs[order])\n        cutoff = np.searchsorted(cum, top_p) + 1\n        keep[order[cutoff:]] = False\n\n    probs = np.where(keep, probs, 0.0)\n    probs /= probs.sum()                      # 重新归一化\n    return rng.choice(len(probs), p=probs)\n\nlogits = [2.0, 1.5, 0.3, -1.0, -2.0]          # 5 个候选 Token 的分数\nprint(sample(logits, temperature=0.7, top_p=0.9))\nprint(sample(logits, top_k=1))                # 等价于贪心：总是选 0",
+   "note": "推理引擎的实现细节（处理顺序、并列值）可能不同，这里只演示原理。"
+  },
+  "table": {
+   "title": "参数组合参考",
+   "head": [
+    "场景",
+    "常见设置思路",
+    "说明"
+   ],
+   "rows": [
+    [
+     "代码、抽取、分类",
+     "低温度或贪心",
+     "追求稳定可复现"
+    ],
+    [
+     "通用对话",
+     "使用厂商默认值",
+     "默认值通常已调优"
+    ],
+    [
+     "创意写作、头脑风暴",
+     "适当提高温度或 top_p",
+     "多样性更高，风险也更高"
+    ],
+    [
+     "自一致性投票",
+     "较高温度多次采样",
+     "用多样答案做投票"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Top-k",
+    "pros": "实现简单，候选数固定",
+    "cons": "分布尖锐或平坦时 k 不合适",
+    "when": "开源引擎中配合其他参数"
+   },
+   {
+    "opt": "Top-p",
+    "pros": "候选数随置信度自适应",
+    "cons": "分布很平时仍可能纳入长尾",
+    "when": "多数 API 的主选项"
+   },
+   {
+    "opt": "低温/贪心",
+    "pros": "确定性强、利于测试",
+    "cons": "易重复、缺乏多样性",
+    "when": "结构化、事实性任务"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "同时大幅调整 temperature 与 top_p，难以归因",
+    "fix": "一次只调一个，多数厂商建议二者择一调整"
+   },
+   {
+    "bad": "以为 temperature=0 就完全可复现",
+    "fix": "批处理、硬件差异仍可能导致输出不同，测试需容忍差异"
+   },
+   {
+    "bad": "对推理模型传入不支持的采样参数",
+    "fix": "查阅该模型文档，按其支持的参数调用"
+   },
+   {
+    "bad": "用高温度掩盖提示词不清晰",
+    "fix": "先改进提示与上下文，再微调采样参数"
+   }
+  ],
+  "checklist": [
+   "按任务类型设定采样参数",
+   "参数写入配置并版本化",
+   "只调一个参数并有评测对比",
+   "确认目标模型支持这些参数",
+   "关键流程不依赖输出完全一致",
+   "评测时固定参数与种子"
+  ],
+  "interview": [
+   {
+    "q": "Top-p 相比 Top-k 的优势？",
+    "a": "Top-k 候选数固定：模型很确定时仍保留 k 个低质候选，不确定时又可能截掉合理选项。Top-p 按累积概率截断，候选数随分布形状自适应，这是核采样论文提出的主要动机。"
+   },
+   {
+    "q": "temperature 和 top_p 的作用顺序？",
+    "a": "常见实现先用温度缩放 logits 改变分布形状，再在新分布上做 top-k/top-p 截断，最后归一化采样。因此温度会改变 top-p 截断后保留的候选数量，二者存在交互。"
+   },
+   {
+    "q": "为什么写代码时通常建议低随机性？",
+    "a": "代码对精确性要求高，一个错 Token 就可能导致语法或逻辑错误；低随机性让模型倾向最可能的写法，结果更稳定、便于复现和测试。需要多方案时可多次采样再用测试筛选。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Holtzman et al. 2019：The Curious Case of Neural Text Degeneration",
+    "url": "https://arxiv.org/abs/1904.09751"
+   },
+   {
+    "title": "Hugging Face：How to generate text",
+    "url": "https://huggingface.co/blog/how-to-generate"
+   },
+   {
+    "title": "Transformers：Generation strategies",
+    "url": "https://huggingface.co/docs/transformers/generation_strategies"
+   }
+  ]
+ },
+ {
+  "slug": "prompt-chaining",
+  "def": "提示链（Prompt Chaining）把复杂任务分解为一系列有序的 LLM 调用，每步的输出作为下一步的输入，步骤之间可插入程序化检查（gate）。它属于 LLM 应用编排层，是最基础的工作流模式：以多一点延迟换取每步更高的准确率、可观测性与可调试性，介于单次提示与自主 Agent 之间。",
+  "how": [
+   "把任务拆成边界清晰的子任务，如「抽取 → 分析 → 撰写 → 校对」，每步有明确输入输出格式。",
+   "每步用专门的提示，只携带该步所需上下文，减少干扰并降低单次 Token 消耗。",
+   "步骤间用代码做校验：解析 JSON、检查必填字段、规则判断，不合格则重试或中止。",
+   "顺序固定的流程由代码控制流程走向，而非让模型自行决定，因此行为可预测。",
+   "每步输入输出可单独记录与评测，定位问题时只需重跑出错的那一步。"
+  ],
+  "terms": [
+   {
+    "t": "工作流 (Workflow)",
+    "d": "由代码预定义路径编排 LLM 调用，区别于模型自主决策的 Agent。"
+   },
+   {
+    "t": "关卡 (Gate)",
+    "d": "步骤之间的程序化检查，决定继续、重试或终止。"
+   },
+   {
+    "t": "中间表示 (Intermediate Output)",
+    "d": "步骤间传递的结构化结果，常用 JSON。"
+   },
+   {
+    "t": "路由 (Routing)",
+    "d": "先分类输入，再交给不同的专门链路处理。"
+   },
+   {
+    "t": "自我修正 (Self-correction)",
+    "d": "增加一步让模型审查并修改上一步结果。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "三步链 + 程序化关卡",
+   "src": "# pip install anthropic\nimport json, anthropic\n\nclient = anthropic.Anthropic()\nMODEL = \"claude-sonnet-4-5\"  # 换成你在用的模型\n\ndef llm(prompt: str) -> str:\n    msg = client.messages.create(model=MODEL, max_tokens=2000,\n                                 messages=[{\"role\": \"user\", \"content\": prompt}])\n    return msg.content[0].text\n\nreview = open(\"feedback.txt\", encoding=\"utf-8\").read()\n\n# 第 1 步：抽取结构化问题列表\nraw = llm(f\"从以下用户反馈中抽取问题，只输出 JSON 数组，元素含 issue 和 severity(1-3)：\\n{review}\")\nissues = json.loads(raw)                     # 关卡：解析失败直接抛错\nassert all({\"issue\", \"severity\"} <= set(i) for i in issues), \"字段缺失\"\n\n# 第 2 步：只取严重问题写修复建议\nserious = [i for i in issues if i[\"severity\"] >= 2]\nplan = llm(f\"为这些问题写简短修复建议：\\n{json.dumps(serious, ensure_ascii=False)}\")\n\n# 第 3 步：面向用户改写成回复\nreply = llm(f\"把以下内部建议改写成礼貌的客服回复，不提内部细节：\\n{plan}\")\nprint(reply)",
+   "note": "每步单一职责；第 1 步后用代码校验格式，生产中还应加重试与结构化输出。"
+  },
+  "table": {
+   "title": "编排模式对比",
+   "head": [
+    "模式",
+    "控制权",
+    "可预测性",
+    "适合"
+   ],
+   "rows": [
+    [
+     "单次提示",
+     "无编排",
+     "中",
+     "简单任务"
+    ],
+    [
+     "提示链",
+     "代码固定顺序",
+     "高",
+     "可拆成固定步骤的任务"
+    ],
+    [
+     "路由 + 专用链",
+     "代码按分类分支",
+     "高",
+     "输入类型差异大"
+    ],
+    [
+     "自主 Agent",
+     "模型决定下一步",
+     "较低",
+     "步骤无法预先确定"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "单次大提示",
+    "pros": "延迟低、实现简单",
+    "cons": "易遗漏要求，出错难定位",
+    "when": "任务短小且一步可完成"
+   },
+   {
+    "opt": "提示链",
+    "pros": "每步更准、可校验、可单独优化",
+    "cons": "多次调用增加延迟与成本",
+    "when": "多阶段、质量要求高"
+   },
+   {
+    "opt": "Agent 自主规划",
+    "pros": "能处理开放式任务",
+    "cons": "成本与行为不确定性高",
+    "when": "路径无法事先固定"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "步骤之间直接传自由文本，格式漂移后下游崩溃",
+    "fix": "用 JSON/结构化输出传递，并在关卡处校验"
+   },
+   {
+    "bad": "把全部上下文传给每一步",
+    "fix": "每步只传必要字段，减少噪声与费用"
+   },
+   {
+    "bad": "拆得过细，延迟与成本失控",
+    "fix": "以可独立校验为拆分粒度，合并无需检查的相邻步"
+   },
+   {
+    "bad": "某一步失败后继续执行下游",
+    "fix": "关卡失败时重试或中止，并记录该步输入输出"
+   }
+  ],
+  "checklist": [
+   "每步有明确的输入输出格式",
+   "步骤间有程序化校验",
+   "失败有重试与中止策略",
+   "每步输入输出都记录日志",
+   "每步提示可单独评测与版本化",
+   "已评估总延迟与成本"
+  ],
+  "interview": [
+   {
+    "q": "提示链和 Agent 的边界在哪里？",
+    "a": "提示链的执行路径由代码预先定义，模型只负责每步内容，行为可预测；Agent 由模型根据环境反馈动态决定调用哪些工具、走哪一步。能用固定流程解决时优先工作流，确有开放性才上 Agent。"
+   },
+   {
+    "q": "如何决定拆分粒度？",
+    "a": "看每步是否有独立可校验的输出、是否需要不同的提示或模型、是否会因同时处理多个目标而降低质量。拆到每步单一职责且可测试即可，避免为拆而拆导致延迟和成本上升。"
+   },
+   {
+    "q": "提示链如何做评测？",
+    "a": "既做端到端评测，也对每步建立小型数据集单独打分；记录中间结果，定位质量下降出在哪一步；修改某一步提示后做回归测试，确保下游不受格式变化影响。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Anthropic：Building effective agents",
+    "url": "https://www.anthropic.com/engineering/building-effective-agents"
+   },
+   {
+    "title": "Anthropic 文档：Chain complex prompts",
+    "url": "https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/chain-prompts"
+   },
+   {
+    "title": "Prompt Engineering Guide：Prompt Chaining",
+    "url": "https://www.promptingguide.ai/techniques/prompt_chaining"
+   }
+  ]
+ },
+ {
+  "slug": "jailbreak",
+  "def": "越狱（Jailbreak）是用户通过精心构造的输入，诱使模型绕过其安全对齐与使用政策，输出本应拒绝的内容或执行被禁止的行为。它与提示注入同属 LLM 应用的输入攻击面（OWASP LLM01），区别在于越狱通常由直接对话的用户发起、目标是突破模型安全限制。防护需要多层组合，不能只靠系统提示。",
+  "how": [
+   "角色扮演与虚构框架：让模型扮演「无限制 AI」或在故事、假设情境中输出有害内容。",
+   "目标冲突：利用「乐于助人」与「安全」两种训练目标的冲突，用紧急情况、权威身份施压。",
+   "泛化失配：用编码、外语、拆分拼接等形式绕开安全训练覆盖不到的分布。",
+   "多轮与多样例：通过多轮逐步升级或在长上下文中堆叠大量示例诱导模型顺从。",
+   "自动化攻击：用优化算法搜索对抗后缀，部分攻击可在不同模型间迁移。"
+  ],
+  "terms": [
+   {
+    "t": "安全对齐 (Safety Alignment)",
+    "d": "通过 RLHF 等训练让模型拒绝有害请求的过程。"
+   },
+   {
+    "t": "提示注入 (Prompt Injection)",
+    "d": "通过输入改变模型预期行为；间接注入来自文档或网页。"
+   },
+   {
+    "t": "对抗后缀 (Adversarial Suffix)",
+    "d": "算法搜索出的字符序列，附加在请求后可诱发违规输出。"
+   },
+   {
+    "t": "安全分类器 (Safety Classifier)",
+    "d": "独立模型检测输入或输出是否违规，如 Llama Guard。"
+   },
+   {
+    "t": "红队测试 (Red Teaming)",
+    "d": "模拟攻击者系统性寻找模型与应用的安全漏洞。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "多层防护的最小骨架",
+   "src": "# pip install openai\nfrom openai import OpenAI\n\nclient = OpenAI()\n\ndef flagged(text: str) -> bool:\n    \"\"\"第 1/3 层：输入与输出都过一遍审核模型\"\"\"\n    r = client.moderations.create(model=\"omni-moderation-latest\", input=text)\n    return r.results[0].flagged\n\ndef handle(user_id: str, msg: str) -> str:\n    if flagged(msg):\n        return \"抱歉，这个请求我无法处理。\"\n\n    # 第 2 层：模型生成（系统提示只是其中一层，不能当唯一防线）\n    resp = client.chat.completions.create(\n        model=\"gpt-4o-mini\",\n        messages=[{\"role\": \"system\", \"content\": \"你是售后客服，只回答订单相关问题。\"},\n                  {\"role\": \"user\", \"content\": msg}],\n    )\n    answer = resp.choices[0].message.content\n\n    if flagged(answer):                     # 输出侧再检查\n        return \"抱歉，这个请求我无法处理。\"\n    # 第 4 层：模型想做的敏感操作（退款、查他人订单）一律由后端按权限校验\n    return answer",
+   "note": "审核模型只拦一般违规内容；业务越权要靠后端权限控制，而不是模型自觉。"
+  },
+  "table": {
+   "title": "防护层次与作用",
+   "head": [
+    "层次",
+    "手段",
+    "防住什么",
+    "局限"
+   ],
+   "rows": [
+    [
+     "模型层",
+     "安全对齐、选用安全性好的模型",
+     "大部分直接有害请求",
+     "可被新话术绕过"
+    ],
+    [
+     "输入/输出过滤",
+     "安全分类器、规则",
+     "明显违规内容",
+     "误报漏报并存"
+    ],
+    [
+     "应用权限层",
+     "最小权限、后端鉴权",
+     "越权操作与数据泄露",
+     "需工程投入"
+    ],
+    [
+     "运营层",
+     "日志、限流、封禁、红队",
+     "持续攻击与新手法",
+     "滞后于攻击"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "严格过滤",
+    "pros": "违规输出风险低",
+    "cons": "误拒正常用户，体验变差",
+    "when": "面向公众或未成年人"
+   },
+   {
+    "opt": "宽松 + 事后审计",
+    "pros": "体验流畅",
+    "cons": "可能产生违规内容",
+    "when": "内部工具、专业用户"
+   },
+   {
+    "opt": "权限隔离优先",
+    "pros": "即使被越狱也难造成实际损害",
+    "cons": "需细化后端权限设计",
+    "when": "Agent 能调用工具与数据"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只在系统提示里写「不要泄露、不要被骗」",
+    "fix": "把敏感数据与操作放到后端权限控制之后"
+   },
+   {
+    "bad": "系统提示中放密钥或内部机密",
+    "fix": "假设系统提示可能被套出，不放任何机密"
+   },
+   {
+    "bad": "只测单轮攻击，忽略多轮逐步诱导",
+    "fix": "红队覆盖多轮、编码、角色扮演与长上下文场景"
+   },
+   {
+    "bad": "上线后不再关注新越狱手法",
+    "fix": "记录与抽检对话，定期回归越狱测试集"
+   }
+  ],
+  "checklist": [
+   "系统提示不含密钥与机密",
+   "敏感操作由后端鉴权，模型无直接权限",
+   "输入输出有安全分类或审核",
+   "建立并定期回归越狱测试集",
+   "异常对话可追溯并能限流封禁",
+   "对外文案说明使用政策"
+  ],
+  "interview": [
+   {
+    "q": "越狱和提示注入有什么区别？",
+    "a": "越狱通常由直接对话的用户发起，目标是突破模型的安全策略让其输出违规内容；提示注入更强调改变应用预期行为，尤其是间接注入——恶意指令藏在网页、文档、工具结果中。OWASP 把二者归在同一风险类别下。"
+   },
+   {
+    "q": "为什么安全训练会被绕过？",
+    "a": "研究归纳出两类原因：目标冲突（乐于助人与安全相互竞争）和泛化失配（安全训练没覆盖编码、低资源语言等分布，而能力本身覆盖到了）。因此单靠模型对齐难以完全防住。"
+   },
+   {
+    "q": "给带工具调用的 Agent 设计越狱防护，重点是什么？",
+    "a": "假设模型终会被绕过：工具按最小权限设计，危险操作要人工确认；后端校验每次调用的身份与授权；工具结果视为不可信输入；输入输出过安全分类；完整审计日志与速率限制。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP GenAI：LLM01 Prompt Injection",
+    "url": "https://genai.owasp.org/llmrisk/llm01-prompt-injection/"
+   },
+   {
+    "title": "Wei et al. 2023：Jailbroken: How Does LLM Safety Training Fail?",
+    "url": "https://arxiv.org/abs/2307.02483"
+   },
+   {
+    "title": "Zou et al. 2023：Universal and Transferable Adversarial Attacks",
+    "url": "https://arxiv.org/abs/2307.15043"
+   },
+   {
+    "title": "Inan et al. 2023：Llama Guard",
+    "url": "https://arxiv.org/abs/2312.06674"
+   }
+  ]
+ }
+]

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="熔断器 (Circuit Breaker) 专业模式：熔断器（Circuit Breaker）是一种容错模式：当对某个依赖的调用失败率或超时超过阈值时，暂时停止调用并快速失败，过一段时间再放少量请求探测恢复。它属于">
+<title>🎓 熔断器 (Circuit Breaker) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="circuit-breaker" data-answer="0" data-prev="idempotency-keys.pro.html" data-next="timeouts-and-deadlines.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#dist">🔮 高级 · 🕸️ 分布式</a><span>›</span><a href="circuit-breaker.html">熔断器 (Circuit Breaker)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.369 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="idempotency-keys.pro.html" rel="prev"><small>‹ 上一个</small><b>🔑 幂等键 (Idempotency Key)</b></a><a class="pn next" href="timeouts-and-deadlines.pro.html" rel="next"><small>下一个 ›</small><b>⏱️ 超时与截止时间传播</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔌</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>熔断器 (Circuit Breaker)</h1><p class="en">Circuit Breaker</p>
+    <div class="hbtns"><a class="prosw back" href="circuit-breaker.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">熔断器（Circuit Breaker）是一种容错模式：当对某个依赖的调用失败率或超时超过阈值时，暂时停止调用并快速失败，过一段时间再放少量请求探测恢复。它属于服务间通信的韧性层，防止下游故障耗尽调用方的线程、连接与重试预算，从而阻断连锁故障。Michael Nygard 在《Release It!》中推广了此模式。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>闭合（Closed）：正常调用，同时在滑动窗口内统计失败率与慢调用比例。</p></li><li><span class="sn">2</span><p>当失败率超过阈值（且窗口内调用数达到最小样本量）时，切换到断开（Open）。</p></li><li><span class="sn">3</span><p>断开状态下调用直接失败或走降级逻辑，不再请求下游，给下游恢复时间。</p></li><li><span class="sn">4</span><p>等待时间到期后进入半开（Half-Open），只放行有限个探测请求。</p></li><li><span class="sn">5</span><p>探测成功率达标则回到闭合；仍失败则重新断开，并重新计时。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>滑动窗口 (Sliding Window)</dt><dd>按最近 N 次调用或最近 N 秒统计失败率。</dd></div><div class="term"><dt>最小调用数 (Minimum Calls)</dt><dd>窗口内样本不足时不触发熔断，避免偶发失败误判。</dd></div><div class="term"><dt>降级 (Fallback)</dt><dd>熔断时返回缓存、默认值或简化结果。</dd></div><div class="term"><dt>慢调用阈值 (Slow Call Threshold)</dt><dd>超过指定耗时即视为失败，计入熔断统计。</dd></div><div class="term"><dt>舱壁 (Bulkhead)</dt><dd>按依赖隔离线程池/连接池，常与熔断配合使用。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>pybreaker 包装外部调用</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import pybreaker, requests
+
+# 连续失败 5 次断开，30 秒后进入半开试探
+breaker = pybreaker.CircuitBreaker(fail_max=5, reset_timeout=30)
+
+@breaker
+def get_rate(currency: str) -&gt; float:
+    resp = requests.get(f&quot;https://api.example.com/rates/{currency}&quot;, timeout=2)
+    resp.raise_for_status()
+    return resp.json()[&quot;rate&quot;]
+
+def rate_with_fallback(currency: str) -&gt; float:
+    try:
+        return get_rate(currency)
+    except pybreaker.CircuitBreakerError:
+        return cached_rate(currency)   # 熔断中：直接用缓存，不打下游
+    except requests.RequestException:
+        return cached_rate(currency)   # 单次失败也降级
+
+def cached_rate(currency: str) -&gt; float:
+    return 7.0  # 示例：实际应读本地缓存</code></pre></div><p class="cnote">超时与熔断配合：先用 timeout 限制单次等待，再用熔断阻止持续打向故障依赖。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">熔断关键参数</h3><div class="tw"><table><thead><tr><th>参数</th><th>作用</th><th>设置思路</th></tr></thead><tbody><tr><td data-h="参数">失败率阈值</td><td data-h="作用">触发断开的失败比例</td><td data-h="设置思路">高于正常波动，留余量</td></tr><tr><td data-h="参数">最小调用数</td><td data-h="作用">防止小样本误判</td><td data-h="设置思路">按流量设置，低流量需更大窗口</td></tr><tr><td data-h="参数">断开等待时间</td><td data-h="作用">给下游恢复的时间</td><td data-h="设置思路">参考下游典型恢复时长</td></tr><tr><td data-h="参数">半开探测数</td><td data-h="作用">恢复时放行的请求量</td><td data-h="设置思路">少量即可，避免冲垮下游</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>客户端库熔断</h4><p><b class="k-p">优点</b>粒度细、可定制降级</p><p><b class="k-c">代价</b>每种语言各自实现，配置分散</p><p><b class="k-w">适用</b>单语言服务、逻辑复杂的降级</p></div><div class="trd"><h4>服务网格/代理熔断（如 Envoy）</h4><p><b class="k-p">优点</b>语言无关、统一配置</p><p><b class="k-c">代价</b>降级能力有限，多为拒绝或摘除实例</p><p><b class="k-w">适用</b>多语言微服务</p></div><div class="trd"><h4>仅超时+重试</h4><p><b class="k-p">优点</b>实现简单</p><p><b class="k-c">代价</b>下游故障时持续施压，易引发重试风暴</p><p><b class="k-w">适用</b>依赖稳定、调用量小</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>熔断只看错误，不看慢调用</p><p class="fix"><b>✓</b>把超时与慢调用计入失败，避免线程被拖死</p></li><li><p class="bad"><b>✗</b>所有下游共用一个熔断器</p><p class="fix"><b>✓</b>按依赖（必要时按接口）分别熔断</p></li><li><p class="bad"><b>✗</b>熔断后没有降级，用户直接看到 500</p><p class="fix"><b>✓</b>设计降级：缓存、默认值、功能隐藏或明确提示</p></li><li><p class="bad"><b>✗</b>把 4xx 业务错误也计为失败</p><p class="fix"><b>✓</b>只统计下游故障类错误（超时、5xx、连接失败）</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个外部依赖有独立熔断器</span></label></li><li><label><input type="checkbox"><span>超时、重试、熔断参数协同设计</span></label></li><li><label><input type="checkbox"><span>定义了降级行为</span></label></li><li><label><input type="checkbox"><span>熔断状态变化有指标与告警</span></label></li><li><label><input type="checkbox"><span>做过下游故障注入演练</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>熔断器与重试如何配合？</summary><p>重试放在熔断器内部或之前需谨慎：每次重试都计入统计；熔断打开后重试应立即停止。重试需有限次数+指数退避+抖动，避免在下游恢复瞬间造成冲击。</p></details><details class="iv"><summary>半开状态为什么只放少量请求？</summary><p>下游可能刚恢复、容量有限；全量流量瞬间涌入会再次压垮它。少量探测成功后再闭合，失败则重新断开，相当于渐进恢复。</p></details><details class="iv"><summary>熔断器和限流有什么区别？</summary><p>限流保护自己（或下游）不被过量请求压垮，按速率拒绝；熔断根据下游健康状况决定是否调用，保护调用方并给下游恢复时间。一个看流量，一个看错误。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://martinfowler.com/bliki/CircuitBreaker.html" target="_blank" rel="noopener"><b>Martin Fowler：CircuitBreaker</b><small>martinfowler.com ↗</small></a></li><li><a href="https://learn.microsoft.com/en-us/azure/architecture/patterns/circuit-breaker" target="_blank" rel="noopener"><b>Microsoft Azure 架构中心：Circuit Breaker pattern</b><small>learn.microsoft.com ↗</small></a></li><li><a href="https://github.com/danielfm/pybreaker" target="_blank" rel="noopener"><b>pybreaker (GitHub)</b><small>github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="idempotency-keys.pro.html" rel="prev"><small>‹ 上一个</small><b>🔑 幂等键 (Idempotency Key)</b></a><a class="pn next" href="timeouts-and-deadlines.pro.html" rel="next"><small>下一个 ›</small><b>⏱️ 超时与截止时间传播</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="时间点恢复 (PITR) 专业模式：时间点恢复（PITR）是把数据库恢复到过去任意指定时刻状态的能力。它以一个基础备份为起点，再按顺序重放之后连续归档的事务日志（PostgreSQL 的 WAL、">
+<title>🎓 时间点恢复 (PITR) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="point-in-time-recovery" data-answer="0" data-prev="testing-your-restores.pro.html" data-next="orm-lazy-loading.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#db">🔮 高级 · 🗄️ 数据库</a><span>›</span><a href="point-in-time-recovery.html">时间点恢复 (PITR)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.252 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="testing-your-restores.pro.html" rel="prev"><small>‹ 上一个</small><b>🧯 备份恢复演练</b></a><a class="pn next" href="orm-lazy-loading.pro.html" rel="next"><small>下一个 ›</small><b>😴 ORM延迟加载</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">⏪</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>时间点恢复 (PITR)</h1><p class="en">Point-in-Time Recovery</p>
+    <div class="hbtns"><a class="prosw back" href="point-in-time-recovery.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">时间点恢复（PITR）是把数据库恢复到过去任意指定时刻状态的能力。它以一个基础备份为起点，再按顺序重放之后连续归档的事务日志（PostgreSQL 的 WAL、MySQL 的 binlog），在目标时间点停止。常用于撤销误删表、错误批量更新等逻辑错误。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>定期做物理基础备份（如 pg_basebackup），并记录备份开始时的日志位置。</p></li><li><span class="sn">2</span><p>持续归档事务日志到独立存储，形成从基础备份开始不间断的日志链。</p></li><li><span class="sn">3</span><p>恢复时先还原基础备份到新实例，再配置日志来源与恢复目标时间。</p></li><li><span class="sn">4</span><p>数据库按顺序重放日志，到达目标时间或事务点后暂停或结束恢复。</p></li><li><span class="sn">5</span><p>核对数据无误后提升为可写实例，或导出所需数据回灌到生产库。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>基础备份 (Base Backup)</dt><dd>某一时刻数据目录的完整物理拷贝。</dd></div><div class="term"><dt>WAL 归档 (WAL Archiving)</dt><dd>把写满的 WAL 段持续复制到归档存储。</dd></div><div class="term"><dt>recovery_target_time</dt><dd>PostgreSQL 恢复的目标时间参数。</dd></div><div class="term"><dt>时间线 (Timeline)</dt><dd>每次 PITR 后产生新时间线，避免与原历史混淆。</dd></div><div class="term"><dt>binlog</dt><dd>MySQL 二进制日志，用于复制和时间点恢复。</dd></div><div class="term"><dt>保留期 (Retention Window)</dt><dd>可恢复到的最早时间，取决于备份与日志保留时长。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>PostgreSQL 恢复到误删前</span><em>bash</em><button class="ccopy">复制</button></div><pre><code># 前提：主库已开启 archive_mode=on，并配置 archive_command 持续归档 WAL
+# 场景：14:30 误删表，恢复到 14:29
+
+# 1. 在新目录还原基础备份（不要覆盖仍在运行的生产数据目录）
+tar -xzf /backups/base_20261020.tar.gz -C /var/lib/postgresql/pitr
+
+# 2. 配置恢复参数（PostgreSQL 12+ 写在 postgresql.conf 中）
+cat &gt;&gt; /var/lib/postgresql/pitr/postgresql.conf &lt;&lt;&#x27;EOF&#x27;
+restore_command = &#x27;cp /mnt/wal_archive/%f %p&#x27;
+recovery_target_time = &#x27;2026-10-20 14:29:00+08&#x27;
+recovery_target_action = &#x27;pause&#x27;
+EOF
+
+# 3. 创建 recovery.signal，进入目标恢复模式并启动
+touch /var/lib/postgresql/pitr/recovery.signal
+pg_ctl -D /var/lib/postgresql/pitr -o &quot;-p 5433&quot; start
+
+# 4. 到达目标后暂停，检查数据是否正确
+psql -p 5433 -c &quot;SELECT count(*) FROM orders;&quot;
+
+# 5. 确认无误后结束恢复，实例变为可写
+psql -p 5433 -c &quot;SELECT pg_wal_replay_resume();&quot;</code></pre></div><p class="cnote">在独立实例恢复并先暂停核对；生产中常用 pgBackRest、WAL-G 等工具封装。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">PITR 实现方式</h3><div class="tw"><table><thead><tr><th>平台</th><th>机制</th><th>说明</th></tr></thead><tbody><tr><td data-h="平台">PostgreSQL 自建</td><td data-h="机制">基础备份 + WAL 归档</td><td data-h="说明">可用 pgBackRest/WAL-G/Barman</td></tr><tr><td data-h="平台">MySQL 自建</td><td data-h="机制">全量备份 + binlog</td><td data-h="说明">mysqlbinlog 按时间截止重放</td></tr><tr><td data-h="平台">Amazon RDS</td><td data-h="机制">自动备份 + 事务日志</td><td data-h="说明">恢复为新实例，保留期最长 35 天</td></tr><tr><td data-h="平台">多数托管数据库</td><td data-h="机制">控制台选择时间点</td><td data-h="说明">通常恢复到新实例而非原地</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>PITR</h4><p><b class="k-p">优点</b>可精确到秒，丢失极少</p><p><b class="k-c">代价</b>需持续归档，恢复耗时较长</p><p><b class="k-w">适用</b>误操作与逻辑错误</p></div><div class="trd"><h4>定时快照/逻辑备份</h4><p><b class="k-p">优点</b>简单，恢复步骤少</p><p><b class="k-c">代价</b>最多丢一个备份周期的数据</p><p><b class="k-w">适用</b>RPO 宽松的系统</p></div><div class="trd"><h4>延迟副本</h4><p><b class="k-p">优点</b>可快速取回误删前数据</p><p><b class="k-c">代价</b>多一个实例成本</p><p><b class="k-w">适用</b>频繁需要快速撤销误操作</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>WAL 归档链中断而无人发现</p><p class="fix"><b>✓</b>监控归档失败与延迟，定期验证可恢复</p></li><li><p class="bad"><b>✗</b>在生产实例上原地恢复，覆盖了误删之后的正常写入</p><p class="fix"><b>✓</b>恢复到新实例，只把需要的数据回灌</p></li><li><p class="bad"><b>✗</b>目标时间未写时区，恢复到了错误时刻</p><p class="fix"><b>✓</b>目标时间带明确时区偏移</p></li><li><p class="bad"><b>✗</b>保留期太短，发现问题时已无法回到那个时间</p><p class="fix"><b>✓</b>按问题发现周期设定保留期</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>日志归档开启且失败有告警</span></label></li><li><label><input type="checkbox"><span>基础备份与日志在独立存储</span></label></li><li><label><input type="checkbox"><span>保留期满足业务发现问题的周期</span></label></li><li><label><input type="checkbox"><span>恢复手册写明时区与目标格式</span></label></li><li><label><input type="checkbox"><span>定期演练 PITR 并记录耗时</span></label></li><li><label><input type="checkbox"><span>明确数据回灌到生产的流程</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>PITR 的原理是什么？</summary><p>数据库所有修改先写日志。拿到某时刻的物理基础备份后，按顺序重放其后的日志，就能重建之后任意时刻的状态；设定目标时间，到达后停止重放即可。前提是日志链完整连续。</p></details><details class="iv"><summary>误删一张表，怎样尽量不影响其他数据？</summary><p>不在生产原地回退。把备份 PITR 到误删前一刻的新实例，导出这张表（或缺失的数据），再导入生产库；这样误删之后其他表的正常写入不受影响。</p></details><details class="iv"><summary>PITR 和主从复制能互相替代吗？</summary><p>不能。复制会把误删同步到副本，无法撤销逻辑错误；PITR 能回到过去但恢复耗时较长，不适合快速故障切换。高可用靠复制，防误操作和灾难恢复靠备份加 PITR。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.postgresql.org/docs/current/continuous-archiving.html" target="_blank" rel="noopener"><b>PostgreSQL: Continuous Archiving and PITR</b><small>postgresql.org ↗</small></a></li><li><a href="https://dev.mysql.com/doc/refman/8.0/en/point-in-time-recovery-binlog.html" target="_blank" rel="noopener"><b>MySQL: Point-in-Time Recovery Using Binary Log</b><small>dev.mysql.com ↗</small></a></li><li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PIT.html" target="_blank" rel="noopener"><b>Amazon RDS: Restoring to a specified time</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://pgbackrest.org/" target="_blank" rel="noopener"><b>pgBackRest</b><small>pgbackrest.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="testing-your-restores.pro.html" rel="prev"><small>‹ 上一个</small><b>🧯 备份恢复演练</b></a><a class="pn next" href="orm-lazy-loading.pro.html" rel="next"><small>下一个 ›</small><b>😴 ORM延迟加载</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

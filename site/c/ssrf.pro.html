@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="服务端请求伪造 专业模式：服务端请求伪造（Server-Side Request Forgery, SSRF）是攻击者诱使服务器向其指定的地址发起请求的漏洞，常见于 URL 预览、Web">
+<title>🎓 服务端请求伪造 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="ssrf" data-answer="0" data-prev="agent-skills.pro.html" data-next="path-traversal.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sec">🔮 高级 · 🛡️ 安全防线</a><span>›</span><a href="ssrf.html">服务端请求伪造</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.218 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="agent-skills.pro.html" rel="prev"><small>‹ 上一个</small><b>🧰 智能体技能 (Skills)</b></a><a class="pn next" href="path-traversal.pro.html" rel="next"><small>下一个 ›</small><b>🪜 路径遍历</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🎯</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>服务端请求伪造</h1><p class="en">SSRF</p>
+    <div class="hbtns"><a class="prosw back" href="ssrf.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">服务端请求伪造（Server-Side Request Forgery, SSRF）是攻击者诱使服务器向其指定的地址发起请求的漏洞，常见于 URL 预览、Webhook 配置、图片抓取等功能。由于请求来自服务器内部，攻击者可借此访问内网服务、云元数据接口获取凭证。它被列入 OWASP Top 10（2021 A10）。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>应用接收用户提供的 URL，由服务端代为请求，例如抓取网页生成预览。</p></li><li><span class="sn">2</span><p>攻击者提交指向内部地址的 URL，如 127.0.0.1、10.0.0.0/8 或云元数据地址 169.254.169.254。</p></li><li><span class="sn">3</span><p>服务器位于内网可信区，请求能到达外部无法访问的管理接口或数据库 HTTP 端口。</p></li><li><span class="sn">4</span><p>绕过手段包括重定向到内网、DNS 重绑定、十进制或 IPv6 等 IP 表示法。</p></li><li><span class="sn">5</span><p>响应若被回显给攻击者，就可直接读取内部数据，即使不回显也可用于探测端口。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>云元数据服务 (IMDS)</dt><dd>169.254.169.254 上提供实例信息与临时凭证的接口。</dd></div><div class="term"><dt>IMDSv2</dt><dd>AWS 要求先 PUT 获取会话令牌的元数据版本，可缓解 SSRF。</dd></div><div class="term"><dt>DNS 重绑定 (DNS Rebinding)</dt><dd>校验时解析为公网 IP，请求时解析为内网 IP。</dd></div><div class="term"><dt>盲 SSRF (Blind SSRF)</dt><dd>看不到响应内容，但可通过时间或副作用探测。</dd></div><div class="term"><dt>出口过滤 (Egress Filtering)</dt><dd>在网络层限制服务器可访问的目标地址。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>解析后校验并固定 IP</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import ipaddress, socket
+from urllib.parse import urlparse
+
+def resolve_public_ip(url: str) -&gt; tuple[str, str]:
+    u = urlparse(url)
+    if u.scheme not in (&quot;http&quot;, &quot;https&quot;) or not u.hostname:
+        raise ValueError(&quot;只允许 http/https&quot;)
+    port = u.port or (443 if u.scheme == &quot;https&quot; else 80)
+    infos = socket.getaddrinfo(u.hostname, port, proto=socket.IPPROTO_TCP)
+    for info in infos:
+        ip = ipaddress.ip_address(info[4][0])
+        if not ip.is_global:   # 排除私有、回环、链路本地(含 169.254.x.x)、保留等
+            raise ValueError(f&quot;禁止访问内部地址 {ip}&quot;)
+    return u.hostname, infos[0][4][0]
+
+# 用法要点：
+# 1. 用返回的 IP 发起连接（并设置 Host 头/SNI），避免 DNS 重绑定
+# 2. 禁止自动跟随重定向；如需跟随，每一跳重新校验
+# 3. 设置超时与响应大小上限
+host, ip = resolve_public_ip(&quot;https://example.com/a.png&quot;)
+print(host, ip)</code></pre></div><p class="cnote">按解析结果判断而非字符串匹配；连接时使用已校验的 IP，并对重定向逐跳校验。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见绕过与防御</h3><div class="tw"><table><thead><tr><th>绕过手法</th><th>示例</th><th>防御</th></tr></thead><tbody><tr><td data-h="绕过手法">IP 变体表示</td><td data-h="示例">2130706433、0x7f000001</td><td data-h="防御">解析为 IP 对象后再判断</td></tr><tr><td data-h="绕过手法">重定向</td><td data-h="示例">公网 URL 302 到内网</td><td data-h="防御">禁用或逐跳校验重定向</td></tr><tr><td data-h="绕过手法">DNS 重绑定</td><td data-h="示例">两次解析结果不同</td><td data-h="防御">解析一次并固定连接 IP</td></tr><tr><td data-h="绕过手法">非 HTTP 协议</td><td data-h="示例">file://、gopher://</td><td data-h="防御">只允许 http/https</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>域名白名单</h4><p><b class="k-p">优点</b>最安全，规则简单</p><p><b class="k-c">代价</b>灵活性差</p><p><b class="k-w">适用</b>只需访问少数已知服务</p></div><div class="trd"><h4>解析后拒绝内网地址</h4><p><b class="k-p">优点</b>支持任意公网 URL</p><p><b class="k-c">代价</b>实现细节多，易遗漏</p><p><b class="k-w">适用</b>URL 预览、通用抓取</p></div><div class="trd"><h4>隔离的出站代理</h4><p><b class="k-p">优点</b>网络层兜底，集中管控</p><p><b class="k-c">代价</b>需额外部署</p><p><b class="k-w">适用</b>抓取量大或多服务共用</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>用字符串判断是否包含 localhost 或 127.</p><p class="fix"><b>✓</b>解析为 IP 后用 ipaddress 判断地址类别</p></li><li><p class="bad"><b>✗</b>校验了第一个 URL，却让 HTTP 库自动跟随重定向</p><p class="fix"><b>✓</b>关闭自动重定向，或每一跳重新校验</p></li><li><p class="bad"><b>✗</b>云实例仍允许 IMDSv1</p><p class="fix"><b>✓</b>强制使用 IMDSv2 并限制跳数</p></li><li><p class="bad"><b>✗</b>AI Agent 的 fetch 工具可访问任意地址</p><p class="fix"><b>✓</b>Agent 抓取工具同样经过出站代理与内网拦截</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>只允许 http/https 协议</span></label></li><li><label><input type="checkbox"><span>解析后拦截非公网地址</span></label></li><li><label><input type="checkbox"><span>重定向逐跳校验或禁用</span></label></li><li><label><input type="checkbox"><span>连接使用已校验的 IP</span></label></li><li><label><input type="checkbox"><span>云元数据强制 IMDSv2</span></label></li><li><label><input type="checkbox"><span>网络层有出口过滤</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么 SSRF 在云环境中危害更大？</summary><p>云实例可通过链路本地地址访问元数据服务，获取实例角色的临时凭证。攻击者借 SSRF 读取这些凭证后，可直接调用云 API 访问存储、数据库等资源，从一个 Web 漏洞扩大为整个云账号的入侵。</p></details><details class="iv"><summary>如何防御 DNS 重绑定？</summary><p>只解析一次域名，对所有解析结果做校验，然后直接用校验通过的 IP 建立连接，并通过 Host 头与 SNI 传递原域名；避免「先校验域名、再让 HTTP 库重新解析」的两段式流程。</p></details><details class="iv"><summary>只靠应用层校验够吗？</summary><p>不够，应纵深防御：应用层校验 URL 与 IP，网络层把抓取服务放在隔离子网并限制出口，云上启用 IMDSv2，服务以最小权限运行，这样单点疏漏不会直接导致凭证泄露。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://owasp.org/Top10/A10_2021-Server-Side_Request_Forgery_%28SSRF%29/" target="_blank" rel="noopener"><b>OWASP Top 10 2021 A10: SSRF</b><small>owasp.org ↗</small></a></li><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html" target="_blank" rel="noopener"><b>OWASP SSRF Prevention Cheat Sheet</b><small>cheatsheetseries.owasp.org ↗</small></a></li><li><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-service.html" target="_blank" rel="noopener"><b>AWS 文档：Use IMDSv2</b><small>docs.aws.amazon.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="agent-skills.pro.html" rel="prev"><small>‹ 上一个</small><b>🧰 智能体技能 (Skills)</b></a><a class="pn next" href="path-traversal.pro.html" rel="next"><small>下一个 ›</small><b>🪜 路径遍历</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="K8s资源请求与硬限制 专业模式：Kubernetes 资源请求（requests）与限制（limits）是为容器声明 CPU 和内存的两个值：requests 是调度器据以选择节点并保证分配的">
+<title>🎓 K8s资源请求与硬限制 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="resource-requests-and-limits" data-answer="0" data-prev="gitops.pro.html" data-next="pod-disruption-budgets.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#devops">🔥 进阶 · 🔭 可观测与交付</a><span>›</span><a href="resource-requests-and-limits.html">K8s资源请求与硬限制</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.449 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="gitops.pro.html" rel="prev"><small>‹ 上一个</small><b>🌡️ 基于Git的持续交付</b></a><a class="pn next" href="pod-disruption-budgets.pro.html" rel="next"><small>下一个 ›</small><b>🏦 Pod中断预算 (PDB)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📦</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>K8s资源请求与硬限制</h1><p class="en">Resource Requests &amp; Limits</p>
+    <div class="hbtns"><a class="prosw back" href="resource-requests-and-limits.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">Kubernetes 资源请求（requests）与限制（limits）是为容器声明 CPU 和内存的两个值：requests 是调度器据以选择节点并保证分配的资源量，limits 是运行时可使用的上限。超 CPU 限制被节流，超内存限制被 OOMKill。两者的组合还决定 Pod 的 QoS 等级与驱逐优先级。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>调度：调度器只看 requests，把 Pod 放到剩余可分配资源足够的节点上。</p></li><li><span class="sn">2</span><p>CPU 请求：通过 cgroup 权重在 CPU 争用时按比例分配，不争用时可以超用。</p></li><li><span class="sn">3</span><p>CPU 限制：通过 CFS 配额限制每个周期内可用的 CPU 时间，超出即被节流等待。</p></li><li><span class="sn">4</span><p>内存限制：容器内存超过 limit 会被内核 OOM Killer 终止，状态显示 OOMKilled。</p></li><li><span class="sn">5</span><p>QoS 与驱逐：节点资源紧张时按 QoS 等级与超用程度驱逐，BestEffort 最先被驱逐。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>QoS 等级</dt><dd>三档服务质量等级，由 requests 与 limits 的设置方式自动判定。</dd></div><div class="term"><dt>CPU 节流 (Throttling)</dt><dd>容器用完 CFS 配额后被暂停到下一周期，表现为延迟升高。</dd></div><div class="term"><dt>OOMKilled</dt><dd>容器因超出内存限制被内核终止的状态。</dd></div><div class="term"><dt>超售 (Overcommit)</dt><dd>节点上 limits 总和大于实际资源，依赖并非所有容器同时满载。</dd></div><div class="term"><dt>LimitRange / ResourceQuota</dt><dd>命名空间级的默认值、上下限与总量配额。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>容器资源配置</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+spec:
+  replicas: 3
+  selector: {matchLabels: {app: api}}
+  template:
+    metadata: {labels: {app: api}}
+    spec:
+      containers:
+      - name: api
+        image: registry.example.com/api:1.8.3
+        resources:
+          requests:
+            cpu: &quot;500m&quot;        # 调度保证 0.5 核
+            memory: &quot;512Mi&quot;
+          limits:
+            memory: &quot;512Mi&quot;    # 内存 limit = request，避免节点内存超售
+            # 不设 CPU limit：避免节流，靠 requests 在争用时分配
+# QoS 为 Burstable；若 CPU、内存都设 limit 且等于 request 则为 Guaranteed</code></pre></div><p class="cnote">常见做法：内存 limit 等于 request，CPU 只设 request；CPU limit 按场景权衡。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">QoS 等级判定</h3><div class="tw"><table><thead><tr><th>等级</th><th>条件</th><th>驱逐顺序</th></tr></thead><tbody><tr><td data-h="等级">Guaranteed</td><td data-h="条件">每个容器 CPU 与内存都设置且 limit = request</td><td data-h="驱逐顺序">最后</td></tr><tr><td data-h="等级">Burstable</td><td data-h="条件">至少一个容器设了 request 或 limit，但不满足上条</td><td data-h="驱逐顺序">居中</td></tr><tr><td data-h="等级">BestEffort</td><td data-h="条件">所有容器都未设置 request 与 limit</td><td data-h="驱逐顺序">最先</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>设置 CPU limit</h4><p><b class="k-p">优点</b>防止单个容器占满节点 CPU</p><p><b class="k-c">代价</b>可能频繁节流，尾延迟升高</p><p><b class="k-w">适用</b>多租户、需严格隔离</p></div><div class="trd"><h4>不设 CPU limit</h4><p><b class="k-p">优点</b>空闲 CPU 可被利用，延迟更稳</p><p><b class="k-c">代价</b>依赖准确的 requests 防止争抢</p><p><b class="k-w">适用</b>延迟敏感、requests 设置合理</p></div><div class="trd"><h4>Guaranteed QoS</h4><p><b class="k-p">优点</b>驱逐优先级最低，表现可预期</p><p><b class="k-c">代价</b>资源利用率较低</p><p><b class="k-w">适用</b>数据库等关键有状态服务</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>不设 requests，节点被过度调度后频繁驱逐</p><p class="fix"><b>✓</b>根据监控的实际用量设置 requests，并用 LimitRange 设默认值</p></li><li><p class="bad"><b>✗</b>CPU limit 设得过低，CPU 使用率不高却延迟飙升</p><p class="fix"><b>✓</b>监控节流指标，调高或去掉 CPU limit</p></li><li><p class="bad"><b>✗</b>JVM 等运行时未按容器内存限制配置堆，频繁 OOMKilled</p><p class="fix"><b>✓</b>让运行时感知容器限制，堆上限留出非堆内存余量</p></li><li><p class="bad"><b>✗</b>requests 远大于实际用量，集群资源大量闲置</p><p class="fix"><b>✓</b>定期按 P95 用量调整，可借助 VPA 推荐值</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有容器设置了 requests</span></label></li><li><label><input type="checkbox"><span>内存 limit 已设置</span></label></li><li><label><input type="checkbox"><span>监控 CPU 节流与 OOM 事件</span></label></li><li><label><input type="checkbox"><span>关键服务 QoS 合理</span></label></li><li><label><input type="checkbox"><span>命名空间有 LimitRange/Quota</span></label></li><li><label><input type="checkbox"><span>requests 定期按实际用量调整</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>requests 和 limits 分别影响什么？</summary><p>requests 影响调度和争用时的资源保证：调度器按它找节点，CPU 争用时按其比例分配。limits 影响运行时上限：CPU 超出被节流，内存超出被 OOMKill。两者共同决定 QoS 等级和节点压力下的驱逐顺序。</p></details><details class="iv"><summary>CPU 使用率才 40% 为何还被节流？</summary><p>CFS 配额按短周期计算，监控的使用率是长时间平均值。多线程程序可能在一个周期的前一小段用完配额，随后整个周期都被暂停，平均看并不高但请求延迟明显变长。看节流指标而非平均使用率。</p></details><details class="iv"><summary>内存为什么通常建议 limit 等于 request？</summary><p>内存是不可压缩资源，超用无法像 CPU 那样节流回收。若 limit 远高于 request，节点内存被超售，压力大时会触发驱逐或 OOM，影响其他 Pod；设为相等让调度时的预留与实际上限一致，行为更可预期。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/" target="_blank" rel="noopener"><b>Kubernetes: Resource Management for Pods and Containers</b><small>kubernetes.io ↗</small></a></li><li><a href="https://kubernetes.io/docs/concepts/workloads/pods/pod-qos/" target="_blank" rel="noopener"><b>Kubernetes: Pod Quality of Service Classes</b><small>kubernetes.io ↗</small></a></li><li><a href="https://kubernetes.io/docs/concepts/policy/limit-range/" target="_blank" rel="noopener"><b>Kubernetes: Limit Ranges</b><small>kubernetes.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="gitops.pro.html" rel="prev"><small>‹ 上一个</small><b>🌡️ 基于Git的持续交付</b></a><a class="pn next" href="pod-disruption-budgets.pro.html" rel="next"><small>下一个 ›</small><b>🏦 Pod中断预算 (PDB)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

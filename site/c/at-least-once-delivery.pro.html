@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="至少一次投递语义 专业模式：至少一次投递（At-Least-Once Delivery）是消息传递语义的一种：系统保证每条消息最终至少被处理一次，但在超时、重试或消费者崩溃时可能重复投递。">
+<title>🎓 至少一次投递语义 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="at-least-once-delivery" data-answer="0" data-prev="poison-messages.pro.html" data-next="webhook-retries.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#cache">🔮 高级 · ⚡ 缓存与队列</a><span>›</span><a href="at-least-once-delivery.html">至少一次投递语义</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.281 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="poison-messages.pro.html" rel="prev"><small>‹ 上一个</small><b>☠️ 毒丸消息</b></a><a class="pn next" href="webhook-retries.pro.html" rel="next"><small>下一个 ›</small><b>🔔 Webhook异步回调重试</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📬</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>⚡ 缓存与队列</span><span>⏱ 约 10 分钟</span></div>
+    <h1>至少一次投递语义</h1><p class="en">At-Least-Once Delivery</p>
+    <div class="hbtns"><a class="prosw back" href="at-least-once-delivery.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">至少一次投递（At-Least-Once Delivery）是消息传递语义的一种：系统保证每条消息最终至少被处理一次，但在超时、重试或消费者崩溃时可能重复投递。它位于消息系统与消费者的契约层，用重复换取不丢失，要求消费端实现幂等（Idempotency）来消化重复。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>生产者发送消息后等待中间件确认，超时未收到确认就重发，此时可能产生重复写入。</p></li><li><span class="sn">2</span><p>消费者取到消息先执行业务逻辑，成功后再确认（ack）或提交位移。</p></li><li><span class="sn">3</span><p>若处理完成但确认前崩溃，中间件认为未处理，会把同一条消息重新投递。</p></li><li><span class="sn">4</span><p>消费者用消息 ID 或业务唯一键去重，已处理过的直接确认跳过，从而得到有效一次的结果。</p></li><li><span class="sn">5</span><p>与之对比，先确认后处理是至多一次（At-Most-Once），崩溃会丢消息但不会重复。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>至多一次 (At-Most-Once)</dt><dd>消息最多处理一次，可能丢失但不会重复。</dd></div><div class="term"><dt>恰好一次 (Exactly-Once)</dt><dd>每条消息效果只生效一次，通常靠幂等加事务在特定范围内实现。</dd></div><div class="term"><dt>幂等消费者 (Idempotent Consumer)</dt><dd>重复处理同一消息结果不变的消费者，常用去重表实现。</dd></div><div class="term"><dt>确认 (Acknowledgement)</dt><dd>消费者告诉中间件消息已处理完成、可以删除的信号。</dd></div><div class="term"><dt>事务性发件箱 (Transactional Outbox)</dt><dd>业务数据与待发消息同库同事务写入，再异步投递，避免双写不一致。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>去重表实现幂等消费</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- 记录已处理过的消息 ID（PostgreSQL）
+CREATE TABLE processed_messages (
+  message_id   TEXT PRIMARY KEY,
+  processed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 在同一事务里：先占位去重，再执行业务
+BEGIN;
+INSERT INTO processed_messages (message_id)
+VALUES (&#x27;msg-7f3a&#x27;)
+ON CONFLICT (message_id) DO NOTHING;
+-- 应用代码检查受影响行数：
+--   0 行 = 重复消息，ROLLBACK 后直接 ack
+--   1 行 = 首次处理，继续执行下面的业务 SQL
+UPDATE accounts SET balance = balance - 100 WHERE id = 42;
+COMMIT;</code></pre></div><p class="cnote">去重记录与业务更新同事务提交，重复投递时插入失败即可安全跳过。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">三种投递语义对比</h3><div class="tw"><table><thead><tr><th>语义</th><th>确认时机</th><th>风险</th><th>典型场景</th></tr></thead><tbody><tr><td data-h="语义">至多一次</td><td data-h="确认时机">处理前确认</td><td data-h="风险">崩溃时丢消息</td><td data-h="典型场景">指标采样、日志</td></tr><tr><td data-h="语义">至少一次</td><td data-h="确认时机">处理后确认</td><td data-h="风险">重复处理</td><td data-h="典型场景">订单、支付通知等主流业务</td></tr><tr><td data-h="语义">恰好一次（效果）</td><td data-h="确认时机">幂等/事务配合</td><td data-h="风险">实现复杂、范围受限</td><td data-h="典型场景">Kafka 流处理、对账</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>至少一次 + 幂等</h4><p><b class="k-p">优点</b>不丢数据，实现成熟</p><p><b class="k-c">代价</b>每个消费者都要做去重</p><p><b class="k-w">适用</b>大多数业务消息的默认选择</p></div><div class="trd"><h4>至多一次</h4><p><b class="k-p">优点</b>无重复，吞吐高</p><p><b class="k-c">代价</b>故障时会丢消息</p><p><b class="k-w">适用</b>丢一些也无所谓的数据</p></div><div class="trd"><h4>中间件事务（如 Kafka EOS）</h4><p><b class="k-p">优点</b>读-处理-写闭环内效果一次</p><p><b class="k-c">代价</b>仅限同一系统内，外部副作用仍需幂等</p><p><b class="k-w">适用</b>Kafka 到 Kafka 的流处理</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>以为用了 SQS 标准队列就不会重复，没做去重。</p><p class="fix"><b>✓</b>按官方说明，标准队列可能重复投递，消费端必须幂等。</p></li><li><p class="bad"><b>✗</b>用时间戳加随机数当去重键，重发时生成了新键。</p><p class="fix"><b>✓</b>去重键由生产者在首次创建消息时生成并随消息传递。</p></li><li><p class="bad"><b>✗</b>去重记录和业务写入不在一个事务里。</p><p class="fix"><b>✓</b>放进同一数据库事务，或使用带条件的原子更新。</p></li><li><p class="bad"><b>✗</b>去重表无限增长，拖慢查询。</p><p class="fix"><b>✓</b>按重投窗口设置过期清理，例如保留数天到数周。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>明确每条链路的投递语义并写进设计文档</span></label></li><li><label><input type="checkbox"><span>消息携带稳定的唯一 ID</span></label></li><li><label><input type="checkbox"><span>消费者处理成功后才确认</span></label></li><li><label><input type="checkbox"><span>去重与业务写入原子化</span></label></li><li><label><input type="checkbox"><span>去重记录有清理策略</span></label></li><li><label><input type="checkbox"><span>有重复投递的集成测试</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么分布式系统很难做到真正的恰好一次？</summary><p>网络无法区分对方没收到和确认丢了，发送方只能重试或放弃。所以端到端只能在至少一次基础上，用幂等或事务让效果只生效一次；一旦涉及发邮件、调第三方等外部副作用，就必须靠幂等键。</p></details><details class="iv"><summary>Kafka 的幂等生产者解决了什么？</summary><p>它为生产者分配 ID 并给每条消息编序号，broker 丢弃重复序号，从而消除生产者重试导致的分区内重复。Kafka 3.0 起 enable.idempotence 默认开启。它不解决消费端重复处理的问题。</p></details><details class="iv"><summary>Outbox 模式和至少一次有什么关系？</summary><p>业务数据和待发消息写进同一事务的 outbox 表，再由中继进程投递。中继可能重复发送，所以下游仍是至少一次，但它保证了不会出现数据已提交而消息没发出去的不一致。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://kafka.apache.org/documentation/#semantics" target="_blank" rel="noopener"><b>Apache Kafka 文档：消息投递语义</b><small>kafka.apache.org ↗</small></a></li><li><a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/standard-queues-at-least-once-delivery.html" target="_blank" rel="noopener"><b>Amazon SQS 标准队列的至少一次投递</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://microservices.io/patterns/communication-style/idempotent-consumer.html" target="_blank" rel="noopener"><b>microservices.io：Idempotent Consumer</b><small>microservices.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="poison-messages.pro.html" rel="prev"><small>‹ 上一个</small><b>☠️ 毒丸消息</b></a><a class="pn next" href="webhook-retries.pro.html" rel="next"><small>下一个 ›</small><b>🔔 Webhook异步回调重试</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="Docker Compose 多容器编排 专业模式：Docker Compose 是用一个 YAML 文件（推荐命名 compose.yaml）声明多容器应用的服务、网络、数据卷与配置，并用 docker com">
+<title>🎓 Docker Compose 多容器编排 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="docker-compose" data-answer="0" data-prev="sql-joins.pro.html" data-next="github-actions.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#devops">🌊 中级 · 🔭 可观测与交付</a><span>›</span><a href="docker-compose.html">Docker Compose 多容器编排</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.170 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="sql-joins.pro.html" rel="prev"><small>‹ 上一个</small><b>🔗 表连接 (JOIN)</b></a><a class="pn next" href="github-actions.pro.html" rel="next"><small>下一个 ›</small><b>🤖 GitHub Actions</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🐙</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>Docker Compose 多容器编排</h1><p class="en">Docker Compose</p>
+    <div class="hbtns"><a class="prosw back" href="docker-compose.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">Docker Compose 是用一个 YAML 文件（推荐命名 compose.yaml）声明多容器应用的服务、网络、数据卷与配置，并用 docker compose 命令统一创建、启动、停止的工具，遵循开放的 Compose Specification。它定位于本地开发、测试与单机部署，是「一条命令拉起整套环境」的标准做法。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>compose.yaml 的 services 下定义每个服务的镜像或构建上下文、端口、环境变量、挂载与依赖。</p></li><li><span class="sn">2</span><p>Compose 为项目创建默认网络，服务之间可直接用服务名作为主机名互相访问。</p></li><li><span class="sn">3</span><p>命名数据卷在容器重建后保留数据；绑定挂载把本地目录映射进容器，便于开发热更新。</p></li><li><span class="sn">4</span><p>depends_on 结合 healthcheck 与 condition: service_healthy，可让依赖服务就绪后再启动应用。</p></li><li><span class="sn">5</span><p>支持 .env 变量替换、多文件覆盖（compose.override.yaml）与 profiles 按需启用服务。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>Compose Specification</dt><dd>定义多容器应用的开放规范，docker compose 实现它。</dd></div><div class="term"><dt>服务 (Service)</dt><dd>一类容器的定义，可扩展为多个副本。</dd></div><div class="term"><dt>命名卷 (Named Volume)</dt><dd>由 Docker 管理的持久化存储，独立于容器生命周期。</dd></div><div class="term"><dt>健康检查 (Healthcheck)</dt><dd>定期执行的探测命令，决定容器是否健康。</dd></div><div class="term"><dt>Profiles</dt><dd>为服务打标签，只在指定 profile 启用时启动。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Web + PostgreSQL + Redis</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code># compose.yaml（顶层 version 字段已过时，不需要写）
+services:
+  web:
+    build: .
+    ports:
+      - &quot;3000:3000&quot;
+    environment:
+      DATABASE_URL: postgres://app:${DB_PASSWORD}@db:5432/app   # 用服务名 db 访问
+      REDIS_URL: redis://cache:6379
+    depends_on:
+      db:
+        condition: service_healthy   # 等数据库就绪再启动
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: ${DB_PASSWORD}   # 从同目录 .env 读取
+      POSTGRES_DB: app
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [&quot;CMD-SHELL&quot;, &quot;pg_isready -U app&quot;]
+      interval: 5s
+      retries: 10
+  cache:
+    image: redis:7
+volumes:
+  pgdata:</code></pre></div><p class="cnote">数据库不映射宿主端口即可只供内部访问；docker compose down -v 会删除 pgdata 卷。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常用命令</h3><div class="tw"><table><thead><tr><th>命令</th><th>作用</th><th>注意</th></tr></thead><tbody><tr><td data-h="命令">docker compose up -d</td><td data-h="作用">构建并后台启动</td><td data-h="注意">配置变化会重建容器</td></tr><tr><td data-h="命令">docker compose logs -f web</td><td data-h="作用">跟踪某服务日志</td><td data-h="注意">排错首选</td></tr><tr><td data-h="命令">docker compose exec db psql -U app</td><td data-h="作用">进入容器执行命令</td><td data-h="注意">服务需在运行</td></tr><tr><td data-h="命令">docker compose down</td><td data-h="作用">停止并删除容器与网络</td><td data-h="注意">加 -v 会删除数据卷</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>Compose</h4><p><b class="k-p">优点</b>简单、声明式、上手快</p><p><b class="k-c">代价</b>单机为主，无自动扩缩容与自愈调度</p><p><b class="k-w">适用</b>本地开发、测试、小型单机部署</p></div><div class="trd"><h4>Kubernetes</h4><p><b class="k-p">优点</b>多节点调度、自愈、滚动更新</p><p><b class="k-c">代价</b>复杂度与运维成本高</p><p><b class="k-w">适用</b>生产多服务、需要高可用</p></div><div class="trd"><h4>直接 docker run</h4><p><b class="k-p">优点</b>无额外文件</p><p><b class="k-c">代价</b>多服务时命令难维护</p><p><b class="k-w">适用</b>临时跑单个容器</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>以为 depends_on 会等数据库可用</p><p class="fix"><b>✓</b>配合 healthcheck 与 condition: service_healthy，应用也应重试连接</p></li><li><p class="bad"><b>✗</b>数据库端口映射到 0.0.0.0 暴露公网</p><p class="fix"><b>✓</b>不映射端口，或绑定 127.0.0.1:5432:5432</p></li><li><p class="bad"><b>✗</b>密码明文写在 compose.yaml 并提交</p><p class="fix"><b>✓</b>用 .env（不入库）或 secrets 注入</p></li><li><p class="bad"><b>✗</b>习惯性 down -v 清掉了数据</p><p class="fix"><b>✓</b>清楚 -v 会删命名卷，重要数据先备份</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>使用 docker compose（v2）与 compose.yaml</span></label></li><li><label><input type="checkbox"><span>依赖服务配置了健康检查</span></label></li><li><label><input type="checkbox"><span>数据库数据使用命名卷</span></label></li><li><label><input type="checkbox"><span>敏感值来自 .env 或 secrets</span></label></li><li><label><input type="checkbox"><span>内部服务不暴露宿主端口</span></label></li><li><label><input type="checkbox"><span>镜像版本固定，不用 latest</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Compose 中服务间如何通信？</summary><p>Compose 为项目创建默认 bridge 网络，并提供内置 DNS，服务名即主机名，容器间直接用 db:5432 访问容器端口，无需映射到宿主机。ports 只用于宿主机或外部访问。</p></details><details class="iv"><summary>depends_on 能保证启动顺序和可用性吗？</summary><p>短语法只保证容器启动顺序，不保证进程就绪。长语法配合 condition: service_healthy 可等待健康检查通过。但运行中依赖也可能重启，应用仍需具备连接重试能力。</p></details><details class="iv"><summary>Compose 能用于生产吗？</summary><p>单机、小规模、可接受停机维护的场景可以，配合 restart 策略、日志轮转与备份即可。需要多节点、高可用、滚动更新与自动扩缩时，应迁移到 Kubernetes 或托管容器平台。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.docker.com/compose/" target="_blank" rel="noopener"><b>Docker 文档：Docker Compose</b><small>docs.docker.com ↗</small></a></li><li><a href="https://docs.docker.com/reference/compose-file/" target="_blank" rel="noopener"><b>Compose file reference</b><small>docs.docker.com ↗</small></a></li><li><a href="https://github.com/compose-spec/compose-spec" target="_blank" rel="noopener"><b>Compose Specification（GitHub）</b><small>github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="sql-joins.pro.html" rel="prev"><small>‹ 上一个</small><b>🔗 表连接 (JOIN)</b></a><a class="pn next" href="github-actions.pro.html" rel="next"><small>下一个 ›</small><b>🤖 GitHub Actions</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

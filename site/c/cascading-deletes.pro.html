@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="级联删除 专业模式：级联删除是外键约束的一种引用动作：删除父表记录时，数据库自动删除所有引用它的子表记录（ON DELETE CASCADE）。它保证引用完整性、免去手工清理，但一">
+<title>🎓 级联删除 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="cascading-deletes" data-answer="0" data-prev="denormalization.pro.html" data-next="full-text-search.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#db">🔮 高级 · 🗄️ 数据库</a><span>›</span><a href="cascading-deletes.html">级联删除</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.246 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="denormalization.pro.html" rel="prev"><small>‹ 上一个</small><b>☂️ 数据库反范式化</b></a><a class="pn next" href="full-text-search.pro.html" rel="next"><small>下一个 ›</small><b>🔎 全文检索</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🁢</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>级联删除</h1><p class="en">Cascading Deletes</p>
+    <div class="hbtns"><a class="prosw back" href="cascading-deletes.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">级联删除是外键约束的一种引用动作：删除父表记录时，数据库自动删除所有引用它的子表记录（ON DELETE CASCADE）。它保证引用完整性、免去手工清理，但一次删除可能沿关系链扩散到大量数据，且无法撤销，必须谨慎设计关系边界。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>在子表外键上声明 ON DELETE 动作：CASCADE、SET NULL、SET DEFAULT、RESTRICT 或 NO ACTION。</p></li><li><span class="sn">2</span><p>删除父行时，数据库查找所有引用它的子行，按声明的动作处理。</p></li><li><span class="sn">3</span><p>子行若又被其他表以 CASCADE 引用，删除会沿关系链递归传播，全部在同一事务中完成。</p></li><li><span class="sn">4</span><p>引擎需要通过子表外键列定位子行；没有索引时每次删除都可能全表扫描。</p></li><li><span class="sn">5</span><p>ORM 也能在应用层模拟级联，但不经过 ORM 的删除不会触发这类逻辑。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>引用动作 (Referential Action)</dt><dd>外键在父行删除或更新时执行的动作。</dd></div><div class="term"><dt>RESTRICT / NO ACTION</dt><dd>有子行引用时拒绝删除父行；二者检查时机略有差别。</dd></div><div class="term"><dt>SET NULL</dt><dd>删除父行时把子行外键置空，保留子行。</dd></div><div class="term"><dt>软删除 (Soft Delete)</dt><dd>用 deleted_at 标记删除而不物理删除。</dd></div><div class="term"><dt>孤儿记录 (Orphan Record)</dt><dd>外键指向已不存在父行的子记录。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>按关系选择引用动作</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>CREATE TABLE users (id bigint PRIMARY KEY, email text UNIQUE NOT NULL);
+
+-- 组成关系：用户删了，其会话没有意义 → 级联删除
+CREATE TABLE sessions (
+  id      uuid PRIMARY KEY,
+  user_id bigint NOT NULL REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 关联关系：订单要留存做账 → 拒绝删除有订单的用户
+CREATE TABLE orders (
+  id      bigint PRIMARY KEY,
+  user_id bigint NOT NULL REFERENCES users(id) ON DELETE RESTRICT
+);
+
+-- 可选关系：指派人离开，任务保留 → 置空
+CREATE TABLE tasks (
+  id          bigint PRIMARY KEY,
+  assignee_id bigint REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- PostgreSQL 不会自动为外键列建索引，级联与 JOIN 都依赖它
+CREATE INDEX ON sessions (user_id);
+CREATE INDEX ON orders (user_id);
+CREATE INDEX ON tasks (assignee_id);</code></pre></div><p class="cnote">按“组成/关联/可选”关系选动作；外键列建索引，避免级联时扫描全表。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">ON DELETE 动作对比</h3><div class="tw"><table><thead><tr><th>动作</th><th>子行结果</th><th>适用关系</th></tr></thead><tbody><tr><td data-h="动作">CASCADE</td><td data-h="子行结果">随父行删除</td><td data-h="适用关系">强组成：会话、订单明细</td></tr><tr><td data-h="动作">SET NULL</td><td data-h="子行结果">外键置空保留</td><td data-h="适用关系">可选关联：负责人、分类</td></tr><tr><td data-h="动作">RESTRICT / NO ACTION</td><td data-h="子行结果">阻止删除父行</td><td data-h="适用关系">需留存的业务记录</td></tr><tr><td data-h="动作">SET DEFAULT</td><td data-h="子行结果">改为默认值</td><td data-h="适用关系">有兜底父行的场景</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>数据库级联</h4><p><b class="k-p">优点</b>原子、可靠，任何客户端删除都生效</p><p><b class="k-c">代价</b>影响范围不直观，难审计</p><p><b class="k-w">适用</b>生命周期完全依附父行的数据</p></div><div class="trd"><h4>ORM/应用层级联</h4><p><b class="k-p">优点</b>可触发回调、写审计日志</p><p><b class="k-c">代价</b>绕过 ORM 的删除不生效</p><p><b class="k-w">适用</b>删除需附带业务逻辑</p></div><div class="trd"><h4>软删除</h4><p><b class="k-p">优点</b>可恢复、保留历史</p><p><b class="k-c">代价</b>查询都要过滤，唯一约束复杂</p><p><b class="k-w">适用</b>用户可见数据需要回收站</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>到处默认 CASCADE，误删一个账户连带清空订单</p><p class="fix"><b>✓</b>只对组成关系用 CASCADE，业务记录用 RESTRICT</p></li><li><p class="bad"><b>✗</b>外键列没索引，删除大父行时极慢且长时间锁表</p><p class="fix"><b>✓</b>为所有外键列建索引，大批量删除分批执行</p></li><li><p class="bad"><b>✗</b>依赖级联删除时期望触发器或审计逻辑执行</p><p class="fix"><b>✓</b>确认引擎行为：MySQL InnoDB 级联不触发触发器</p></li><li><p class="bad"><b>✗</b>合规删除只删主表，日志与备份仍留数据</p><p class="fix"><b>✓</b>梳理全部副本，制定数据删除清单</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个外键的 ON DELETE 动作有明确理由</span></label></li><li><label><input type="checkbox"><span>外键列都有索引</span></label></li><li><label><input type="checkbox"><span>删除前可预估影响行数</span></label></li><li><label><input type="checkbox"><span>关键业务数据不会被级联删除</span></label></li><li><label><input type="checkbox"><span>大批量删除分批执行</span></label></li><li><label><input type="checkbox"><span>删除操作有审计记录</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>ON DELETE CASCADE 和 ORM 的 cascade 有什么区别？</summary><p>数据库级联由引擎在同一事务内执行，任何客户端的 DELETE 都会触发，可靠但不运行应用回调。ORM 级联先加载子对象再逐个删除，可触发钩子，但慢，且直接执行 SQL 删除时不生效。SQLAlchemy 可用 passive_deletes 交给数据库。</p></details><details class="iv"><summary>如何评估一次删除会波及多少数据？</summary><p>从父表出发沿外键图列出所有 CASCADE 关系，对每张子表执行 COUNT 预估；在预发环境用事务执行删除并统计受影响行数后回滚。对用户触发的删除，可在界面上展示影响范围再确认。</p></details><details class="iv"><summary>软删除和级联怎么配合？</summary><p>软删除不会触发外键动作，需要在应用层同步标记子记录，或在查询时通过父表状态过滤。唯一约束要改为部分索引（如仅约束 deleted_at IS NULL 的行），并有定期物理清理策略。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.postgresql.org/docs/current/ddl-constraints.html#DDL-CONSTRAINTS-FK" target="_blank" rel="noopener"><b>PostgreSQL: Foreign Keys</b><small>postgresql.org ↗</small></a></li><li><a href="https://dev.mysql.com/doc/refman/8.0/en/create-table-foreign-keys.html" target="_blank" rel="noopener"><b>MySQL: FOREIGN KEY Constraints</b><small>dev.mysql.com ↗</small></a></li><li><a href="https://docs.sqlalchemy.org/en/20/orm/cascades.html" target="_blank" rel="noopener"><b>SQLAlchemy: Cascades</b><small>docs.sqlalchemy.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="denormalization.pro.html" rel="prev"><small>‹ 上一个</small><b>☂️ 数据库反范式化</b></a><a class="pn next" href="full-text-search.pro.html" rel="next"><small>下一个 ›</small><b>🔎 全文检索</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

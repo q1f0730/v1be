@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="连接排空 专业模式：连接排空（Connection Draining）是负载均衡器在后端实例下线时，停止向其分配新连接或请求，同时让已建立连接在时限内自然结束的机制。AWS ALB">
+<title>🎓 连接排空 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="connection-draining" data-answer="0" data-prev="graceful-shutdown.pro.html" data-next="stateless-services.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sre">🔮 高级 · 🩺 高可用 SRE</a><span>›</span><a href="connection-draining.html">连接排空</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.294 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="graceful-shutdown.pro.html" rel="prev"><small>‹ 上一个</small><b>🌙 优雅停机机制</b></a><a class="pn next" href="stateless-services.pro.html" rel="next"><small>下一个 ›</small><b>🧑‍🍳 无状态服务架构</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🚪</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>连接排空</h1><p class="en">Connection Draining</p>
+    <div class="hbtns"><a class="prosw back" href="connection-draining.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">连接排空（Connection Draining）是负载均衡器在后端实例下线时，停止向其分配新连接或请求，同时让已建立连接在时限内自然结束的机制。AWS ALB/NLB 中称为注销延迟（Deregistration Delay），Google Cloud 称连接排空。它位于流量接入层，与优雅停机配合实现发布缩容不断连。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>实例被标记下线，原因可能是发布替换旧版本、自动缩容、手动注销或健康检查连续失败。</p></li><li><span class="sn">2</span><p>负载均衡器将其状态置为 draining，不再路由新的请求或连接给它。</p></li><li><span class="sn">3</span><p>已有连接和在途请求继续在该实例上完成，长连接需要应用主动收尾。</p></li><li><span class="sn">4</span><p>排空超时到达或在途连接数归零后，负载均衡器才把该实例从目标组中彻底移除。</p></li><li><span class="sn">5</span><p>应用端同步执行优雅停机，在排空窗口内关闭空闲 keep-alive 连接后退出。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>注销延迟 (Deregistration Delay)</dt><dd>AWS 目标组中目标从 draining 到移除的最长等待，默认 300 秒。</dd></div><div class="term"><dt>Keep-Alive 连接</dt><dd>HTTP 复用的长连接，排空时需要服务端关闭或发 Connection: close。</dd></div><div class="term"><dt>GOAWAY 帧</dt><dd>HTTP/2 中通知对端不再接受新流、让其换连接的控制帧。</dd></div><div class="term"><dt>长连接 (WebSocket / gRPC Stream)</dt><dd>可能持续数小时，排空窗口内往往结束不了，需应用层迁移。</dd></div><div class="term"><dt>粘性会话 (Sticky Session)</dt><dd>把同一用户固定到同一实例，排空时会话需迁移或失效。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>AWS 目标组排空操作</span><em>bash</em><button class="ccopy">复制</button></div><pre><code>TG_ARN=&quot;arn:aws:elasticloadbalancing:...:targetgroup/api/abc123&quot;
+
+# 1. 把注销延迟从默认 300 秒调到 60 秒（请求都很短时）
+aws elbv2 modify-target-group-attributes \
+  --target-group-arn &quot;$TG_ARN&quot; \
+  --attributes Key=deregistration_delay.timeout_seconds,Value=60
+
+# 2. 注销实例：进入 draining，不再接新请求
+aws elbv2 deregister-targets \
+  --target-group-arn &quot;$TG_ARN&quot; \
+  --targets Id=i-0123456789abcdef0
+
+# 3. 等待排空完成后再停机
+aws elbv2 wait target-deregistered \
+  --target-group-arn &quot;$TG_ARN&quot; \
+  --targets Id=i-0123456789abcdef0</code></pre></div><p class="cnote">用 AWS CLI 调整排空时长、注销目标并等待排空完成，再安全停机。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">排空时长怎么定</h3><div class="tw"><table><thead><tr><th>流量类型</th><th>建议思路</th><th>风险</th></tr></thead><tbody><tr><td data-h="流量类型">短 HTTP 请求</td><td data-h="建议思路">略大于 p99.9 请求耗时</td><td data-h="风险">过长会拖慢发布</td></tr><tr><td data-h="流量类型">文件上传/下载</td><td data-h="建议思路">按最大传输时间估算</td><td data-h="风险">过短会中断传输</td></tr><tr><td data-h="流量类型">WebSocket/长流</td><td data-h="建议思路">应用层通知客户端重连</td><td data-h="风险">仅靠排空无法覆盖</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>较长排空时间</h4><p><b class="k-p">优点</b>慢请求也能完成</p><p><b class="k-c">代价</b>发布和缩容变慢，成本增加</p><p><b class="k-w">适用</b>存在长请求或大文件传输</p></div><div class="trd"><h4>较短排空时间</h4><p><b class="k-p">优点</b>发布快</p><p><b class="k-c">代价</b>慢请求可能被中断</p><p><b class="k-w">适用</b>请求普遍很短且可重试</p></div><div class="trd"><h4>应用层主动迁移</h4><p><b class="k-p">优点</b>可处理长连接</p><p><b class="k-c">代价</b>需客户端支持重连</p><p><b class="k-w">适用</b>WebSocket、gRPC 流</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>负载均衡排空 300 秒，但 Pod 宽限期只有 30 秒，进程先被杀。</p><p class="fix"><b>✓</b>让应用停机时长与排空窗口匹配，必要时调大宽限期。</p></li><li><p class="bad"><b>✗</b>服务端不关闭空闲 keep-alive，客户端继续复用到已摘除实例。</p><p class="fix"><b>✓</b>停机时关闭空闲连接，HTTP/2 发送 GOAWAY。</p></li><li><p class="bad"><b>✗</b>以为排空能保住 WebSocket 会话。</p><p class="fix"><b>✓</b>服务端主动通知并让客户端带退避重连。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>排空时长依据真实请求耗时设定</span></label></li><li><label><input type="checkbox"><span>应用宽限期不短于排空需要的时间</span></label></li><li><label><input type="checkbox"><span>停机时关闭空闲连接</span></label></li><li><label><input type="checkbox"><span>长连接有重连与会话恢复机制</span></label></li><li><label><input type="checkbox"><span>发布过程中监控 5xx 与连接重置</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>连接排空和优雅停机是什么关系？</summary><p>排空是负载均衡侧动作：不给实例发新流量、给旧连接时间结束；优雅停机是应用侧动作：停止接新工作、完成在途工作再退出。两者时间窗口要对齐，排空先开始，应用在窗口内完成退出。</p></details><details class="iv"><summary>HTTP/2 和 gRPC 长连接如何排空？</summary><p>一个连接承载很多请求，单纯等待连接结束可能很久。服务端应发送 GOAWAY，告知客户端不要在该连接上开新流，客户端会建立新连接到其他实例，已在途的流继续完成。</p></details><details class="iv"><summary>注销延迟设得越长越好吗？</summary><p>不是。过长会让每次发布和缩容都等待很久，滚动发布总时长成倍增加。应按 p99.9 请求时长加余量设定，长连接场景交给应用层迁移。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-target-groups.html#deregistration-delay" target="_blank" rel="noopener"><b>AWS ALB 文档：Deregistration delay</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://cloud.google.com/load-balancing/docs/enabling-connection-draining" target="_blank" rel="noopener"><b>Google Cloud：Connection draining</b><small>cloud.google.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="graceful-shutdown.pro.html" rel="prev"><small>‹ 上一个</small><b>🌙 优雅停机机制</b></a><a class="pn next" href="stateless-services.pro.html" rel="next"><small>下一个 ›</small><b>🧑‍🍳 无状态服务架构</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

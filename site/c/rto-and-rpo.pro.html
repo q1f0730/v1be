@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="恢复时间与恢复点目标 专业模式：RTO（Recovery Time Objective，恢复时间目标）是故障后到服务恢复的最长可接受时间；RPO（Recovery Point Objectiv">
+<title>🎓 恢复时间与恢复点目标 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="rto-and-rpo" data-answer="0" data-prev="disaster-recovery.pro.html" data-next="slos.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sre">🔮 高级 · 🩺 高可用 SRE</a><span>›</span><a href="rto-and-rpo.html">恢复时间与恢复点目标</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.300 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="disaster-recovery.pro.html" rel="prev"><small>‹ 上一个</small><b>🆘 灾难恢复体系 (DR)</b></a><a class="pn next" href="slos.pro.html" rel="next"><small>下一个 ›</small><b>🎯 服务等级目标</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">⏱️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>恢复时间与恢复点目标</h1><p class="en">RTO &amp; RPO</p>
+    <div class="hbtns"><a class="prosw back" href="rto-and-rpo.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">RTO（Recovery Time Objective，恢复时间目标）是故障后到服务恢复的最长可接受时间；RPO（Recovery Point Objective，恢复点目标）是以时间衡量的最大可接受数据丢失，即可回退到多久之前的状态。二者是业务连续性与灾难恢复规划的核心指标，决定备份频率、复制方式和 DR 成本。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>业务方评估停机与丢数据的代价，为每个系统给出可接受的 RTO 与 RPO。</p></li><li><span class="sn">2</span><p>RPO 决定数据保护方式：每日备份对应约一天，日志归档或持续复制可缩到分钟或秒级。</p></li><li><span class="sn">3</span><p>RTO 决定恢复方式：从备份重建需小时级，温备或自动故障转移可到分钟级。</p></li><li><span class="sn">4</span><p>架构与手册按目标设计，例如 WAL 归档间隔、跨区复制、IaC 重建时间。</p></li><li><span class="sn">5</span><p>通过演练测出实际恢复时间（RTA）与实际数据损失（RPA），与目标比较并改进。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>恢复时间实际值 (RTA)</dt><dd>演练或真实事件中测得的实际恢复耗时。</dd></div><div class="term"><dt>最大可容忍停机 (MTPD)</dt><dd>业务能承受的最长中断，RTO 必须小于它。</dd></div><div class="term"><dt>WAL 归档 (WAL Archiving)</dt><dd>PostgreSQL 持续保存预写日志，用于时间点恢复。</dd></div><div class="term"><dt>业务影响分析 (BIA)</dt><dd>评估各业务中断造成损失的过程，是设定 RTO/RPO 的依据。</dd></div><div class="term"><dt>MTTR (Mean Time To Recovery)</dt><dd>平均恢复时间，是对历史表现的统计，不同于目标值 RTO。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>用 WAL 归档压缩 RPO</span><em>text</em><button class="ccopy">复制</button></div><pre><code># postgresql.conf：持续归档 WAL，配合基础备份做时间点恢复
+wal_level = replica
+archive_mode = on
+
+# 每个写满的 WAL 段都复制到归档位置（示例：本地挂载的备份盘）
+archive_command = &#x27;test ! -f /mnt/wal_archive/%f &amp;&amp; cp %p /mnt/wal_archive/%f&#x27;
+
+# 即使写入很少，也最多每 60 秒切换一次 WAL 段
+# 这让最坏情况下的数据丢失大致限制在约 1 分钟量级
+archive_timeout = 60
+
+# 恢复时在新实例中设置：
+# restore_command = &#x27;cp /mnt/wal_archive/%f %p&#x27;
+# recovery_target_time = &#x27;2026-10-20 10:00:00+08&#x27;</code></pre></div><p class="cnote">archive_timeout 限定 WAL 段切换间隔，从配置层面约束 RPO；示例取自官方文档写法。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">手段与可达的目标量级</h3><div class="tw"><table><thead><tr><th>数据保护手段</th><th>RPO 量级</th><th>恢复手段</th><th>RTO 量级</th></tr></thead><tbody><tr><td data-h="数据保护手段">每日全量备份</td><td data-h="RPO 量级">约 24 小时</td><td data-h="恢复手段">从备份重建</td><td data-h="RTO 量级">小时级</td></tr><tr><td data-h="数据保护手段">备份 + 日志归档</td><td data-h="RPO 量级">分钟级</td><td data-h="恢复手段">PITR 恢复</td><td data-h="RTO 量级">小时级</td></tr><tr><td data-h="数据保护手段">异步复制备库</td><td data-h="RPO 量级">秒级</td><td data-h="恢复手段">提升备库</td><td data-h="RTO 量级">分钟级</td></tr><tr><td data-h="数据保护手段">同步复制</td><td data-h="RPO 量级">接近 0</td><td data-h="恢复手段">自动故障转移</td><td data-h="RTO 量级">秒到分钟级</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>宽松目标（小时级）</h4><p><b class="k-p">优点</b>成本低，架构简单</p><p><b class="k-c">代价</b>故障时业务中断长、丢数据多</p><p><b class="k-w">适用</b>内部工具、可补录的数据</p></div><div class="trd"><h4>严格目标（分钟级）</h4><p><b class="k-p">优点</b>业务影响小</p><p><b class="k-c">代价</b>需复制、温备、自动化，成本高</p><p><b class="k-w">适用</b>在线交易、核心用户功能</p></div><div class="trd"><h4>RPO 接近零</h4><p><b class="k-p">优点</b>几乎不丢数据</p><p><b class="k-c">代价</b>同步复制增加写延迟</p><p><b class="k-w">适用</b>资金、账务类数据</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>所有系统统一定一个 RTO/RPO，核心系统不够，边缘系统浪费。</p><p class="fix"><b>✓</b>按业务影响分级设定。</p></li><li><p class="bad"><b>✗</b>RPO 只看备份频率，忽略备份本身上传失败。</p><p class="fix"><b>✓</b>监控备份成功与归档延迟，失败即告警。</p></li><li><p class="bad"><b>✗</b>RTO 只算数据恢复时间，没算发现、决策和 DNS 切换。</p><p class="fix"><b>✓</b>RTO 从故障发生算到用户可用，端到端演练测量。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个系统有书面 RTO/RPO 并经业务确认</span></label></li><li><label><input type="checkbox"><span>备份与复制方案能达成 RPO</span></label></li><li><label><input type="checkbox"><span>演练测得的 RTA 小于 RTO</span></label></li><li><label><input type="checkbox"><span>备份与归档延迟有监控</span></label></li><li><label><input type="checkbox"><span>RTO 计算包含检测与决策时间</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>RTO 和 MTTR 有什么区别？</summary><p>RTO 是事先设定的目标，即最长可接受的恢复时间；MTTR 是事后统计的历史平均恢复时间。评审时用 MTTR 及演练数据验证能否满足 RTO，并关注最坏情况而不只是平均值。</p></details><details class="iv"><summary>RPO 为零可以只靠备份实现吗？</summary><p>不行。备份总有间隔，备份点之后的写入会丢失。接近零的 RPO 需要同步复制，让写入在确认前已到达另一副本；但复制会同步误删除，所以仍需时间点恢复来应对逻辑错误。</p></details><details class="iv"><summary>如何说服业务方接受合理的 RTO/RPO？</summary><p>把目标和成本放在一起：给出不同档位所需架构、月成本和演练要求，对应停机每小时与丢数据的损失估算，让业务方在代价与风险间做选择，而不是一律要求零。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/disaster-recovery-dr-objectives.html" target="_blank" rel="noopener"><b>AWS Well-Architected：Disaster recovery objectives</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/business-continuity-plan-bcp.html" target="_blank" rel="noopener"><b>AWS 白皮书：Business Continuity Plan</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/continuous-archiving.html" target="_blank" rel="noopener"><b>PostgreSQL 文档：持续归档与时间点恢复</b><small>postgresql.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="disaster-recovery.pro.html" rel="prev"><small>‹ 上一个</small><b>🆘 灾难恢复体系 (DR)</b></a><a class="pn next" href="slos.pro.html" rel="next"><small>下一个 ›</small><b>🎯 服务等级目标</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

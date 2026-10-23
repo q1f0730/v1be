@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="法定人数机制 专业模式：法定人数机制（Quorum）是复制系统中规定一次读或写必须得到多少个副本确认才算成功的规则。设副本数 N、写需确认数 W、读需确认数 R，当 W + R &gt; N">
+<title>🎓 法定人数机制 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="quorums" data-answer="0" data-prev="split-brain.pro.html" data-next="clock-skew.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#dist">🔥 进阶 · 🕸️ 分布式</a><span>›</span><a href="quorums.html">法定人数机制</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.434 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="split-brain.pro.html" rel="prev"><small>‹ 上一个</small><b>🧠 脑裂故障</b></a><a class="pn next" href="clock-skew.pro.html" rel="next"><small>下一个 ›</small><b>🕰️ 时钟偏斜</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">✋</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>法定人数机制</h1><p class="en">Quorums</p>
+    <div class="hbtns"><a class="prosw back" href="quorums.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">法定人数机制（Quorum）是复制系统中规定一次读或写必须得到多少个副本确认才算成功的规则。设副本数 N、写需确认数 W、读需确认数 R，当 W + R &gt; N 时读写集合必然相交，读能看到最新写入。它让系统在部分副本故障时仍可工作，并在一致性、延迟与可用性之间调节。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>数据复制到 N 个副本节点，通常分布在不同机架或可用区以隔离故障。</p></li><li><span class="sn">2</span><p>写入：请求发往全部副本，收到至少 W 个确认即向客户端返回成功。</p></li><li><span class="sn">3</span><p>读取向副本发请求，收到至少 R 个响应后按版本号或时间戳选出最新值。</p></li><li><span class="sn">4</span><p>W + R &gt; N 保证读集合与最近写集合至少重叠一个副本，从而读到最新值。</p></li><li><span class="sn">5</span><p>读修复与后台反熵把落后的副本补齐，确认数不足时请求以失败返回。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>N / W / R</dt><dd>副本数、写入确认数、读取响应数三个可调参数。</dd></div><div class="term"><dt>严格法定人数 (Strict Quorum)</dt><dd>读写只计入数据真正归属的 N 个副本。</dd></div><div class="term"><dt>宽松法定人数 (Sloppy Quorum)</dt><dd>归属副本不可达时临时写入其他节点，提高可用性。</dd></div><div class="term"><dt>提示移交 (Hinted Handoff)</dt><dd>临时节点暂存写入，归属副本恢复后再转交给它。</dd></div><div class="term"><dt>LOCAL_QUORUM</dt><dd>Cassandra 中只在本数据中心内取多数，避免跨地域延迟。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Cassandra 一致性级别</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- cqlsh：keyspace 每个数据中心 3 副本
+CREATE KEYSPACE shop WITH replication =
+  {&#x27;class&#x27;: &#x27;NetworkTopologyStrategy&#x27;, &#x27;dc1&#x27;: 3};
+
+-- QUORUM = floor(3/2)+1 = 2
+-- 写 QUORUM + 读 QUORUM：2 + 2 &gt; 3，读能看到已确认的写
+CONSISTENCY QUORUM;
+INSERT INTO shop.carts (user_id, item, qty) VALUES (42, &#x27;book&#x27;, 1);
+SELECT * FROM shop.carts WHERE user_id = 42;
+
+-- 读 ONE：延迟最低、可用性最高，但可能读到旧值（1 + 2 = 3，不大于 3）
+CONSISTENCY ONE;
+SELECT * FROM shop.carts WHERE user_id = 42;
+
+-- 多数据中心时常用 LOCAL_QUORUM，避免跨地域往返
+CONSISTENCY LOCAL_QUORUM;</code></pre></div><p class="cnote">CONSISTENCY 是 cqlsh 命令，驱动中按语句设置；W+R&gt;N 才保证读到最新确认写入。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">N=3 时的组合</h3><div class="tw"><table><thead><tr><th>W / R</th><th>是否重叠</th><th>特点</th></tr></thead><tbody><tr><td data-h="W / R">W=2, R=2</td><td data-h="是否重叠">是</td><td data-h="特点">读写均衡，常见默认</td></tr><tr><td data-h="W / R">W=3, R=1</td><td data-h="是否重叠">是</td><td data-h="特点">读快，任一副本故障即不可写</td></tr><tr><td data-h="W / R">W=1, R=3</td><td data-h="是否重叠">是</td><td data-h="特点">写快，读需全部副本在线</td></tr><tr><td data-h="W / R">W=1, R=1</td><td data-h="是否重叠">否</td><td data-h="特点">延迟最低，可能读到旧值</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>多数派读写</h4><p><b class="k-p">优点</b>容忍少数副本故障且读到最新</p><p><b class="k-c">代价</b>每次操作等待多个副本</p><p><b class="k-w">适用</b>大多数需要较强一致的数据</p></div><div class="trd"><h4>低 W/R</h4><p><b class="k-p">优点</b>延迟低、可用性高</p><p><b class="k-c">代价</b>可能读到旧值</p><p><b class="k-w">适用</b>计数、日志、可容忍陈旧</p></div><div class="trd"><h4>宽松法定人数</h4><p><b class="k-p">优点</b>分区时仍可写</p><p><b class="k-c">代价</b>W+R&gt;N 不再保证读到最新</p><p><b class="k-w">适用</b>购物车等写可用性优先</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>以为 W+R&gt;N 就等于线性一致</p><p class="fix"><b>✓</b>并发写、失败写的部分残留仍可能导致异常，需版本与读修复配合</p></li><li><p class="bad"><b>✗</b>写失败后客户端以为没写入，但部分副本已写</p><p class="fix"><b>✓</b>写失败结果视为不确定，重试需幂等</p></li><li><p class="bad"><b>✗</b>多数据中心使用 QUORUM，每次跨地域等待</p><p class="fix"><b>✓</b>按需使用 LOCAL_QUORUM，并明确跨地域一致性需求</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>N、W、R 按数据类型设定</span></label></li><li><label><input type="checkbox"><span>关键数据满足 W+R&gt;N</span></label></li><li><label><input type="checkbox"><span>副本跨故障域分布</span></label></li><li><label><input type="checkbox"><span>写入重试幂等</span></label></li><li><label><input type="checkbox"><span>读修复/反熵已启用</span></label></li><li><label><input type="checkbox"><span>监控确认数不足的失败</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么 W+R&gt;N 能读到最新写？</summary><p>成功的写入至少落在 W 个副本上，读取会询问 R 个副本；W+R&gt;N 时两个集合必然至少有一个副本相同，读到的响应中至少一个包含该写入，再按版本号选出最新值返回。</p></details><details class="iv"><summary>宽松法定人数有什么代价？</summary><p>分区时写入可落到非归属节点并靠提示移交补回，提高了写可用性；但此时 W 个确认并不在 N 个归属副本中，读的 R 个副本可能都不含新值，W+R&gt;N 的保证失效，只能保证最终一致。</p></details><details class="iv"><summary>Raft 的多数派和 Dynamo 式 Quorum 有何不同？</summary><p>Raft 由领导者对日志排序，多数派复制后提交，提供线性一致；Dynamo 式无领导者，客户端或协调者并行写多个副本，没有全局顺序，需要版本向量或 LWW 处理冲突，通常只提供可调的最终一致。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf" target="_blank" rel="noopener"><b>Dynamo: Amazon&#x27;s Highly Available Key-value Store</b><small>allthingsdistributed.com ↗</small></a></li><li><a href="https://cassandra.apache.org/doc/latest/cassandra/architecture/dynamo.html" target="_blank" rel="noopener"><b>Cassandra: Dynamo 架构与一致性</b><small>cassandra.apache.org ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Quorum_(distributed_computing)" target="_blank" rel="noopener"><b>Quorum (distributed computing) - Wikipedia</b><small>en.wikipedia.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="split-brain.pro.html" rel="prev"><small>‹ 上一个</small><b>🧠 脑裂故障</b></a><a class="pn next" href="clock-skew.pro.html" rel="next"><small>下一个 ›</small><b>🕰️ 时钟偏斜</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

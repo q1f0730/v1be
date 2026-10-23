@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="UUID与自增主键 专业模式：主键生成策略决定每行记录的唯一标识如何产生：自增整数（Auto-Increment / IDENTITY / SEQUENCE）由数据库按序分配；UUID（RF">
+<title>🎓 UUID与自增主键 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="uuids-vs-auto-increment" data-answer="0" data-prev="soft-deletes.pro.html" data-next="cursor-based-pagination.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#db">🌊 中级 · 🗄️ 数据库</a><span>›</span><a href="uuids-vs-auto-increment.html">UUID与自增主键</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.131 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="soft-deletes.pro.html" rel="prev"><small>‹ 上一个</small><b>🗃️ 软删除 / 逻辑删除</b></a><a class="pn next" href="cursor-based-pagination.pro.html" rel="next"><small>下一个 ›</small><b>🔖 基于游标的分页</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🎫</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>UUID与自增主键</h1><p class="en">UUIDs vs Auto-Increment</p>
+    <div class="hbtns"><a class="prosw back" href="uuids-vs-auto-increment.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">主键生成策略决定每行记录的唯一标识如何产生：自增整数（Auto-Increment / IDENTITY / SEQUENCE）由数据库按序分配；UUID（RFC 9562）是 128 位标识，可在任意节点独立生成。选择影响索引局部性、存储大小、分布式写入、URL 暴露与数据合并，属于数据建模层的基础决策。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>自增主键由数据库序列维护计数器，插入时取下一个值，新行总落在 B-tree 索引最右侧。</p></li><li><span class="sn">2</span><p>序列为性能不参与事务回滚，失败插入会留下空洞，因此自增 ID 不保证连续。</p></li><li><span class="sn">3</span><p>UUIDv4 为 122 位随机数，可在客户端生成，但随机插入导致索引页分裂与缓存命中下降。</p></li><li><span class="sn">4</span><p>UUIDv7 高位是 Unix 毫秒时间戳、低位随机，按时间大致有序，兼顾分布式生成与索引局部性。</p></li><li><span class="sn">5</span><p>存储上 bigint 占 8 字节，UUID 用原生类型占 16 字节，存成字符串则约 36 字节且比较更慢。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>RFC 9562</dt><dd>2024 年发布的 UUID 规范，取代 RFC 4122，定义了 v6、v7、v8。</dd></div><div class="term"><dt>UUIDv7</dt><dd>以 Unix 毫秒时间戳开头的 UUID，生成顺序与时间大致一致。</dd></div><div class="term"><dt>序列 (Sequence)</dt><dd>数据库中生成递增数值的对象，支撑 SERIAL/IDENTITY。</dd></div><div class="term"><dt>页分裂 (Page Split)</dt><dd>B-tree 页满时拆分为两页，随机键插入会频繁触发。</dd></div><div class="term"><dt>枚举攻击 (Enumeration)</dt><dd>通过遍历连续 ID 探测或抓取他人资源。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>两种主键的建表写法</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- 自增：PostgreSQL 推荐 IDENTITY（SQL 标准），比 SERIAL 更规范
+CREATE TABLE orders (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- UUID：用原生 uuid 类型（16 字节），不要存成 varchar
+-- gen_random_uuid() 生成 v4，PostgreSQL 13 起内置
+CREATE TABLE files (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL
+);
+
+-- 混合方案：内部 bigint 主键做关联，对外暴露 UUID
+CREATE TABLE users (
+  id        bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  public_id uuid NOT NULL UNIQUE DEFAULT gen_random_uuid(),
+  email     text NOT NULL
+);
+-- 需要 UUIDv7 时，可在应用层生成（各语言有成熟库），
+-- 或确认所用数据库版本是否已内置 v7 函数</code></pre></div><p class="cnote">对内用紧凑有序的整数，对外暴露不可猜的 UUID，是常见折中。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">主键方案对比</h3><div class="tw"><table><thead><tr><th>方案</th><th>大小</th><th>索引局部性</th><th>分布式生成</th></tr></thead><tbody><tr><td data-h="方案">bigint 自增</td><td data-h="大小">8 字节</td><td data-h="索引局部性">好（顺序追加）</td><td data-h="分布式生成">需中心化分配</td></tr><tr><td data-h="方案">UUIDv4</td><td data-h="大小">16 字节</td><td data-h="索引局部性">差（随机）</td><td data-h="分布式生成">可任意节点生成</td></tr><tr><td data-h="方案">UUIDv7</td><td data-h="大小">16 字节</td><td data-h="索引局部性">较好（时间有序）</td><td data-h="分布式生成">可任意节点生成</td></tr><tr><td data-h="方案">Snowflake 类 ID</td><td data-h="大小">8 字节</td><td data-h="索引局部性">好（时间有序）</td><td data-h="分布式生成">需分配机器号</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>bigint 自增</h4><p><b class="k-p">优点</b>最小最快，易读易调试</p><p><b class="k-c">代价</b>可被枚举，泄露业务量，合库冲突</p><p><b class="k-w">适用</b>单库、内部表、无需对外暴露</p></div><div class="trd"><h4>UUIDv4</h4><p><b class="k-p">优点</b>不可猜，客户端可离线生成</p><p><b class="k-c">代价</b>随机写入，索引膨胀、缓存不友好</p><p><b class="k-w">适用</b>数据量不大或需离线生成</p></div><div class="trd"><h4>UUIDv7</h4><p><b class="k-p">优点</b>可分布式生成且大致有序</p><p><b class="k-c">代价</b>16 字节，泄露创建时间</p><p><b class="k-w">适用</b>分布式系统、新项目主键</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>把 UUID 存成 varchar(36)</p><p class="fix"><b>✓</b>使用原生 uuid 或 binary(16) 类型，节省空间并加快比较</p></li><li><p class="bad"><b>✗</b>以为自增 ID 连续，用 MAX(id) 统计数量</p><p class="fix"><b>✓</b>回滚和缓存都会产生空洞，计数请用 COUNT 或业务字段</p></li><li><p class="bad"><b>✗</b>对外 URL 直接暴露自增 ID 且无权限校验</p><p class="fix"><b>✓</b>先做对象级权限检查；需要时对外换用 UUID</p></li><li><p class="bad"><b>✗</b>以为 UUID 不可猜就能替代鉴权</p><p class="fix"><b>✓</b>ID 只是标识，访问控制必须独立校验</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>主键类型与数据规模、分布式需求匹配</span></label></li><li><label><input type="checkbox"><span>UUID 使用原生类型存储</span></label></li><li><label><input type="checkbox"><span>对外暴露的 ID 不可枚举或已鉴权</span></label></li><li><label><input type="checkbox"><span>外键列类型与主键完全一致</span></label></li><li><label><input type="checkbox"><span>批量导入/合库时主键不冲突</span></label></li><li><label><input type="checkbox"><span>AI 生成的模型未混用多种 ID 类型</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么随机 UUID 做主键会影响写入性能？</summary><p>B-tree 主键按键序存储，随机键使插入分散到所有页，导致频繁页分裂、写放大和缓冲池命中率下降；InnoDB 聚簇索引下影响更明显。时间有序的 UUIDv7 或自增键能让插入集中在索引尾部。</p></details><details class="iv"><summary>UUIDv7 有什么需要注意的？</summary><p>前 48 位是毫秒时间戳，会暴露记录创建时间；依赖生成端时钟，时钟回拨可能破坏有序；同一毫秒内的单调性取决于实现。对外暴露时需评估时间信息是否敏感。</p></details><details class="iv"><summary>分库分表时自增主键有什么问题？</summary><p>各分片独立自增会产生重复 ID。可用步长错开、号段服务、Snowflake 类方案或 UUID。迁移、合并数据时也要考虑冲突，因此分布式系统通常优先选去中心化生成。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.rfc-editor.org/rfc/rfc9562" target="_blank" rel="noopener"><b>RFC 9562: Universally Unique IDentifiers (UUIDs)</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/datatype-uuid.html" target="_blank" rel="noopener"><b>PostgreSQL 文档：UUID Type</b><small>postgresql.org ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/sql-createtable.html" target="_blank" rel="noopener"><b>PostgreSQL 文档：CREATE TABLE（IDENTITY）</b><small>postgresql.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="soft-deletes.pro.html" rel="prev"><small>‹ 上一个</small><b>🗃️ 软删除 / 逻辑删除</b></a><a class="pn next" href="cursor-based-pagination.pro.html" rel="next"><small>下一个 ›</small><b>🔖 基于游标的分页</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

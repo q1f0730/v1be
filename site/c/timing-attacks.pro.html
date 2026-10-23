@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="时序侧信道攻击 专业模式：时序侧信道攻击（Timing Attack）是一类侧信道攻击：攻击者测量系统处理不同输入所需的时间差，推断出密钥、令牌、密码或账号是否存在等秘密信息。常见根源是">
+<title>🎓 时序侧信道攻击 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="timing-attacks" data-answer="0" data-prev="self-improving-agents.pro.html" data-next="threat-modeling.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#sec">🔥 进阶 · 🛡️ 安全防线</a><span>›</span><a href="timing-attacks.html">时序侧信道攻击</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.413 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="self-improving-agents.pro.html" rel="prev"><small>‹ 上一个</small><b>🌱 自我进化的智能体</b></a><a class="pn next" href="threat-modeling.pro.html" rel="next"><small>下一个 ›</small><b>🗺️ 威胁建模</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">⏱️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>时序侧信道攻击</h1><p class="en">Timing Attacks</p>
+    <div class="hbtns"><a class="prosw back" href="timing-attacks.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">时序侧信道攻击（Timing Attack）是一类侧信道攻击：攻击者测量系统处理不同输入所需的时间差，推断出密钥、令牌、密码或账号是否存在等秘密信息。常见根源是逐字节提前返回的比较、依赖秘密的分支与查表，防御核心是让耗时与秘密无关（常数时间）。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>找到依赖秘密的操作：如逐字节比较签名，遇到首个不同字节即返回。</p></li><li><span class="sn">2</span><p>构造输入：攻击者逐位枚举候选值，并针对每个候选值重复发送大量请求。</p></li><li><span class="sn">3</span><p>统计测量：对响应时间取中位数等统计量，消除网络抖动，识别略慢的候选。</p></li><li><span class="sn">4</span><p>逐步恢复：耗时更长说明匹配到更多前缀字节，据此一位一位还原秘密。</p></li><li><span class="sn">5</span><p>防御：使用常数时间比较、统一错误路径耗时、限流，并避免依赖秘密的分支。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>侧信道 (Side Channel)</dt><dd>通过时间、功耗、缓存等实现副作用泄露信息的途径。</dd></div><div class="term"><dt>常数时间 (Constant-time)</dt><dd>执行耗时不随秘密数据取值变化的实现方式。</dd></div><div class="term"><dt>短路比较 (Early-exit Comparison)</dt><dd>发现首个不同字节就返回的比较，耗时泄露匹配长度。</dd></div><div class="term"><dt>用户枚举 (User Enumeration)</dt><dd>通过响应差异判断某账号是否存在。</dd></div><div class="term"><dt>缓存时序攻击 (Cache-timing)</dt><dd>利用 CPU 缓存命中与否的时间差推断内存访问模式。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>常数时间比较签名</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import hmac, hashlib
+
+SECRET = b&quot;server-side-secret&quot;
+
+def sign(msg: bytes) -&gt; str:
+    return hmac.new(SECRET, msg, hashlib.sha256).hexdigest()
+
+def verify_bad(msg: bytes, sig: str) -&gt; bool:
+    return sign(msg) == sig          # 普通比较：可能提前返回，耗时泄露前缀匹配长度
+
+def verify_good(msg: bytes, sig: str) -&gt; bool:
+    # compare_digest 的耗时不取决于两者有多少前缀相同
+    return hmac.compare_digest(sign(msg), sig)
+
+# Node.js 等价写法：crypto.timingSafeEqual(bufA, bufB)（要求长度相同）
+print(verify_good(b&quot;order=42&quot;, sign(b&quot;order=42&quot;)))   # True</code></pre></div><p class="cnote">校验 HMAC、API 令牌、重置链接 token 时应使用常数时间比较。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见泄露点与修复</h3><div class="tw"><table><thead><tr><th>场景</th><th>泄露什么</th><th>修复</th></tr></thead><tbody><tr><td data-h="场景">签名/令牌比较</td><td data-h="泄露什么">匹配的前缀长度</td><td data-h="修复">hmac.compare_digest / timingSafeEqual</td></tr><tr><td data-h="场景">登录接口</td><td data-h="泄露什么">账号是否存在</td><td data-h="修复">不存在的账号也执行一次哈希计算</td></tr><tr><td data-h="场景">密码学实现</td><td data-h="泄露什么">密钥位</td><td data-h="修复">使用经过审计的常数时间库</td></tr><tr><td data-h="场景">数据库查找令牌</td><td data-h="泄露什么">令牌前缀命中</td><td data-h="修复">查询只用令牌 ID，再常数时间比对密文部分</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>常数时间比较</h4><p><b class="k-p">优点</b>从根源消除比较类时序泄露</p><p><b class="k-c">代价</b>需要开发者知道在哪些地方使用</p><p><b class="k-w">适用</b>任何秘密值比较</p></div><div class="trd"><h4>统一响应耗时/加随机延迟</h4><p><b class="k-p">优点</b>可遮掩部分业务流程差异</p><p><b class="k-c">代价</b>随机延迟可被统计平均掉，效果有限</p><p><b class="k-w">适用</b>作为辅助手段</p></div><div class="trd"><h4>限流与锁定</h4><p><b class="k-p">优点</b>大幅提高统计测量所需成本</p><p><b class="k-c">代价</b>不消除泄露本身，可能误伤用户</p><p><b class="k-w">适用</b>所有认证相关接口</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>用 == 比较 HMAC 签名或 Webhook 签名</p><p class="fix"><b>✓</b>使用语言提供的常数时间比较函数</p></li><li><p class="bad"><b>✗</b>登录时账号不存在直接返回，存在才算密码哈希</p><p class="fix"><b>✓</b>对不存在的账号也计算一次哈希，统一错误信息</p></li><li><p class="bad"><b>✗</b>认为网络抖动大，远程时序攻击不可行</p><p class="fix"><b>✓</b>统计大量样本可滤除抖动，仍按可被利用来防御</p></li><li><p class="bad"><b>✗</b>自己实现加密算法或比较逻辑</p><p class="fix"><b>✓</b>使用成熟、经过审计的密码学库</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有令牌/签名比较为常数时间</span></label></li><li><label><input type="checkbox"><span>登录失败路径耗时一致</span></label></li><li><label><input type="checkbox"><span>认证接口有限流</span></label></li><li><label><input type="checkbox"><span>错误信息不区分账号是否存在</span></label></li><li><label><input type="checkbox"><span>使用成熟密码学库</span></label></li><li><label><input type="checkbox"><span>Webhook 校验用官方 SDK 或安全比较</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么 == 比较字符串会有时序问题？</summary><p>多数语言的字符串比较在遇到第一个不同字符时立即返回，前缀匹配越长耗时越长。攻击者逐位尝试并统计耗时，就能一位位恢复正确签名，把指数级暴力破解降为线性。</p></details><details class="iv"><summary>compare_digest 是怎么做到常数时间的？</summary><p>它遍历全部字节，对每对字节做异或并累积到一个结果变量，不在中途分支或返回，最后统一判断结果是否为零，因此耗时只与长度相关，与内容匹配程度无关。</p></details><details class="iv"><summary>AI 生成的代码在这里常见什么问题？</summary><p>生成 Webhook 签名校验、API Key 鉴权时常直接用 == 或 ===；登录逻辑先查用户再验密码导致用户枚举。审查时应专门搜索秘密值比较，并要求使用常数时间函数。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://en.wikipedia.org/wiki/Timing_attack" target="_blank" rel="noopener"><b>Timing attack (Wikipedia)</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://docs.python.org/3/library/hmac.html" target="_blank" rel="noopener"><b>Python hmac.compare_digest</b><small>docs.python.org ↗</small></a></li><li><a href="https://nodejs.org/api/crypto.html" target="_blank" rel="noopener"><b>Node.js crypto.timingSafeEqual</b><small>nodejs.org ↗</small></a></li><li><a href="https://www.paulkocher.com/doc/TimingAttacks.pdf" target="_blank" rel="noopener"><b>Kocher: Timing Attacks on Implementations of Diffie-Hellman, RSA, DSS</b><small>paulkocher.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="self-improving-agents.pro.html" rel="prev"><small>‹ 上一个</small><b>🌱 自我进化的智能体</b></a><a class="pn next" href="threat-modeling.pro.html" rel="next"><small>下一个 ›</small><b>🗺️ 威胁建模</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

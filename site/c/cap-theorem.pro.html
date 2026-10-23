@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="CAP定理 专业模式：CAP 定理指出：分布式数据系统在发生网络分区（P）时，无法同时保证一致性（C，此处指线性一致性）和可用性（A，每个非故障节点都要返回响应），只能二选一。它由 ">
+<title>🎓 CAP定理 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="cap-theorem" data-answer="0" data-prev="partition-keys.pro.html" data-next="eventual-consistency.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#dist">🔥 进阶 · 🕸️ 分布式</a><span>›</span><a href="cap-theorem.html">CAP定理</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.428 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="partition-keys.pro.html" rel="prev"><small>‹ 上一个</small><b>🏷️ 消息分区路由键</b></a><a class="pn next" href="eventual-consistency.pro.html" rel="next"><small>下一个 ›</small><b>⏳ 最终一致性</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">⚖️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>CAP定理</h1><p class="en">CAP Theorem</p>
+    <div class="hbtns"><a class="prosw back" href="cap-theorem.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">CAP 定理指出：分布式数据系统在发生网络分区（P）时，无法同时保证一致性（C，此处指线性一致性）和可用性（A，每个非故障节点都要返回响应），只能二选一。它由 Brewer 提出、Gilbert 与 Lynch 于 2002 年形式化证明，是分析分布式存储取舍的基础框架。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>前提：网络分区在分布式系统中不可避免，因此 P 不是可选项。</p></li><li><span class="sn">2</span><p>冲突：分区发生时两侧节点无法通信，却可能各自继续收到读写请求。</p></li><li><span class="sn">3</span><p>选 C（CP）：少数派一侧拒绝请求或返回错误，保证读到的总是最新值。</p></li><li><span class="sn">4</span><p>选 A（AP）：两侧都继续服务，可能读到旧值或产生写冲突，分区恢复后再合并。</p></li><li><span class="sn">5</span><p>无分区时可同时兼顾 C 与 A，此时取舍转为延迟与一致性之间（PACELC）。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>网络分区 (Network Partition)</dt><dd>节点间消息丢失或无限延迟，集群被分割成互不相通的部分。</dd></div><div class="term"><dt>线性一致性 (Linearizability)</dt><dd>CAP 中 C 的定义：所有操作看起来按实时顺序原子执行。</dd></div><div class="term"><dt>CAP 可用性</dt><dd>每个非故障节点收到的请求最终都必须返回非错误响应。</dd></div><div class="term"><dt>PACELC</dt><dd>分区时在 A 与 C 间选择，否则在延迟 L 与一致性 C 间选择。</dd></div><div class="term"><dt>多数派 (Majority Quorum)</dt><dd>超过半数节点，CP 系统常以此决定哪一侧继续服务。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>MongoDB 的一致性旋钮</span><em>javascript</em><button class="ccopy">复制</button></div><pre><code>// mongosh：同一数据库可按操作选择偏 C 还是偏 A
+
+// 偏一致：写入需多数节点确认，读线性一致（只能读主）
+db.accounts.updateOne(
+  { _id: 42 }, { $inc: { balance: -100 } },
+  { writeConcern: { w: &quot;majority&quot;, wtimeout: 5000 } }
+);
+db.accounts.find({ _id: 42 })
+  .readConcern(&quot;linearizable&quot;)
+  .maxTimeMS(5000);
+
+// 偏可用/低延迟：从最近的节点读，可能读到旧数据
+db.products.find({ category: &quot;book&quot; })
+  .readPref(&quot;nearest&quot;)
+  .readConcern(&quot;local&quot;);</code></pre></div><p class="cnote">CAP 不是整库的标签，很多系统允许按操作在一致性与可用性之间调节。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">典型系统的默认倾向</h3><div class="tw"><table><thead><tr><th>系统</th><th>倾向</th><th>说明</th></tr></thead><tbody><tr><td data-h="系统">etcd / ZooKeeper</td><td data-h="倾向">CP</td><td data-h="说明">少数派分区不可写，保证一致</td></tr><tr><td data-h="系统">Cassandra / DynamoDB（默认读）</td><td data-h="倾向">AP</td><td data-h="说明">可调一致性级别，默认偏可用</td></tr><tr><td data-h="系统">MongoDB（多数写+多数读）</td><td data-h="倾向">偏 CP</td><td data-h="说明">主节点在少数派时会降级</td></tr><tr><td data-h="系统">单机 PostgreSQL</td><td data-h="倾向">不适用</td><td data-h="说明">非分布式，不涉及分区取舍</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>CP 设计</h4><p><b class="k-p">优点</b>数据始终正确，推理简单</p><p><b class="k-c">代价</b>分区时部分请求失败</p><p><b class="k-w">适用</b>余额、库存、配置与锁</p></div><div class="trd"><h4>AP 设计</h4><p><b class="k-p">优点</b>始终可写可读，延迟低</p><p><b class="k-c">代价</b>需处理旧数据和冲突合并</p><p><b class="k-w">适用</b>购物车、社交动态、计数</p></div><div class="trd"><h4>按操作可调</h4><p><b class="k-p">优点</b>关键路径强一致，其余高可用</p><p><b class="k-c">代价</b>开发者需理解每个选项含义</p><p><b class="k-w">适用</b>业务混合多种一致性需求</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>把系统简单标为 CA，忽视分区必然发生</p><p class="fix"><b>✓</b>分布式系统必须设计分区行为，CA 只适用于单机</p></li><li><p class="bad"><b>✗</b>把 CAP 的 C 与 ACID 的 C 混为一谈</p><p class="fix"><b>✓</b>CAP 的 C 指线性一致性，ACID 的 C 指满足约束</p></li><li><p class="bad"><b>✗</b>以为选了 AP 就不会有一致性问题需要处理</p><p class="fix"><b>✓</b>为冲突设计合并策略，如版本向量、CRDT 或业务规则</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>明确每类数据的一致性需求</span></label></li><li><label><input type="checkbox"><span>定义分区时的系统行为</span></label></li><li><label><input type="checkbox"><span>客户端能处理不可用错误</span></label></li><li><label><input type="checkbox"><span>AP 数据有冲突合并策略</span></label></li><li><label><input type="checkbox"><span>用故障注入验证分区行为</span></label></li><li><label><input type="checkbox"><span>文档写清读写一致性选项</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么说 CAP 中 P 不能放弃？</summary><p>跨机器通信总可能丢包、延迟或断网，分区是会发生的事实而非可选特性。系统真正的选择只是分区发生时牺牲一致性还是可用性；声称 CA 的分布式系统，实际是在分区时未定义行为。</p></details><details class="iv"><summary>CAP 有哪些常被批评的局限？</summary><p>定义很窄：C 仅指线性一致性，A 要求所有非故障节点响应；只讨论分区时的情况，忽略了正常运行下的延迟取舍；现实系统多是部分可用、可调一致性的光谱。PACELC 等模型对此做了补充。</p></details><details class="iv"><summary>设计库存系统你会选 CP 还是 AP？</summary><p>扣减库存需要防超卖，核心扣减走 CP（单主或共识存储，分区时拒绝写入）；商品浏览展示的库存数可用 AP 缓存，允许短暂不准。即按操作区分，而不是整个系统一刀切。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://users.ece.cmu.edu/~adrian/731-sp04/readings/GL-cap.pdf" target="_blank" rel="noopener"><b>Gilbert &amp; Lynch: Brewer&#x27;s Conjecture and the Feasibility of CAP</b><small>users.ece.cmu.edu ↗</small></a></li><li><a href="https://www.infoq.com/articles/cap-twelve-years-later-how-the-rules-have-changed/" target="_blank" rel="noopener"><b>CAP Twelve Years Later (Brewer, InfoQ)</b><small>infoq.com ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/CAP_theorem" target="_blank" rel="noopener"><b>CAP theorem (Wikipedia)</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/PACELC_design_principle" target="_blank" rel="noopener"><b>PACELC (Wikipedia)</b><small>en.wikipedia.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="partition-keys.pro.html" rel="prev"><small>‹ 上一个</small><b>🏷️ 消息分区路由键</b></a><a class="pn next" href="eventual-consistency.pro.html" rel="next"><small>下一个 ›</small><b>⏳ 最终一致性</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

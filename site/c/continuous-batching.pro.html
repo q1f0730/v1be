@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="连续批处理 (Continuous Batching) 专业模式：连续批处理（Continuous Batching，也称迭代级调度或 in-flight batching）是 LLM 推理服务的调度方式：调度器在每一步解码迭">
+<title>🎓 连续批处理 (Continuous Batching) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="continuous-batching" data-answer="0" data-prev="speculative-decoding.pro.html" data-next="paged-attention.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#llmops">🔥 进阶 · 🧠 模型工程与推理部署</a><span>›</span><a href="continuous-batching.html">连续批处理 (Continuous Batching)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.481 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="speculative-decoding.pro.html" rel="prev"><small>‹ 上一个</small><b>🏃 投机解码 (Speculative Decoding)</b></a><a class="pn next" href="paged-attention.pro.html" rel="next"><small>下一个 ›</small><b>📑 分页注意力 (PagedAttention)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🚌</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🧠 模型工程与推理部署</span><span>⏱ 约 10 分钟</span></div>
+    <h1>连续批处理 (Continuous Batching)</h1><p class="en">Continuous Batching</p>
+    <div class="hbtns"><a class="prosw back" href="continuous-batching.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">连续批处理（Continuous Batching，也称迭代级调度或 in-flight batching）是 LLM 推理服务的调度方式：调度器在每一步解码迭代时重新组批，完成的请求立即移出，新请求立即加入，而不是等整批全部生成结束。该思想由 Orca（OSDI 2022）系统化提出，现已是 vLLM、SGLang、TGI、TensorRT-LLM 等引擎的标准能力。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>LLM 生成分为预填充（prefill，一次处理整个提示）和解码（decode，每步生成一个 Token）两个阶段。</p></li><li><span class="sn">2</span><p>静态批处理中，一批请求必须一起开始、一起结束，短回答完成后其位置空转，等待最长的请求。</p></li><li><span class="sn">3</span><p>连续批处理以单次迭代为调度粒度：每步结束检查是否有请求生成了结束符或达到长度上限，立即释放其资源。</p></li><li><span class="sn">4</span><p>空出的容量立即分配给等待队列中的新请求，受最大并发序列数和单步最大 Token 数等预算约束。</p></li><li><span class="sn">5</span><p>分块预填充（chunked prefill）把长提示切块，与正在解码的请求混合在同一步中，减少长提示对他人延迟的冲击。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>迭代级调度 (Iteration-level Scheduling)</dt><dd>每生成一步重新决定批内成员的调度策略。</dd></div><div class="term"><dt>预填充/解码 (Prefill/Decode)</dt><dd>处理提示的计算密集阶段与逐 Token 生成的带宽密集阶段。</dd></div><div class="term"><dt>分块预填充 (Chunked Prefill)</dt><dd>把长提示拆成多块分步处理，与解码请求共批。</dd></div><div class="term"><dt>max-num-seqs</dt><dd>vLLM 中单次迭代可同时处理的最大序列数，控制并发上限。</dd></div><div class="term"><dt>抢占 (Preemption)</dt><dd>KV 缓存不足时暂停部分请求，释放显存后再重算或换回。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>并发压测 OpenAI 兼容服务</span><em>python</em><button class="ccopy">复制</button></div><pre><code># pip install openai ；假设已用推理引擎在本地 8000 端口启动服务
+import asyncio, time
+from openai import AsyncOpenAI
+
+client = AsyncOpenAI(base_url=&quot;http://localhost:8000/v1&quot;, api_key=&quot;EMPTY&quot;)
+MODEL = &quot;Qwen/Qwen2.5-7B-Instruct&quot;     # 与服务端加载的模型一致
+
+async def one(i: int) -&gt; int:
+    r = await client.chat.completions.create(
+        model=MODEL,
+        messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: f&quot;写一段 {50 + i % 5 * 100} 字的介绍&quot;}],
+        max_tokens=512,
+    )
+    return r.usage.completion_tokens
+
+async def main(concurrency: int = 32):
+    t0 = time.perf_counter()
+    tokens = await asyncio.gather(*(one(i) for i in range(concurrency)))
+    dt = time.perf_counter() - t0
+    print(f&quot;并发 {concurrency}: {sum(tokens) / dt:.0f} 输出 tok/s, 总耗时 {dt:.1f}s&quot;)
+
+for c in (1, 8, 32):
+    asyncio.run(main(c))</code></pre></div><p class="cnote">长短不一的请求混合时，连续批处理的优势最明显；同时应记录 TTFT 和 P99 延迟，不只看吞吐。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">批处理策略对比</h3><div class="tw"><table><thead><tr><th>策略</th><th>调度粒度</th><th>GPU 利用率</th><th>延迟特征</th></tr></thead><tbody><tr><td data-h="策略">不批处理</td><td data-h="调度粒度">单请求</td><td data-h="GPU 利用率">很低</td><td data-h="延迟特征">单请求最快，排队严重</td></tr><tr><td data-h="策略">静态批处理</td><td data-h="调度粒度">整个请求</td><td data-h="GPU 利用率">受最长请求拖累</td><td data-h="延迟特征">短请求被迫等待</td></tr><tr><td data-h="策略">动态批处理</td><td data-h="调度粒度">等待时间窗口内凑批</td><td data-h="GPU 利用率">中</td><td data-h="延迟特征">增加凑批等待</td></tr><tr><td data-h="策略">连续批处理</td><td data-h="调度粒度">每次解码迭代</td><td data-h="GPU 利用率">高</td><td data-h="延迟特征">新请求可快速加入</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>调大最大并发序列</h4><p><b class="k-p">优点</b>吞吐提升，GPU 更饱满</p><p><b class="k-c">代价</b>单请求 TPOT 变长，KV 缓存压力增大</p><p><b class="k-w">适用</b>离线或吞吐优先的服务</p></div><div class="trd"><h4>调小最大并发序列</h4><p><b class="k-p">优点</b>单请求速度更快、更稳定</p><p><b class="k-c">代价</b>吞吐下降，排队增加</p><p><b class="k-w">适用</b>实时对话、低延迟要求</p></div><div class="trd"><h4>开启分块预填充</h4><p><b class="k-p">优点</b>长提示不再造成他人延迟尖刺</p><p><b class="k-c">代价</b>长提示自身 TTFT 可能略增</p><p><b class="k-w">适用</b>提示长度差异大的混合负载</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>只用单个请求测速，误判服务容量</p><p class="fix"><b>✓</b>按真实并发与长度分布压测，记录吞吐、TTFT 与 P99</p></li><li><p class="bad"><b>✗</b>max_tokens 设置过大，预留与抢占频繁</p><p class="fix"><b>✓</b>按业务需要设置合理上限，监控抢占次数</p></li><li><p class="bad"><b>✗</b>在应用层再自行攒批，叠加额外等待</p><p class="fix"><b>✓</b>直接并发发送请求，让引擎负责调度</p></li><li><p class="bad"><b>✗</b>忽视长提示对整体延迟的影响</p><p class="fix"><b>✓</b>开启分块预填充或对超长请求单独路由</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>压测覆盖目标并发与真实长度分布</span></label></li><li><label><input type="checkbox"><span>监控吞吐、TTFT、TPOT 与排队时间</span></label></li><li><label><input type="checkbox"><span>最大并发与 Token 预算按 SLO 调优</span></label></li><li><label><input type="checkbox"><span>监控 KV 缓存使用率与抢占次数</span></label></li><li><label><input type="checkbox"><span>超长提示有限制或单独处理</span></label></li><li><label><input type="checkbox"><span>客户端使用流式输出改善感知延迟</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么静态批处理会浪费 GPU？</summary><p>LLM 输出长度差异巨大。静态批处理中整批必须等最长的请求结束，已完成的短请求占着批位空转，新请求也无法加入，导致 GPU 大量时间在处理填充位。连续批处理在每一步都回收与补充批位，消除了这种空转。</p></details><details class="iv"><summary>连续批处理和 PagedAttention 是什么关系？</summary><p>连续批处理决定每一步谁在批里，需要频繁加入和移出请求；PagedAttention 以小块分配 KV 缓存，减少碎片，使同样显存能容纳更多并发序列，并让请求加入与释放的内存管理代价很低。两者结合是 vLLM 高吞吐的关键。</p></details><details class="iv"><summary>吞吐和延迟如何权衡？</summary><p>并发越高，每步要处理的序列越多，总吞吐上升，但每个请求的每 Token 耗时变长，接近算力上限后排队时间急剧增加。应先定义 TTFT 和 TPOT 的 SLO，再在满足 SLO 的前提下找出最大吞吐对应的并发设置。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.anyscale.com/blog/continuous-batching-llm-inference" target="_blank" rel="noopener"><b>Anyscale: How continuous batching enables 23x throughput</b><small>anyscale.com ↗</small></a></li><li><a href="https://arxiv.org/abs/2308.16369" target="_blank" rel="noopener"><b>Agrawal et al.: SARATHI, Chunked Prefills (arXiv:2308.16369)</b><small>arxiv.org ↗</small></a></li><li><a href="https://docs.vllm.ai/en/latest/" target="_blank" rel="noopener"><b>vLLM Documentation</b><small>docs.vllm.ai ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="speculative-decoding.pro.html" rel="prev"><small>‹ 上一个</small><b>🏃 投机解码 (Speculative Decoding)</b></a><a class="pn next" href="paged-attention.pro.html" rel="next"><small>下一个 ›</small><b>📑 分页注意力 (PagedAttention)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

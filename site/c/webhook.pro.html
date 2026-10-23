@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="Webhook 回调 专业模式：Webhook 是一种由服务提供方在事件发生时主动向订阅方预先登记的 URL 发送 HTTP 请求（通常是 POST + JSON）的回调机制。它属于系统集成层">
+<title>🎓 Webhook 回调 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="webhook" data-answer="0" data-prev="rest-api.pro.html" data-next="rate-limiting.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#net">🌊 中级 · 🌐 网络与 API</a><span>›</span><a href="webhook.html">Webhook 回调</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.134 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="rest-api.pro.html" rel="prev"><small>‹ 上一个</small><b>🍽️ REST API</b></a><a class="pn next" href="rate-limiting.pro.html" rel="next"><small>下一个 ›</small><b>🚦 限流</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔔</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>Webhook 回调</h1><p class="en">Webhook</p>
+    <div class="hbtns"><a class="prosw back" href="webhook.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">Webhook 是一种由服务提供方在事件发生时主动向订阅方预先登记的 URL 发送 HTTP 请求（通常是 POST + JSON）的回调机制。它属于系统集成层的事件推送模式，替代客户端轮询，常见于支付结果、代码仓库事件、表单提交等场景，核心难点在验签、幂等和重试。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>订阅方在提供方后台或 API 注册回调 URL，并选择关注的事件类型，获得签名密钥。</p></li><li><span class="sn">2</span><p>事件发生后，提供方构造事件载荷，用密钥对原始请求体计算 HMAC 签名并放入请求头。</p></li><li><span class="sn">3</span><p>订阅方收到请求，先用原始 body 重新计算签名并恒定时间比较，校验时间戳防重放。</p></li><li><span class="sn">4</span><p>校验通过后快速返回 2xx，把实际处理放进后台队列，避免超时引发重投。</p></li><li><span class="sn">5</span><p>提供方在非 2xx 或超时时按退避策略重试，因此订阅方需按事件 ID 去重。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>HMAC 签名</dt><dd>用共享密钥对消息计算的摘要，证明来源与完整性。</dd></div><div class="term"><dt>至少一次投递 (At-least-once)</dt><dd>保证送达但可能重复，接收方需幂等。</dd></div><div class="term"><dt>重放攻击 (Replay Attack)</dt><dd>截获合法请求后重复发送；用时间戳加去重防御。</dd></div><div class="term"><dt>恒定时间比较 (Constant-time Compare)</dt><dd>比较耗时与内容无关，防止计时侧信道。</dd></div><div class="term"><dt>死信 (Dead Letter)</dt><dd>多次重试仍失败、被单独保存待人工处理的消息。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Flask 接收并验签</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import hmac, hashlib, time, os
+from flask import Flask, request, abort
+
+app = Flask(__name__)
+SECRET = os.environ[&quot;WEBHOOK_SECRET&quot;].encode()
+seen = set()  # 生产中改用数据库唯一约束或 Redis
+
+@app.post(&quot;/webhooks/orders&quot;)
+def orders_hook():
+    body = request.get_data()                    # 必须用原始字节
+    ts = request.headers.get(&quot;X-Timestamp&quot;, &quot;0&quot;)
+    sig = request.headers.get(&quot;X-Signature&quot;, &quot;&quot;)
+    if abs(time.time() - int(ts)) &gt; 300:         # 5 分钟窗口防重放
+        abort(400)
+    mac = hmac.new(SECRET, ts.encode() + b&quot;.&quot; + body, hashlib.sha256)
+    if not hmac.compare_digest(mac.hexdigest(), sig):
+        abort(401)
+    event = request.get_json()
+    if event[&quot;id&quot;] in seen:                     # 按事件 ID 去重
+        return &quot;&quot;, 200
+    seen.add(event[&quot;id&quot;])
+    # enqueue(event)  放入队列异步处理，尽快返回
+    return &quot;&quot;, 200</code></pre></div><p class="cnote">头名与签名拼接方式是示例，实际以提供方文档为准；核心是原始 body、恒定时间比较与去重。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">事件获取方式对比</h3><div class="tw"><table><thead><tr><th>方式</th><th>实时性</th><th>接收方要求</th><th>可靠性</th></tr></thead><tbody><tr><td data-h="方式">轮询 (Polling)</td><td data-h="实时性">取决于间隔</td><td data-h="接收方要求">无需公网入口</td><td data-h="可靠性">简单但浪费请求</td></tr><tr><td data-h="方式">Webhook</td><td data-h="实时性">近实时</td><td data-h="接收方要求">公网 HTTPS 端点</td><td data-h="可靠性">需重试与去重</td></tr><tr><td data-h="方式">WebSocket/SSE</td><td data-h="实时性">实时</td><td data-h="接收方要求">保持长连接</td><td data-h="可靠性">断线需重连补数据</td></tr><tr><td data-h="方式">消息队列订阅</td><td data-h="实时性">近实时</td><td data-h="接收方要求">接入 MQ</td><td data-h="可靠性">高，支持确认机制</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>同步处理后返回</h4><p><b class="k-p">优点</b>实现简单</p><p><b class="k-c">代价</b>慢操作易超时触发重复投递</p><p><b class="k-w">适用</b>处理极轻量</p></div><div class="trd"><h4>先入队再返回 2xx</h4><p><b class="k-p">优点</b>响应快，可削峰与重试</p><p><b class="k-c">代价</b>需队列与幂等处理</p><p><b class="k-w">适用</b>大多数生产场景</p></div><div class="trd"><h4>Webhook + 定期对账</h4><p><b class="k-p">优点</b>可补回丢失事件</p><p><b class="k-c">代价</b>额外调用与实现成本</p><p><b class="k-w">适用</b>支付等不能漏的事件</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>对解析后再序列化的 JSON 验签，签名总对不上</p><p class="fix"><b>✓</b>用框架提供的原始请求体字节计算签名</p></li><li><p class="bad"><b>✗</b>用 == 比较签名</p><p class="fix"><b>✓</b>使用 hmac.compare_digest 等恒定时间比较</p></li><li><p class="bad"><b>✗</b>不去重，重试导致重复发货或重复入账</p><p class="fix"><b>✓</b>以事件 ID 建唯一约束，重复事件直接返回 2xx</p></li><li><p class="bad"><b>✗</b>假设事件按顺序到达</p><p class="fix"><b>✓</b>以事件内时间或版本判断新旧，必要时回查最新状态</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>仅接受 HTTPS 回调</span></label></li><li><label><input type="checkbox"><span>签名与时间戳校验已实现</span></label></li><li><label><input type="checkbox"><span>事件 ID 去重持久化</span></label></li><li><label><input type="checkbox"><span>2xx 在超时前返回，重活入队</span></label></li><li><label><input type="checkbox"><span>失败事件有告警与重放手段</span></label></li><li><label><input type="checkbox"><span>密钥可轮换且不入代码库</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Webhook 接收端如何保证幂等？</summary><p>以提供方事件 ID 为键写入带唯一约束的处理表，与业务更新放在同一事务；重复到达时检测到冲突直接返回 2xx。业务操作本身也尽量设计成按状态判断的幂等更新。</p></details><details class="iv"><summary>为什么签名里要包含时间戳？</summary><p>仅对 body 签名，攻击者截获后可无限重放。把时间戳纳入签名并限制有效窗口，配合事件 ID 去重，可防重放；同时要求双方时钟大致同步。</p></details><details class="iv"><summary>Webhook 丢了怎么办？</summary><p>除依赖提供方重试外，应定期调用对方查询 API 对账补齐遗漏；关键业务在用户操作后也可主动查询最新状态，不把推送当作唯一来源。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.github.com/en/webhooks/using-webhooks/validating-webhook-deliveries" target="_blank" rel="noopener"><b>GitHub Docs：Validating webhook deliveries</b><small>docs.github.com ↗</small></a></li><li><a href="https://docs.stripe.com/webhooks" target="_blank" rel="noopener"><b>Stripe Docs：Webhooks</b><small>docs.stripe.com ↗</small></a></li><li><a href="https://docs.python.org/3/library/hmac.html" target="_blank" rel="noopener"><b>Python 文档：hmac</b><small>docs.python.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="rest-api.pro.html" rel="prev"><small>‹ 上一个</small><b>🍽️ REST API</b></a><a class="pn next" href="rate-limiting.pro.html" rel="next"><small>下一个 ›</small><b>🚦 限流</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

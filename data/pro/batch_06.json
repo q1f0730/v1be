@@ -1,0 +1,3813 @@
+[
+ {
+  "slug": "lockfiles",
+  "def": "依赖锁文件（Lockfile）记录依赖树中每个包的精确版本、来源与完整性哈希，如 package-lock.json、pnpm-lock.yaml、poetry.lock、uv.lock、Cargo.lock。它属于构建与供应链层，保证不同机器、CI 与生产安装出完全一致的依赖，是可复现构建与防篡改的基础。",
+  "how": [
+   "清单文件（如 package.json）只写版本范围，例如 ^1.2.0，允许匹配多个版本。",
+   "包管理器解析范围与传递依赖，选出一组确定版本，连同来源 URL 和哈希写入锁文件。",
+   "后续安装优先按锁文件还原，不再重新解析，因此新发布的版本不会被意外引入。",
+   "安装时校验下载内容的哈希（如 npm 的 integrity 字段），不匹配即报错。",
+   "升级依赖时显式执行 update 命令重新解析，锁文件变化随代码一起提交与审查。"
+  ],
+  "terms": [
+   {
+    "t": "语义化版本 (SemVer)",
+    "d": "主.次.修订版本号约定，^ 与 ~ 表示允许的升级范围。"
+   },
+   {
+    "t": "传递依赖 (Transitive Dependency)",
+    "d": "依赖的依赖，通常占依赖树的大多数。"
+   },
+   {
+    "t": "完整性哈希 (Integrity Hash)",
+    "d": "包内容的摘要，用于校验未被篡改。"
+   },
+   {
+    "t": "可复现构建 (Reproducible Build)",
+    "d": "相同输入在任何环境产生相同产物。"
+   },
+   {
+    "t": "冻结安装 (Frozen Install)",
+    "d": "锁文件与清单不一致时直接失败，不改写锁文件。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "CI 中严格按锁文件安装",
+   "src": "# Node.js：npm ci 只按 package-lock.json 安装，\n# 与 package.json 不一致时报错，且会先删除 node_modules\nnpm ci\n\n# pnpm / Yarn（v2+）的等价写法\npnpm install --frozen-lockfile\nyarn install --immutable\n\n# Python (uv)：锁文件过期则失败\nuv sync --locked\n\n# Python (pip)：要求每个包都有哈希\npip install --require-hashes -r requirements.txt\n\n# 本地有意升级某个依赖，再提交锁文件的 diff\nnpm install lodash@latest\ngit add package.json package-lock.json\ngit commit -m \"chore(deps): bump lodash\"",
+   "note": "CI 与生产用冻结模式安装，锁文件只在有意升级时变化并经过审查。"
+  },
+  "table": {
+   "title": "各生态的锁文件",
+   "head": [
+    "生态",
+    "清单文件",
+    "锁文件",
+    "严格安装命令"
+   ],
+   "rows": [
+    [
+     "npm",
+     "package.json",
+     "package-lock.json",
+     "npm ci"
+    ],
+    [
+     "pnpm",
+     "package.json",
+     "pnpm-lock.yaml",
+     "pnpm install --frozen-lockfile"
+    ],
+    [
+     "uv (Python)",
+     "pyproject.toml",
+     "uv.lock",
+     "uv sync --locked"
+    ],
+    [
+     "Cargo (Rust)",
+     "Cargo.toml",
+     "Cargo.lock",
+     "cargo build --locked"
+    ],
+    [
+     "Go modules",
+     "go.mod",
+     "go.sum（校验和）",
+     "go mod verify"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "提交锁文件",
+    "pros": "环境一致，可复现，可审计",
+    "cons": "锁文件冲突与 diff 较大",
+    "when": "应用、服务，几乎总是"
+   },
+   {
+    "opt": "库项目不依赖锁文件发布",
+    "pros": "让使用方自行解析兼容版本",
+    "cons": "库自身 CI 结果可能不稳定",
+    "when": "发布到注册表的库（锁文件仍可用于开发）"
+   },
+   {
+    "opt": "自动依赖升级 PR",
+    "pros": "持续获得安全修复",
+    "cons": "PR 噪声，需要测试兜底",
+    "when": "有可靠 CI 的项目"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把锁文件加入 .gitignore",
+    "fix": "应用项目必须提交锁文件"
+   },
+   {
+    "bad": "CI 用 npm install，悄悄改写锁文件",
+    "fix": "CI 改用 npm ci 或冻结模式安装"
+   },
+   {
+    "bad": "解决合并冲突时手改锁文件",
+    "fix": "取一方版本后重新运行包管理器生成"
+   },
+   {
+    "bad": "让 AI 随手加依赖，锁文件里多出大量陌生包",
+    "fix": "审查锁文件 diff，核对新增包名、来源与维护状况"
+   }
+  ],
+  "checklist": [
+   "锁文件已提交且只有一种包管理器",
+   "CI 使用冻结/严格安装",
+   "锁文件 diff 纳入代码审查",
+   "启用依赖漏洞扫描",
+   "有定期依赖升级机制",
+   "私有源地址与哈希校验正常"
+  ],
+  "interview": [
+   {
+    "q": "有了 ^ 版本范围为什么还需要锁文件？",
+    "a": "范围允许匹配新发布的版本，不同时间安装会得到不同依赖树，传递依赖更不可控。锁文件固定解析结果，保证可复现，并让每次依赖变化都显式出现在代码审查里。"
+   },
+   {
+    "q": "锁文件如何防范供应链攻击？",
+    "a": "完整性哈希能发现已锁定版本被替换或下载被篡改；但若锁定的版本本身是恶意发布就无能为力。还需结合依赖审查、漏洞与恶意包扫描、延迟采用新版本和最小化依赖。"
+   },
+   {
+    "q": "npm install 和 npm ci 的区别？",
+    "a": "npm install 会按范围解析并可能更新锁文件；npm ci 要求锁文件存在且与 package.json 一致，删除 node_modules 后严格按锁文件安装，不写回锁文件，适合 CI 与生产构建。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "npm Docs：package-lock.json",
+    "url": "https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json"
+   },
+   {
+    "title": "npm Docs：npm ci",
+    "url": "https://docs.npmjs.com/cli/v10/commands/npm-ci"
+   },
+   {
+    "title": "uv 文档：Locking and syncing",
+    "url": "https://docs.astral.sh/uv/concepts/projects/sync/"
+   },
+   {
+    "title": "Cargo Book：Cargo.toml vs Cargo.lock",
+    "url": "https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html"
+   }
+  ]
+ },
+ {
+  "slug": "branch-protection",
+  "def": "分支保护（Branch Protection）是代码托管平台对指定分支（通常是 main 或 release/*）施加的写入规则，如必须通过 Pull Request、必须有审批、必须通过 CI 状态检查、禁止强制推送和删除。它属于代码治理与软件供应链层，保证进入主干的每次变更都经过审查与验证。",
+  "how": [
+   "管理员为匹配模式的分支配置规则，GitHub 中可用经典分支保护或更新的规则集（Rulesets）。",
+   "直接 push 到受保护分支被拒绝，变更必须通过 Pull Request 合并。",
+   "合并前需满足条件：指定数量的批准、CODEOWNERS 审查、所需 CI 检查全部通过。",
+   "可要求分支与目标保持最新、线性历史、签名提交，并在新提交后撤销旧批准。",
+   "规则可选择是否对管理员生效，并可为自动化账号或应急场景设置受控的绕过名单。"
+  ],
+  "terms": [
+   {
+    "t": "必需状态检查 (Required Status Checks)",
+    "d": "合并前必须通过的 CI 检查项。"
+   },
+   {
+    "t": "CODEOWNERS",
+    "d": "按路径指定负责人，相关改动需其审批。"
+   },
+   {
+    "t": "规则集 (Rulesets)",
+    "d": "GitHub 新一代分支/标签保护机制，可多层叠加。"
+   },
+   {
+    "t": "合并队列 (Merge Queue)",
+    "d": "按序在最新主干上验证并合并 PR，避免语义冲突。"
+   },
+   {
+    "t": "强制推送 (Force Push)",
+    "d": "改写远端历史的推送，受保护分支通常禁止。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "用 GitHub API 设置保护",
+   "src": "# 需要仓库管理员权限；OWNER/REPO 替换为实际值\ngh api -X PUT repos/OWNER/REPO/branches/main/protection \\\n  -H \"Accept: application/vnd.github+json\" \\\n  --input - <<'JSON'\n{\n  \"required_status_checks\": {\n    \"strict\": true,\n    \"contexts\": [\"ci/test\", \"ci/lint\"]\n  },\n  \"enforce_admins\": true,\n  \"required_pull_request_reviews\": {\n    \"required_approving_review_count\": 1,\n    \"dismiss_stale_reviews\": true,\n    \"require_code_owner_reviews\": true\n  },\n  \"restrictions\": null,\n  \"allow_force_pushes\": false,\n  \"allow_deletions\": false\n}\nJSON",
+   "note": "要求 CI 通过、至少一人批准与代码所有者审查，管理员同样受约束，禁止强推与删除。"
+  },
+  "table": {
+   "title": "常用保护规则",
+   "head": [
+    "规则",
+    "防止什么",
+    "注意点"
+   ],
+   "rows": [
+    [
+     "必须经 PR 合并",
+     "未审查的直接推送",
+     "自动化账号需单独授权"
+    ],
+    [
+     "必需审批 + 撤销过期批准",
+     "批准后偷偷追加改动",
+     "小团队审批人数要现实"
+    ],
+    [
+     "必需状态检查",
+     "测试失败的代码进主干",
+     "检查名变更需同步更新"
+    ],
+    [
+     "禁止强推与删除",
+     "历史被改写或分支丢失",
+     "应急恢复需管理员流程"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "规则对管理员生效",
+    "pros": "没有人能绕过审查",
+    "cons": "紧急修复流程变慢",
+    "when": "生产代码、合规要求高"
+   },
+   {
+    "opt": "允许指定账号绕过",
+    "pros": "发布机器人可自动推送",
+    "cons": "绕过账号成为攻击目标",
+    "when": "自动化发布，需最小权限"
+   },
+   {
+    "opt": "启用合并队列",
+    "pros": "保证主干始终可构建",
+    "cons": "合并有排队延迟",
+    "when": "PR 多、主干频繁变动"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "设置了必需检查但检查名写错，规则形同虚设或永远卡住",
+    "fix": "从最近一次 CI 运行中复制确切检查名，并验证生效"
+   },
+   {
+    "bad": "批准后作者继续推送未审代码",
+    "fix": "开启新提交时撤销过期批准"
+   },
+   {
+    "bad": "只保护 main，release 分支可随意推送",
+    "fix": "用通配模式覆盖所有发布分支"
+   },
+   {
+    "bad": "让 AI Agent 拥有绕过保护的 token",
+    "fix": "Agent 只能开 PR，合并由人或受控流程完成"
+   }
+  ],
+  "checklist": [
+   "main 与发布分支均受保护",
+   "必需检查名称与 CI 一致",
+   "至少一人审批且撤销过期批准",
+   "禁止强推与删除",
+   "绕过名单最小化并定期审计",
+   "关键路径配置 CODEOWNERS"
+  ],
+  "interview": [
+   {
+    "q": "strict 状态检查（要求分支最新）有什么作用？",
+    "a": "保证 CI 是在合并了最新主干后的代码上通过的，避免两个各自通过的 PR 合在一起后出错。代价是需要频繁更新分支，PR 多时可用合并队列代替。"
+   },
+   {
+    "q": "分支保护和 CODEOWNERS 如何配合？",
+    "a": "CODEOWNERS 按路径声明负责人；开启「要求代码所有者审查」后，改动这些路径的 PR 必须有对应负责人批准，适合保护基础设施、支付、权限等敏感目录。"
+   },
+   {
+    "q": "AI 编码 Agent 接入仓库时如何设计权限？",
+    "a": "给 Agent 使用最小权限的令牌，只允许推送到自己的分支并创建 PR；主干保护规则强制人工审查与 CI 通过；禁止其修改 CI 配置与保护规则，敏感路径加 CODEOWNERS。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "GitHub Docs：About protected branches",
+    "url": "https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches"
+   },
+   {
+    "title": "GitHub Docs：About rulesets",
+    "url": "https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets"
+   },
+   {
+    "title": "GitHub REST API：Branch protection",
+    "url": "https://docs.github.com/en/rest/branches/branch-protection"
+   }
+  ]
+ },
+ {
+  "slug": "multi-agent-systems",
+  "def": "多智能体系统（Multi-Agent System）是由多个具备独立提示词、工具和上下文的 LLM 智能体协作完成任务的架构，常见形态有编排者-工作者、流水线和对等协商。它位于 AI 应用编排层，用并行与分工突破单个上下文窗口和单一角色的限制，代价是更高的 token 成本与协调复杂度。",
+  "how": [
+   "编排者分析任务，拆成可独立推进的子任务，并为每个子任务写清目标、边界和输出格式。",
+   "工作者智能体在各自独立的上下文中并行执行，调用搜索、代码执行等工具。",
+   "工作者只返回压缩后的结论与证据，避免把大量中间过程塞回编排者的上下文。",
+   "编排者汇总结果，判断是否需要补充子任务、交叉验证或进入下一阶段。",
+   "全流程记录追踪数据（每个智能体的输入、工具调用、token 消耗），用于调试与评测。"
+  ],
+  "terms": [
+   {
+    "t": "编排者-工作者 (Orchestrator-Worker)",
+    "d": "一个主智能体分派任务、汇总多个子智能体结果。"
+   },
+   {
+    "t": "交接 (Handoff)",
+    "d": "一个智能体把控制权和上下文移交给另一个智能体。"
+   },
+   {
+    "t": "上下文隔离 (Context Isolation)",
+    "d": "每个智能体只看到完成自身任务所需信息。"
+   },
+   {
+    "t": "扇出/扇入 (Fan-out/Fan-in)",
+    "d": "并行分发子任务，再统一收集结果。"
+   },
+   {
+    "t": "智能体追踪 (Agent Tracing)",
+    "d": "记录多智能体调用链路，定位哪一步出错。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "编排者并行派发工作者",
+   "src": "import asyncio, os\nimport anthropic\n\nclient = anthropic.AsyncAnthropic()          # 读取 ANTHROPIC_API_KEY\nMODEL = os.getenv(\"MODEL\", \"claude-sonnet-4-5\")\n\nasync def ask(system: str, prompt: str) -> str:\n    msg = await client.messages.create(\n        model=MODEL, max_tokens=1024, system=system,\n        messages=[{\"role\": \"user\", \"content\": prompt}],\n    )\n    return msg.content[0].text\n\nasync def research(question: str) -> str:\n    # 1) 编排者拆解任务（真实系统中可让模型输出 JSON 子任务列表）\n    subtasks = [f\"{question}——技术原理\", f\"{question}——成本与风险\"]\n    worker_sys = \"你是研究员。只回答分配的子问题，输出不超过 200 字的要点与依据。\"\n    # 2) 工作者并行执行，各自独立上下文\n    results = await asyncio.gather(*(ask(worker_sys, t) for t in subtasks))\n    # 3) 编排者汇总\n    merged = \"\\n\\n\".join(results)\n    return await ask(\"你是主编，整合以下要点，指出矛盾之处。\", merged)\n\nprint(asyncio.run(research(\"是否应在产品中引入向量数据库\")))",
+   "note": "子任务并行、上下文隔离、结果压缩后汇总；模型名通过环境变量配置。"
+  },
+  "table": {
+   "title": "常见协作拓扑",
+   "head": [
+    "拓扑",
+    "特点",
+    "适合任务"
+   ],
+   "rows": [
+    [
+     "编排者-工作者",
+     "集中规划，并行执行",
+     "调研、批量代码修改"
+    ],
+    [
+     "顺序流水线",
+     "每步输出喂给下一步",
+     "生成→审查→修订"
+    ],
+    [
+     "交接路由",
+     "按意图转给专职智能体",
+     "客服分流"
+    ],
+    [
+     "辩论/评审",
+     "多方互评后裁决",
+     "需交叉验证的判断"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "单智能体 + 工具",
+    "pros": "简单、便宜、易调试",
+    "cons": "上下文易被撑满，难并行",
+    "when": "任务线性、规模中等"
+   },
+   {
+    "opt": "编排者-工作者",
+    "pros": "可并行，突破单窗口限制",
+    "cons": "token 成本显著上升，协调难",
+    "when": "可拆分的广度型任务"
+   },
+   {
+    "opt": "固定流水线",
+    "pros": "行为可预期，易评测",
+    "cons": "灵活性差",
+    "when": "流程稳定的生产任务"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "子任务描述模糊，多个工作者做重复的事",
+    "fix": "为每个子任务写明目标、范围、禁止事项与输出格式"
+   },
+   {
+    "bad": "工作者把完整原始资料返回，撑爆编排者上下文",
+    "fix": "要求返回压缩摘要与引用，原始数据写入文件"
+   },
+   {
+    "bad": "强耦合任务硬拆给多个智能体并行写同一文件",
+    "fix": "按依赖拆分；共享对象只交给一个智能体修改"
+   },
+   {
+    "bad": "没有追踪，出错时不知道是哪个智能体",
+    "fix": "记录每个智能体的输入、工具调用和输出"
+   }
+  ],
+  "checklist": [
+   "先证明单智能体不够再上多智能体",
+   "子任务边界清晰且可独立完成",
+   "工作者输出格式固定、篇幅受控",
+   "有并发与总 token 预算上限",
+   "全链路追踪可回放",
+   "有端到端评测集衡量效果"
+  ],
+  "interview": [
+   {
+    "q": "什么任务适合多智能体？",
+    "a": "可拆成多个相对独立、可并行的子问题，且信息量超出单个上下文窗口的广度型任务，如大范围调研。强依赖、需要频繁共享状态的任务（如多数编码任务）收益较小，协调成本可能超过并行收益。"
+   },
+   {
+    "q": "多智能体系统的主要成本在哪？",
+    "a": "每个智能体都要独立加载指令与上下文，并行探索带来大量重复读取，token 消耗远高于单次对话；另外是调试与评测难度。Anthropic 工程博客提到其研究系统的 token 用量约为普通对话的 15 倍。"
+   },
+   {
+    "q": "如何评测多智能体系统？",
+    "a": "以最终结果为主做端到端评测（正确性、引用质量、完整性），可用 LLM 评审辅以人工抽检；同时统计成本、耗时与工具调用次数，并通过追踪定位失败发生在规划、执行还是汇总阶段。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Anthropic：How we built our multi-agent research system",
+    "url": "https://www.anthropic.com/engineering/multi-agent-research-system"
+   },
+   {
+    "title": "Anthropic：Building effective agents",
+    "url": "https://www.anthropic.com/engineering/building-effective-agents"
+   },
+   {
+    "title": "OpenAI Agents SDK：Handoffs",
+    "url": "https://openai.github.io/openai-agents-python/handoffs/"
+   }
+  ]
+ },
+ {
+  "slug": "subagents",
+  "def": "子代理（Subagent）是主智能体在运行中派生出的专用智能体实例，拥有独立的上下文窗口、系统提示词和受限工具集，完成指定子任务后只把结果返回给主智能体。它是多智能体模式在编码 Agent（如 Claude Code）中的具体落地，主要用于隔离上下文、并行探索与职责专精。",
+  "how": [
+   "预先定义子代理：名称、何时使用的描述、系统提示词、允许的工具和可选模型。",
+   "主智能体根据描述自动判断或由用户显式指定，把子任务连同必要上下文委派出去。",
+   "子代理在全新上下文中工作，读文件、搜索、运行命令，不污染主对话。",
+   "完成后返回精简结论（如相关文件路径与发现），中间过程留在子代理上下文中。",
+   "主智能体基于结果继续推进，可同时派出多个子代理并行处理互不依赖的任务。"
+  ],
+  "terms": [
+   {
+    "t": "上下文隔离 (Context Isolation)",
+    "d": "子代理的探索过程不进入主对话上下文。"
+   },
+   {
+    "t": "工具白名单 (Tool Allowlist)",
+    "d": "限定子代理可用的工具，降低风险。"
+   },
+   {
+    "t": "委派 (Delegation)",
+    "d": "主智能体把子任务和所需上下文交给子代理。"
+   },
+   {
+    "t": "上下文腐化 (Context Rot)",
+    "d": "上下文越长，模型对早期信息利用越差的现象。"
+   },
+   {
+    "t": "项目级/用户级定义",
+    "d": "Claude Code 中子代理可放在项目或用户目录下共享或私用。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "Claude Code 子代理定义",
+   "src": "# 文件：.claude/agents/code-reviewer.md（项目级，随仓库共享）\n---\nname: code-reviewer\ndescription: 代码审查专家。在完成代码修改后主动使用，\n  检查正确性、安全性与可维护性。\ntools: Read, Grep, Glob, Bash\nmodel: inherit\n---\n你是资深代码审查者。被调用时：\n1. 运行 git diff 查看最近改动\n2. 只关注被修改的文件\n3. 按「必须修复 / 建议修改 / 可选优化」分级输出\n4. 每个问题给出文件路径、行号和修复示例\n\n不要修改任何文件，只输出审查意见。",
+   "note": "YAML 头部声明名称、使用时机与工具，正文是系统提示词；只读工具降低误改风险。"
+  },
+  "table": {
+   "title": "子代理与主对话分工",
+   "head": [
+    "维度",
+    "主对话",
+    "子代理"
+   ],
+   "rows": [
+    [
+     "上下文",
+     "累积整个会话",
+     "每次任务全新开始"
+    ],
+    [
+     "职责",
+     "规划、决策、与用户沟通",
+     "检索、审查、测试等专项"
+    ],
+    [
+     "工具",
+     "通常完整",
+     "按任务最小化"
+    ],
+    [
+     "产出",
+     "最终修改与答复",
+     "压缩后的结论"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "主对话直接处理",
+    "pros": "信息完整，无交接损失",
+    "cons": "大量探索内容挤占上下文",
+    "when": "小任务、需要连续推理"
+   },
+   {
+    "opt": "委派子代理",
+    "pros": "保护主上下文，可并行",
+    "cons": "交接可能丢失细节，额外 token",
+    "when": "大范围搜索、独立审查"
+   },
+   {
+    "opt": "专精子代理库",
+    "pros": "提示词可复用，行为稳定",
+    "cons": "定义需要维护",
+    "when": "团队常见重复任务"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "description 写得含糊，主智能体从不调用或乱调用",
+    "fix": "写清触发场景与能力边界，必要时显式点名调用"
+   },
+   {
+    "bad": "审查类子代理拥有写权限，直接改了代码",
+    "fix": "只读任务只给 Read/Grep/Glob 等工具"
+   },
+   {
+    "bad": "委派时只给一句话，子代理缺少关键上下文",
+    "fix": "交代目标、相关文件、约束与期望输出格式"
+   },
+   {
+    "bad": "让多个子代理并行修改同一批文件",
+    "fix": "写操作集中在一处，子代理负责调研与产出建议"
+   }
+  ],
+  "checklist": [
+   "每个子代理职责单一",
+   "description 明确触发时机",
+   "工具权限按最小化原则",
+   "输出格式简短且结构化",
+   "项目级定义纳入版本控制",
+   "定期复盘子代理的命中与效果"
+  ],
+  "interview": [
+   {
+    "q": "子代理解决的核心问题是什么？",
+    "a": "上下文管理。大量文件读取、搜索结果和日志若都进入主对话，会挤占窗口并降低后续推理质量。子代理在独立上下文中消化这些信息，只返回结论，主对话保持干净聚焦。"
+   },
+   {
+    "q": "子代理和 Skills 有什么区别？",
+    "a": "子代理是独立运行的智能体实例，有自己的上下文与工具；Skills 是按需加载到当前智能体上下文中的指令与资源包，不另起上下文。前者解决隔离与并行，后者解决专业知识复用。"
+   },
+   {
+    "q": "什么时候不该用子代理？",
+    "a": "任务很小、需要与主对话频繁来回、或需要用到主对话中大量已有细节时，委派的交接成本和信息损失会超过收益；强依赖的连续编码改动也更适合在主对话完成。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Claude Code 文档：Subagents",
+    "url": "https://docs.claude.com/en/docs/claude-code/sub-agents"
+   },
+   {
+    "title": "Anthropic：Effective context engineering for AI agents",
+    "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+   },
+   {
+    "title": "Anthropic：How we built our multi-agent research system",
+    "url": "https://www.anthropic.com/engineering/multi-agent-research-system"
+   }
+  ]
+ },
+ {
+  "slug": "evals",
+  "def": "AI 评测（Evals）是用一组带期望结果或评分标准的测试用例，系统地衡量 LLM 应用输出质量的过程，评分方式包括代码断言、人工标注和 LLM 评审（LLM-as-a-Judge）。它是 AI 工程的质量保障层，相当于传统软件的测试套件，用于比较提示词、模型与架构改动，防止回归。",
+  "how": [
+   "明确成功标准：任务正确性、格式、事实性、安全性、延迟与成本等可衡量维度。",
+   "构建数据集：从真实日志、失败案例和边界场景收集输入，并标注期望输出或评分细则。",
+   "运行被测系统得到输出，用确定性检查、相似度、LLM 评审或人工打分逐条评分。",
+   "汇总为通过率、平均分等指标，按类别切片分析，定位具体失败模式。",
+   "接入 CI，每次修改提示词或换模型都自动跑评测，与基线对比后再发布。"
+  ],
+  "terms": [
+   {
+    "t": "LLM 评审 (LLM-as-a-Judge)",
+    "d": "用模型按评分细则给输出打分，需与人工校准。"
+   },
+   {
+    "t": "黄金数据集 (Golden Dataset)",
+    "d": "经人工确认的标准输入与期望输出集合。"
+   },
+   {
+    "t": "回归测试 (Regression Eval)",
+    "d": "确保改动不破坏原本能通过的用例。"
+   },
+   {
+    "t": "评分细则 (Rubric)",
+    "d": "把主观质量拆成可判定的具体标准。"
+   },
+   {
+    "t": "pass@k",
+    "d": "k 次采样中至少一次通过的概率，常用于代码生成。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "最小评测脚本",
+   "src": "import json\n\n# 每条用例：输入 + 可程序化检查的期望\nCASES = [\n    {\"input\": \"把 2026-03-05 转成 05/03/2026 格式\", \"expect\": \"05/03/2026\"},\n    {\"input\": \"提取邮箱：联系 ada@example.com\", \"expect\": \"ada@example.com\"},\n    {\"input\": \"只回答 yes 或 no：1+1=2 吗？\", \"expect\": \"yes\"},\n]\n\ndef run_system(prompt: str) -> str:\n    \"\"\"替换为真实调用：你的提示词 + 模型\"\"\"\n    raise NotImplementedError\n\ndef grade(output: str, expect: str) -> bool:\n    return expect.lower() in output.strip().lower()   # 确定性检查优先\n\ndef main():\n    results = []\n    for c in CASES:\n        out = run_system(c[\"input\"])\n        results.append({**c, \"output\": out, \"pass\": grade(out, c[\"expect\"])})\n    rate = sum(r[\"pass\"] for r in results) / len(results)\n    print(f\"通过率 {rate:.0%}\")\n    json.dump(results, open(\"eval_results.json\", \"w\"), ensure_ascii=False, indent=2)\n\nif __name__ == \"__main__\":\n    main()",
+   "note": "数据集、被测系统、评分函数三件套；能用代码判定的先用代码，结果落盘便于对比。"
+  },
+  "table": {
+   "title": "评分方式对比",
+   "head": [
+    "方式",
+    "成本",
+    "适用",
+    "风险"
+   ],
+   "rows": [
+    [
+     "代码断言/精确匹配",
+     "极低",
+     "格式、抽取、分类",
+     "覆盖不了开放式回答"
+    ],
+    [
+     "LLM 评审",
+     "中",
+     "语气、相关性、完整性",
+     "评审偏差，需人工校准"
+    ],
+    [
+     "人工评审",
+     "高",
+     "高风险、主观质量",
+     "慢，标准不一致"
+    ],
+    [
+     "线上 A/B 指标",
+     "中",
+     "真实用户效果",
+     "滞后，噪声大"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "小而精的手工数据集",
+    "pros": "快速起步，覆盖关键场景",
+    "cons": "代表性有限",
+    "when": "项目早期"
+   },
+   {
+    "opt": "从线上日志持续采样",
+    "pros": "贴近真实分布",
+    "cons": "需脱敏与标注成本",
+    "when": "已有用户流量"
+   },
+   {
+    "opt": "合成数据扩充",
+    "pros": "快速覆盖边界情况",
+    "cons": "可能偏离真实分布",
+    "when": "补充稀有场景"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "凭几次手动试用就判断新提示词更好",
+    "fix": "固定数据集批量评测，与基线对比再决定"
+   },
+   {
+    "bad": "LLM 评审未经校准就当真值",
+    "fix": "抽样与人工标注比对一致性，迭代评审提示词"
+   },
+   {
+    "bad": "只看总分，不看失败案例",
+    "fix": "按类别切片并逐条阅读失败输出，归纳错误模式"
+   },
+   {
+    "bad": "评测集被用来反复调提示词，产生过拟合",
+    "fix": "保留不参与调优的留出集定期验证"
+   }
+  ],
+  "checklist": [
+   "成功标准书面且可衡量",
+   "数据集覆盖主流场景与边界",
+   "优先使用确定性评分",
+   "LLM 评审与人工校准过",
+   "评测接入 CI 并有基线",
+   "同时记录成本与延迟"
+  ],
+  "interview": [
+   {
+    "q": "如何让 LLM 评审更可靠？",
+    "a": "使用具体评分细则而非笼统打分，优先二元或少档位判断；让评审先给理由再给结论；与人工标注比较一致率；注意位置偏差与偏好自身风格等问题，可交换顺序或换模型评审。"
+   },
+   {
+    "q": "评测数据从哪来？",
+    "a": "从真实用户日志与客服反馈中挑选典型与失败案例，补充领域专家写的边界场景，再用合成数据扩展覆盖；每次线上发现的新问题都转成一条回归用例。"
+   },
+   {
+    "q": "Agent 类系统怎么评测？",
+    "a": "除最终结果外，还要评估过程：是否选对工具、步骤数、是否越权操作、成本与耗时。可在可复现的沙箱环境中运行任务，用状态检查判定结果，并记录完整轨迹供分析。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Anthropic 文档：Create strong empirical evaluations",
+    "url": "https://docs.claude.com/en/docs/test-and-evaluate/develop-tests"
+   },
+   {
+    "title": "Hamel Husain：Your AI Product Needs Evals",
+    "url": "https://hamel.dev/blog/posts/evals/"
+   },
+   {
+    "title": "Inspect（UK AISI 评测框架）",
+    "url": "https://inspect.aisi.org.uk/"
+   }
+  ]
+ },
+ {
+  "slug": "fine-tuning",
+  "def": "微调（Fine-tuning）是在预训练模型基础上，用特定任务或领域的数据继续训练，调整模型权重以改变其行为、格式或领域能力的方法。按更新范围分为全参数微调与参数高效微调（PEFT，如 LoRA），按目标分为监督微调（SFT）与偏好优化（如 DPO）。它位于模型定制层，与提示工程、RAG 互补。",
+  "how": [
+   "准备数据：整理成指令-回答或多轮对话格式，清洗、去重并划分训练集与验证集。",
+   "选择基座模型与方法：全参数微调更新全部权重；LoRA 冻结原权重，只训练低秩适配矩阵。",
+   "设置超参数（学习率、轮数、批大小、LoRA 秩 r 等），在训练集上最小化损失。",
+   "在验证集与独立评测集上比较微调前后效果，并检查通用能力是否退化。",
+   "部署时合并适配器权重或在推理时动态加载适配器，一个基座可挂载多个 LoRA。"
+  ],
+  "terms": [
+   {
+    "t": "监督微调 (SFT)",
+    "d": "用标注好的输入-输出对训练模型模仿目标回答。"
+   },
+   {
+    "t": "LoRA",
+    "d": "在权重旁加低秩矩阵并只训练它们，参数量和显存大幅下降。"
+   },
+   {
+    "t": "QLoRA",
+    "d": "在 4 位量化基座上训练 LoRA，进一步降低显存。"
+   },
+   {
+    "t": "DPO",
+    "d": "直接偏好优化，用成对的好/坏回答训练，无需单独奖励模型。"
+   },
+   {
+    "t": "灾难性遗忘 (Catastrophic Forgetting)",
+    "d": "微调后模型丢失原有通用能力。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "用 PEFT 给模型加 LoRA",
+   "src": "from transformers import AutoModelForCausalLM, AutoTokenizer\nfrom peft import LoraConfig, get_peft_model\n\nbase = \"Qwen/Qwen2.5-0.5B-Instruct\"    # 小模型便于演示\ntokenizer = AutoTokenizer.from_pretrained(base)\nmodel = AutoModelForCausalLM.from_pretrained(base)\n\nconfig = LoraConfig(\n    r=16,                      # 低秩维度，越大容量越高\n    lora_alpha=32,             # 缩放系数\n    lora_dropout=0.05,\n    target_modules=[\"q_proj\", \"v_proj\"],   # 注入到注意力投影层\n    task_type=\"CAUSAL_LM\",\n)\nmodel = get_peft_model(model, config)\nmodel.print_trainable_parameters()\n# 输出可训练参数占比，通常远小于 1%\n\n# 之后用 transformers Trainer 或 TRL 的 SFTTrainer 训练，\n# 训练完 model.save_pretrained(\"lora-adapter\") 只保存适配器权重\n# 部署时可 model.merge_and_unload() 合并回基座",
+   "note": "LoRA 只训练少量新增参数；target_modules 名称取决于具体模型结构。"
+  },
+  "table": {
+   "title": "定制模型行为的路径",
+   "head": [
+    "方法",
+    "改变什么",
+    "成本",
+    "适合"
+   ],
+   "rows": [
+    [
+     "提示工程",
+     "输入指令与示例",
+     "最低",
+     "大多数需求的起点"
+    ],
+    [
+     "RAG",
+     "推理时提供外部知识",
+     "中",
+     "知识频繁更新、需引用"
+    ],
+    [
+     "LoRA 微调",
+     "少量新增权重",
+     "中",
+     "固定格式、风格、领域任务"
+    ],
+    [
+     "全参数微调",
+     "全部权重",
+     "高",
+     "大规模数据与算力"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "先做提示工程 + RAG",
+    "pros": "迭代快，无需训练设施",
+    "cons": "提示词变长，成本与延迟上升",
+    "when": "需求仍在变化、知识需更新"
+   },
+   {
+    "opt": "LoRA/QLoRA",
+    "pros": "显存需求低，可多适配器切换",
+    "cons": "容量有限，需要数据与评测",
+    "when": "稳定任务需特定格式或风格"
+   },
+   {
+    "opt": "托管微调服务",
+    "pros": "免运维，按量付费",
+    "cons": "受平台支持的模型与参数限制",
+    "when": "没有 GPU 团队"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "想用微调给模型灌输经常变化的知识",
+    "fix": "知识更新用 RAG，微调用于行为、格式和风格"
+   },
+   {
+    "bad": "数据量少质量差，模型反而变笨",
+    "fix": "优先保证数据质量与一致性，先小规模实验"
+   },
+   {
+    "bad": "只看训练损失，不做独立评测",
+    "fix": "用留出评测集对比基线，并检查通用能力退化"
+   },
+   {
+    "bad": "训练数据含用户隐私或密钥",
+    "fix": "训练前脱敏与扫描，模型可能记住并复述训练数据"
+   }
+  ],
+  "checklist": [
+   "已证明提示工程与 RAG 不足",
+   "数据格式与推理时模板一致",
+   "有训练/验证/评测集划分",
+   "评测覆盖目标任务与通用能力",
+   "数据已脱敏且有使用授权",
+   "适配器与基座版本对应记录"
+  ],
+  "interview": [
+   {
+    "q": "微调和 RAG 怎么选？",
+    "a": "需要模型掌握会变的事实、并能给出出处时用 RAG；需要稳定的输出格式、语气、特定任务技巧或缩短提示词时用微调。两者可结合：微调学会如何使用检索结果，RAG 提供最新知识。"
+   },
+   {
+    "q": "LoRA 为什么能省显存？",
+    "a": "冻结原始权重，只为部分层引入两个低秩矩阵 A、B 来近似权重更新，可训练参数和优化器状态大幅减少；QLoRA 再把冻结的基座量化到 4 位，使单卡微调更大模型成为可能。"
+   },
+   {
+    "q": "如何发现微调导致的能力退化？",
+    "a": "除目标任务评测外，保留一组通用能力和安全性评测（指令遵循、推理、拒答等），对比微调前后；可在训练数据中混入少量通用数据，或降低学习率、减少轮数缓解遗忘。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "LoRA 论文 (arXiv:2106.09685)",
+    "url": "https://arxiv.org/abs/2106.09685"
+   },
+   {
+    "title": "QLoRA 论文 (arXiv:2305.14314)",
+    "url": "https://arxiv.org/abs/2305.14314"
+   },
+   {
+    "title": "Hugging Face PEFT 文档",
+    "url": "https://huggingface.co/docs/peft/index"
+   },
+   {
+    "title": "Hugging Face TRL：SFT Trainer",
+    "url": "https://huggingface.co/docs/trl/sft_trainer"
+   }
+  ]
+ },
+ {
+  "slug": "model-routing",
+  "def": "模型路由（Model Routing）是在 LLM 应用中根据请求的难度、类型、成本预算或延迟要求，把每次调用分派给最合适模型的策略层。简单请求走便宜快速的小模型，复杂推理走能力更强的大模型，失败时可升级或切换供应商。它位于应用与模型 API 之间，目标是在质量不明显下降的前提下降低成本与延迟。",
+  "how": [
+   "定义候选模型池，记录各自的能力、价格、上下文长度、延迟与可用性。",
+   "对请求提取特征：任务类型、输入长度、是否需要工具或视觉、用户套餐等。",
+   "路由器根据这些特征，用规则、轻量分类器或小模型打分，决定首选模型。",
+   "调用后可做质量检查（格式校验、置信度），不达标则升级到更强模型重试（级联）。",
+   "持续记录每条路由的成本、延迟与评测分数，据此调整规则或重新训练路由器。"
+  ],
+  "terms": [
+   {
+    "t": "级联 (Cascade)",
+    "d": "先用便宜模型，不满足条件再逐级升级。"
+   },
+   {
+    "t": "回退 (Fallback)",
+    "d": "首选模型报错或限流时切换到备用模型或供应商。"
+   },
+   {
+    "t": "路由分类器 (Router Classifier)",
+    "d": "预测请求难度或类别以选择模型的轻量模型。"
+   },
+   {
+    "t": "质量-成本前沿 (Pareto Frontier)",
+    "d": "在给定成本下能达到的最佳质量曲线。"
+   },
+   {
+    "t": "LLM 网关 (LLM Gateway)",
+    "d": "统一代理多家模型 API，集中做路由、限流与计费。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "规则路由 + 级联升级",
+   "src": "import json\n\nSMALL, LARGE = \"small-model\", \"large-model\"   # 替换为实际模型名\n\ndef pick_model(task: str, prompt: str) -> str:\n    if task in {\"classify\", \"extract\", \"translate\"} and len(prompt) < 4000:\n        return SMALL\n    if task in {\"code\", \"plan\", \"math\"}:\n        return LARGE\n    return SMALL\n\ndef valid(output: str) -> bool:\n    try:\n        json.loads(output)          # 要求结构化输出\n        return True\n    except ValueError:\n        return False\n\ndef run(task: str, prompt: str, call_llm) -> str:\n    model = pick_model(task, prompt)\n    out = call_llm(model, prompt)\n    if model == SMALL and not valid(out):\n        out = call_llm(LARGE, prompt)   # 级联：小模型不达标就升级\n    return out\n# call_llm(model, prompt) 由你接入具体 SDK；记录每次的模型、token 与是否升级",
+   "note": "先用规则把明显简单的任务交给小模型，用可校验的输出决定是否升级。"
+  },
+  "table": {
+   "title": "路由策略对比",
+   "head": [
+    "策略",
+    "实现成本",
+    "效果",
+    "风险"
+   ],
+   "rows": [
+    [
+     "静态规则",
+     "低",
+     "取决于任务划分是否清晰",
+     "边界请求分错"
+    ],
+    [
+     "分类器路由",
+     "中",
+     "可学习难度分布",
+     "需要标注数据"
+    ],
+    [
+     "级联升级",
+     "低到中",
+     "质量有兜底",
+     "失败请求延迟翻倍"
+    ],
+    [
+     "供应商回退",
+     "低",
+     "提升可用性",
+     "不同模型行为不一致"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "全部用最强模型",
+    "pros": "质量最稳，实现简单",
+    "cons": "成本和延迟最高",
+    "when": "流量小或质量要求极高"
+   },
+   {
+    "opt": "按任务静态路由",
+    "pros": "可预期，易调试",
+    "cons": "无法适应同类任务的难度差异",
+    "when": "任务类型清晰的产品"
+   },
+   {
+    "opt": "动态路由/级联",
+    "pros": "成本与质量兼顾",
+    "cons": "需评测体系与监控",
+    "when": "流量大、成本敏感"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "没有评测就上路由，质量下降无人察觉",
+    "fix": "按路由分支分别评测，并对比全用大模型的基线"
+   },
+   {
+    "bad": "同一提示词直接套用不同模型",
+    "fix": "为各模型调整提示词与输出格式要求"
+   },
+   {
+    "bad": "回退模型能力差太多，静默降低质量",
+    "fix": "记录回退事件并告警，关键任务宁可报错重试"
+   },
+   {
+    "bad": "路由本身用大模型判断，成本反而更高",
+    "fix": "路由器用规则或轻量模型，开销远小于节省"
+   }
+  ],
+  "checklist": [
+   "每条路由分支有独立评测",
+   "记录模型、token、成本与延迟",
+   "回退与升级事件可观测",
+   "各模型提示词已适配",
+   "有供应商故障的回退方案",
+   "定期复核路由规则效果"
+  ],
+  "interview": [
+   {
+    "q": "如何判断一个请求该用小模型？",
+    "a": "离线用评测集同时跑大小模型，标出小模型也能做对的样本，提取其特征（任务类型、长度、关键词）形成规则或训练分类器；线上再用可验证的输出（格式、测试通过）兜底升级。"
+   },
+   {
+    "q": "级联路由的主要代价是什么？",
+    "a": "被升级的请求要先等小模型失败，延迟叠加，且付了两次费用；若小模型失败率高，总成本可能高于直接用大模型。需监控升级率并调整入口规则。"
+   },
+   {
+    "q": "多供应商回退要注意什么？",
+    "a": "统一抽象接口与错误分类，区分可重试错误（限流、超时）与不可重试错误；各模型的工具调用格式、上下文长度、安全策略不同，要分别测试；数据合规上确认每家供应商都允许处理该数据。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RouteLLM 论文 (arXiv:2406.18665)",
+    "url": "https://arxiv.org/abs/2406.18665"
+   },
+   {
+    "title": "FrugalGPT 论文 (arXiv:2305.05176)",
+    "url": "https://arxiv.org/abs/2305.05176"
+   },
+   {
+    "title": "LiteLLM 文档：Router",
+    "url": "https://docs.litellm.ai/docs/routing"
+   }
+  ]
+ },
+ {
+  "slug": "context-compaction",
+  "def": "上下文压缩（Context Compaction）是在长对话或长任务中，当累积的消息、工具结果接近上下文窗口上限时，把较早的内容压缩为摘要或删除可再获取的信息，以腾出空间继续工作的技术。它属于上下文工程层，常见于编码 Agent 的长会话，如 Claude Code 的 /compact。",
+  "how": [
+   "持续统计当前上下文的 token 数，接近阈值（如窗口的某个比例）时触发压缩。",
+   "原样保留系统提示词、当前任务目标和最近若干轮对话，不做摘要。",
+   "把更早的对话交给模型总结：已做决定、已修改文件、未解决问题和下一步。",
+   "清理可重新获取的大块内容，如旧的工具输出、文件全文，只留引用路径。",
+   "用「摘要 + 最近消息」替换原历史继续对话，必要时把关键状态写入外部文件。"
+  ],
+  "terms": [
+   {
+    "t": "上下文窗口 (Context Window)",
+    "d": "模型单次请求能处理的最大 token 数。"
+   },
+   {
+    "t": "上下文工程 (Context Engineering)",
+    "d": "决定每一步把哪些信息放进上下文的设计。"
+   },
+   {
+    "t": "工具结果清理 (Tool Result Clearing)",
+    "d": "删除旧工具调用的输出，保留调用记录。"
+   },
+   {
+    "t": "结构化笔记 (Structured Note-taking)",
+    "d": "Agent 把进度写入外部文件，压缩后可读回。"
+   },
+   {
+    "t": "上下文腐化 (Context Rot)",
+    "d": "上下文越长，模型回忆与利用信息的准确度下降。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "超阈值时摘要旧消息",
+   "src": "import anthropic\n\nclient = anthropic.Anthropic()\nMODEL = \"claude-sonnet-4-5\"     # 以实际可用模型为准\nLIMIT = 150_000                  # 触发阈值，按模型窗口设定\nKEEP_RECENT = 6                  # 保留最近 6 条原文\n\ndef tokens(messages, system):\n    r = client.messages.count_tokens(model=MODEL, system=system, messages=messages)\n    return r.input_tokens\n\ndef compact(messages, system):\n    if tokens(messages, system) < LIMIT:\n        return messages\n    old, recent = messages[:-KEEP_RECENT], messages[-KEEP_RECENT:]\n    summary = client.messages.create(\n        model=MODEL, max_tokens=2000,\n        system=\"把以下对话压缩为要点：目标、已做决定、改过的文件、待办、关键报错。\",\n        messages=[{\"role\": \"user\", \"content\": str(old)}],\n    ).content[0].text\n    head = {\"role\": \"user\", \"content\": f\"[此前对话摘要]\\n{summary}\"}\n    # 注意：消息需保持 user/assistant 交替，必要时调整 recent 的起点\n    return [head] + recent",
+   "note": "用官方 count_tokens 计数，超阈值时把旧消息换成结构化摘要；需注意消息角色交替。"
+  },
+  "table": {
+   "title": "压缩手段对比",
+   "head": [
+    "手段",
+    "信息损失",
+    "实现难度",
+    "适用"
+   ],
+   "rows": [
+    [
+     "截断最旧消息",
+     "高，直接丢弃",
+     "低",
+     "闲聊类对话"
+    ],
+    [
+     "LLM 摘要",
+     "中，取决于摘要质量",
+     "中",
+     "长任务会话"
+    ],
+    [
+     "清理工具输出",
+     "低，可重新获取",
+     "低",
+     "Agent 读文件、搜索"
+    ],
+    [
+     "外部笔记/记忆",
+     "低",
+     "中",
+     "跨会话的长期任务"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "自动压缩",
+    "pros": "无需用户干预，任务不中断",
+    "cons": "时机不可控，可能丢关键细节",
+    "when": "长时间自主运行的 Agent"
+   },
+   {
+    "opt": "手动压缩（如 /compact）",
+    "pros": "可在阶段边界执行并给出保留重点",
+    "cons": "依赖用户判断",
+    "when": "交互式编码会话"
+   },
+   {
+    "opt": "开新会话 + 交接文档",
+    "pros": "上下文最干净",
+    "cons": "需写交接说明",
+    "when": "任务阶段切换"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "摘要丢了用户明确提出的约束",
+    "fix": "摘要模板中单列约束与决定，原文保留用户指令"
+   },
+   {
+    "bad": "在任务中途压缩，正在调试的报错细节消失",
+    "fix": "尽量在阶段完成时压缩，或要求摘要保留最近报错原文"
+   },
+   {
+    "bad": "把大量文件全文留在上下文中",
+    "fix": "只保留路径和关键片段，需要时重新读取"
+   },
+   {
+    "bad": "压缩后消息角色顺序错误导致 API 报错",
+    "fix": "压缩后校验消息格式与 user/assistant 交替规则"
+   }
+  ],
+  "checklist": [
+   "有 token 计数与触发阈值",
+   "摘要模板覆盖目标、决定、待办",
+   "用户约束原文保留",
+   "大块工具输出可被清理",
+   "关键状态写入外部文件",
+   "压缩前后效果有评测"
+  ],
+  "interview": [
+   {
+    "q": "为什么不直接用更大的上下文窗口？",
+    "a": "窗口再大也有上限，且成本与延迟随长度增长；更重要的是长上下文中模型对信息的利用会退化，无关内容会稀释注意力。主动精简上下文往往比塞满窗口效果更好。"
+   },
+   {
+    "q": "压缩时哪些信息必须保留？",
+    "a": "用户原始目标与约束、已经做出的设计决定、修改过的文件与当前状态、未解决的错误和下一步计划。可重新获取的内容（文件全文、搜索结果）可以只留引用。"
+   },
+   {
+    "q": "压缩和外部记忆如何配合？",
+    "a": "压缩处理单个会话内的窗口压力；外部记忆（如项目说明文件、进度笔记）跨会话持久保存。Agent 在压缩前把关键进度写入文件，压缩后或新会话开始时读回，避免依赖摘要质量。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Anthropic：Effective context engineering for AI agents",
+    "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+   },
+   {
+    "title": "Anthropic 文档：Token counting",
+    "url": "https://docs.claude.com/en/docs/build-with-claude/token-counting"
+   },
+   {
+    "title": "Claude Code 文档：Slash commands",
+    "url": "https://docs.claude.com/en/docs/claude-code/slash-commands"
+   }
+  ]
+ },
+ {
+  "slug": "agent-memory",
+  "def": "智能体记忆（Agent Memory）是让 LLM 智能体在单次上下文之外保存并检索信息的机制，使其跨会话记住用户偏好、项目约定和过往经验。通常分为短期记忆（当前上下文）和长期记忆（文件、数据库、向量库），由检索或按需读取注入上下文。它位于 Agent 架构的状态管理层。",
+  "how": [
+   "短期记忆即当前对话的消息历史，受上下文窗口限制，会话结束即消失。",
+   "长期记忆写入外部存储：Markdown 文件、键值库、关系库或向量数据库。",
+   "写入时机由规则或模型决定：用户明确要求、任务结束总结、检测到稳定偏好。",
+   "读取方式包括固定加载（如项目说明文件）、关键词或向量检索、由 Agent 调用工具查询。",
+   "定期整理记忆：合并重复条目、更新过时内容、删除用户要求遗忘的信息。"
+  ],
+  "terms": [
+   {
+    "t": "短期记忆 (Working Memory)",
+    "d": "当前上下文窗口中的信息。"
+   },
+   {
+    "t": "情景记忆 (Episodic Memory)",
+    "d": "过去具体交互或任务经历的记录。"
+   },
+   {
+    "t": "语义记忆 (Semantic Memory)",
+    "d": "提炼出的事实与偏好，如用户使用的技术栈。"
+   },
+   {
+    "t": "程序性记忆 (Procedural Memory)",
+    "d": "做事的方法与规则，如团队的提交规范。"
+   },
+   {
+    "t": "记忆投毒 (Memory Poisoning)",
+    "d": "恶意内容被写入记忆，持续影响后续行为。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "CLAUDE.md 项目记忆示例",
+   "src": "# 文件：./CLAUDE.md（项目级，随仓库共享；Claude Code 启动时自动加载）\n\n## 项目约定\n- 包管理用 pnpm，不要使用 npm 或 yarn\n- 测试命令：pnpm test；提交前必须通过 pnpm lint\n- 数据库变更只能通过 prisma migrate 生成迁移文件\n\n## 代码风格\n- TypeScript 严格模式，禁止 any\n- 组件放在 src/components，按功能分目录\n\n## 注意事项\n- payments/ 目录改动需人工审查，不要自动提交\n- 环境变量见 .env.example，切勿写入真实密钥\n\n# 个人偏好可放在 ~/.claude/CLAUDE.md（用户级，所有项目生效）",
+   "note": "固定加载的记忆文件是最简单可靠的长期记忆；内容应短而具体，并可被审查。"
+  },
+  "table": {
+   "title": "长期记忆存储方式",
+   "head": [
+    "方式",
+    "检索方式",
+    "优点",
+    "缺点"
+   ],
+   "rows": [
+    [
+     "Markdown 文件",
+     "固定加载或读取",
+     "透明、可编辑、可版本控制",
+     "规模大时占上下文"
+    ],
+    [
+     "键值/关系库",
+     "精确查询",
+     "结构清晰，易更新删除",
+     "需要设计 schema"
+    ],
+    [
+     "向量数据库",
+     "语义相似度检索",
+     "适合大量非结构化内容",
+     "召回不稳定，难以审计"
+    ],
+    [
+     "知识图谱",
+     "关系查询",
+     "表达实体关系",
+     "构建维护成本高"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "固定加载记忆文件",
+    "pros": "确定、透明、易审查",
+    "cons": "内容多时挤占上下文",
+    "when": "项目约定、少量稳定偏好"
+   },
+   {
+    "opt": "检索式记忆",
+    "pros": "可扩展到大量记录",
+    "cons": "可能取错或漏取",
+    "when": "历史对话、知识积累"
+   },
+   {
+    "opt": "Agent 自主读写记忆",
+    "pros": "灵活，能自我积累经验",
+    "cons": "可能写入错误或被投毒",
+    "when": "需配合审查与可删除机制"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把一次性的临时信息写成长期规则",
+    "fix": "只记录稳定且会复用的事实，并注明适用条件"
+   },
+   {
+    "bad": "记忆文件越积越长，充满过时规则",
+    "fix": "定期整理，更新或删除过时条目"
+   },
+   {
+    "bad": "把网页或工具返回的内容直接写入记忆",
+    "fix": "外部内容视为不可信，写入前过滤并标注来源"
+   },
+   {
+    "bad": "记忆中保存密钥或个人隐私",
+    "fix": "禁止写入敏感信息，并提供查看与删除入口"
+   }
+  ],
+  "checklist": [
+   "区分项目级与用户级记忆",
+   "记忆内容简短、具体、可执行",
+   "有更新与删除机制",
+   "外部来源内容不直接入记忆",
+   "敏感信息禁止写入",
+   "记忆对行为的影响有评测"
+  ],
+  "interview": [
+   {
+    "q": "记忆和 RAG 有什么区别？",
+    "a": "RAG 检索的是外部知识库，通常相对静态、与具体用户无关；记忆是 Agent 在交互中积累的、与用户或项目相关的状态，需要写入、更新和遗忘。两者可共用检索技术，但生命周期与治理要求不同。"
+   },
+   {
+    "q": "如何防止记忆投毒？",
+    "a": "把来自网页、文件、工具的内容视为不可信数据，不允许其直接写入长期记忆；写入需经用户确认或规则过滤；记忆条目记录来源与时间，可审计与回滚。"
+   },
+   {
+    "q": "记忆过多会有什么问题？",
+    "a": "占用上下文、引入过时或冲突信息，导致模型遵循错误规则。应控制总量、按相关性检索，冲突时以最新且用户明确的信息为准，并定期清理。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Claude Code 文档：Manage Claude's memory",
+    "url": "https://docs.claude.com/en/docs/claude-code/memory"
+   },
+   {
+    "title": "MemGPT 论文 (arXiv:2310.08560)",
+    "url": "https://arxiv.org/abs/2310.08560"
+   },
+   {
+    "title": "LangGraph 文档：Memory",
+    "url": "https://docs.langchain.com/oss/python/langgraph/memory"
+   }
+  ]
+ },
+ {
+  "slug": "guardrails",
+  "def": "护栏（Guardrails）是围绕 LLM 调用设置的输入、输出与行为约束层，用于拦截提示注入、越权工具调用、敏感信息泄露、有害内容和不符合格式的输出。它在模型自身对齐之外提供可控、可审计的防线，通常由规则校验、分类模型、结构化输出校验和权限控制组合而成。",
+  "how": [
+   "输入护栏：检测提示注入、越狱尝试、敏感信息和超出业务范围的请求，必要时拒绝或改写。",
+   "上下文护栏：把检索内容、网页、文件标记为不可信数据，与系统指令明确分隔。",
+   "工具护栏：限定可调用工具与参数范围，高风险操作需人工确认，权限按最小化原则。",
+   "输出护栏：用 schema 校验结构，检测 PII、有害内容与事实性问题，不合格则重试或拦截。",
+   "记录所有拦截事件、触发规则与样本，用于监控攻击趋势和调整阈值。"
+  ],
+  "terms": [
+   {
+    "t": "提示注入 (Prompt Injection)",
+    "d": "通过输入或外部内容篡改模型行为，OWASP LLM Top 10 首位。"
+   },
+   {
+    "t": "间接提示注入 (Indirect Injection)",
+    "d": "恶意指令藏在模型读取的网页、文档或邮件中。"
+   },
+   {
+    "t": "结构化输出 (Structured Output)",
+    "d": "约束模型按 JSON Schema 输出，便于校验。"
+   },
+   {
+    "t": "内容分类器 (Safety Classifier)",
+    "d": "判断输入输出是否违规的专用模型，如 Llama Guard。"
+   },
+   {
+    "t": "过度代理 (Excessive Agency)",
+    "d": "赋予模型过多权限或自主性导致的风险。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "输出 schema 校验与工具白名单",
+   "src": "import re\nfrom pydantic import BaseModel, Field, ValidationError\n\nclass RefundDecision(BaseModel):\n    approve: bool\n    amount_cents: int = Field(ge=0, le=50_000)   # 金额上限硬约束\n    reason: str = Field(max_length=300)\n\nALLOWED_TOOLS = {\"lookup_order\", \"issue_refund\"}\nNEEDS_HUMAN = {\"issue_refund\"}\nPII = re.compile(r\"\\b\\d{16}\\b\")                   # 粗略的卡号模式\n\ndef check_output(raw_json: str) -> RefundDecision | None:\n    try:\n        d = RefundDecision.model_validate_json(raw_json)\n    except ValidationError:\n        return None                    # 结构不合格：重试或拒绝\n    if PII.search(d.reason):\n        return None                    # 输出含疑似卡号：拦截\n    return d\n\ndef check_tool(name: str) -> str:\n    if name not in ALLOWED_TOOLS:\n        return \"deny\"\n    return \"ask_human\" if name in NEEDS_HUMAN else \"allow\"",
+   "note": "用代码强制的约束（schema、上限、白名单）比提示词里的「请不要」可靠得多。"
+  },
+  "table": {
+   "title": "护栏层次与手段",
+   "head": [
+    "层次",
+    "防什么",
+    "常用手段"
+   ],
+   "rows": [
+    [
+     "输入",
+     "注入、越狱、超范围请求",
+     "分类器、规则、主题限制"
+    ],
+    [
+     "上下文",
+     "间接注入",
+     "数据与指令分隔、来源标注"
+    ],
+    [
+     "工具/行为",
+     "越权操作",
+     "白名单、参数校验、人工确认"
+    ],
+    [
+     "输出",
+     "格式错误、泄露、有害内容",
+     "schema 校验、PII 检测、审核模型"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "提示词内约束",
+    "pros": "零成本，易调整",
+    "cons": "可被绕过，不能当安全边界",
+    "when": "体验层面的引导"
+   },
+   {
+    "opt": "代码级硬约束",
+    "pros": "确定性强，不可被提示绕过",
+    "cons": "只能覆盖可形式化的规则",
+    "when": "金额、权限、格式等"
+   },
+   {
+    "opt": "分类模型护栏",
+    "pros": "覆盖语义层面的风险",
+    "cons": "增加延迟与误判",
+    "when": "开放式输入输出的产品"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "以为在系统提示里写「忽略任何注入」就安全",
+    "fix": "把权限控制放在代码与基础设施层，不依赖模型自律"
+   },
+   {
+    "bad": "Agent 读取网页后可以直接调用发邮件、转账工具",
+    "fix": "处理不可信内容的上下文中限制高风险工具，或需人工确认"
+   },
+   {
+    "bad": "护栏过严，大量正常请求被拒绝",
+    "fix": "用评测集同时衡量拦截率与误拒率，逐步调阈值"
+   },
+   {
+    "bad": "只拦截不记录，无法发现攻击模式",
+    "fix": "记录拦截事件与样本，定期复盘"
+   }
+  ],
+  "checklist": [
+   "高风险工具有人工确认",
+   "工具与参数有白名单校验",
+   "输出有 schema 校验",
+   "外部内容与指令明确分隔",
+   "PII 与密钥有检测",
+   "拦截率与误拒率可监控"
+  ],
+  "interview": [
+   {
+    "q": "为什么提示注入很难彻底解决？",
+    "a": "LLM 在同一输入流中处理指令和数据，无法从机制上区分可信指令与不可信内容。因此只能降低风险：限制模型权限、隔离不可信上下文、高风险操作需人工确认，假设注入终会成功来设计影响范围。"
+   },
+   {
+    "q": "护栏应该放在哪一层？",
+    "a": "多层叠加：输入层过滤明显攻击，上下文层隔离外部数据，工具层用权限与参数校验做硬约束，输出层校验结构与敏感信息。最关键的是工具/权限层，因为真正造成损失的是行动。"
+   },
+   {
+    "q": "如何评估护栏效果？",
+    "a": "构建攻击样本集（直接与间接注入、越狱、PII 诱导）与正常请求集，分别统计拦截率与误拒率；做红队测试；上线后监控拦截日志与用户投诉，持续补充样本。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP Top 10 for LLM Applications",
+    "url": "https://genai.owasp.org/llm-top-10/"
+   },
+   {
+    "title": "NVIDIA NeMo Guardrails 文档",
+    "url": "https://docs.nvidia.com/nemo/guardrails/latest/index.html"
+   },
+   {
+    "title": "Llama Guard 论文 (arXiv:2312.06674)",
+    "url": "https://arxiv.org/abs/2312.06674"
+   }
+  ]
+ },
+ {
+  "slug": "prompt-caching",
+  "def": "提示词缓存（Prompt Caching）是模型服务端对请求中重复出现的前缀（系统提示、工具定义、长文档、历史对话）缓存其中间计算结果（KV Cache），后续请求命中相同前缀时跳过重复计算的机制。它属于推理优化层，可显著降低长上下文请求的成本与首 token 延迟，对多轮 Agent 尤为关键。",
+  "how": [
+   "模型处理输入时为每个 token 计算注意力的键值（KV），这部分计算与前缀内容一一对应。",
+   "服务端以前缀内容为键保存 KV 结果；只有从开头起完全一致的部分才能命中。",
+   "Anthropic API 需用 cache_control 显式标记缓存断点；OpenAI 对足够长的提示自动缓存。",
+   "命中时缓存部分按较低单价计费，并减少首 token 延迟；未命中则正常计算并写入缓存。",
+   "缓存有存活时间，一段时间无访问即失效，命中后通常会刷新存活时间。"
+  ],
+  "terms": [
+   {
+    "t": "KV 缓存 (KV Cache)",
+    "d": "注意力层中已计算 token 的键值张量。"
+   },
+   {
+    "t": "前缀匹配 (Prefix Match)",
+    "d": "只有与已缓存内容从头完全一致的部分可复用。"
+   },
+   {
+    "t": "缓存断点 (Cache Breakpoint)",
+    "d": "Anthropic 中用 cache_control 标记的缓存边界。"
+   },
+   {
+    "t": "缓存写入/读取 token",
+    "d": "响应 usage 中分别统计的写入与命中 token 数。"
+   },
+   {
+    "t": "首 token 延迟 (TTFT)",
+    "d": "从发出请求到收到第一个输出 token 的时间。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Anthropic 显式缓存长前缀",
+   "src": "import anthropic\n\nclient = anthropic.Anthropic()\nLONG_DOC = open(\"handbook.md\").read()      # 长且不变的内容放前面\n\ndef ask(question: str):\n    resp = client.messages.create(\n        model=\"claude-sonnet-4-5\",          # 以实际可用模型为准\n        max_tokens=1024,\n        system=[\n            {\"type\": \"text\", \"text\": \"你是员工手册问答助手。\"},\n            {\"type\": \"text\", \"text\": LONG_DOC,\n             \"cache_control\": {\"type\": \"ephemeral\"}},   # 断点：此前内容被缓存\n        ],\n        messages=[{\"role\": \"user\", \"content\": question}],  # 变化部分放最后\n    )\n    u = resp.usage\n    print(\"写入缓存:\", u.cache_creation_input_tokens,\n          \"命中缓存:\", u.cache_read_input_tokens,\n          \"未缓存输入:\", u.input_tokens)\n    return resp.content[0].text\n\nask(\"年假有几天？\")     # 首次：写入缓存\nask(\"报销流程是？\")     # 存活期内再次调用：命中缓存",
+   "note": "稳定内容在前、变化内容在后；通过 usage 字段确认是否真的命中。"
+  },
+  "table": {
+   "title": "主流 API 的缓存方式",
+   "head": [
+    "平台",
+    "开启方式",
+    "如何确认命中"
+   ],
+   "rows": [
+    [
+     "Anthropic",
+     "cache_control 显式标记断点",
+     "usage.cache_read_input_tokens"
+    ],
+    [
+     "OpenAI",
+     "达到最小长度自动缓存",
+     "usage 中 cached_tokens 字段"
+    ],
+    [
+     "Gemini",
+     "隐式缓存与显式缓存 API",
+     "usage 中缓存 token 统计"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "显式标记缓存",
+    "pros": "可精确控制缓存内容与时机",
+    "cons": "需要设计断点，写入可能有溢价",
+    "when": "前缀稳定且重复调用频繁"
+   },
+   {
+    "opt": "依赖自动缓存",
+    "pros": "零改动",
+    "cons": "命中依赖提示结构，难以保证",
+    "when": "OpenAI 等自动缓存平台"
+   },
+   {
+    "opt": "不使用缓存",
+    "pros": "无需关心结构",
+    "cons": "长上下文重复付费",
+    "when": "短提示或前缀每次都不同"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在系统提示开头插入当前时间或请求 ID",
+    "fix": "动态内容移到最后，保持前缀逐字节稳定"
+   },
+   {
+    "bad": "工具定义顺序或 JSON 序列化每次不同",
+    "fix": "固定工具列表顺序与序列化方式"
+   },
+   {
+    "bad": "前缀低于最小可缓存长度，以为已缓存",
+    "fix": "查阅官方最小长度要求，并以 usage 字段验证"
+   },
+   {
+    "bad": "请求间隔超过缓存存活时间，始终未命中",
+    "fix": "根据调用频率选择存活时间，或合并请求"
+   }
+  ],
+  "checklist": [
+   "提示结构为稳定在前、变化在后",
+   "前缀中无时间戳等动态内容",
+   "工具定义顺序固定",
+   "监控缓存命中率与成本",
+   "确认满足最小缓存长度",
+   "Agent 多轮对话复用历史前缀"
+  ],
+  "interview": [
+   {
+    "q": "为什么提示词缓存只能匹配前缀？",
+    "a": "Transformer 中每个 token 的 KV 依赖它之前的全部 token；前面任何一个 token 变化，其后所有 KV 都会不同，因此只有从开头起完全一致的部分才能复用。"
+   },
+   {
+    "q": "Agent 场景下如何最大化缓存命中？",
+    "a": "保持系统提示与工具定义固定，对话历史只追加不修改，在最新消息处设置断点使每轮都复用之前的前缀；避免在中途改写早期消息或频繁切换工具集。"
+   },
+   {
+    "q": "提示词缓存和应用层响应缓存有何不同？",
+    "a": "提示词缓存复用的是模型对输入前缀的中间计算，输出仍由模型实时生成，问题不同也能受益；响应缓存直接返回之前的完整答案，只适用于完全相同或语义等价的请求。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Anthropic 文档：Prompt caching",
+    "url": "https://docs.claude.com/en/docs/build-with-claude/prompt-caching"
+   },
+   {
+    "title": "OpenAI 文档：Prompt caching",
+    "url": "https://platform.openai.com/docs/guides/prompt-caching"
+   },
+   {
+    "title": "Gemini API：Context caching",
+    "url": "https://ai.google.dev/gemini-api/docs/caching"
+   }
+  ]
+ },
+ {
+  "slug": "llm-rate-limits-and-cost",
+  "def": "模型限速与成本控制是调用商用 LLM API 时必须处理的两类约束：供应商按账号或组织限制每分钟请求数（RPM）和 token 数（TPM 等），超限返回 429；费用按输入、输出 token 分别计价。它属于 AI 应用的运维与财务治理层，需要重试退避、并发控制、预算告警和用量归因。",
+  "how": [
+   "供应商按使用层级设定限额，常见维度为每分钟请求数、输入 token 数与输出 token 数。",
+   "超限时返回 429 并可能附带 retry-after 头；客户端应退避重试而非立即重发。",
+   "每次响应的 usage 字段给出输入、输出及缓存 token 数，乘以单价即得单次成本。",
+   "降本手段包括：路由到小模型、提示词缓存、限制 max_tokens、批处理接口、精简上下文。",
+   "按用户、功能、环境打标签汇总用量，设置预算阈值与告警，防止失控循环烧钱。"
+  ],
+  "terms": [
+   {
+    "t": "RPM / TPM",
+    "d": "每分钟请求数 / 每分钟 token 数限额。"
+   },
+   {
+    "t": "使用层级 (Usage Tier)",
+    "d": "按累计消费或充值提升限额的分级制度。"
+   },
+   {
+    "t": "批处理接口 (Batch API)",
+    "d": "异步批量提交请求，价格更低但不保证实时。"
+   },
+   {
+    "t": "max_tokens",
+    "d": "单次输出 token 上限，限制成本与长度。"
+   },
+   {
+    "t": "成本归因 (Cost Attribution)",
+    "d": "把 token 消耗分摊到用户、功能或团队。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "限并发、退避与成本记录",
+   "src": "import asyncio\nimport anthropic\n\n# SDK 自带对 429/5xx 的指数退避重试，可调 max_retries\nclient = anthropic.AsyncAnthropic(max_retries=5)\nsem = asyncio.Semaphore(8)            # 控制并发，避免瞬间打满限额\nPRICE_IN, PRICE_OUT = 3.0, 15.0       # 美元/百万 token，示例值，以官网为准\n\nasync def call(prompt: str, feature: str) -> str:\n    async with sem:\n        resp = await client.messages.create(\n            model=\"claude-sonnet-4-5\",\n            max_tokens=512,               # 限制输出长度\n            messages=[{\"role\": \"user\", \"content\": prompt}],\n        )\n    u = resp.usage\n    cost = (u.input_tokens * PRICE_IN + u.output_tokens * PRICE_OUT) / 1e6\n    print(f\"[{feature}] in={u.input_tokens} out={u.output_tokens} ${cost:.5f}\")\n    return resp.content[0].text\n\nasync def main(prompts):\n    try:\n        return await asyncio.gather(*(call(p, \"summarize\") for p in prompts))\n    except anthropic.RateLimitError:\n        print(\"重试后仍被限流：降低并发或申请更高额度\")\n\nasyncio.run(main([\"总结：…\"] * 20))",
+   "note": "信号量限并发，SDK 内置退避，按功能记录 token 与成本；价格为示例需以官网为准。"
+  },
+  "table": {
+   "title": "常见降本手段",
+   "head": [
+    "手段",
+    "作用于",
+    "代价"
+   ],
+   "rows": [
+    [
+     "小模型路由",
+     "单价",
+     "需评测质量"
+    ],
+    [
+     "提示词缓存",
+     "重复输入",
+     "需稳定提示结构"
+    ],
+    [
+     "批处理接口",
+     "单价",
+     "结果延迟数小时内返回"
+    ],
+    [
+     "精简上下文/max_tokens",
+     "token 数量",
+     "可能截断信息"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "客户端排队限速",
+    "pros": "平滑请求，减少 429",
+    "cons": "高峰时延迟增加",
+    "when": "批量任务、后台处理"
+   },
+   {
+    "opt": "批处理接口",
+    "pros": "价格更低，不占实时限额",
+    "cons": "非实时",
+    "when": "离线评测、数据标注"
+   },
+   {
+    "opt": "多供应商分流",
+    "pros": "叠加限额，提高可用性",
+    "cons": "行为差异与集成成本",
+    "when": "大流量、高可用要求"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "Agent 循环无上限，一晚上烧掉大量额度",
+    "fix": "设置步数、token 与金额上限，超限中止并告警"
+   },
+   {
+    "bad": "收到 429 立即并发重试，形成重试风暴",
+    "fix": "遵循 retry-after，指数退避加抖动，并限制并发"
+   },
+   {
+    "bad": "max_tokens 设得极大以防截断",
+    "fix": "按任务设合理上限，必要时检测截断后续写"
+   },
+   {
+    "bad": "所有环境共用一个 API Key，无法归因",
+    "fix": "按环境/功能分 Key 或打标签，分别设预算"
+   }
+  ],
+  "checklist": [
+   "所有调用记录 usage 与成本",
+   "有并发与重试退避策略",
+   "Agent 有步数与金额上限",
+   "按环境/功能隔离 Key",
+   "控制台预算与告警已配置",
+   "离线任务使用批处理接口"
+  ],
+  "interview": [
+   {
+    "q": "429 和 529/503 应如何区别处理？",
+    "a": "429 是你的账号超出限额，应退避、降并发或排队；529（Anthropic 的过载）或 503 表示服务端繁忙，与你的用量无关，同样退避重试，持续时可切换备用模型或供应商。"
+   },
+   {
+    "q": "如何估算一个 AI 功能的成本？",
+    "a": "统计典型请求的输入与输出 token（含系统提示、工具定义、历史和检索内容），乘以单价得单次成本，再乘以预期调用量；Agent 需乘以平均步数。上线后用实际 usage 校准。"
+   },
+   {
+    "q": "为什么输出 token 通常更贵？",
+    "a": "输入可以并行一次处理，输出必须逐 token 自回归生成，每步都要占用计算资源，吞吐更低，因此多数供应商的输出单价高于输入。控制输出长度往往是最直接的降本手段。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Anthropic 文档：Rate limits",
+    "url": "https://docs.claude.com/en/api/rate-limits"
+   },
+   {
+    "title": "OpenAI 文档：Rate limits",
+    "url": "https://platform.openai.com/docs/guides/rate-limits"
+   },
+   {
+    "title": "Anthropic 文档：Message Batches",
+    "url": "https://docs.claude.com/en/docs/build-with-claude/batch-processing"
+   }
+  ]
+ },
+ {
+  "slug": "local-models",
+  "def": "本地模型指下载开放权重的 LLM，在自己的电脑或服务器上用推理引擎运行，不调用云端 API。常用工具有 Ollama、LM Studio、llama.cpp 和 vLLM，多加载 GGUF 等量化格式并提供 OpenAI 兼容接口。它解决数据不出本机、离线可用和长期成本问题，代价是受硬件限制、能力通常弱于顶级闭源模型。",
+  "how": [
+   "从模型库下载开放权重，通常选择已量化的版本以适配显存或内存。",
+   "推理引擎把权重加载到 GPU 显存，放不下的层可卸载到 CPU 内存运行，速度会下降。",
+   "引擎启动本地 HTTP 服务：Ollama 默认监听 11434 端口，LM Studio 本地服务器默认 1234。",
+   "应用通过原生接口或 OpenAI 兼容接口调用，只需把 base_url 指向本地地址。",
+   "根据速度与质量调整模型大小、量化级别、上下文长度与并发设置。"
+  ],
+  "terms": [
+   {
+    "t": "开放权重 (Open Weights)",
+    "d": "公开可下载的模型参数，许可条款各不相同。"
+   },
+   {
+    "t": "GGUF",
+    "d": "llama.cpp 生态使用的单文件模型格式，支持多种量化。"
+   },
+   {
+    "t": "显存 (VRAM)",
+    "d": "GPU 内存，决定能完整加载多大的模型。"
+   },
+   {
+    "t": "层卸载 (Offloading)",
+    "d": "部分层放到 CPU 内存运行，以小显存跑大模型。"
+   },
+   {
+    "t": "tokens/s",
+    "d": "每秒生成 token 数，衡量本地推理速度。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "Ollama 本地运行与调用",
+   "src": "# 拉取并交互运行一个模型（名称以 ollama 模型库为准）\nollama pull llama3.2\nollama run llama3.2 \"用一句话解释什么是索引\"\n\n# 查看已下载模型与正在运行的模型\nollama list\nollama ps\n\n# 原生 REST 接口\ncurl http://localhost:11434/api/chat -d '{\n  \"model\": \"llama3.2\",\n  \"messages\": [{\"role\": \"user\", \"content\": \"你好\"}],\n  \"stream\": false\n}'\n\n# OpenAI 兼容接口：现有 SDK 只需改 base_url\ncurl http://localhost:11434/v1/chat/completions \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\": \"llama3.2\", \"messages\": [{\"role\": \"user\", \"content\": \"hi\"}]}'",
+   "note": "本地服务提供原生与 OpenAI 兼容两种接口，便于把云端代码切换到本地模型。"
+  },
+  "table": {
+   "title": "常见本地推理工具",
+   "head": [
+    "工具",
+    "形态",
+    "特点"
+   ],
+   "rows": [
+    [
+     "Ollama",
+     "命令行 + 后台服务",
+     "一键拉取运行，接口简单"
+    ],
+    [
+     "LM Studio",
+     "桌面图形界面",
+     "可视化选模型，内置本地服务器"
+    ],
+    [
+     "llama.cpp",
+     "C/C++ 推理库",
+     "轻量，GGUF 原生，CPU 友好"
+    ],
+    [
+     "vLLM",
+     "Python 推理服务",
+     "高吞吐，适合 GPU 服务器多并发"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "本地模型",
+    "pros": "数据不出本机，可离线，无按量费",
+    "cons": "受硬件限制，能力与速度有限",
+    "when": "隐私敏感、离线、批量低难度任务"
+   },
+   {
+    "opt": "云端 API",
+    "pros": "能力最强，免运维",
+    "cons": "按量付费，数据需出网",
+    "when": "复杂推理、编码 Agent"
+   },
+   {
+    "opt": "自建 GPU 推理服务",
+    "pros": "团队共享，可控性高",
+    "cons": "硬件与运维成本高",
+    "when": "企业内网、稳定大流量"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "选的模型超过显存，大量卸载到 CPU，慢到不可用",
+    "fix": "按显存选模型大小与量化级别，用 ollama ps 查看加载情况"
+   },
+   {
+    "bad": "把本地服务直接暴露到公网且无鉴权",
+    "fix": "只监听本机或内网，必要时加反向代理鉴权"
+   },
+   {
+    "bad": "默认上下文长度较短，长文档被截断",
+    "fix": "按需调大上下文参数，注意显存随之增加"
+   },
+   {
+    "bad": "忽视模型许可证，直接商用",
+    "fix": "逐个核对模型许可条款与使用限制"
+   }
+  ],
+  "checklist": [
+   "模型大小与显存匹配",
+   "上下文长度按需配置",
+   "本地服务未暴露到公网",
+   "模型许可证已核对",
+   "用自己的评测集对比云端效果",
+   "记录模型版本与量化级别"
+  ],
+  "interview": [
+   {
+    "q": "如何估算本地运行一个模型需要多少显存？",
+    "a": "粗估：参数量 × 每参数字节数，再加 KV 缓存与运行开销。FP16 每参数约 2 字节，4 位量化约 0.5 字节多一点；上下文越长 KV 缓存越大。实际以工具显示的占用为准。"
+   },
+   {
+    "q": "本地模型适合接入编码 Agent 吗？",
+    "a": "可以用于补全、简单问答和隐私敏感的代码，但复杂的多步规划和工具调用通常明显弱于顶级云端模型，且长上下文对显存要求高。常见做法是本地处理简单任务，复杂任务路由到云端。"
+   },
+   {
+    "q": "Ollama 和 vLLM 怎么选？",
+    "a": "个人电脑、单用户、快速试用选 Ollama 或 LM Studio；需要在 GPU 服务器上高并发服务多个用户时选 vLLM 等面向吞吐优化的推理引擎。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Ollama 官网",
+    "url": "https://ollama.com/"
+   },
+   {
+    "title": "Ollama 文档：OpenAI compatibility",
+    "url": "https://docs.ollama.com/api/openai-compatibility"
+   },
+   {
+    "title": "LM Studio 文档",
+    "url": "https://lmstudio.ai/docs"
+   },
+   {
+    "title": "llama.cpp（GitHub）",
+    "url": "https://github.com/ggml-org/llama.cpp"
+   }
+  ]
+ },
+ {
+  "slug": "quantization",
+  "def": "模型量化（Quantization）是把神经网络权重（有时也包括激活值和 KV 缓存）从 FP16/BF16 等高精度格式转换为 INT8、INT4 等低位宽表示的压缩技术。它属于模型推理优化层，用少量精度损失换取更小的显存占用、更低的内存带宽需求和更快的推理速度，是本地运行大模型的关键前提。",
+  "how": [
+   "把一组浮点权重映射到有限个整数级别，并为每组保存缩放因子（scale），必要时还有零点。",
+   "按块或按通道分组量化，组越小精度越高，但额外存储的缩放因子越多。",
+   "训练后量化（PTQ）直接对现成模型量化，可用少量校准数据减少误差，如 GPTQ、AWQ。",
+   "推理时把低位权重按需反量化参与计算，或直接用支持低精度的计算内核。",
+   "量化后在评测集上对比困惑度和下游任务指标，确认精度损失在可接受范围。"
+  ],
+  "terms": [
+   {
+    "t": "训练后量化 (PTQ)",
+    "d": "模型训练完成后再量化，无需重新训练。"
+   },
+   {
+    "t": "量化感知训练 (QAT)",
+    "d": "训练中模拟量化误差，精度通常更好但成本高。"
+   },
+   {
+    "t": "GPTQ",
+    "d": "基于近似二阶信息逐层量化权重的 PTQ 方法。"
+   },
+   {
+    "t": "AWQ",
+    "d": "根据激活重要性保护关键权重的仅权重量化方法。"
+   },
+   {
+    "t": "NF4",
+    "d": "QLoRA 提出的 4 位 NormalFloat 数据类型。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "4 位量化加载模型",
+   "src": "import torch\nfrom transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig\n\nmodel_id = \"Qwen/Qwen2.5-1.5B-Instruct\"\n\nbnb = BitsAndBytesConfig(\n    load_in_4bit=True,                     # 权重以 4 位存储\n    bnb_4bit_quant_type=\"nf4\",             # NormalFloat4\n    bnb_4bit_compute_dtype=torch.bfloat16, # 计算时用 bf16\n    bnb_4bit_use_double_quant=True,        # 对缩放因子再量化\n)\n\ntok = AutoTokenizer.from_pretrained(model_id)\nmodel = AutoModelForCausalLM.from_pretrained(\n    model_id, quantization_config=bnb, device_map=\"auto\"  # 需要 CUDA GPU\n)\nprint(f\"显存占用约 {model.get_memory_footprint() / 1e9:.2f} GB\")\n\ninputs = tok(\"量化的代价是什么？\", return_tensors=\"pt\").to(model.device)\nout = model.generate(**inputs, max_new_tokens=60)\nprint(tok.decode(out[0], skip_special_tokens=True))",
+   "note": "bitsandbytes 在加载时即时量化；本地推理常用的 GGUF 量化则是预先转换好的文件。"
+  },
+  "table": {
+   "title": "精度与显存（权重部分）",
+   "head": [
+    "格式",
+    "每参数约占",
+    "7B 模型权重约",
+    "精度影响"
+   ],
+   "rows": [
+    [
+     "FP16/BF16",
+     "2 字节",
+     "14 GB",
+     "基准"
+    ],
+    [
+     "INT8",
+     "1 字节",
+     "7 GB",
+     "通常很小"
+    ],
+    [
+     "4 位",
+     "约 0.5 字节",
+     "约 4 GB",
+     "小到中等，依方法而定"
+    ],
+    [
+     "2–3 位",
+     "更少",
+     "更少",
+     "明显下降"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "8 位量化",
+    "pros": "精度几乎无损，显存减半",
+    "cons": "压缩比有限",
+    "when": "精度敏感、显存够用"
+   },
+   {
+    "opt": "4 位量化",
+    "pros": "显存约为 FP16 的四分之一",
+    "cons": "部分任务质量下降",
+    "when": "本地运行、消费级 GPU"
+   },
+   {
+    "opt": "更大模型 + 低位量化",
+    "pros": "常优于同显存的小模型全精度",
+    "cons": "极低位时质量崩溃",
+    "when": "显存受限但想要更强能力"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只看显存，不评测量化后的任务效果",
+    "fix": "用自己的评测集对比量化前后指标"
+   },
+   {
+    "bad": "以为量化后显存只取决于权重大小",
+    "fix": "预留 KV 缓存与运行开销，长上下文占用显著"
+   },
+   {
+    "bad": "混用不兼容的量化格式与推理引擎",
+    "fix": "按引擎选择格式：llama.cpp 用 GGUF，GPU 服务常用 AWQ/GPTQ"
+   },
+   {
+    "bad": "对代码、数学等敏感任务用过低位宽",
+    "fix": "这类任务优先 8 位或较高质量的 4 位方案"
+   }
+  ],
+  "checklist": [
+   "量化方法与推理引擎兼容",
+   "量化前后在评测集上对比",
+   "显存预算包含 KV 缓存",
+   "记录量化格式与来源",
+   "长上下文场景单独测试",
+   "确认原模型许可允许再分发"
+  ],
+  "interview": [
+   {
+    "q": "为什么量化能加速推理？",
+    "a": "LLM 解码阶段通常受内存带宽限制，每生成一个 token 都要读取全部权重。位宽降低使读取的数据量成比例减少；若硬件支持低精度计算，算力利用也会提升。"
+   },
+   {
+    "q": "GPTQ 和 AWQ 的区别？",
+    "a": "两者都是仅权重的训练后量化。GPTQ 逐层利用近似二阶信息补偿量化误差；AWQ 根据激活分布找出少量关键权重通道并加以保护。实际效果因模型而异，需评测选择。"
+   },
+   {
+    "q": "KV 缓存也能量化吗？",
+    "a": "可以。长上下文时 KV 缓存可能占用大量显存，将其量化到 8 位甚至更低能支持更长上下文或更多并发，但可能影响长距离信息的准确性，需要评测。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Hugging Face 文档：Quantization",
+    "url": "https://huggingface.co/docs/transformers/main/en/quantization/overview"
+   },
+   {
+    "title": "GPTQ 论文 (arXiv:2210.17323)",
+    "url": "https://arxiv.org/abs/2210.17323"
+   },
+   {
+    "title": "AWQ 论文 (arXiv:2306.00978)",
+    "url": "https://arxiv.org/abs/2306.00978"
+   },
+   {
+    "title": "QLoRA 论文 (arXiv:2305.14314)",
+    "url": "https://arxiv.org/abs/2305.14314"
+   }
+  ]
+ },
+ {
+  "slug": "sandbox",
+  "def": "沙箱（Sandbox）是把代码执行限制在隔离环境中的安全机制，通过限制文件系统、网络、进程权限和资源用量，使不可信代码即使出错或被恶意利用也无法影响宿主系统。在 AI 场景中，它是让 Agent 执行生成代码、运行命令和安装依赖的必要边界，常见实现有容器、gVisor 和微虚拟机。",
+  "how": [
+   "选择隔离边界：语言级、操作系统级（命名空间 + cgroups）、用户态内核或硬件虚拟化。",
+   "文件系统只挂载工作目录，其余只读或不可见，避免读取宿主密钥与配置。",
+   "网络默认禁用，或仅允许访问白名单域名，防止数据外泄与横向访问。",
+   "降低进程权限：非 root 用户、丢弃 Linux capabilities、禁止提权，并设置系统调用过滤。",
+   "限制 CPU、内存、进程数与运行时长，任务结束后立即销毁整个环境。"
+  ],
+  "terms": [
+   {
+    "t": "命名空间 (Namespaces)",
+    "d": "Linux 隔离进程视图的机制，如 PID、网络、挂载。"
+   },
+   {
+    "t": "cgroups",
+    "d": "限制进程组 CPU、内存等资源用量的内核功能。"
+   },
+   {
+    "t": "seccomp",
+    "d": "过滤进程可执行的系统调用。"
+   },
+   {
+    "t": "gVisor",
+    "d": "在用户态实现内核接口的容器运行时，减少内核攻击面。"
+   },
+   {
+    "t": "微虚拟机 (MicroVM)",
+    "d": "如 Firecracker，启动快的轻量虚拟机，隔离强。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "用 Docker 运行不可信代码",
+   "src": "# 在受限容器中运行 AI 生成的脚本（bash 数组里可以写注释）\nopts=(\n  --rm\n  --network none                  # 断网，防止外泄\n  --read-only                     # 根文件系统只读\n  --tmpfs /tmp:rw,size=64m        # 仅提供小块可写临时空间\n  -v \"$PWD/job:/work:ro\"          # 代码只读挂载\n  --user 1000:1000                # 非 root\n  --cap-drop ALL                  # 丢弃全部 capabilities\n  --security-opt no-new-privileges\n  --memory 512m --cpus 1          # 资源上限\n  --pids-limit 128                # 防 fork 炸弹\n)\ndocker run \"${opts[@]}\" python:3.12-slim \\\n  timeout 30 python /work/main.py   # 运行时长上限\n\n# 更强隔离：安装 gVisor 后加 --runtime=runsc",
+   "note": "断网、只读、非 root、去权限、限资源和超时叠加使用；普通容器仍共享宿主内核。"
+  },
+  "table": {
+   "title": "隔离方案对比",
+   "head": [
+    "方案",
+    "隔离强度",
+    "启动开销",
+    "典型用途"
+   ],
+   "rows": [
+    [
+     "普通容器",
+     "中，共享宿主内核",
+     "低",
+     "可信或半可信代码"
+    ],
+    [
+     "gVisor 容器",
+     "较高，拦截系统调用",
+     "低到中",
+     "多租户代码执行"
+    ],
+    [
+     "微虚拟机",
+     "高，独立内核",
+     "中",
+     "云端 Agent 沙箱"
+    ],
+    [
+     "完整虚拟机",
+     "高",
+     "高",
+     "长期隔离环境"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "本机直接运行",
+    "pros": "最快，环境完整",
+    "cons": "Agent 误操作可破坏本机",
+    "when": "仅限只读或低风险命令"
+   },
+   {
+    "opt": "容器沙箱",
+    "pros": "轻量、易集成",
+    "cons": "内核漏洞可能逃逸",
+    "when": "自用或可信度较高的代码"
+   },
+   {
+    "opt": "微虚拟机/托管沙箱",
+    "pros": "强隔离，适合多租户",
+    "cons": "成本和集成复杂度更高",
+    "when": "执行用户或 AI 提交的任意代码"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把 Docker socket 挂进沙箱容器",
+    "fix": "绝不挂载 /var/run/docker.sock，它等同宿主 root 权限"
+   },
+   {
+    "bad": "沙箱里放了真实云凭证或 SSH 密钥",
+    "fix": "沙箱只给最小、短期、可撤销的凭证"
+   },
+   {
+    "bad": "网络完全放开，生成代码可外传数据",
+    "fix": "默认断网，按需白名单放行特定域名"
+   },
+   {
+    "bad": "以 --privileged 运行以解决权限报错",
+    "fix": "定位具体所需权限，单独授予而非全开"
+   }
+  ],
+  "checklist": [
+   "默认断网或域名白名单",
+   "非 root 且丢弃 capabilities",
+   "CPU/内存/进程数/时长受限",
+   "不挂载宿主敏感路径与 socket",
+   "凭证最小化且短期有效",
+   "任务结束后环境销毁"
+  ],
+  "interview": [
+   {
+    "q": "为什么说普通容器不是强安全边界？",
+    "a": "容器与宿主共享同一内核，内核漏洞或错误配置（特权模式、危险挂载、过多 capabilities）都可能导致逃逸。多租户执行不可信代码时，应使用 gVisor 或微虚拟机这类隔离更强的方案。"
+   },
+   {
+    "q": "编码 Agent 的沙箱要限制什么？",
+    "a": "文件系统限制在项目目录、网络限制到必要的包源与 API、禁止访问宿主凭证、命令有超时与资源上限；并配合权限审批，让删除文件、推送代码等不可逆操作需要确认。"
+   },
+   {
+    "q": "沙箱如何防止数据外泄？",
+    "a": "核心是网络出口控制：默认拒绝所有出站连接，只允许访问白名单域名；同时不在沙箱中放置敏感数据与长期凭证，并记录出站请求用于审计。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Docker 文档：Running containers（资源与安全选项）",
+    "url": "https://docs.docker.com/engine/containers/run/"
+   },
+   {
+    "title": "gVisor 文档",
+    "url": "https://gvisor.dev/docs/"
+   },
+   {
+    "title": "Firecracker 官网",
+    "url": "https://firecracker-microvm.github.io/"
+   },
+   {
+    "title": "Claude Code 文档：Sandboxing",
+    "url": "https://docs.claude.com/en/docs/claude-code/sandboxing"
+   }
+  ]
+ },
+ {
+  "slug": "human-in-the-loop",
+  "def": "人在回路（Human-in-the-Loop, HITL）是在自动化或 AI 智能体的执行流程中设置人工检查点的设计模式：在高风险、不可逆或低置信度的步骤暂停，由人批准、修改或拒绝后再继续。它属于 Agent 编排与治理层，在自动化效率和安全可控之间取得平衡，也为后续评测与训练积累人工反馈。",
+  "how": [
+   "按风险给操作分级：只读操作自动执行，写入、付款、对外发送、删除等需要审批。",
+   "执行到检查点时，智能体暂停并保存当前状态，向人展示拟执行的操作、参数和理由。",
+   "人可以批准、修改参数、拒绝或给出反馈，决定通过界面或消息回传。",
+   "系统从保存的检查点恢复执行；若被拒绝，智能体根据反馈调整方案。",
+   "记录每次审批的内容、决定人与时间，用于审计，并据此调整自动化边界。"
+  ],
+  "terms": [
+   {
+    "t": "审批门 (Approval Gate)",
+    "d": "流程中必须获得人工批准才能继续的节点。"
+   },
+   {
+    "t": "中断与恢复 (Interrupt/Resume)",
+    "d": "暂停执行并持久化状态，收到输入后继续。"
+   },
+   {
+    "t": "检查点 (Checkpoint)",
+    "d": "保存的执行状态快照，支持暂停后恢复。"
+   },
+   {
+    "t": "审批疲劳 (Approval Fatigue)",
+    "d": "审批请求过多导致人不看内容就点同意。"
+   },
+   {
+    "t": "权限模式 (Permission Mode)",
+    "d": "编码 Agent 中决定哪些操作需确认的配置。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "按风险分级的审批门",
+   "src": "import json\n\nRISK = {\n    \"read_file\": \"low\",\n    \"search\": \"low\",\n    \"write_file\": \"medium\",\n    \"send_email\": \"high\",\n    \"delete_records\": \"high\",\n}\n\ndef approve(tool: str, args: dict) -> dict | None:\n    \"\"\"返回（可能被修改的）参数；拒绝返回 None\"\"\"\n    print(f\"\\n[待审批] {tool}\\n{json.dumps(args, ensure_ascii=False, indent=2)}\")\n    choice = input(\"批准 y / 拒绝 n / 修改 e: \").strip().lower()\n    if choice == \"y\":\n        return args\n    if choice == \"e\":\n        return json.loads(input(\"输入修改后的 JSON 参数: \"))\n    return None\n\ndef execute(tool: str, args: dict, tools: dict):\n    level = RISK.get(tool, \"high\")          # 未登记的工具按高风险处理\n    if level != \"low\":\n        args = approve(tool, args)\n        if args is None:\n            return {\"status\": \"rejected\", \"tool\": tool}   # 反馈给智能体\n    return tools[tool](**args)",
+   "note": "未知工具默认高风险；人可批准、改参或拒绝，拒绝结果回传给智能体继续规划。"
+  },
+  "table": {
+   "title": "审批粒度选择",
+   "head": [
+    "粒度",
+    "适用场景",
+    "风险"
+   ],
+   "rows": [
+    [
+     "每个操作都审批",
+     "初期试运行、高风险环境",
+     "效率低，审批疲劳"
+    ],
+    [
+     "按风险分级审批",
+     "大多数生产 Agent",
+     "风险分级需持续维护"
+    ],
+    [
+     "计划级审批",
+     "多步任务，先批准整体计划",
+     "执行偏离计划需检测"
+    ],
+    [
+     "事后抽检",
+     "低风险批量任务",
+     "问题发现滞后"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "全自动",
+    "pros": "最快，无需人工",
+    "cons": "错误直接生效",
+    "when": "低风险、可回滚的操作"
+   },
+   {
+    "opt": "关键步骤审批",
+    "pros": "在可控前提下保持效率",
+    "cons": "需要定义风险边界",
+    "when": "涉及资金、外发、删除"
+   },
+   {
+    "opt": "全部人工确认",
+    "pros": "最安全",
+    "cons": "抵消自动化价值，易疲劳",
+    "when": "新上线或高合规场景"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "审批界面只显示「是否继续？」",
+    "fix": "展示具体操作、参数、影响范围与回滚方式"
+   },
+   {
+    "bad": "审批请求太多，用户习惯性全部批准",
+    "fix": "只对高风险操作审批，低风险自动化并事后可查"
+   },
+   {
+    "bad": "暂停后状态只在内存里，进程重启就丢失",
+    "fix": "检查点持久化，支持跨进程恢复"
+   },
+   {
+    "bad": "把模型自报的置信度当作是否需要审批的唯一依据",
+    "fix": "以操作类型与影响范围为主要依据"
+   }
+  ],
+  "checklist": [
+   "操作按风险分级并有默认值",
+   "审批信息包含参数与影响",
+   "执行状态可持久化恢复",
+   "拒绝与修改可反馈给智能体",
+   "审批记录可审计",
+   "定期复盘审批量与误批"
+  ],
+  "interview": [
+   {
+    "q": "如何决定哪些操作需要人工审批？",
+    "a": "看不可逆性、影响范围和外部可见性：删除数据、付款、对外发送、生产变更、权限修改需要审批；只读和可轻易回滚的操作可自动执行。未登记的新工具默认按高风险处理。"
+   },
+   {
+    "q": "如何避免审批疲劳？",
+    "a": "减少低价值审批：按风险分级、批准整体计划而非逐步、允许对某类安全操作设置「本次会话不再询问」；审批界面突出关键差异，让人能快速做出有效判断。"
+   },
+   {
+    "q": "HITL 在编码 Agent 中如何体现？",
+    "a": "编码 Agent 通常有权限模式：读文件自动执行，编辑文件、运行命令或访问网络需确认，也可按规则预先允许或拒绝某些命令。高风险操作如推送代码、删除文件建议始终保留确认。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "LangGraph 文档：Human-in-the-loop",
+    "url": "https://docs.langchain.com/oss/python/langgraph/interrupts"
+   },
+   {
+    "title": "Claude Code 文档：Identity and Access Management（权限）",
+    "url": "https://docs.claude.com/en/docs/claude-code/iam"
+   },
+   {
+    "title": "OWASP LLM06:2025 Excessive Agency",
+    "url": "https://genai.owasp.org/llmrisk/llm062025-excessive-agency/"
+   }
+  ]
+ },
+ {
+  "slug": "agent-skills",
+  "def": "智能体技能（Agent Skills）是 Anthropic 提出的把专业知识打包给智能体的方式：一个技能是包含 SKILL.md（带名称与描述的 YAML 头部和指令正文）及可选脚本、模板、参考资料的文件夹。智能体平时只加载各技能的简短描述，相关时才读取全文和附属文件，即渐进式披露。",
+  "how": [
+   "每个技能是一个目录，核心文件 SKILL.md 以 YAML 头部声明 name 与 description。",
+   "会话启动时只把所有技能的名称和描述放入上下文，常驻开销很小。",
+   "任务与某个技能描述匹配时，智能体读取该 SKILL.md 正文获取详细步骤。",
+   "正文可引用同目录下的其他文件或脚本，智能体按需读取或执行，而非全部加载。",
+   "技能可放在用户级或项目级目录中共享，也可通过 API 上传给托管智能体使用。"
+  ],
+  "terms": [
+   {
+    "t": "SKILL.md",
+    "d": "技能的入口文件，含 YAML 元数据与指令正文。"
+   },
+   {
+    "t": "渐进式披露 (Progressive Disclosure)",
+    "d": "先给摘要，需要时再逐层加载细节。"
+   },
+   {
+    "t": "description 字段",
+    "d": "决定智能体何时使用技能的关键描述。"
+   },
+   {
+    "t": "附属脚本 (Bundled Scripts)",
+    "d": "技能内可执行的代码，用于确定性操作。"
+   },
+   {
+    "t": "MCP",
+    "d": "模型上下文协议，用于连接外部工具与数据，与技能互补。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "一个技能的目录与 SKILL.md",
+   "src": "# 目录结构（例如放在 .claude/skills/ 下）\nrelease-notes/\n├── SKILL.md\n├── template.md          # 发布说明模板\n└── scripts/\n    └── collect_commits.sh\n\n# SKILL.md\n---\nname: release-notes\ndescription: 根据 git 提交生成面向用户的发布说明。当用户要求写\n  release notes、更新日志或版本说明时使用。\n---\n# 生成发布说明\n1. 运行 scripts/collect_commits.sh <上一个标签> 获取提交列表\n2. 按 feat / fix / perf 分组，忽略 chore 与 ci\n3. 用 template.md 的结构输出，语言面向终端用户\n4. 破坏性变更单独列在最前面，并给出迁移步骤",
+   "note": "描述写清何时使用；正文写步骤；确定性的工作交给脚本，模板按需读取。"
+  },
+  "table": {
+   "title": "给智能体扩展能力的方式",
+   "head": [
+    "方式",
+    "提供什么",
+    "加载时机"
+   ],
+   "rows": [
+    [
+     "系统提示/记忆文件",
+     "常驻规则与约定",
+     "每次会话全部加载"
+    ],
+    [
+     "Agent Skills",
+     "专业流程、脚本、资料",
+     "按需加载"
+    ],
+    [
+     "MCP 服务器",
+     "外部工具与数据访问",
+     "工具定义随会话加载"
+    ],
+    [
+     "子代理",
+     "独立上下文的专项执行者",
+     "被委派时启动"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "写进系统提示",
+    "pros": "始终生效，简单",
+    "cons": "内容多时挤占上下文",
+    "when": "少量全局规则"
+   },
+   {
+    "opt": "做成技能",
+    "pros": "按需加载，可附脚本与资料",
+    "cons": "依赖描述触发，可能漏用",
+    "when": "可复用的专业流程"
+   },
+   {
+    "opt": "做成 MCP 工具",
+    "pros": "可访问外部系统与实时数据",
+    "cons": "需运行服务，工具定义占上下文",
+    "when": "需要调用外部 API"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "description 太笼统，技能该用时没被触发",
+    "fix": "写明具体任务、关键词与使用时机"
+   },
+   {
+    "bad": "把所有资料塞进 SKILL.md 正文",
+    "fix": "正文保持精炼，详细资料拆到附属文件按需读取"
+   },
+   {
+    "bad": "直接安装来源不明的技能",
+    "fix": "像审查代码一样审查技能内的指令与脚本"
+   },
+   {
+    "bad": "用自然语言描述本可用脚本完成的确定性步骤",
+    "fix": "格式转换、校验等交给附属脚本执行"
+   }
+  ],
+  "checklist": [
+   "name 与 description 清晰具体",
+   "正文为可执行步骤",
+   "大块资料拆为附属文件",
+   "脚本经过审查与测试",
+   "第三方技能已安全审查",
+   "实际任务中验证会被触发"
+  ],
+  "interview": [
+   {
+    "q": "Skills 为什么能节省上下文？",
+    "a": "采用渐进式披露：常驻上下文的只有每个技能的名称与描述；正文仅在任务相关时读取，附属文件和脚本更是在需要时才访问。因此可以安装很多技能而几乎不增加基础开销。"
+   },
+   {
+    "q": "Skills 和 MCP 是什么关系？",
+    "a": "互补。MCP 提供连接外部系统的工具与数据通道；Skills 提供如何完成某类任务的知识与流程，可以指导智能体如何组合使用这些 MCP 工具。"
+   },
+   {
+    "q": "技能有哪些安全风险？",
+    "a": "技能包含指令和可执行脚本，恶意技能可能诱导智能体泄露数据或执行危险命令。应只使用可信来源的技能，审查其内容与脚本，并在沙箱与权限控制下运行。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Anthropic 文档：Agent Skills overview",
+    "url": "https://docs.claude.com/en/docs/agents-and-tools/agent-skills/overview"
+   },
+   {
+    "title": "Anthropic：Equipping agents for the real world with Agent Skills",
+    "url": "https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills"
+   },
+   {
+    "title": "anthropics/skills（GitHub 示例库）",
+    "url": "https://github.com/anthropics/skills"
+   }
+  ]
+ },
+ {
+  "slug": "ssrf",
+  "def": "服务端请求伪造（Server-Side Request Forgery, SSRF）是攻击者诱使服务器向其指定的地址发起请求的漏洞，常见于 URL 预览、Webhook 配置、图片抓取等功能。由于请求来自服务器内部，攻击者可借此访问内网服务、云元数据接口获取凭证。它被列入 OWASP Top 10（2021 A10）。",
+  "how": [
+   "应用接收用户提供的 URL，由服务端代为请求，例如抓取网页生成预览。",
+   "攻击者提交指向内部地址的 URL，如 127.0.0.1、10.0.0.0/8 或云元数据地址 169.254.169.254。",
+   "服务器位于内网可信区，请求能到达外部无法访问的管理接口或数据库 HTTP 端口。",
+   "绕过手段包括重定向到内网、DNS 重绑定、十进制或 IPv6 等 IP 表示法。",
+   "响应若被回显给攻击者，就可直接读取内部数据，即使不回显也可用于探测端口。"
+  ],
+  "terms": [
+   {
+    "t": "云元数据服务 (IMDS)",
+    "d": "169.254.169.254 上提供实例信息与临时凭证的接口。"
+   },
+   {
+    "t": "IMDSv2",
+    "d": "AWS 要求先 PUT 获取会话令牌的元数据版本，可缓解 SSRF。"
+   },
+   {
+    "t": "DNS 重绑定 (DNS Rebinding)",
+    "d": "校验时解析为公网 IP，请求时解析为内网 IP。"
+   },
+   {
+    "t": "盲 SSRF (Blind SSRF)",
+    "d": "看不到响应内容，但可通过时间或副作用探测。"
+   },
+   {
+    "t": "出口过滤 (Egress Filtering)",
+    "d": "在网络层限制服务器可访问的目标地址。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "解析后校验并固定 IP",
+   "src": "import ipaddress, socket\nfrom urllib.parse import urlparse\n\ndef resolve_public_ip(url: str) -> tuple[str, str]:\n    u = urlparse(url)\n    if u.scheme not in (\"http\", \"https\") or not u.hostname:\n        raise ValueError(\"只允许 http/https\")\n    port = u.port or (443 if u.scheme == \"https\" else 80)\n    infos = socket.getaddrinfo(u.hostname, port, proto=socket.IPPROTO_TCP)\n    for info in infos:\n        ip = ipaddress.ip_address(info[4][0])\n        if not ip.is_global:   # 排除私有、回环、链路本地(含 169.254.x.x)、保留等\n            raise ValueError(f\"禁止访问内部地址 {ip}\")\n    return u.hostname, infos[0][4][0]\n\n# 用法要点：\n# 1. 用返回的 IP 发起连接（并设置 Host 头/SNI），避免 DNS 重绑定\n# 2. 禁止自动跟随重定向；如需跟随，每一跳重新校验\n# 3. 设置超时与响应大小上限\nhost, ip = resolve_public_ip(\"https://example.com/a.png\")\nprint(host, ip)",
+   "note": "按解析结果判断而非字符串匹配；连接时使用已校验的 IP，并对重定向逐跳校验。"
+  },
+  "table": {
+   "title": "常见绕过与防御",
+   "head": [
+    "绕过手法",
+    "示例",
+    "防御"
+   ],
+   "rows": [
+    [
+     "IP 变体表示",
+     "2130706433、0x7f000001",
+     "解析为 IP 对象后再判断"
+    ],
+    [
+     "重定向",
+     "公网 URL 302 到内网",
+     "禁用或逐跳校验重定向"
+    ],
+    [
+     "DNS 重绑定",
+     "两次解析结果不同",
+     "解析一次并固定连接 IP"
+    ],
+    [
+     "非 HTTP 协议",
+     "file://、gopher://",
+     "只允许 http/https"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "域名白名单",
+    "pros": "最安全，规则简单",
+    "cons": "灵活性差",
+    "when": "只需访问少数已知服务"
+   },
+   {
+    "opt": "解析后拒绝内网地址",
+    "pros": "支持任意公网 URL",
+    "cons": "实现细节多，易遗漏",
+    "when": "URL 预览、通用抓取"
+   },
+   {
+    "opt": "隔离的出站代理",
+    "pros": "网络层兜底，集中管控",
+    "cons": "需额外部署",
+    "when": "抓取量大或多服务共用"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用字符串判断是否包含 localhost 或 127.",
+    "fix": "解析为 IP 后用 ipaddress 判断地址类别"
+   },
+   {
+    "bad": "校验了第一个 URL，却让 HTTP 库自动跟随重定向",
+    "fix": "关闭自动重定向，或每一跳重新校验"
+   },
+   {
+    "bad": "云实例仍允许 IMDSv1",
+    "fix": "强制使用 IMDSv2 并限制跳数"
+   },
+   {
+    "bad": "AI Agent 的 fetch 工具可访问任意地址",
+    "fix": "Agent 抓取工具同样经过出站代理与内网拦截"
+   }
+  ],
+  "checklist": [
+   "只允许 http/https 协议",
+   "解析后拦截非公网地址",
+   "重定向逐跳校验或禁用",
+   "连接使用已校验的 IP",
+   "云元数据强制 IMDSv2",
+   "网络层有出口过滤"
+  ],
+  "interview": [
+   {
+    "q": "为什么 SSRF 在云环境中危害更大？",
+    "a": "云实例可通过链路本地地址访问元数据服务，获取实例角色的临时凭证。攻击者借 SSRF 读取这些凭证后，可直接调用云 API 访问存储、数据库等资源，从一个 Web 漏洞扩大为整个云账号的入侵。"
+   },
+   {
+    "q": "如何防御 DNS 重绑定？",
+    "a": "只解析一次域名，对所有解析结果做校验，然后直接用校验通过的 IP 建立连接，并通过 Host 头与 SNI 传递原域名；避免「先校验域名、再让 HTTP 库重新解析」的两段式流程。"
+   },
+   {
+    "q": "只靠应用层校验够吗？",
+    "a": "不够，应纵深防御：应用层校验 URL 与 IP，网络层把抓取服务放在隔离子网并限制出口，云上启用 IMDSv2，服务以最小权限运行，这样单点疏漏不会直接导致凭证泄露。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP Top 10 2021 A10: SSRF",
+    "url": "https://owasp.org/Top10/A10_2021-Server-Side_Request_Forgery_%28SSRF%29/"
+   },
+   {
+    "title": "OWASP SSRF Prevention Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html"
+   },
+   {
+    "title": "AWS 文档：Use IMDSv2",
+    "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-service.html"
+   }
+  ]
+ },
+ {
+  "slug": "path-traversal",
+  "def": "路径遍历（Path Traversal / Directory Traversal，CWE-22）是攻击者利用 ../、绝对路径或编码变体，让应用访问预期目录之外文件的漏洞，常见于文件下载、模板加载、上传保存和压缩包解压。它可导致读取配置与密钥、覆盖程序文件，进而远程代码执行。根因是把用户输入直接拼进文件路径。",
+  "how": [
+   "应用根据用户输入构造文件路径，如 base_dir + \"/\" + filename。",
+   "攻击者提交 ../../etc/passwd 或绝对路径，使拼接结果跳出基准目录。",
+   "绕过简单过滤的变体包括 URL 编码 %2e%2e%2f、双重编码、反斜杠和符号链接。",
+   "解压时条目名包含 ../ 可把文件写到任意位置，即 Zip Slip。",
+   "正确防御是先规范化为绝对真实路径，再确认它仍位于基准目录之内。"
+  ],
+  "terms": [
+   {
+    "t": "CWE-22",
+    "d": "对受限目录的路径名限制不当，即路径遍历。"
+   },
+   {
+    "t": "规范化 (Canonicalization)",
+    "d": "解析 ..、符号链接等，得到唯一真实路径。"
+   },
+   {
+    "t": "Zip Slip",
+    "d": "压缩包条目名含 ../，解压时写出目标目录。"
+   },
+   {
+    "t": "符号链接攻击 (Symlink Attack)",
+    "d": "借助指向外部的链接绕过目录检查。"
+   },
+   {
+    "t": "间接引用 (Indirect Reference)",
+    "d": "用 ID 映射文件而不让用户直接给路径。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "安全地拼接用户文件路径",
+   "src": "from pathlib import Path\nimport zipfile\n\nBASE = Path(\"/srv/app/uploads\").resolve()\n\ndef safe_path(user_name: str) -> Path:\n    # resolve() 会处理 ..、绝对路径与符号链接\n    p = (BASE / user_name).resolve()\n    if not p.is_relative_to(BASE):          # Python 3.9+\n        raise PermissionError(\"非法路径\")\n    return p\n\ndef safe_extract(zip_path: str, dest: Path):\n    dest = dest.resolve()\n    with zipfile.ZipFile(zip_path) as z:\n        for name in z.namelist():\n            target = (dest / name).resolve()\n            if not target.is_relative_to(dest):   # 防 Zip Slip\n                raise PermissionError(f\"恶意条目: {name}\")\n        z.extractall(dest)\n\nprint(safe_path(\"report.pdf\"))\n# safe_path(\"../../etc/passwd\")  -> PermissionError",
+   "note": "先 resolve 规范化再判断是否仍在基准目录内；解压前逐个检查条目。"
+  },
+  "table": {
+   "title": "常见攻击载荷",
+   "head": [
+    "载荷",
+    "目的",
+    "防御要点"
+   ],
+   "rows": [
+    [
+     "../../etc/passwd",
+     "跳出目录读取系统文件",
+     "规范化后比对前缀目录"
+    ],
+    [
+     "/etc/passwd",
+     "绝对路径覆盖拼接",
+     "拒绝绝对路径或规范化检查"
+    ],
+    [
+     "..%2f..%2f",
+     "编码绕过过滤",
+     "先解码再规范化，勿黑名单"
+    ],
+    [
+     "指向外部的符号链接",
+     "绕过字符串检查",
+     "解析真实路径后检查"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "规范化 + 目录前缀校验",
+    "pros": "通用，支持用户指定文件名",
+    "cons": "需正确处理平台差异",
+    "when": "必须接受文件名输入"
+   },
+   {
+    "opt": "ID 映射到文件",
+    "pros": "用户完全接触不到路径",
+    "cons": "需维护映射表",
+    "when": "下载、附件等业务场景"
+   },
+   {
+    "opt": "文件名白名单正则",
+    "pros": "简单直观",
+    "cons": "限制字符集，可能误拒",
+    "when": "文件名格式固定"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用 replace(\"../\", \"\") 过滤",
+    "fix": "....// 等变体可绕过；改为规范化后校验"
+   },
+   {
+    "bad": "用字符串 startswith 比较路径前缀",
+    "fix": "/srv/app2 会匹配 /srv/app；用 is_relative_to 等路径语义判断"
+   },
+   {
+    "bad": "上传文件直接使用客户端提供的文件名保存",
+    "fix": "服务端生成随机文件名，原名只存数据库"
+   },
+   {
+    "bad": "Agent 文件工具未限制工作目录",
+    "fix": "Agent 读写工具同样做目录限制并在沙箱中运行"
+   }
+  ],
+  "checklist": [
+   "用户输入不直接拼接路径",
+   "规范化后校验在基准目录内",
+   "解压前检查每个条目",
+   "上传文件使用服务端生成名",
+   "进程以最小文件权限运行",
+   "有 ../ 与编码变体的测试用例"
+  ],
+  "interview": [
+   {
+    "q": "为什么黑名单过滤 ../ 不可靠？",
+    "a": "存在大量变体：URL 编码、双重编码、Unicode 形式、Windows 反斜杠、嵌套如 ....//、绝对路径和符号链接。正确方法是把路径规范化为真实绝对路径，再判断其是否位于允许的目录内。"
+   },
+   {
+    "q": "路径遍历如何升级为代码执行？",
+    "a": "若能写文件，攻击者可覆盖应用代码、模板、启动脚本、cron 配置或 SSH authorized_keys，从而执行任意代码；即使只能读，也可能读到密钥和配置，再进一步入侵。"
+   },
+   {
+    "q": "检查和使用之间有什么竞态风险？",
+    "a": "检查路径后、打开文件前，攻击者可能把文件替换为符号链接（TOCTOU）。可在打开时使用不跟随符号链接的选项，或在受控目录中操作，并限制进程文件权限。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP：Path Traversal",
+    "url": "https://owasp.org/www-community/attacks/Path_Traversal"
+   },
+   {
+    "title": "CWE-22",
+    "url": "https://cwe.mitre.org/data/definitions/22.html"
+   },
+   {
+    "title": "Python 文档：pathlib",
+    "url": "https://docs.python.org/3/library/pathlib.html"
+   }
+  ]
+ },
+ {
+  "slug": "mass-assignment",
+  "def": "批量赋值漏洞（Mass Assignment，CWE-915）指框架把请求字段自动绑定到数据模型时未限制可写字段，攻击者额外提交 role、is_admin 等敏感属性即可改写它们。OWASP API Security Top 10（2023）将其归入 API3「对象属性级授权失效」。根因是信任客户端提交的整个对象。",
+  "how": [
+   "接口把请求 JSON 直接展开到模型，例如 User(**body) 或 user.update(body)。",
+   "正常客户端只发送 name、avatar 等字段，界面上看不到敏感字段。",
+   "攻击者通过抓包或阅读前端代码、文档猜测字段名，额外加入 is_admin: true。",
+   "框架把所有名称匹配的字段写入数据库，权限、余额或资源归属因此被篡改。",
+   "防御核心是为每个接口定义显式的可写字段白名单（DTO / Schema），其余拒绝或忽略。"
+  ],
+  "terms": [
+   {
+    "t": "CWE-915",
+    "d": "对动态确定的对象属性修改控制不当。"
+   },
+   {
+    "t": "DTO (Data Transfer Object)",
+    "d": "专为接口输入输出定义的数据结构。"
+   },
+   {
+    "t": "强参数 (Strong Parameters)",
+    "d": "Rails 中用 permit 声明允许字段的机制。"
+   },
+   {
+    "t": "BOPLA",
+    "d": "对象属性级授权失效，OWASP API3:2023。"
+   },
+   {
+    "t": "过度数据暴露",
+    "d": "响应返回了不该给客户端的字段，与批量赋值同属 BOPLA。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "用 Pydantic 限定可写字段",
+   "src": "from fastapi import FastAPI, Depends\nfrom pydantic import BaseModel, ConfigDict, Field\n\napp = FastAPI()\n\nclass UserUpdate(BaseModel):\n    model_config = ConfigDict(extra=\"forbid\")   # 多余字段直接 422\n    name: str | None = Field(default=None, max_length=50)\n    avatar_url: str | None = None\n    # 不包含 role、is_admin、balance 等字段\n\nclass AdminUserUpdate(UserUpdate):\n    role: str | None = None                      # 仅管理员接口可改\n\ndef current_user():\n    ...  # 从会话或 token 取当前用户（省略）\n\n@app.patch(\"/me\")\ndef update_me(body: UserUpdate, user=Depends(current_user)):\n    changes = body.model_dump(exclude_unset=True)  # 只取客户端实际提交的字段\n    for k, v in changes.items():\n        setattr(user, k, v)\n    # db.commit()\n    return {\"updated\": list(changes)}",
+   "note": "按接口定义输入模型，extra=forbid 拒绝多余字段；管理员可改字段放在独立模型。"
+  },
+  "table": {
+   "title": "各框架的防护方式",
+   "head": [
+    "框架",
+    "风险写法",
+    "安全写法"
+   ],
+   "rows": [
+    [
+     "FastAPI/Pydantic",
+     "直接用 ORM 模型接收",
+     "独立输入模型 + extra=forbid"
+    ],
+    [
+     "Rails",
+     "User.new(params[:user])",
+     "params.require(:user).permit(:name)"
+    ],
+    [
+     "Django REST",
+     "fields = \"__all__\"",
+     "显式 fields 与 read_only_fields"
+    ],
+    [
+     "Express + ORM",
+     "Model.update(req.body)",
+     "按白名单挑选字段"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "白名单输入模型",
+    "pros": "明确、可审查，最安全",
+    "cons": "每个接口要写模型",
+    "when": "默认推荐"
+   },
+   {
+    "opt": "黑名单排除敏感字段",
+    "pros": "写法少",
+    "cons": "新增敏感字段时容易漏",
+    "when": "不推荐"
+   },
+   {
+    "opt": "多余字段静默忽略",
+    "pros": "兼容旧客户端",
+    "cons": "攻击尝试不可见",
+    "when": "过渡期，并记录日志"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "直接用 ORM 模型作为请求体类型",
+    "fix": "接口输入使用独立的 DTO，与数据库模型分离"
+   },
+   {
+    "bad": "前端隐藏了字段就以为用户改不了",
+    "fix": "服务端白名单才是边界，前端隐藏不构成防护"
+   },
+   {
+    "bad": "嵌套对象未校验，通过关联字段修改 owner_id",
+    "fix": "嵌套结构也逐层定义可写字段"
+   },
+   {
+    "bad": "AI 生成的 CRUD 代码直接 update(**body)",
+    "fix": "审查生成代码，要求按接口定义输入模型"
+   }
+  ],
+  "checklist": [
+   "每个写接口有独立输入模型",
+   "敏感字段不在普通用户模型中",
+   "多余字段被拒绝或记录",
+   "嵌套对象同样受限",
+   "有提交 is_admin 等字段的测试",
+   "响应模型同样白名单输出"
+  ],
+  "interview": [
+   {
+    "q": "为什么白名单优于黑名单？",
+    "a": "黑名单要求列出所有敏感字段，模型新增字段（如 credit_limit）时很容易忘记同步，默认就是可写的。白名单默认拒绝，只有明确允许的字段可写，新增字段不会自动暴露。"
+   },
+   {
+    "q": "批量赋值和越权访问有什么区别？",
+    "a": "越权访问（BOLA）是能操作不属于自己的对象，例如改别人的订单；批量赋值是在自己有权操作的对象上，修改了不应允许修改的属性，例如把自己的角色改成管理员。两者需要分别防护。"
+   },
+   {
+    "q": "如何在代码审查中发现这类问题？",
+    "a": "搜索直接把请求体展开到模型或 update 的写法，检查序列化器是否使用全部字段，确认输入模型不含权限、金额、归属、状态等敏感字段，并补充提交这些字段的负向测试。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP Mass Assignment Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Mass_Assignment_Cheat_Sheet.html"
+   },
+   {
+    "title": "OWASP API3:2023 Broken Object Property Level Authorization",
+    "url": "https://owasp.org/API-Security/editions/2023/en/0xa3-broken-object-property-level-authorization/"
+   },
+   {
+    "title": "CWE-915",
+    "url": "https://cwe.mitre.org/data/definitions/915.html"
+   }
+  ]
+ },
+ {
+  "slug": "clickjacking",
+  "def": "点击劫持（Clickjacking / UI Redressing）是攻击者把目标网站嵌入透明或伪装的 iframe，覆盖在诱饵页面上，诱导用户在不知情时点击目标站的按钮，完成授权、转账、修改设置等操作。由于请求带着用户的真实登录态，服务端难以区分。防御核心是由目标站声明自己不允许被他站嵌入。",
+  "how": [
+   "攻击者在自己的页面中用 iframe 加载目标站的敏感操作页，用户此时已登录目标站。",
+   "通过 CSS 把 iframe 设为透明并精确定位，使目标按钮正好位于诱饵按钮下方。",
+   "用户以为点击的是诱饵内容，实际点击落在 iframe 中的目标站按钮上。",
+   "浏览器自动携带目标站 Cookie（取决于 SameSite 设置），操作以用户身份执行。",
+   "防御：响应头 CSP frame-ancestors 或 X-Frame-Options 让浏览器拒绝跨站嵌入。"
+  ],
+  "terms": [
+   {
+    "t": "UI 伪装 (UI Redressing)",
+    "d": "通过叠层与透明度伪装界面诱导交互。"
+   },
+   {
+    "t": "frame-ancestors",
+    "d": "CSP 指令，规定哪些来源可以嵌入本页面。"
+   },
+   {
+    "t": "X-Frame-Options",
+    "d": "RFC 7034 描述的旧式响应头，取值 DENY 或 SAMEORIGIN。"
+   },
+   {
+    "t": "SameSite Cookie",
+    "d": "限制跨站请求携带 Cookie，可降低嵌入页的登录态。"
+   },
+   {
+    "t": "防框架脚本 (Frame Busting)",
+    "d": "用 JS 检测并跳出框架的旧方法，易被绕过。"
+   }
+  ],
+  "code": {
+   "lang": "http",
+   "title": "禁止被跨站嵌入的响应头",
+   "src": "# 方案一：完全禁止任何站点（包括自己）嵌入\nHTTP/1.1 200 OK\nContent-Security-Policy: frame-ancestors 'none'\nX-Frame-Options: DENY\n\n# 方案二：只允许同源页面嵌入\nHTTP/1.1 200 OK\nContent-Security-Policy: frame-ancestors 'self'\nX-Frame-Options: SAMEORIGIN\n\n# 方案三：允许指定合作方嵌入（X-Frame-Options 无法表达，只用 CSP）\nHTTP/1.1 200 OK\nContent-Security-Policy: frame-ancestors 'self' https://partner.example.com\n\n# 同时设置会话 Cookie 的 SameSite，减少被嵌入时携带登录态\nSet-Cookie: session=abc123; Secure; HttpOnly; SameSite=Lax",
+   "note": "frame-ancestors 是现代标准，X-Frame-Options 兼容旧浏览器；两者并存时以 CSP 为准。"
+  },
+  "table": {
+   "title": "防御手段对比",
+   "head": [
+    "手段",
+    "粒度",
+    "说明"
+   ],
+   "rows": [
+    [
+     "CSP frame-ancestors",
+     "可列多个来源",
+     "推荐，现代浏览器支持"
+    ],
+    [
+     "X-Frame-Options",
+     "DENY / SAMEORIGIN",
+     "兼容旧浏览器，不能列多个来源"
+    ],
+    [
+     "SameSite Cookie",
+     "Cookie 级",
+     "降低风险，不能替代上两者"
+    ],
+    [
+     "敏感操作二次确认",
+     "业务级",
+     "密码、验证码等打断一键点击"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "frame-ancestors 'none'",
+    "pros": "最安全，配置简单",
+    "cons": "自身也无法嵌入",
+    "when": "不需要被嵌入的应用"
+   },
+   {
+    "opt": "frame-ancestors 'self'",
+    "pros": "允许同源内嵌",
+    "cons": "同源页面若有漏洞仍可被利用",
+    "when": "站内有 iframe 布局"
+   },
+   {
+    "opt": "允许指定外部来源",
+    "pros": "支持合作方嵌入",
+    "cons": "信任范围扩大",
+    "when": "嵌入式组件、支付插件"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只在首页加防护头，敏感操作页漏掉",
+    "fix": "在网关或中间件全局设置，例外页面单独放开"
+   },
+   {
+    "bad": "依赖 JS frame busting 脚本",
+    "fix": "使用响应头，脚本可被 sandbox 属性等手段禁用"
+   },
+   {
+    "bad": "用 X-Frame-Options ALLOW-FROM 指定来源",
+    "fix": "ALLOW-FROM 已不被现代浏览器支持，改用 frame-ancestors"
+   },
+   {
+    "bad": "在 meta 标签里写 frame-ancestors",
+    "fix": "该指令在 meta 中无效，必须通过 HTTP 响应头下发"
+   }
+  ],
+  "checklist": [
+   "所有 HTML 响应带 frame-ancestors",
+   "同时设置 X-Frame-Options 兼容",
+   "例外嵌入来源已逐个评审",
+   "会话 Cookie 设置 SameSite",
+   "高风险操作有二次确认",
+   "用扫描工具验证响应头生效"
+  ],
+  "interview": [
+   {
+    "q": "X-Frame-Options 和 frame-ancestors 怎么选？",
+    "a": "优先 CSP frame-ancestors，它可列多个来源并支持通配，是标准方案；X-Frame-Options 只有 DENY 与 SAMEORIGIN，作为旧浏览器兼容一起下发。两者同时存在时，支持 CSP 的浏览器以 frame-ancestors 为准。"
+   },
+   {
+    "q": "API 接口需要防点击劫持吗？",
+    "a": "点击劫持针对被渲染并可交互的页面，纯 JSON API 不会被用户直接点击，风险很低；但统一下发防护头成本几乎为零，很多团队在网关全局设置。"
+   },
+   {
+    "q": "SameSite 能完全防御点击劫持吗？",
+    "a": "不能。SameSite=Lax/Strict 使跨站 iframe 中通常不携带 Cookie，能大幅降低风险，但依赖浏览器行为与 Cookie 配置，且对同站子域无效。应与 frame-ancestors 一起使用。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP Clickjacking Defense Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Clickjacking_Defense_Cheat_Sheet.html"
+   },
+   {
+    "title": "MDN：CSP frame-ancestors",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/frame-ancestors"
+   },
+   {
+    "title": "RFC 7034: HTTP Header Field X-Frame-Options",
+    "url": "https://www.rfc-editor.org/rfc/rfc7034"
+   }
+  ]
+ },
+ {
+  "slug": "content-security-policy",
+  "def": "内容安全策略（Content Security Policy, CSP）是服务器通过响应头告诉浏览器页面允许从哪些来源加载和执行脚本、样式、图片、连接与框架的声明式安全机制，由 W3C 规范定义。它是防御跨站脚本（XSS）与数据注入的纵深防线：即使攻击者注入了脚本，浏览器也会拒绝执行未授权的代码。",
+  "how": [
+   "服务器下发 Content-Security-Policy 头，由若干指令组成，如 script-src、style-src、connect-src。",
+   "浏览器加载每个资源或执行脚本前，按对应指令检查来源，不匹配即阻止并在控制台报错。",
+   "严格 CSP 推荐用每次请求随机生成的 nonce 或脚本哈希授权内联脚本，而非域名白名单。",
+   "'strict-dynamic' 允许已授权脚本动态加载的子脚本，简化第三方库的配置。",
+   "先用 Content-Security-Policy-Report-Only 只报告不拦截，收集违规后再切换为强制模式。"
+  ],
+  "terms": [
+   {
+    "t": "nonce",
+    "d": "每次响应随机生成的值，只有带匹配 nonce 的脚本才能执行。"
+   },
+   {
+    "t": "'strict-dynamic'",
+    "d": "信任由已授权脚本加载的脚本，忽略域名白名单。"
+   },
+   {
+    "t": "'unsafe-inline'",
+    "d": "允许所有内联脚本，基本抵消 CSP 防 XSS 的作用。"
+   },
+   {
+    "t": "Report-Only 模式",
+    "d": "只上报违规不拦截，用于灰度上线。"
+   },
+   {
+    "t": "Trusted Types",
+    "d": "CSP 扩展，限制危险 DOM API 只接受经过处理的值。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "Express 下发 nonce CSP",
+   "src": "const express = require(\"express\");\nconst crypto = require(\"crypto\");\nconst app = express();\n\napp.use((req, res, next) => {\n  // 每个响应生成新的随机 nonce\n  res.locals.nonce = crypto.randomBytes(16).toString(\"base64\");\n  res.setHeader(\"Content-Security-Policy\", [\n    `script-src 'nonce-${res.locals.nonce}' 'strict-dynamic'`,\n    \"object-src 'none'\",\n    \"base-uri 'none'\",\n    \"frame-ancestors 'none'\",\n  ].join(\"; \"));\n  next();\n});\n\napp.get(\"/\", (req, res) => {\n  // 只有带正确 nonce 的脚本能执行，注入的 <script> 会被拦截\n  res.send(`<!doctype html>\n<script nonce=\"${res.locals.nonce}\" src=\"/app.js\"></script>\n<script nonce=\"${res.locals.nonce}\">console.log(\"ok\")</script>`);\n});\n\napp.listen(3000);",
+   "note": "nonce 每次随机且不可预测；strict-dynamic 让 app.js 动态加载的脚本也能运行。"
+  },
+  "table": {
+   "title": "关键指令",
+   "head": [
+    "指令",
+    "控制什么",
+    "建议值"
+   ],
+   "rows": [
+    [
+     "script-src",
+     "脚本来源与内联脚本",
+     "nonce/哈希 + 'strict-dynamic'"
+    ],
+    [
+     "object-src",
+     "插件内容（object/embed）",
+     "'none'"
+    ],
+    [
+     "base-uri",
+     "<base> 标签可设的地址",
+     "'none' 或 'self'"
+    ],
+    [
+     "connect-src",
+     "fetch/XHR/WebSocket 目标",
+     "按需列出 API 域名"
+    ],
+    [
+     "frame-ancestors",
+     "谁可以嵌入本页",
+     "'none' 或 'self'"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "域名白名单 CSP",
+    "pros": "直观，易理解",
+    "cons": "白名单域上的 JSONP/旧库常可绕过",
+    "when": "不推荐单独使用"
+   },
+   {
+    "opt": "nonce + strict-dynamic",
+    "pros": "防护强，维护成本较低",
+    "cons": "需服务端渲染时注入 nonce",
+    "when": "服务端渲染的应用"
+   },
+   {
+    "opt": "哈希 CSP",
+    "pros": "适合静态页面，无需服务端",
+    "cons": "脚本内容变更需更新哈希",
+    "when": "静态站点、内联脚本固定"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "为了让页面正常加上 'unsafe-inline'",
+    "fix": "改用 nonce 或哈希；内联事件处理器重构为 addEventListener"
+   },
+   {
+    "bad": "nonce 固定写死或可预测",
+    "fix": "每个响应用安全随机数生成新 nonce"
+   },
+   {
+    "bad": "直接上线强制模式，页面大面积失效",
+    "fix": "先 Report-Only 收集违规报告，修复后再强制"
+   },
+   {
+    "bad": "CDN 缓存了带 nonce 的 HTML",
+    "fix": "带 nonce 的页面不可被共享缓存，或改用哈希方案"
+   }
+  ],
+  "checklist": [
+   "不含 'unsafe-inline' 与 'unsafe-eval'",
+   "nonce 每次响应随机生成",
+   "object-src 与 base-uri 已限制",
+   "配置了违规上报端点",
+   "先 Report-Only 再强制",
+   "用 CSP Evaluator 等工具检查"
+  ],
+  "interview": [
+   {
+    "q": "为什么域名白名单式 CSP 容易被绕过？",
+    "a": "白名单中的大型 CDN 或第三方域常托管 JSONP 接口或旧版 AngularJS 等可被利用的脚本，攻击者借助它们执行任意代码。Google 的研究表明大量白名单策略可被绕过，因此推荐 nonce/哈希加 strict-dynamic。"
+   },
+   {
+    "q": "有了 CSP 还需要做输出转义吗？",
+    "a": "需要。CSP 是纵深防御，用于在 XSS 已发生时阻止执行；根本防御仍是上下文相关的输出编码、使用安全的模板与 API。CSP 配置失误或浏览器差异时，转义仍是第一道防线。"
+   },
+   {
+    "q": "AI 生成的前端代码常与 CSP 冲突在哪？",
+    "a": "常见是内联 onclick 处理器、内联 style、eval 或 new Function、动态插入 script。应要求生成代码使用 addEventListener、外部或带 nonce 的脚本，并在 Report-Only 模式下验证。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "MDN：Content Security Policy (CSP)",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP"
+   },
+   {
+    "title": "W3C：Content Security Policy Level 3",
+    "url": "https://www.w3.org/TR/CSP3/"
+   },
+   {
+    "title": "web.dev：Mitigate XSS with a strict CSP",
+    "url": "https://web.dev/articles/strict-csp"
+   },
+   {
+    "title": "OWASP CSP Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html"
+   }
+  ]
+ },
+ {
+  "slug": "security-headers",
+  "def": "安全响应头（Security Headers）是服务器在 HTTP 响应中下发的一组指令，让浏览器启用额外的安全行为：强制 HTTPS（HSTS）、禁止 MIME 嗅探、限制被嵌入、控制 Referer 泄露、禁用不需要的浏览器能力、隔离跨源窗口等。它们成本低、覆盖面广，是 Web 应用安全基线的一部分。",
+  "how": [
+   "由服务器、反向代理或框架中间件在每个响应中统一添加这些安全头。",
+   "Strict-Transport-Security 让浏览器在有效期内只用 HTTPS 访问该域名。",
+   "X-Content-Type-Options: nosniff 禁止浏览器猜测内容类型，防止把上传文件当脚本执行。",
+   "Referrer-Policy 控制跳转时发送多少来源信息，Permissions-Policy 禁用摄像头等能力。",
+   "Content-Security-Policy 与 frame-ancestors 限制脚本来源与页面嵌入，跨源隔离头控制窗口关系。"
+  ],
+  "terms": [
+   {
+    "t": "HSTS",
+    "d": "RFC 6797 定义，强制浏览器只通过 HTTPS 访问。"
+   },
+   {
+    "t": "HSTS 预加载 (Preload)",
+    "d": "把域名写入浏览器内置列表，首次访问也强制 HTTPS。"
+   },
+   {
+    "t": "MIME 嗅探 (MIME Sniffing)",
+    "d": "浏览器无视 Content-Type 猜测类型的行为。"
+   },
+   {
+    "t": "Permissions-Policy",
+    "d": "控制页面及 iframe 可使用的浏览器功能。"
+   },
+   {
+    "t": "COOP",
+    "d": "Cross-Origin-Opener-Policy，隔离跨源窗口引用。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "Nginx 统一下发安全头",
+   "src": "server {\n    listen 443 ssl;\n    server_name example.com;\n\n    # always：错误页（4xx/5xx）也带上这些头\n    add_header Strict-Transport-Security \"max-age=31536000; includeSubDomains\" always;\n    add_header X-Content-Type-Options \"nosniff\" always;\n    add_header Referrer-Policy \"strict-origin-when-cross-origin\" always;\n    add_header Permissions-Policy \"camera=(), microphone=(), geolocation=()\" always;\n    add_header Content-Security-Policy \"frame-ancestors 'none'; object-src 'none'; base-uri 'none'\" always;\n    add_header X-Frame-Options \"DENY\" always;\n    add_header Cross-Origin-Opener-Policy \"same-origin\" always;\n\n    # 注意：location 块里若再写 add_header，\n    # 不会继承这里的配置，需要重复声明\n    location / {\n        proxy_pass http://app:3000;\n    }\n}\n\n# 验证：curl -sI https://example.com | grep -iE 'strict|nosniff|referrer|policy'",
+   "note": "always 保证错误响应也带头；Nginx 子块写 add_header 会覆盖父级，是常见遗漏点。"
+  },
+  "table": {
+   "title": "常用安全头速查",
+   "head": [
+    "响应头",
+    "防御",
+    "常见取值"
+   ],
+   "rows": [
+    [
+     "Strict-Transport-Security",
+     "降级与中间人攻击",
+     "max-age=31536000; includeSubDomains"
+    ],
+    [
+     "X-Content-Type-Options",
+     "MIME 嗅探执行",
+     "nosniff"
+    ],
+    [
+     "Referrer-Policy",
+     "URL 信息泄露",
+     "strict-origin-when-cross-origin"
+    ],
+    [
+     "Permissions-Policy",
+     "滥用浏览器能力",
+     "camera=(), microphone=()"
+    ],
+    [
+     "Content-Security-Policy",
+     "XSS、点击劫持",
+     "按应用定制"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "网关/代理统一添加",
+    "pros": "覆盖所有服务，集中管理",
+    "cons": "难以按应用定制",
+    "when": "通用安全头"
+   },
+   {
+    "opt": "应用中间件添加",
+    "pros": "可按页面精细配置",
+    "cons": "每个服务都需维护",
+    "when": "CSP 等与应用强相关的头"
+   },
+   {
+    "opt": "HSTS 预加载",
+    "pros": "首次访问也受保护",
+    "cons": "撤销需要很长时间",
+    "when": "确认全部子域永久支持 HTTPS"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "HSTS 一上来就设很长 max-age 并 preload",
+    "fix": "先用短 max-age 验证所有子域 HTTPS 正常，再逐步加长"
+   },
+   {
+    "bad": "Nginx location 中新增 add_header 导致全局头丢失",
+    "fix": "在每个有 add_header 的块中重复声明，或使用 include 片段"
+   },
+   {
+    "bad": "错误页不带安全头",
+    "fix": "Nginx 使用 always 参数"
+   },
+   {
+    "bad": "继续依赖 X-XSS-Protection",
+    "fix": "该头已被主流浏览器移除支持，改用 CSP"
+   }
+  ],
+  "checklist": [
+   "HSTS 已启用并逐步加长",
+   "nosniff 全局生效",
+   "Referrer-Policy 已设置",
+   "不需要的浏览器能力已禁用",
+   "CSP 与 frame-ancestors 已配置",
+   "用扫描工具定期检查"
+  ],
+  "interview": [
+   {
+    "q": "HSTS 解决什么问题，有什么风险？",
+    "a": "防止用户首次输入 http 或点击 http 链接时被中间人劫持降级，浏览器在有效期内直接用 HTTPS。风险是配置后若某子域不支持 HTTPS 将无法访问，预加载后撤销需要很长时间，因此要逐步上线。"
+   },
+   {
+    "q": "为什么需要 X-Content-Type-Options: nosniff？",
+    "a": "浏览器可能无视 Content-Type 猜测内容类型，把用户上传的文本文件当作脚本或 HTML 执行。nosniff 要求浏览器严格按声明类型处理，配合正确的 Content-Type 防止此类攻击。"
+   },
+   {
+    "q": "Referrer-Policy 为什么重要？",
+    "a": "URL 中可能包含令牌、搜索词或内部路径，跳转第三方时会通过 Referer 泄露。strict-origin-when-cross-origin 在跨站时只发送源，降级到 HTTP 时不发送，兼顾分析需求与隐私。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP HTTP Headers Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html"
+   },
+   {
+    "title": "MDN：Strict-Transport-Security",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security"
+   },
+   {
+    "title": "RFC 6797: HTTP Strict Transport Security",
+    "url": "https://www.rfc-editor.org/rfc/rfc6797"
+   },
+   {
+    "title": "OWASP Secure Headers Project",
+    "url": "https://owasp.org/www-project-secure-headers/"
+   }
+  ]
+ },
+ {
+  "slug": "row-level-security",
+  "def": "行级安全（Row-Level Security, RLS）是数据库根据当前用户或会话上下文，自动为查询附加过滤条件、只允许访问或修改特定行的访问控制机制。PostgreSQL 用 CREATE POLICY 实现，Supabase 以它保护前端直连。它把多租户隔离下沉到数据层，避免漏写 WHERE 导致越权。",
+  "how": [
+   "对表执行 ENABLE ROW LEVEL SECURITY；启用后若没有任何策略，普通角色默认看不到任何行。",
+   "用 CREATE POLICY 定义规则：USING 过滤可见与可操作的行，WITH CHECK 校验写入的新行。",
+   "策略可按命令（SELECT、INSERT、UPDATE、DELETE）和角色分别定义，多条宽松策略按 OR 组合。",
+   "查询执行时数据库把策略条件自动加入查询，应用代码无需显式写过滤。",
+   "当前用户身份来自数据库角色或会话变量（如 current_setting），由应用在连接上设置。"
+  ],
+  "terms": [
+   {
+    "t": "USING 子句",
+    "d": "决定哪些现有行对查询可见或可更新、删除。"
+   },
+   {
+    "t": "WITH CHECK 子句",
+    "d": "决定插入或更新后的新行是否允许写入。"
+   },
+   {
+    "t": "BYPASSRLS",
+    "d": "可绕过行级安全的角色属性，超级用户默认具备。"
+   },
+   {
+    "t": "FORCE ROW LEVEL SECURITY",
+    "d": "让表所有者也受策略约束。"
+   },
+   {
+    "t": "会话变量 (current_setting)",
+    "d": "在连接上设置的自定义参数，常存租户 ID。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "PostgreSQL 多租户 RLS",
+   "src": "CREATE TABLE documents (\n  id        bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,\n  tenant_id uuid NOT NULL,\n  title     text NOT NULL\n);\nCREATE INDEX ON documents (tenant_id);          -- 策略条件需要索引\n\nALTER TABLE documents ENABLE ROW LEVEL SECURITY;\nALTER TABLE documents FORCE ROW LEVEL SECURITY; -- 表所有者也受约束\n\n-- 只能看到、修改本租户的行；写入的行也必须属于本租户\nCREATE POLICY tenant_isolation ON documents\n  USING (tenant_id = current_setting('app.tenant_id')::uuid)\n  WITH CHECK (tenant_id = current_setting('app.tenant_id')::uuid);\n\n-- 应用在每个事务开始时设置租户（SET LOCAL 只在当前事务有效）\nBEGIN;\nSET LOCAL app.tenant_id = '6f1c2a3e-0000-4000-8000-000000000001';\nSELECT * FROM documents;          -- 自动只返回该租户数据\nCOMMIT;\n\n-- 应用连接使用的角色不能是超级用户，也不能有 BYPASSRLS",
+   "note": "策略同时约束读和写；租户上下文用 SET LOCAL 绑定事务，配合连接池更安全。"
+  },
+  "table": {
+   "title": "多租户隔离方式",
+   "head": [
+    "方式",
+    "隔离强度",
+    "运维成本",
+    "风险点"
+   ],
+   "rows": [
+    [
+     "应用层 WHERE tenant_id",
+     "依赖每条查询",
+     "低",
+     "漏写即越权"
+    ],
+    [
+     "RLS 策略",
+     "数据库强制",
+     "中",
+     "策略写错或角色可绕过"
+    ],
+    [
+     "每租户独立 schema",
+     "较高",
+     "高（迁移数量多）",
+     "连接与迁移管理复杂"
+    ],
+    [
+     "每租户独立数据库",
+     "最高",
+     "最高",
+     "成本与运维压力大"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "仅应用层过滤",
+    "pros": "简单，无数据库依赖",
+    "cons": "任何遗漏都会越权",
+    "when": "单租户或内部工具"
+   },
+   {
+    "opt": "应用过滤 + RLS 兜底",
+    "pros": "纵深防御，遗漏也不泄露",
+    "cons": "策略需维护与测试",
+    "when": "多租户 SaaS 推荐"
+   },
+   {
+    "opt": "前端直连 + RLS（如 Supabase）",
+    "pros": "开发快，无需后端 API",
+    "cons": "策略即全部防线，必须严谨",
+    "when": "小团队快速开发"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "建表后忘记启用 RLS，前端可读全表",
+    "fix": "所有暴露给客户端的表强制启用，并在 CI 中检查"
+   },
+   {
+    "bad": "应用用超级用户或表所有者连接，RLS 被绕过",
+    "fix": "使用专用低权限角色，并对表 FORCE ROW LEVEL SECURITY"
+   },
+   {
+    "bad": "只写 USING 不写 WITH CHECK，可插入他人租户数据",
+    "fix": "写操作策略同时定义 WITH CHECK"
+   },
+   {
+    "bad": "连接池中会话变量残留到下一个请求",
+    "fix": "用 SET LOCAL 绑定在事务内，或每次请求重置"
+   }
+  ],
+  "checklist": [
+   "所有敏感表已启用 RLS",
+   "应用角色无 BYPASSRLS",
+   "读写策略都已定义",
+   "策略列有索引",
+   "有跨租户访问的自动化测试",
+   "服务端密钥不暴露到前端"
+  ],
+  "interview": [
+   {
+    "q": "RLS 对性能有什么影响？",
+    "a": "策略条件会加入每个查询，相当于额外的 WHERE。条件列有索引时开销很小；若策略调用复杂函数或子查询，可能阻碍索引使用并逐行计算，需要用 EXPLAIN 检查，并把函数标记为合适的稳定性级别。"
+   },
+   {
+    "q": "Supabase 为什么特别强调 RLS？",
+    "a": "Supabase 允许前端用公开的 anon key 直接通过 API 访问数据库，此时 RLS 策略就是数据访问的主要边界。表未启用 RLS 或策略过宽，任何人都可能读写数据；service_role 密钥会绕过 RLS，只能在服务端使用。"
+   },
+   {
+    "q": "如何测试 RLS 策略？",
+    "a": "以不同用户或租户身份建立会话，分别执行增删改查，断言只能访问自己的行、无法写入他人数据；覆盖未设置上下文的情况，确认默认拒绝。把这些测试纳入 CI。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL 文档：Row Security Policies",
+    "url": "https://www.postgresql.org/docs/current/ddl-rowsecurity.html"
+   },
+   {
+    "title": "PostgreSQL 文档：CREATE POLICY",
+    "url": "https://www.postgresql.org/docs/current/sql-createpolicy.html"
+   },
+   {
+    "title": "Supabase 文档：Row Level Security",
+    "url": "https://supabase.com/docs/guides/database/postgres/row-level-security"
+   }
+  ]
+ },
+ {
+  "slug": "rbac",
+  "def": "基于角色的访问控制（Role-Based Access Control, RBAC）把权限授予角色，再把角色分配给用户，用户通过所属角色获得权限。NIST 将其标准化为核心、层级和约束（职责分离）模型。它属于授权层，用于在组织规模增长时简化权限管理与审计，是企业系统、云平台和 Kubernetes 的主流授权方式。",
+  "how": [
+   "定义权限为对资源的操作，如 invoice:read、invoice:approve。",
+   "按岗位职责定义角色，把一组权限绑定到角色，例如财务、审批人、管理员。",
+   "把角色分配给用户或用户组，用户的有效权限是其所有角色权限的并集。",
+   "请求到达时，授权层检查当前用户的有效权限是否包含所需权限，并结合资源归属判断。",
+   "通过角色层级继承减少重复配置，用职责分离约束防止同一人兼任冲突角色。"
+  ],
+  "terms": [
+   {
+    "t": "权限 (Permission)",
+    "d": "对某类资源执行某个操作的许可。"
+   },
+   {
+    "t": "角色层级 (Role Hierarchy)",
+    "d": "高级角色继承低级角色的权限。"
+   },
+   {
+    "t": "职责分离 (SoD)",
+    "d": "禁止同一用户同时拥有相互冲突的角色。"
+   },
+   {
+    "t": "ABAC",
+    "d": "基于属性的访问控制，按用户、资源、环境属性动态判断。"
+   },
+   {
+    "t": "角色爆炸 (Role Explosion)",
+    "d": "为细分场景不断新增角色导致难以管理。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "权限检查装饰器",
+   "src": "from functools import wraps\n\nROLE_PERMS = {\n    \"viewer\":   {\"invoice:read\"},\n    \"accountant\": {\"invoice:read\", \"invoice:create\"},\n    \"approver\": {\"invoice:read\", \"invoice:approve\"},\n}\nSOD_CONFLICTS = [{\"accountant\", \"approver\"}]   # 职责分离：不能既创建又审批\n\ndef perms_of(user) -> set[str]:\n    return set().union(*(ROLE_PERMS[r] for r in user[\"roles\"]))\n\ndef assign_role(user, role):\n    new = set(user[\"roles\"]) | {role}\n    if any(c <= new for c in SOD_CONFLICTS):\n        raise PermissionError(\"违反职责分离\")\n    user[\"roles\"] = sorted(new)\n\ndef require(perm):\n    def deco(fn):\n        @wraps(fn)\n        def wrapper(user, *args, **kwargs):\n            if perm not in perms_of(user):   # 检查权限，而不是检查角色名\n                raise PermissionError(f\"缺少权限 {perm}\")\n            return fn(user, *args, **kwargs)\n        return wrapper\n    return deco\n\n@require(\"invoice:approve\")\ndef approve_invoice(user, invoice_id): pass",
+   "note": "代码检查权限而非角色名，角色调整无需改代码；职责分离在分配角色时校验。"
+  },
+  "table": {
+   "title": "授权模型对比",
+   "head": [
+    "模型",
+    "判断依据",
+    "优点",
+    "不足"
+   ],
+   "rows": [
+    [
+     "ACL",
+     "资源上的用户列表",
+     "直观、粒度细",
+     "规模大时难管理"
+    ],
+    [
+     "RBAC",
+     "用户的角色",
+     "易管理、易审计",
+     "难表达动态条件"
+    ],
+    [
+     "ABAC",
+     "用户/资源/环境属性",
+     "灵活，可表达复杂规则",
+     "策略复杂难审计"
+    ],
+    [
+     "ReBAC",
+     "用户与资源的关系图",
+     "适合共享与协作场景",
+     "需要专门的关系存储"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "纯 RBAC",
+    "pros": "简单清晰，审计方便",
+    "cons": "无法表达「只能改自己的」",
+    "when": "内部系统、后台管理"
+   },
+   {
+    "opt": "RBAC + 资源归属检查",
+    "pros": "兼顾管理性与对象级控制",
+    "cons": "需在业务层实现归属判断",
+    "when": "大多数 SaaS 应用"
+   },
+   {
+    "opt": "策略引擎（如 OPA）",
+    "pros": "统一、可测试的授权策略",
+    "cons": "引入新组件与学习成本",
+    "when": "多服务、规则复杂"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "代码里写 if role == \"admin\"",
+    "fix": "检查具体权限，角色与权限映射放在配置或数据库中"
+   },
+   {
+    "bad": "为每个特殊需求新建角色，角色数量失控",
+    "fix": "定期合并角色，动态条件交给属性或归属检查"
+   },
+   {
+    "bad": "只做功能级 RBAC，未检查资源归属",
+    "fix": "在权限检查之外校验用户是否有权访问该具体对象"
+   },
+   {
+    "bad": "只在前端隐藏按钮",
+    "fix": "每个后端接口都执行授权检查"
+   }
+  ],
+  "checklist": [
+   "权限按资源:操作命名",
+   "代码检查权限而非角色名",
+   "所有接口服务端授权",
+   "对象级归属检查已实现",
+   "冲突角色有职责分离约束",
+   "定期进行权限复核"
+  ],
+  "interview": [
+   {
+    "q": "RBAC 和 ABAC 如何结合？",
+    "a": "用 RBAC 决定用户能做哪类操作，用属性条件进一步限制范围，例如审批人只能审批本部门且金额低于阈值的发票。实现上可由策略引擎统一评估角色与属性。"
+   },
+   {
+    "q": "什么是最小权限原则在 RBAC 中的体现？",
+    "a": "角色只包含完成职责所需的权限；用户只分配当前需要的角色；临时提权有时限并留审计记录；定期复核并回收不再需要的角色，避免权限随时间累积。"
+   },
+   {
+    "q": "Kubernetes 的 RBAC 有哪些核心对象？",
+    "a": "Role 与 ClusterRole 定义对资源的动词权限（命名空间级与集群级），RoleBinding 与 ClusterRoleBinding 把角色绑定到用户、组或 ServiceAccount。授权是纯允许式的，没有拒绝规则。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "NIST CSRC：Role Based Access Control",
+    "url": "https://csrc.nist.gov/projects/role-based-access-control"
+   },
+   {
+    "title": "OWASP Authorization Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html"
+   },
+   {
+    "title": "Kubernetes 文档：Using RBAC Authorization",
+    "url": "https://kubernetes.io/docs/reference/access-authn-authz/rbac/"
+   }
+  ]
+ },
+ {
+  "slug": "secret-scanning",
+  "def": "机密扫描（Secret Scanning）是自动检测代码仓库、提交历史、CI 日志、容器镜像中意外包含的 API 密钥、令牌、私钥和密码的安全实践，基于正则特征、熵值和厂商令牌格式识别，部分工具还会调用接口验证密钥是否有效。它属于软件供应链与 DevSecOps 层，目标是在泄露前拦截、泄露后快速吊销。",
+  "how": [
+   "在开发者本机用 pre-commit 钩子扫描暂存改动，发现疑似密钥即阻止提交。",
+   "托管平台在推送时检查（如 GitHub 推送保护），命中已知令牌格式则拒绝推送。",
+   "在 CI 中拉取并扫描完整提交历史，覆盖那些早已进入仓库的旧提交。",
+   "命中后按格式识别服务商，部分工具验证密钥是否仍有效，以确定优先级。",
+   "确认泄露后首先吊销并轮换密钥，再清理历史，并排查是否已被滥用。"
+  ],
+  "terms": [
+   {
+    "t": "推送保护 (Push Protection)",
+    "d": "在推送阶段拦截包含已知格式密钥的提交。"
+   },
+   {
+    "t": "熵检测 (Entropy Detection)",
+    "d": "根据字符串随机程度判断是否像密钥。"
+   },
+   {
+    "t": "密钥轮换 (Secret Rotation)",
+    "d": "生成新密钥替换旧密钥并使旧密钥失效。"
+   },
+   {
+    "t": "误报 (False Positive)",
+    "d": "被误认为密钥的测试值或示例字符串。"
+   },
+   {
+    "t": "合作伙伴计划 (Partner Program)",
+    "d": "平台把检测到的令牌通知发行方以便自动吊销。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "用 gitleaks 扫描密钥",
+   "src": "# 文件：.pre-commit-config.yaml —— 提交前在本机扫描\nrepos:\n  - repo: https://github.com/gitleaks/gitleaks\n    rev: v8.18.0            # 建议固定为当前最新的发布版本\n    hooks:\n      - id: gitleaks\n\n# 文件：.github/workflows/secrets.yml —— CI 扫描完整历史\n# name: secret-scan\n# on: [push, pull_request]\n# jobs:\n#   gitleaks:\n#     runs-on: ubuntu-latest\n#     steps:\n#       - uses: actions/checkout@v4\n#         with:\n#           fetch-depth: 0          # 拉取全部历史，旧提交也会被扫描\n#       - uses: gitleaks/gitleaks-action@v2\n#         env:\n#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}\n\n# 安装钩子：pip install pre-commit && pre-commit install",
+   "note": "本机钩子尽早拦截，CI 扫描全历史兜底；开发者可跳过本地钩子，所以服务端检查不可省。"
+  },
+  "table": {
+   "title": "扫描所处阶段",
+   "head": [
+    "阶段",
+    "工具示例",
+    "作用"
+   ],
+   "rows": [
+    [
+     "本机提交前",
+     "pre-commit + gitleaks",
+     "最早拦截，成本最低"
+    ],
+    [
+     "推送时",
+     "GitHub 推送保护",
+     "服务端强制，无法本地跳过"
+    ],
+    [
+     "CI / 定期",
+     "gitleaks、TruffleHog",
+     "扫描全历史与其他仓库"
+    ],
+    [
+     "运行时/日志",
+     "日志脱敏与扫描",
+     "发现日志中输出的密钥"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "仅本地钩子",
+    "pros": "反馈快，泄露前拦截",
+    "cons": "可被跳过或未安装",
+    "when": "作为第一层"
+   },
+   {
+    "opt": "平台推送保护",
+    "pros": "服务端强制，覆盖全员",
+    "cons": "只识别支持的令牌格式",
+    "when": "托管平台支持时默认开启"
+   },
+   {
+    "opt": "带验证的扫描",
+    "pros": "能确认密钥有效，减少误报",
+    "cons": "需调用外部服务",
+    "when": "处理大量历史告警时"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "发现泄露后只删除文件或改写历史，不吊销密钥",
+    "fix": "立即吊销并轮换；公开过的密钥应视为已被获取"
+   },
+   {
+    "bad": "为消除告警随意加入忽略规则",
+    "fix": "忽略项需审查并记录原因，仅限确认的测试值"
+   },
+   {
+    "bad": "只扫描当前代码，不扫描历史提交",
+    "fix": "CI 使用完整历史扫描，定期全量扫描"
+   },
+   {
+    "bad": "让 AI 生成代码时把真实密钥写进示例或配置",
+    "fix": "用环境变量与 .env.example 占位，.env 加入 .gitignore"
+   }
+  ],
+  "checklist": [
+   "本机安装 pre-commit 扫描",
+   "平台推送保护已开启",
+   "CI 扫描完整历史",
+   ".env 等文件已在 .gitignore",
+   "有泄露响应与轮换流程",
+   "密钥统一存放在密钥管理服务"
+  ],
+  "interview": [
+   {
+    "q": "密钥已经推送到公开仓库，第一步做什么？",
+    "a": "第一步是吊销并轮换该密钥，而不是清理历史：公开仓库会被自动化工具快速抓取，应假设已泄露。随后检查服务商日志确认是否被滥用，再清理历史、补上扫描与防护措施并复盘。"
+   },
+   {
+    "q": "为什么改写 git 历史还不够？",
+    "a": "历史可能已被克隆、fork 或被缓存与镜像收录，CI 日志、PR 页面也可能残留。改写历史只能减少继续暴露，无法撤回已泄露的副本，因此密钥必须失效。"
+   },
+   {
+    "q": "如何从根上减少密钥泄露？",
+    "a": "使用密钥管理服务并在运行时注入；优先短期凭证与工作负载身份（如 OIDC 联合）替代长期密钥；为每个环境与服务分配最小权限密钥；配合多层扫描与快速轮换能力。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "GitHub Docs：About secret scanning",
+    "url": "https://docs.github.com/en/code-security/secret-scanning/introduction/about-secret-scanning"
+   },
+   {
+    "title": "gitleaks（GitHub）",
+    "url": "https://github.com/gitleaks/gitleaks"
+   },
+   {
+    "title": "OWASP Secrets Management Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html"
+   },
+   {
+    "title": "TruffleHog（GitHub）",
+    "url": "https://github.com/trufflesecurity/trufflehog"
+   }
+  ]
+ }
+]

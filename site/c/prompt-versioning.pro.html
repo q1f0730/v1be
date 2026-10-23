@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="提示词版本管理 专业模式：提示词版本管理（Prompt Versioning）是把提示词视为可部署的代码资产：独立存储、按版本标识、记录变更原因、与评测结果关联，并能在线上快速切换与回滚">
+<title>🎓 提示词版本管理 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="prompt-versioning" data-answer="0" data-prev="golden-datasets.pro.html" data-next="lost-in-the-middle.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#ai">🔮 高级 · 🤖 AI 与提示词</a><span>›</span><a href="prompt-versioning.html">提示词版本管理</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.340 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="golden-datasets.pro.html" rel="prev"><small>‹ 上一个</small><b>🏅 黄金评测集</b></a><a class="pn next" href="lost-in-the-middle.pro.html" rel="next"><small>下一个 ›</small><b>🕳️ 长上下文中段遗忘</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🗂️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>提示词版本管理</h1><p class="en">Prompt Versioning</p>
+    <div class="hbtns"><a class="prosw back" href="prompt-versioning.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">提示词版本管理（Prompt Versioning）是把提示词视为可部署的代码资产：独立存储、按版本标识、记录变更原因、与评测结果关联，并能在线上快速切换与回滚。由于提示词的细微修改就可能显著改变模型行为，版本化让每次线上输出都能追溯到具体的提示词、模型与参数组合，是 LLM 应用可复现与可审计的基础。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>把提示词从业务代码中抽离为独立文件（如 YAML、Markdown 模板）或存入提示词管理平台。</p></li><li><span class="sn">2</span><p>每次修改生成新版本：用语义化版本号或内容哈希标识，并附变更说明与作者。</p></li><li><span class="sn">3</span><p>新版本先在黄金评测集上跑分，与当前生产版本对比，达标后才允许发布。</p></li><li><span class="sn">4</span><p>通过标签或环境指针（如 production、staging）控制线上使用哪个版本，可配合功能开关灰度发布。</p></li><li><span class="sn">5</span><p>每次调用在日志或 trace 中记录提示词版本、模型名与参数，出问题时一键切回上一版本。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>提示词模板 (Prompt Template)</dt><dd>带变量占位符的提示词，运行时填充具体内容。</dd></div><div class="term"><dt>提示词注册表 (Prompt Registry)</dt><dd>集中存储、版本化和分发提示词的服务。</dd></div><div class="term"><dt>环境标签 (Label / Alias)</dt><dd>把 production 等名称指向某个版本，切换无需改代码。</dd></div><div class="term"><dt>内容哈希 (Content Hash)</dt><dd>根据提示词文本计算的指纹，用于精确识别版本。</dd></div><div class="term"><dt>灰度发布 (Gradual Rollout)</dt><dd>先让部分流量使用新版本，观察指标后再全量。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>文件化提示词并记录版本</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import hashlib, logging
+from pathlib import Path
+import yaml   # pip install pyyaml
+
+# prompts/support_reply.yaml 内容示例：
+# version: 1.3.0
+# changelog: 语气更简洁，新增退款政策链接
+# model: gpt-4o-mini        # 以官方文档为准
+# template: |
+#   你是客服助手，回答不超过 3 句。用户问题：{question}
+
+def load_prompt(name: str) -&gt; dict:
+    data = yaml.safe_load(Path(f&quot;prompts/{name}.yaml&quot;).read_text(encoding=&quot;utf-8&quot;))
+    data[&quot;hash&quot;] = hashlib.sha256(data[&quot;template&quot;].encode()).hexdigest()[:8]
+    return data
+
+p = load_prompt(&quot;support_reply&quot;)
+messages = [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: p[&quot;template&quot;].format(question=&quot;怎么退货？&quot;)}]
+# 每次调用记录版本、哈希与模型，便于追溯和回滚
+logging.warning(&quot;prompt=%s version=%s hash=%s model=%s&quot;,
+                &quot;support_reply&quot;, p[&quot;version&quot;], p[&quot;hash&quot;], p[&quot;model&quot;])</code></pre></div><p class="cnote">提示词与代码分离、带版本号和变更说明；日志记录版本与哈希，线上问题可精确追溯。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">提示词管理方式对比</h3><div class="tw"><table><thead><tr><th>方式</th><th>回滚速度</th><th>协作</th><th>适用</th></tr></thead><tbody><tr><td data-h="方式">硬编码在代码里</td><td data-h="回滚速度">需重新部署</td><td data-h="协作">差，改动混在代码中</td><td data-h="适用">不推荐</td></tr><tr><td data-h="方式">仓库内独立文件 + Git</td><td data-h="回滚速度">需部署，但历史清晰</td><td data-h="协作">PR 评审</td><td data-h="适用">开发者主导的团队</td></tr><tr><td data-h="方式">提示词管理平台</td><td data-h="回滚速度">即时切换标签</td><td data-h="协作">非开发者也可编辑</td><td data-h="适用">产品/运营频繁调提示词</td></tr><tr><td data-h="方式">平台 + Git 同步</td><td data-h="回滚速度">即时且有审计</td><td data-h="协作">兼顾两者</td><td data-h="适用">中大型团队</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>Git 管理提示词文件</h4><p><b class="k-p">优点</b>与代码同评审、同版本，零额外依赖</p><p><b class="k-c">代价</b>改提示词需走发布流程</p><p><b class="k-w">适用</b>提示词与代码强耦合</p></div><div class="trd"><h4>提示词注册表运行时拉取</h4><p><b class="k-p">优点</b>无需部署即可切换与回滚</p><p><b class="k-c">代价</b>引入外部依赖，需缓存与降级</p><p><b class="k-w">适用</b>需要快速迭代与非技术人员参与</p></div><div class="trd"><h4>功能开关控制版本</h4><p><b class="k-p">优点</b>可按用户灰度与 A/B</p><p><b class="k-c">代价</b>配置复杂度上升</p><p><b class="k-w">适用</b>高流量产品的提示词实验</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>线上直接改提示词，没有评测就发布</p><p class="fix"><b>✓</b>新版本必须先通过黄金评测集回归</p></li><li><p class="bad"><b>✗</b>只版本化提示词，不记录模型与参数</p><p class="fix"><b>✓</b>版本记录应包含模型名、温度等完整配置</p></li><li><p class="bad"><b>✗</b>日志中不记录提示词版本</p><p class="fix"><b>✓</b>每次请求记录版本号或哈希，关联到 trace</p></li><li><p class="bad"><b>✗</b>运行时拉取提示词，平台故障时服务中断</p><p class="fix"><b>✓</b>本地缓存最近可用版本并设置降级默认值</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>提示词与业务代码分离存储</span></label></li><li><label><input type="checkbox"><span>每个版本有变更说明与作者</span></label></li><li><label><input type="checkbox"><span>发布前通过评测集回归</span></label></li><li><label><input type="checkbox"><span>线上可一键回滚</span></label></li><li><label><input type="checkbox"><span>请求日志记录提示词版本与模型</span></label></li><li><label><input type="checkbox"><span>运行时拉取有缓存与降级</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么提示词需要像代码一样版本化？</summary><p>提示词直接决定模型行为，一个词的改动就可能影响格式、语气或准确率，且效果难以凭肉眼判断。版本化让每次变更可评审、可评测、可回滚，并能把线上异常精确追溯到某个版本。</p></details><details class="iv"><summary>提示词版本应包含哪些信息？</summary><p>除模板文本外，还应包括模型名与版本、温度等采样参数、工具定义、输出 schema、变更说明、作者和对应的评测结果。只有完整配置才能复现输出，单独的提示词文本不足以确定行为。</p></details><details class="iv"><summary>如何安全地发布新版本提示词？</summary><p>先在黄金评测集上与当前版本对比；再用功能开关或标签对小比例流量灰度，监控质量指标、用户反馈与成本；确认无退化后逐步全量，出现问题立即把标签指回旧版本。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://langfuse.com/docs/prompt-management/overview" target="_blank" rel="noopener"><b>Langfuse：Prompt Management</b><small>langfuse.com ↗</small></a></li><li><a href="https://mlflow.org/docs/latest/genai/prompt-registry/" target="_blank" rel="noopener"><b>MLflow：Prompt Registry</b><small>mlflow.org ↗</small></a></li><li><a href="https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview" target="_blank" rel="noopener"><b>Anthropic：Prompt engineering overview</b><small>docs.anthropic.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="golden-datasets.pro.html" rel="prev"><small>‹ 上一个</small><b>🏅 黄金评测集</b></a><a class="pn next" href="lost-in-the-middle.pro.html" rel="next"><small>下一个 ›</small><b>🕳️ 长上下文中段遗忘</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

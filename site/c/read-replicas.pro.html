@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="只读副本 专业模式：只读副本（Read Replica）是从主库持续复制数据、只对外提供读查询的数据库实例。它通过把读流量分摊出去来扩展读能力，也可用于报表隔离、跨地域就近读取和故">
+<title>🎓 只读副本 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="read-replicas" data-answer="0" data-prev="full-text-search.pro.html" data-next="replication-lag.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#db">🔮 高级 · 🗄️ 数据库</a><span>›</span><a href="read-replicas.html">只读副本</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.248 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="full-text-search.pro.html" rel="prev"><small>‹ 上一个</small><b>🔎 全文检索</b></a><a class="pn next" href="replication-lag.pro.html" rel="next"><small>下一个 ›</small><b>📠 主从复制延迟</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🖼️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>只读副本</h1><p class="en">Read Replicas</p>
+    <div class="hbtns"><a class="prosw back" href="read-replicas.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">只读副本（Read Replica）是从主库持续复制数据、只对外提供读查询的数据库实例。它通过把读流量分摊出去来扩展读能力，也可用于报表隔离、跨地域就近读取和故障切换候选。它不能扩展写能力，且通常为异步复制，读到的数据可能略旧。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>主库把变更写入日志（PostgreSQL 的 WAL、MySQL 的 binlog），并持续发送给副本。</p></li><li><span class="sn">2</span><p>副本接收并重放这些日志，保持与主库数据近似一致，且拒绝写入。</p></li><li><span class="sn">3</span><p>应用或代理层按语句类型路由：写请求和强一致读走主库，其余读走副本。</p></li><li><span class="sn">4</span><p>多个副本可放在负载均衡后，按健康状态与延迟剔除异常节点。</p></li><li><span class="sn">5</span><p>主库故障时，可把某个副本提升（promote）为新主库，其余副本改为跟随它。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>流复制 (Streaming Replication)</dt><dd>PostgreSQL 通过网络实时传输 WAL 的复制方式。</dd></div><div class="term"><dt>异步复制 (Asynchronous Replication)</dt><dd>主库提交不等待副本确认，延迟低但可能丢数据。</dd></div><div class="term"><dt>读写分离 (Read/Write Splitting)</dt><dd>按读写类型把请求路由到不同实例。</dd></div><div class="term"><dt>提升 (Promote)</dt><dd>把副本转为可写的主库。</dd></div><div class="term"><dt>热备 (Hot Standby)</dt><dd>处于恢复状态但可接受只读查询的备库。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>应用层读写分离</span><em>python</em><button class="ccopy">复制</button></div><pre><code>from sqlalchemy import create_engine, text
+
+primary = create_engine(&quot;postgresql+psycopg://app@db-primary:5432/app&quot;)
+replica = create_engine(&quot;postgresql+psycopg://app@db-replica:5432/app&quot;)
+
+def engine_for(readonly: bool, need_fresh: bool = False):
+    # 写操作、以及刚写完马上要读的场景，一律走主库
+    if not readonly or need_fresh:
+        return primary
+    return replica
+
+# 列表页：容忍少量延迟，走副本
+with engine_for(readonly=True).connect() as conn:
+    posts = conn.execute(text(&quot;SELECT id, title FROM posts ORDER BY id DESC LIMIT 20&quot;)).all()
+
+# 用户刚提交订单后查看详情：需要最新数据，走主库
+with engine_for(readonly=True, need_fresh=True).connect() as conn:
+    order = conn.execute(text(&quot;SELECT * FROM orders WHERE id = :id&quot;), {&quot;id&quot;: 1001}).one()
+
+# 确认连接到的是副本（PostgreSQL 处于恢复模式即为副本）
+with replica.connect() as conn:
+    print(conn.execute(text(&quot;SELECT pg_is_in_recovery()&quot;)).scalar())  # True</code></pre></div><p class="cnote">按一致性需求而非仅按 SELECT 路由；刚写完就读的场景回主库。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">副本的用途与注意点</h3><div class="tw"><table><thead><tr><th>用途</th><th>收益</th><th>注意点</th></tr></thead><tbody><tr><td data-h="用途">分摊在线读流量</td><td data-h="收益">提升读吞吐</td><td data-h="注意点">需处理复制延迟</td></tr><tr><td data-h="用途">报表/分析查询</td><td data-h="收益">不影响主库</td><td data-h="注意点">长查询可能与复制冲突</td></tr><tr><td data-h="用途">跨地域就近读</td><td data-h="收益">降低远端用户延迟</td><td data-h="注意点">跨区流量费与更大延迟</td></tr><tr><td data-h="用途">故障切换候选</td><td data-h="收益">缩短恢复时间</td><td data-h="注意点">异步副本可能缺最新事务</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>应用层路由</h4><p><b class="k-p">优点</b>可按业务语义精确控制</p><p><b class="k-c">代价</b>代码侵入，易漏判</p><p><b class="k-w">适用</b>一致性要求各异的业务</p></div><div class="trd"><h4>代理层路由（ProxySQL 等）</h4><p><b class="k-p">优点</b>应用无感知</p><p><b class="k-c">代价</b>无法理解业务一致性需求</p><p><b class="k-w">适用</b>存量系统快速接入</p></div><div class="trd"><h4>加缓存替代副本</h4><p><b class="k-p">优点</b>延迟更低、成本更低</p><p><b class="k-c">代价</b>失效逻辑复杂</p><p><b class="k-w">适用</b>热点读集中在少数数据</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>所有 SELECT 一律走副本，用户刚改的资料显示旧值</p><p class="fix"><b>✓</b>写后短时间内或关键读回主库</p></li><li><p class="bad"><b>✗</b>副本规格比主库小，延迟持续扩大</p><p class="fix"><b>✓</b>副本规格不低于主库，监控重放速度</p></li><li><p class="bad"><b>✗</b>把副本当备份</p><p class="fix"><b>✓</b>误删也会被复制过去，仍需独立备份与 PITR</p></li><li><p class="bad"><b>✗</b>事务内混用主库和副本连接</p><p class="fix"><b>✓</b>一个事务内的读写使用同一连接</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>明确哪些读可以容忍延迟</span></label></li><li><label><input type="checkbox"><span>写后读场景有回主库策略</span></label></li><li><label><input type="checkbox"><span>副本延迟有监控与告警</span></label></li><li><label><input type="checkbox"><span>延迟过大时自动摘除副本</span></label></li><li><label><input type="checkbox"><span>副本规格与参数与主库匹配</span></label></li><li><label><input type="checkbox"><span>演练过副本提升流程</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>只读副本能解决写入瓶颈吗？</summary><p>不能。每个副本都要重放主库的全部写入，写压力并未分摊。写瓶颈需靠优化写路径、批量化、垂直扩容、分区或分片。副本只扩展读和隔离分析负载。</p></details><details class="iv"><summary>如何保证“写后读”一致？</summary><p>常见方法：写入后一段时间内该用户的读走主库；记录写入时主库日志位置（如 LSN），读时选择已重放到该位置的副本或等待；关键页面直接读主库。按业务重要性选择。</p></details><details class="iv"><summary>副本上的长查询会带来什么问题？</summary><p>PostgreSQL 热备上，重放需要清理的行版本可能被长查询依赖，产生冲突：要么取消查询，要么延迟重放（max_standby_streaming_delay）。开启 hot_standby_feedback 可减少取消，但会让主库膨胀。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.postgresql.org/docs/current/warm-standby.html" target="_blank" rel="noopener"><b>PostgreSQL: Log-Shipping Standby Servers</b><small>postgresql.org ↗</small></a></li><li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ReadRepl.html" target="_blank" rel="noopener"><b>Amazon RDS: Working with read replicas</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://dev.mysql.com/doc/refman/8.0/en/replication.html" target="_blank" rel="noopener"><b>MySQL: Replication</b><small>dev.mysql.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="full-text-search.pro.html" rel="prev"><small>‹ 上一个</small><b>🔎 全文检索</b></a><a class="pn next" href="replication-lag.pro.html" rel="next"><small>下一个 ›</small><b>📠 主从复制延迟</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

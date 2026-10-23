@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="子网划分与公私隔离 专业模式：子网（Subnet）是把 VPC 地址段进一步切分出的更小网段，在主流云上每个子网位于单一可用区。子网本身没有“公有”“私有”属性，决定其角色的是关联的路由表：">
+<title>🎓 子网划分与公私隔离 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="subnets" data-answer="0" data-prev="vpcs.pro.html" data-next="firewalls.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#net">🔮 高级 · 🌐 网络与 API</a><span>›</span><a href="subnets.html">子网划分与公私隔离</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.268 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="vpcs.pro.html" rel="prev"><small>‹ 上一个</small><b>🏰 虚拟私有云</b></a><a class="pn next" href="firewalls.pro.html" rel="next"><small>下一个 ›</small><b>🧱 网络防火墙与WAF</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🏘️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>子网划分与公私隔离</h1><p class="en">Subnets</p>
+    <div class="hbtns"><a class="prosw back" href="subnets.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">子网（Subnet）是把 VPC 地址段进一步切分出的更小网段，在主流云上每个子网位于单一可用区。子网本身没有“公有”“私有”属性，决定其角色的是关联的路由表：默认路由指向互联网网关即为公有子网，指向 NAT 或无出网路由即为私有/隔离子网。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>从 VPC 的 CIDR 中划出不重叠的子网段，每个子网落在一个可用区。</p></li><li><span class="sn">2</span><p>云平台会保留每个子网的部分地址（AWS 为每个子网 5 个），可用地址少于理论值。</p></li><li><span class="sn">3</span><p>每个子网关联一张路由表；0.0.0.0/0 指向 IGW 为公有，指向 NAT 网关为私有。</p></li><li><span class="sn">4</span><p>典型三层布局：公有层放负载均衡与 NAT，私有层放应用，隔离层放数据库。</p></li><li><span class="sn">5</span><p>同一层在多个可用区各建一个子网，单个可用区故障时其他可用区继续服务。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>公有子网 (Public Subnet)</dt><dd>路由表含指向互联网网关的默认路由。</dd></div><div class="term"><dt>私有子网 (Private Subnet)</dt><dd>通过 NAT 出网，不能被公网直接访问。</dd></div><div class="term"><dt>隔离子网 (Isolated Subnet)</dt><dd>完全没有通往公网的路由。</dd></div><div class="term"><dt>路由表 (Route Table)</dt><dd>按目的网段决定下一跳的规则集合。</dd></div><div class="term"><dt>前缀长度 (Prefix Length)</dt><dd>/24 表示 256 个地址，前缀越大网段越小。</dd></div><div class="term"><dt>保留地址 (Reserved IPs)</dt><dd>云平台为网关、DNS 等占用的子网地址。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>规划三层多可用区子网</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import ipaddress
+
+vpc = ipaddress.ip_network(&quot;10.20.0.0/16&quot;)
+azs = [&quot;a&quot;, &quot;b&quot;, &quot;c&quot;]
+blocks = list(vpc.subnets(new_prefix=20))   # 切成 16 个 /20，每个 4096 个地址
+
+plan = {}
+for i, az in enumerate(azs):
+    plan[f&quot;public-{az}&quot;]  = blocks[i]       # 负载均衡、NAT 网关
+    plan[f&quot;private-{az}&quot;] = blocks[i + 3]   # 应用、容器
+    plan[f&quot;data-{az}&quot;]    = blocks[i + 6]   # 数据库、缓存（无公网路由）
+
+for name, net in plan.items():
+    usable = net.num_addresses - 5           # AWS 每个子网保留 5 个地址
+    print(f&quot;{name:10} {str(net):16} 可用 {usable}&quot;)
+
+print(&quot;预留扩展：&quot;, [str(b) for b in blocks[9:]])
+
+# 路由表设计：
+#   public-*  : 0.0.0.0/0 -&gt; igw-xxxx
+#   private-* : 0.0.0.0/0 -&gt; 同可用区的 nat-xxxx
+#   data-*    : 只有 VPC 本地路由</code></pre></div><p class="cnote">用标准库算 CIDR，避免手算出错；公私属性由路由表决定，并预留空闲网段。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">三层子网布局</h3><div class="tw"><table><thead><tr><th>层</th><th>默认路由</th><th>放什么</th></tr></thead><tbody><tr><td data-h="层">公有层</td><td data-h="默认路由">互联网网关</td><td data-h="放什么">负载均衡、NAT 网关、堡垒机</td></tr><tr><td data-h="层">私有层</td><td data-h="默认路由">NAT 网关</td><td data-h="放什么">应用服务、容器节点</td></tr><tr><td data-h="层">隔离层</td><td data-h="默认路由">无（仅 VPC 内）</td><td data-h="放什么">数据库、缓存、内部存储</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>每个 AZ 一个 NAT 网关</h4><p><b class="k-p">优点</b>单 AZ 故障不影响其他 AZ 出网</p><p><b class="k-c">代价</b>NAT 固定费用翻倍</p><p><b class="k-w">适用</b>生产环境</p></div><div class="trd"><h4>共享单个 NAT 网关</h4><p><b class="k-p">优点</b>成本低</p><p><b class="k-c">代价</b>单点故障，跨 AZ 流量费</p><p><b class="k-w">适用</b>开发测试环境</p></div><div class="trd"><h4>大子网（/20 以上）</h4><p><b class="k-p">优点</b>容器等场景 IP 充足</p><p><b class="k-c">代价</b>隔离粒度粗</p><p><b class="k-w">适用</b>Kubernetes 节点与 Pod 子网</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>子网开成 /24，Kubernetes Pod 很快耗尽 IP</p><p class="fix"><b>✓</b>按 Pod 网络模型估算 IP 需求，给足前缀</p></li><li><p class="bad"><b>✗</b>以为给实例分配公网 IP 就能上网</p><p class="fix"><b>✓</b>还需所在子网路由指向 IGW 且安全规则放行</p></li><li><p class="bad"><b>✗</b>应用层只建在一个可用区</p><p class="fix"><b>✓</b>每一层在至少两个可用区各建子网</p></li><li><p class="bad"><b>✗</b>私有子网路由指向其他 AZ 的 NAT</p><p class="fix"><b>✓</b>每个 AZ 路由到本 AZ 的 NAT，避免跨 AZ 依赖</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每层至少跨两个可用区</span></label></li><li><label><input type="checkbox"><span>子网大小按峰值 IP 需求估算</span></label></li><li><label><input type="checkbox"><span>公有子网中只有入口类组件</span></label></li><li><label><input type="checkbox"><span>数据层子网无公网路由</span></label></li><li><label><input type="checkbox"><span>私有子网路由到本 AZ 的 NAT</span></label></li><li><label><input type="checkbox"><span>预留空闲网段供未来扩展</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>什么决定一个子网是公有还是私有？</summary><p>关联的路由表。默认路由 0.0.0.0/0 指向互联网网关就是公有子网；指向 NAT 网关是私有子网；没有出网路由是隔离子网。实例是否有公网 IP、安全组是否放行是另外两个条件。</p></details><details class="iv"><summary>/24 子网在 AWS 上实际有多少可用地址？</summary><p>/24 共 256 个地址，AWS 保留网络地址、VPC 路由器、DNS、未来使用和广播地址共 5 个，因此可用 251 个。规划时还要考虑负载均衡、Lambda 网卡、Pod 等也会占用 IP。</p></details><details class="iv"><summary>为什么数据库要放隔离子网？</summary><p>数据库不需要主动访问公网，也不应被公网访问。去掉出网路由可以减少数据外泄路径和误配置风险；更新补丁、备份等通过 VPC 端点或托管服务完成，即使安全组配置失误也多一层保护。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html" target="_blank" rel="noopener"><b>AWS: Subnets for your VPC</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html" target="_blank" rel="noopener"><b>AWS: Subnet CIDR blocks</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://docs.python.org/3/library/ipaddress.html" target="_blank" rel="noopener"><b>Python: ipaddress 模块</b><small>docs.python.org ↗</small></a></li><li><a href="https://www.rfc-editor.org/rfc/rfc4632" target="_blank" rel="noopener"><b>RFC 4632: CIDR</b><small>rfc-editor.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="vpcs.pro.html" rel="prev"><small>‹ 上一个</small><b>🏰 虚拟私有云</b></a><a class="pn next" href="firewalls.pro.html" rel="next"><small>下一个 ›</small><b>🧱 网络防火墙与WAF</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

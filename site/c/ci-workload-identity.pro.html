@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="CI 工作负载身份联邦 (OIDC) 专业模式：CI 工作负载身份联邦是让 CI/CD 任务用平台签发的短期 OIDC 身份令牌，向云厂商换取临时访问凭证的机制，从而不再在 CI 中保存长期云密钥。GitHu">
+<title>🎓 CI 工作负载身份联邦 (OIDC) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="ci-workload-identity" data-answer="0" data-prev="ai-red-teaming.pro.html" data-next="contract-testing.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#sec">🔥 进阶 · 🛡️ 安全防线</a><span>›</span><a href="ci-workload-identity.html">CI 工作负载身份联邦 (OIDC)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.497 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="ai-red-teaming.pro.html" rel="prev"><small>‹ 上一个</small><b>🥷 AI 红队测试</b></a><a class="pn next" href="contract-testing.pro.html" rel="next"><small>下一个 ›</small><b>📝 契约测试 (Pact)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🎫</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>CI 工作负载身份联邦 (OIDC)</h1><p class="en">CI Workload Identity Federation</p>
+    <div class="hbtns"><a class="prosw back" href="ci-workload-identity.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">CI 工作负载身份联邦是让 CI/CD 任务用平台签发的短期 OIDC 身份令牌，向云厂商换取临时访问凭证的机制，从而不再在 CI 中保存长期云密钥。GitHub Actions、GitLab CI 等充当 OIDC 身份提供方，AWS IAM、Google Cloud Workload Identity Federation、Azure 联合凭证负责校验令牌声明并授予最小权限。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>在云账号中登记 CI 平台为可信的 OIDC 身份提供方，如 GitHub 的签发者 https://token.actions.githubusercontent.com。</p></li><li><span class="sn">2</span><p>创建角色或服务账号，信任策略中限定令牌的受众（aud）与主体（sub），如只允许某仓库的 main 分支或某个环境。</p></li><li><span class="sn">3</span><p>任务运行时向 CI 平台请求 OIDC 令牌（GitHub 需要 id-token: write 权限），令牌包含仓库、分支、工作流等声明。</p></li><li><span class="sn">4</span><p>任务用令牌调用云的安全令牌服务换取临时凭证，凭证有效期短，过期自动失效。</p></li><li><span class="sn">5</span><p>云侧审计日志记录每次换取所对应的仓库与运行信息，便于溯源。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>OIDC 令牌 (ID Token)</dt><dd>由身份提供方签名的 JWT，声明了调用者身份与上下文。</dd></div><div class="term"><dt>sub 声明</dt><dd>令牌主体，GitHub 中形如 repo:org/repo:ref:refs/heads/main，是信任条件核心。</dd></div><div class="term"><dt>aud 声明</dt><dd>令牌受众，指明令牌给谁使用，如 sts.amazonaws.com。</dd></div><div class="term"><dt>AssumeRoleWithWebIdentity</dt><dd>AWS STS 用外部 OIDC 令牌换取临时凭证的接口。</dd></div><div class="term"><dt>工作负载身份池 (Workload Identity Pool)</dt><dd>Google Cloud 中管理外部身份映射的资源。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>AWS 角色信任策略</span><em>json</em><button class="ccopy">复制</button></div><pre><code>{
+  &quot;Version&quot;: &quot;2012-10-17&quot;,
+  &quot;Statement&quot;: [
+    {
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Principal&quot;: {
+        &quot;Federated&quot;: &quot;arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com&quot;
+      },
+      &quot;Action&quot;: &quot;sts:AssumeRoleWithWebIdentity&quot;,
+      &quot;Condition&quot;: {
+        &quot;StringEquals&quot;: {
+          &quot;token.actions.githubusercontent.com:aud&quot;: &quot;sts.amazonaws.com&quot;,
+          &quot;token.actions.githubusercontent.com:sub&quot;: &quot;repo:acme/web:ref:refs/heads/main&quot;
+        }
+      }
+    }
+  ]
+}</code></pre></div><p class="cnote">工作流需声明 permissions: id-token: write，并用 aws-actions/configure-aws-credentials 指定 role-to-assume；sub 条件务必精确到仓库与分支或环境。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">CI 访问云的凭证方式</h3><div class="tw"><table><thead><tr><th>方式</th><th>凭证寿命</th><th>泄露影响</th><th>轮换</th></tr></thead><tbody><tr><td data-h="方式">长期访问密钥存为 CI Secret</td><td data-h="凭证寿命">长期</td><td data-h="泄露影响">可被长期滥用</td><td data-h="轮换">需手动轮换</td></tr><tr><td data-h="方式">OIDC 联邦临时凭证</td><td data-h="凭证寿命">通常为分钟到小时级</td><td data-h="泄露影响">很快失效</td><td data-h="轮换">自动</td></tr><tr><td data-h="方式">自托管 Runner 绑定实例角色</td><td data-h="凭证寿命">临时</td><td data-h="泄露影响">所有在该 Runner 上运行的任务共享权限</td><td data-h="轮换">自动</td></tr><tr><td data-h="方式">密钥管理系统动态凭证</td><td data-h="凭证寿命">短期</td><td data-h="泄露影响">有限</td><td data-h="轮换">自动，需额外组件</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>OIDC 联邦</h4><p><b class="k-p">优点</b>无需存储密钥，按仓库/分支精细授权</p><p><b class="k-c">代价</b>初次配置信任策略较繁琐</p><p><b class="k-w">适用</b>云厂商与 CI 平台都支持时的首选</p></div><div class="trd"><h4>自托管 Runner 实例角色</h4><p><b class="k-p">优点</b>配置简单</p><p><b class="k-c">代价</b>难以区分不同仓库与任务的权限</p><p><b class="k-w">适用</b>单一用途、隔离良好的 Runner</p></div><div class="trd"><h4>长期密钥</h4><p><b class="k-p">优点</b>任何平台都可用</p><p><b class="k-c">代价</b>泄露风险高、审计困难</p><p><b class="k-w">适用</b>仅限无法联邦的遗留系统，并严格轮换</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>信任策略的 sub 用通配符 repo:acme/*</p><p class="fix"><b>✓</b>精确限定仓库与分支或环境，不同用途使用不同角色</p></li><li><p class="bad"><b>✗</b>未校验 aud，令牌可被其他受众复用</p><p class="fix"><b>✓</b>在条件中同时校验 aud 与 sub</p></li><li><p class="bad"><b>✗</b>拉取请求工作流也能换取生产部署凭证</p><p class="fix"><b>✓</b>生产角色只信任受保护分支或带审批的环境</p></li><li><p class="bad"><b>✗</b>迁移到 OIDC 后忘记删除旧长期密钥</p><p class="fix"><b>✓</b>迁移完成后吊销并删除旧密钥，扫描仓库与 CI 变量</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>CI 中不再存放长期云密钥</span></label></li><li><label><input type="checkbox"><span>信任策略同时校验 aud 与 sub</span></label></li><li><label><input type="checkbox"><span>生产角色仅信任受保护分支或环境</span></label></li><li><label><input type="checkbox"><span>角色权限按任务最小化</span></label></li><li><label><input type="checkbox"><span>工作流只在需要的作业中授予 id-token: write</span></label></li><li><label><input type="checkbox"><span>云审计日志可追溯到仓库与运行</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>OIDC 联邦为什么比在 CI 存密钥安全？</summary><p>长期密钥一旦从日志、依赖或被入侵的工作流中泄露，攻击者可在任意地点长期使用。OIDC 令牌由 CI 平台为单次运行签发并绑定仓库、分支等声明，换得的云凭证很快过期；云侧还可按声明精确限权，并完整审计每次使用。</p></details><details class="iv"><summary>信任策略中 sub 条件为什么关键？</summary><p>同一个 OIDC 提供方为平台上所有仓库签发令牌。若只校验签发者与受众，任何人的仓库都可能换取你的角色。sub 声明区分组织、仓库、分支、环境或拉取请求，必须精确匹配，才能确保只有受信的工作流获得权限。</p></details><details class="iv"><summary>拉取请求触发的工作流有什么额外风险？</summary><p>外部贡献者的代码会在 CI 中运行，可能窃取令牌或凭证。应只让受保护分支或需审批的部署环境换取高权限角色，拉取请求工作流仅授予只读或无云权限，并谨慎使用会以目标仓库权限运行的触发器。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/about-security-hardening-with-openid-connect" target="_blank" rel="noopener"><b>GitHub Docs: About security hardening with OpenID Connect</b><small>docs.github.com ↗</small></a></li><li><a href="https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services" target="_blank" rel="noopener"><b>GitHub Docs: Configuring OIDC in AWS</b><small>docs.github.com ↗</small></a></li><li><a href="https://cloud.google.com/iam/docs/workload-identity-federation" target="_blank" rel="noopener"><b>Google Cloud: Workload Identity Federation</b><small>cloud.google.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="ai-red-teaming.pro.html" rel="prev"><small>‹ 上一个</small><b>🥷 AI 红队测试</b></a><a class="pn next" href="contract-testing.pro.html" rel="next"><small>下一个 ›</small><b>📝 契约测试 (Pact)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

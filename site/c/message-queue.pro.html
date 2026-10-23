@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="消息队列 专业模式：消息队列是生产者与消费者之间的异步中间件：生产者把消息写入队列后即可返回，消费者按自己的节奏取出处理并确认。它实现服务解耦、削峰填谷和失败重试，常见实现有 Ra">
+<title>🎓 消息队列 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="message-queue" data-answer="0" data-prev="security-groups.pro.html" data-next="cache-invalidation.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#cache">🔮 高级 · ⚡ 缓存与队列</a><span>›</span><a href="message-queue.html">消息队列</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.271 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="security-groups.pro.html" rel="prev"><small>‹ 上一个</small><b>🚪 云安全组</b></a><a class="pn next" href="cache-invalidation.pro.html" rel="next"><small>下一个 ›</small><b>🧽 缓存失效与更新策略</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📬</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>⚡ 缓存与队列</span><span>⏱ 约 10 分钟</span></div>
+    <h1>消息队列</h1><p class="en">Message Queue</p>
+    <div class="hbtns"><a class="prosw back" href="message-queue.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">消息队列是生产者与消费者之间的异步中间件：生产者把消息写入队列后即可返回，消费者按自己的节奏取出处理并确认。它实现服务解耦、削峰填谷和失败重试，常见实现有 RabbitMQ、Amazon SQS、Kafka（日志型）、Redis Streams。代价是引入最终一致性与重复消费等问题。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>生产者把消息发送给 Broker，Broker 持久化后返回确认。</p></li><li><span class="sn">2</span><p>消费者拉取（或被推送）消息；处理期间消息对其他消费者不可见或标记为未确认。</p></li><li><span class="sn">3</span><p>处理成功后消费者确认（ack/删除），Broker 才真正移除消息。</p></li><li><span class="sn">4</span><p>超时未确认的消息重新投递，因此语义通常是“至少一次”，消费者需幂等。</p></li><li><span class="sn">5</span><p>多次失败的消息转入死信队列（DLQ）供排查；队列积压量是扩容消费者的信号。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>Broker</dt><dd>负责接收、存储和投递消息的服务端。</dd></div><div class="term"><dt>确认 (Ack)</dt><dd>消费者告知已成功处理，消息可被移除。</dd></div><div class="term"><dt>至少一次 (At-least-once)</dt><dd>消息不丢但可能重复投递的语义。</dd></div><div class="term"><dt>可见性超时 (Visibility Timeout)</dt><dd>SQS 中消息被取走后对他人隐藏的时长。</dd></div><div class="term"><dt>死信队列 (DLQ)</dt><dd>存放多次处理失败消息的队列。</dd></div><div class="term"><dt>Outbox 模式</dt><dd>业务写入与待发消息同事务落库，再异步投递。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>SQS 幂等消费者</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import json, boto3
+
+sqs = boto3.client(&quot;sqs&quot;)
+QUEUE_URL = &quot;https://sqs.us-east-1.amazonaws.com/123456789012/orders&quot;
+
+def consume_forever():
+    while True:
+        resp = sqs.receive_message(
+            QueueUrl=QUEUE_URL,
+            MaxNumberOfMessages=10,
+            WaitTimeSeconds=20,       # 长轮询，减少空请求
+            VisibilityTimeout=60,     # 需大于单条消息的最长处理时间
+        )
+        for msg in resp.get(&quot;Messages&quot;, []):
+            body = json.loads(msg[&quot;Body&quot;])
+            # 幂等：同一 order_id 只处理一次（mark_processed 用唯一约束实现）
+            if mark_processed(body[&quot;order_id&quot;]):
+                send_confirmation_email(body)
+            # 处理成功才删除；抛异常则不删，超时后重新投递
+            sqs.delete_message(QueueUrl=QUEUE_URL, ReceiptHandle=msg[&quot;ReceiptHandle&quot;])
+
+# 队列上配置 RedrivePolicy：maxReceiveCount=5 后转入死信队列</code></pre></div><p class="cnote">先处理后删除；重复投递靠业务幂等吸收；失败次数过多进入 DLQ。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">主流消息系统对比</h3><div class="tw"><table><thead><tr><th>系统</th><th>模型</th><th>消费后消息</th><th>典型场景</th></tr></thead><tbody><tr><td data-h="系统">RabbitMQ</td><td data-h="模型">队列 + 交换机路由</td><td data-h="消费后消息">确认后删除</td><td data-h="典型场景">任务分发、复杂路由</td></tr><tr><td data-h="系统">Amazon SQS</td><td data-h="模型">托管队列</td><td data-h="消费后消息">删除后移除</td><td data-h="典型场景">云上异步任务</td></tr><tr><td data-h="系统">Kafka</td><td data-h="模型">分区日志</td><td data-h="消费后消息">按保留期保留，可回放</td><td data-h="典型场景">事件流、数据管道</td></tr><tr><td data-h="系统">Redis Streams</td><td data-h="模型">追加流 + 消费组</td><td data-h="消费后消息">需显式裁剪</td><td data-h="典型场景">轻量事件流</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>任务队列（RabbitMQ/SQS）</h4><p><b class="k-p">优点</b>每条消息一个消费者处理，简单</p><p><b class="k-c">代价</b>消费后即删，不能回放</p><p><b class="k-w">适用</b>后台任务、邮件、转码</p></div><div class="trd"><h4>日志型（Kafka）</h4><p><b class="k-p">优点</b>高吞吐，多订阅方可回放</p><p><b class="k-c">代价</b>运维复杂，有序性按分区</p><p><b class="k-w">适用</b>事件驱动、数据集成</p></div><div class="trd"><h4>数据库表当队列</h4><p><b class="k-p">优点</b>无新组件，可与业务同事务</p><p><b class="k-c">代价</b>高吞吐下扩展性差</p><p><b class="k-w">适用</b>规模小、强一致需求</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>假设消息只会投递一次</p><p class="fix"><b>✓</b>按至少一次设计，消费者用唯一键实现幂等</p></li><li><p class="bad"><b>✗</b>先写数据库再发消息，进程崩溃导致消息丢失</p><p class="fix"><b>✓</b>使用 Outbox 模式或事务消息</p></li><li><p class="bad"><b>✗</b>可见性超时小于处理时间，消息被重复处理</p><p class="fix"><b>✓</b>超时大于最长处理时间，或处理中延长超时</p></li><li><p class="bad"><b>✗</b>没有死信队列，毒消息无限重试</p><p class="fix"><b>✓</b>设置最大重试次数与 DLQ，并对 DLQ 告警</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>消费者幂等</span></label></li><li><label><input type="checkbox"><span>处理成功后才确认</span></label></li><li><label><input type="checkbox"><span>配置了死信队列与告警</span></label></li><li><label><input type="checkbox"><span>监控队列积压与消息年龄</span></label></li><li><label><input type="checkbox"><span>生产端可靠投递（Outbox 等）</span></label></li><li><label><input type="checkbox"><span>消息体有版本号以便演进</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>如何实现“恰好一次”处理？</summary><p>端到端的恰好一次很难靠队列单独保证。实践是“至少一次投递 + 幂等消费”：用业务唯一键、去重表或条件写入，使重复消息不产生副作用。Kafka 事务能在其内部读-处理-写链路中提供恰好一次语义。</p></details><details class="iv"><summary>消息顺序怎么保证？</summary><p>全局有序代价很高。通常只需按业务键有序：Kafka 用相同键进入同一分区，SQS FIFO 用 MessageGroupId。同一分组内只能串行消费，并行度受分组数限制；重试时还需避免乱序。</p></details><details class="iv"><summary>队列积压时怎么办？</summary><p>先看消息年龄与积压量是否持续增长；扩容消费者（受分区数等限制）；排查下游瓶颈或毒消息；必要时降级非关键处理、批量消费。长期则做容量规划，按积压指标自动扩缩容。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html" target="_blank" rel="noopener"><b>Amazon SQS: Visibility timeout</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://kafka.apache.org/documentation/" target="_blank" rel="noopener"><b>Apache Kafka Documentation</b><small>kafka.apache.org ↗</small></a></li><li><a href="https://microservices.io/patterns/data/transactional-outbox.html" target="_blank" rel="noopener"><b>microservices.io: Transactional outbox</b><small>microservices.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="security-groups.pro.html" rel="prev"><small>‹ 上一个</small><b>🚪 云安全组</b></a><a class="pn next" href="cache-invalidation.pro.html" rel="next"><small>下一个 ›</small><b>🧽 缓存失效与更新策略</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

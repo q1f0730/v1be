@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="冷启动延迟 专业模式：冷启动（Cold Start）是函数或实例在没有可复用运行环境时，从零创建环境、加载运行时和代码、执行初始化后才能处理首个请求所产生的额外延迟。它常见于 Ser">
+<title>🎓 冷启动延迟 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="cold-starts" data-answer="0" data-prev="horizontal-vs-vertical-scaling.pro.html" data-next="load-testing.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sre">🔮 高级 · 🩺 高可用 SRE</a><span>›</span><a href="cold-starts.html">冷启动延迟</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.310 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="horizontal-vs-vertical-scaling.pro.html" rel="prev"><small>‹ 上一个</small><b>🐎 水平与垂直扩展</b></a><a class="pn next" href="load-testing.pro.html" rel="next"><small>下一个 ›</small><b>🏋️ 负载与压力测试</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🥶</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>冷启动延迟</h1><p class="en">Cold Starts</p>
+    <div class="hbtns"><a class="prosw back" href="cold-starts.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">冷启动（Cold Start）是函数或实例在没有可复用运行环境时，从零创建环境、加载运行时和代码、执行初始化后才能处理首个请求所产生的额外延迟。它常见于 Serverless（如 AWS Lambda、Cloud Run）和缩到零的服务，扩容时也会出现。治理手段包括减小包体、延迟初始化、预置并发和保持最小实例。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>请求到达时若没有空闲的已初始化环境，平台需要新建执行环境或容器。</p></li><li><span class="sn">2</span><p>平台下载代码包或镜像，启动运行时，如 Python 解释器或 JVM。</p></li><li><span class="sn">3</span><p>执行函数处理器外的初始化代码：导入依赖、读取配置、建立数据库连接。</p></li><li><span class="sn">4</span><p>初始化完成后才开始执行请求处理，用户感知到的额外延迟主要就来自前面这几步。</p></li><li><span class="sn">5</span><p>环境处理完请求后会被保留一段时间复用，后续请求是热启动，直到被回收。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>热启动 (Warm Start)</dt><dd>复用已初始化的执行环境处理请求，没有初始化开销。</dd></div><div class="term"><dt>预置并发 (Provisioned Concurrency)</dt><dd>Lambda 中预先初始化并保持一定数量执行环境。</dd></div><div class="term"><dt>SnapStart</dt><dd>Lambda 对初始化后的环境做快照，冷启动时从快照恢复。</dd></div><div class="term"><dt>最小实例数 (Min Instances)</dt><dd>Cloud Run 等平台保持常驻的实例数，避免缩到零。</dd></div><div class="term"><dt>初始化阶段 (Init Phase)</dt><dd>Lambda 生命周期中运行处理器外代码的阶段。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Lambda 初始化放在外层</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import json
+import os
+import boto3
+
+# 处理器外的代码只在冷启动时执行一次，热启动复用
+TABLE = boto3.resource(&quot;dynamodb&quot;).Table(os.environ[&quot;TABLE_NAME&quot;])
+
+def handler(event, context):
+    # 每次调用只做必要工作，复用外层创建的客户端
+    item = TABLE.get_item(Key={&quot;id&quot;: event[&quot;id&quot;]}).get(&quot;Item&quot;)
+    return {&quot;statusCode&quot;: 200, &quot;body&quot;: json.dumps(item, default=str)}
+
+# 对延迟敏感的别名开启预置并发（AWS CLI）：
+# aws lambda put-provisioned-concurrency-config \
+#   --function-name orders-api --qualifier live \
+#   --provisioned-concurrent-executions 5</code></pre></div><p class="cnote">客户端在初始化阶段创建并在热启动中复用；预置并发让一部分环境始终就绪。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">冷启动治理手段</h3><div class="tw"><table><thead><tr><th>手段</th><th>作用</th><th>代价</th></tr></thead><tbody><tr><td data-h="手段">减小依赖与包体</td><td data-h="作用">缩短下载和导入时间</td><td data-h="代价">需要裁剪依赖</td></tr><tr><td data-h="手段">延迟加载</td><td data-h="作用">只在用到时初始化</td><td data-h="代价">首次用到时仍有开销</td></tr><tr><td data-h="手段">预置并发/最小实例</td><td data-h="作用">保持环境常驻</td><td data-h="代价">按常驻时长计费</td></tr><tr><td data-h="手段">SnapStart/快照恢复</td><td data-h="作用">跳过大部分初始化</td><td data-h="代价">有运行时与唯一性等限制</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>缩到零</h4><p><b class="k-p">优点</b>空闲零成本</p><p><b class="k-c">代价</b>首个请求冷启动</p><p><b class="k-w">适用</b>低频、对延迟不敏感</p></div><div class="trd"><h4>预置并发/最小实例</h4><p><b class="k-p">优点</b>消除大部分冷启动</p><p><b class="k-c">代价</b>持续产生费用</p><p><b class="k-w">适用</b>面向用户的延迟敏感接口</p></div><div class="trd"><h4>改用常驻服务</h4><p><b class="k-p">优点</b>延迟稳定</p><p><b class="k-c">代价</b>失去按调用计费的弹性</p><p><b class="k-w">适用</b>流量持续且稳定</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>在处理器内每次调用都新建 SDK 客户端和数据库连接。</p><p class="fix"><b>✓</b>在处理器外初始化并复用，注意连接数上限。</p></li><li><p class="bad"><b>✗</b>打包整个大型依赖库，导入耗时数秒。</p><p class="fix"><b>✓</b>精简依赖，按需导入，或使用分层与容器镜像优化。</p></li><li><p class="bad"><b>✗</b>用定时 ping 保温替代预置并发，并发突增时仍大量冷启动。</p><p class="fix"><b>✓</b>对关键路径使用平台提供的预置并发或最小实例。</p></li><li><p class="bad"><b>✗</b>只看平均延迟，冷启动的长尾被掩盖。</p><p class="fix"><b>✓</b>关注 p99 延迟，并单独统计初始化耗时。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>初始化代码放在处理器外并复用连接</span></label></li><li><label><input type="checkbox"><span>依赖与包体已精简</span></label></li><li><label><input type="checkbox"><span>延迟敏感接口配置预置并发或最小实例</span></label></li><li><label><input type="checkbox"><span>监控初始化耗时与 p99 延迟</span></label></li><li><label><input type="checkbox"><span>函数并发与数据库连接数匹配</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>冷启动延迟由哪些部分组成？</summary><p>主要包括创建执行环境、下载代码或镜像、启动运行时、执行处理器外的初始化代码。语言运行时、包体大小、依赖导入和初始化中的网络调用都会影响时长。</p></details><details class="iv"><summary>Lambda 预置并发和 SnapStart 有何区别？</summary><p>预置并发预先初始化并持续保持一定数量的执行环境，按时长计费，能基本消除这部分容量内的冷启动；SnapStart 对初始化完成的环境做快照，冷启动时从快照恢复，缩短初始化但不保证零延迟，并对运行时和代码有要求，如唯一性数据需在恢复后重新生成。</p></details><details class="iv"><summary>缩到零的服务如何兼顾成本与体验？</summary><p>对用户直接访问的路径保持少量最小实例或预置并发；后台任务允许缩到零；优化启动时间；在前端用加载状态或异步处理掩盖首次延迟。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtime-environment.html" target="_blank" rel="noopener"><b>AWS Lambda：执行环境生命周期</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://docs.aws.amazon.com/lambda/latest/dg/provisioned-concurrency.html" target="_blank" rel="noopener"><b>AWS Lambda：预置并发</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://docs.aws.amazon.com/lambda/latest/dg/snapstart.html" target="_blank" rel="noopener"><b>AWS Lambda：SnapStart</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://cloud.google.com/run/docs/configuring/min-instances" target="_blank" rel="noopener"><b>Cloud Run：最小实例数</b><small>cloud.google.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="horizontal-vs-vertical-scaling.pro.html" rel="prev"><small>‹ 上一个</small><b>🐎 水平与垂直扩展</b></a><a class="pn next" href="load-testing.pro.html" rel="next"><small>下一个 ›</small><b>🏋️ 负载与压力测试</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

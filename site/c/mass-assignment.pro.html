@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="批量赋值漏洞 专业模式：批量赋值漏洞（Mass Assignment，CWE-915）指框架把请求字段自动绑定到数据模型时未限制可写字段，攻击者额外提交 role、is_admin 等">
+<title>🎓 批量赋值漏洞 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="mass-assignment" data-answer="0" data-prev="path-traversal.pro.html" data-next="clickjacking.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sec">🔮 高级 · 🛡️ 安全防线</a><span>›</span><a href="mass-assignment.html">批量赋值漏洞</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.220 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="path-traversal.pro.html" rel="prev"><small>‹ 上一个</small><b>🪜 路径遍历</b></a><a class="pn next" href="clickjacking.pro.html" rel="next"><small>下一个 ›</small><b>🪤 点击劫持</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📮</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>批量赋值漏洞</h1><p class="en">Mass Assignment</p>
+    <div class="hbtns"><a class="prosw back" href="mass-assignment.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">批量赋值漏洞（Mass Assignment，CWE-915）指框架把请求字段自动绑定到数据模型时未限制可写字段，攻击者额外提交 role、is_admin 等敏感属性即可改写它们。OWASP API Security Top 10（2023）将其归入 API3「对象属性级授权失效」。根因是信任客户端提交的整个对象。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>接口把请求 JSON 直接展开到模型，例如 User(**body) 或 user.update(body)。</p></li><li><span class="sn">2</span><p>正常客户端只发送 name、avatar 等字段，界面上看不到敏感字段。</p></li><li><span class="sn">3</span><p>攻击者通过抓包或阅读前端代码、文档猜测字段名，额外加入 is_admin: true。</p></li><li><span class="sn">4</span><p>框架把所有名称匹配的字段写入数据库，权限、余额或资源归属因此被篡改。</p></li><li><span class="sn">5</span><p>防御核心是为每个接口定义显式的可写字段白名单（DTO / Schema），其余拒绝或忽略。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>CWE-915</dt><dd>对动态确定的对象属性修改控制不当。</dd></div><div class="term"><dt>DTO (Data Transfer Object)</dt><dd>专为接口输入输出定义的数据结构。</dd></div><div class="term"><dt>强参数 (Strong Parameters)</dt><dd>Rails 中用 permit 声明允许字段的机制。</dd></div><div class="term"><dt>BOPLA</dt><dd>对象属性级授权失效，OWASP API3:2023。</dd></div><div class="term"><dt>过度数据暴露</dt><dd>响应返回了不该给客户端的字段，与批量赋值同属 BOPLA。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>用 Pydantic 限定可写字段</span><em>python</em><button class="ccopy">复制</button></div><pre><code>from fastapi import FastAPI, Depends
+from pydantic import BaseModel, ConfigDict, Field
+
+app = FastAPI()
+
+class UserUpdate(BaseModel):
+    model_config = ConfigDict(extra=&quot;forbid&quot;)   # 多余字段直接 422
+    name: str | None = Field(default=None, max_length=50)
+    avatar_url: str | None = None
+    # 不包含 role、is_admin、balance 等字段
+
+class AdminUserUpdate(UserUpdate):
+    role: str | None = None                      # 仅管理员接口可改
+
+def current_user():
+    ...  # 从会话或 token 取当前用户（省略）
+
+@app.patch(&quot;/me&quot;)
+def update_me(body: UserUpdate, user=Depends(current_user)):
+    changes = body.model_dump(exclude_unset=True)  # 只取客户端实际提交的字段
+    for k, v in changes.items():
+        setattr(user, k, v)
+    # db.commit()
+    return {&quot;updated&quot;: list(changes)}</code></pre></div><p class="cnote">按接口定义输入模型，extra=forbid 拒绝多余字段；管理员可改字段放在独立模型。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">各框架的防护方式</h3><div class="tw"><table><thead><tr><th>框架</th><th>风险写法</th><th>安全写法</th></tr></thead><tbody><tr><td data-h="框架">FastAPI/Pydantic</td><td data-h="风险写法">直接用 ORM 模型接收</td><td data-h="安全写法">独立输入模型 + extra=forbid</td></tr><tr><td data-h="框架">Rails</td><td data-h="风险写法">User.new(params[:user])</td><td data-h="安全写法">params.require(:user).permit(:name)</td></tr><tr><td data-h="框架">Django REST</td><td data-h="风险写法">fields = &quot;__all__&quot;</td><td data-h="安全写法">显式 fields 与 read_only_fields</td></tr><tr><td data-h="框架">Express + ORM</td><td data-h="风险写法">Model.update(req.body)</td><td data-h="安全写法">按白名单挑选字段</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>白名单输入模型</h4><p><b class="k-p">优点</b>明确、可审查，最安全</p><p><b class="k-c">代价</b>每个接口要写模型</p><p><b class="k-w">适用</b>默认推荐</p></div><div class="trd"><h4>黑名单排除敏感字段</h4><p><b class="k-p">优点</b>写法少</p><p><b class="k-c">代价</b>新增敏感字段时容易漏</p><p><b class="k-w">适用</b>不推荐</p></div><div class="trd"><h4>多余字段静默忽略</h4><p><b class="k-p">优点</b>兼容旧客户端</p><p><b class="k-c">代价</b>攻击尝试不可见</p><p><b class="k-w">适用</b>过渡期，并记录日志</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>直接用 ORM 模型作为请求体类型</p><p class="fix"><b>✓</b>接口输入使用独立的 DTO，与数据库模型分离</p></li><li><p class="bad"><b>✗</b>前端隐藏了字段就以为用户改不了</p><p class="fix"><b>✓</b>服务端白名单才是边界，前端隐藏不构成防护</p></li><li><p class="bad"><b>✗</b>嵌套对象未校验，通过关联字段修改 owner_id</p><p class="fix"><b>✓</b>嵌套结构也逐层定义可写字段</p></li><li><p class="bad"><b>✗</b>AI 生成的 CRUD 代码直接 update(**body)</p><p class="fix"><b>✓</b>审查生成代码，要求按接口定义输入模型</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个写接口有独立输入模型</span></label></li><li><label><input type="checkbox"><span>敏感字段不在普通用户模型中</span></label></li><li><label><input type="checkbox"><span>多余字段被拒绝或记录</span></label></li><li><label><input type="checkbox"><span>嵌套对象同样受限</span></label></li><li><label><input type="checkbox"><span>有提交 is_admin 等字段的测试</span></label></li><li><label><input type="checkbox"><span>响应模型同样白名单输出</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么白名单优于黑名单？</summary><p>黑名单要求列出所有敏感字段，模型新增字段（如 credit_limit）时很容易忘记同步，默认就是可写的。白名单默认拒绝，只有明确允许的字段可写，新增字段不会自动暴露。</p></details><details class="iv"><summary>批量赋值和越权访问有什么区别？</summary><p>越权访问（BOLA）是能操作不属于自己的对象，例如改别人的订单；批量赋值是在自己有权操作的对象上，修改了不应允许修改的属性，例如把自己的角色改成管理员。两者需要分别防护。</p></details><details class="iv"><summary>如何在代码审查中发现这类问题？</summary><p>搜索直接把请求体展开到模型或 update 的写法，检查序列化器是否使用全部字段，确认输入模型不含权限、金额、归属、状态等敏感字段，并补充提交这些字段的负向测试。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Mass_Assignment_Cheat_Sheet.html" target="_blank" rel="noopener"><b>OWASP Mass Assignment Cheat Sheet</b><small>cheatsheetseries.owasp.org ↗</small></a></li><li><a href="https://owasp.org/API-Security/editions/2023/en/0xa3-broken-object-property-level-authorization/" target="_blank" rel="noopener"><b>OWASP API3:2023 Broken Object Property Level Authorization</b><small>owasp.org ↗</small></a></li><li><a href="https://cwe.mitre.org/data/definitions/915.html" target="_blank" rel="noopener"><b>CWE-915</b><small>cwe.mitre.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="path-traversal.pro.html" rel="prev"><small>‹ 上一个</small><b>🪜 路径遍历</b></a><a class="pn next" href="clickjacking.pro.html" rel="next"><small>下一个 ›</small><b>🪤 点击劫持</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

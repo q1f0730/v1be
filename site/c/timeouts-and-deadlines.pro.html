@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="超时与截止时间传播 专业模式：超时（Timeout）是单次操作允许等待的最长时间；截止时间（Deadline）是整个请求链路必须完成的绝对时间点，并随调用向下游传播。它们属于分布式系统可靠性">
+<title>🎓 超时与截止时间传播 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="timeouts-and-deadlines" data-answer="0" data-prev="circuit-breaker.pro.html" data-next="service-discovery.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#dist">🔮 高级 · 🕸️ 分布式</a><span>›</span><a href="timeouts-and-deadlines.html">超时与截止时间传播</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.370 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="circuit-breaker.pro.html" rel="prev"><small>‹ 上一个</small><b>🔌 熔断器 (Circuit Breaker)</b></a><a class="pn next" href="service-discovery.pro.html" rel="next"><small>下一个 ›</small><b>🧭 服务发现</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">⏱️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>超时与截止时间传播</h1><p class="en">Timeouts &amp; Deadlines</p>
+    <div class="hbtns"><a class="prosw back" href="timeouts-and-deadlines.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">超时（Timeout）是单次操作允许等待的最长时间；截止时间（Deadline）是整个请求链路必须完成的绝对时间点，并随调用向下游传播。它们属于分布式系统可靠性层：没有超时的调用会在下游卡住时无限占用线程和连接，逐级堆积成连锁故障；截止时间传播则避免上游已放弃、下游仍在白做工。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>每次网络调用至少区分连接超时（建立连接）和读取超时（等待响应），也可设置总超时。</p></li><li><span class="sn">2</span><p>入口服务为请求确定总预算，例如用户可接受的等待时间，换算成绝对截止时间。</p></li><li><span class="sn">3</span><p>调用下游时把剩余时间传递下去（如 gRPC deadline、自定义请求头），下游据此设置自己的超时。</p></li><li><span class="sn">4</span><p>每一跳都扣除已用时间；剩余预算不足时直接放弃，不再发起注定超时的调用。</p></li><li><span class="sn">5</span><p>超时触发后取消进行中的工作（关闭连接、取消上下文），并返回错误或降级结果。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>连接超时 (Connect Timeout)</dt><dd>建立 TCP/TLS 连接允许的最长时间。</dd></div><div class="term"><dt>读取超时 (Read Timeout)</dt><dd>两次收到数据之间允许的最长间隔，并非总耗时。</dd></div><div class="term"><dt>截止时间传播 (Deadline Propagation)</dt><dd>把请求的绝对截止时间沿调用链传给下游。</dd></div><div class="term"><dt>取消 (Cancellation)</dt><dd>超时后通知下游停止工作，释放资源。</dd></div><div class="term"><dt>超时预算 (Timeout Budget)</dt><dd>把总时限按调用链分配给各环节。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>requests 超时与剩余预算</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import time, requests
+
+TOTAL_BUDGET = 3.0  # 整个请求最多 3 秒
+
+def handle(user_id: str):
+    deadline = time.monotonic() + TOTAL_BUDGET
+    profile = call(f&quot;https://users.internal/{user_id}&quot;, deadline)
+    orders = call(f&quot;https://orders.internal/{user_id}&quot;, deadline)
+    return profile, orders
+
+def call(url: str, deadline: float):
+    remaining = deadline - time.monotonic()
+    if remaining &lt;= 0.05:
+        raise TimeoutError(&quot;budget exhausted&quot;)  # 不再发注定超时的请求
+    # (连接超时, 读取超时)；读取超时不超过剩余预算
+    resp = requests.get(url, timeout=(0.5, remaining),
+                        headers={&quot;X-Deadline-Ms&quot;: str(int(remaining * 1000))})
+    resp.raise_for_status()
+    return resp.json()</code></pre></div><p class="cnote">requests 默认不设超时会一直等；这里用剩余预算限制每一跳并告知下游。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见默认超时行为</h3><div class="tw"><table><thead><tr><th>组件</th><th>默认行为</th><th>建议</th></tr></thead><tbody><tr><td data-h="组件">Python requests</td><td data-h="默认行为">不设置则无超时</td><td data-h="建议">每次调用显式传 timeout</td></tr><tr><td data-h="组件">Node fetch</td><td data-h="默认行为">无内置请求超时</td><td data-h="建议">用 AbortSignal.timeout()</td></tr><tr><td data-h="组件">gRPC</td><td data-h="默认行为">默认无 deadline</td><td data-h="建议">客户端每次调用设置 deadline</td></tr><tr><td data-h="组件">PostgreSQL</td><td data-h="默认行为">statement_timeout 默认 0（不限）</td><td data-h="建议">按角色/会话设置上限</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>固定超时</h4><p><b class="k-p">优点</b>简单可预测</p><p><b class="k-c">代价</b>链路长时各层叠加，总耗时失控</p><p><b class="k-w">适用</b>单跳调用</p></div><div class="trd"><h4>截止时间传播</h4><p><b class="k-p">优点</b>全链路共享预算，避免白做工</p><p><b class="k-c">代价</b>需要框架或协议支持</p><p><b class="k-w">适用</b>多跳微服务、gRPC</p></div><div class="trd"><h4>自适应超时（按延迟分位数）</h4><p><b class="k-p">优点</b>贴合实际延迟分布</p><p><b class="k-c">代价</b>实现复杂，异常时可能放大</p><p><b class="k-w">适用</b>延迟波动大的依赖</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>只设连接超时，没设读取超时</p><p class="fix"><b>✓</b>两者都设，并对总耗时设上限</p></li><li><p class="bad"><b>✗</b>下游超时比上游还长</p><p class="fix"><b>✓</b>下游超时应小于上游剩余预算</p></li><li><p class="bad"><b>✗</b>超时后不取消下游工作，资源继续被占用</p><p class="fix"><b>✓</b>传递取消信号，数据库查询同样设语句超时</p></li><li><p class="bad"><b>✗</b>超时与重试叠加，总耗时远超用户可接受范围</p><p class="fix"><b>✓</b>重试计入总预算，剩余时间不足即停止</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有出站 HTTP/RPC/数据库调用都有超时</span></label></li><li><label><input type="checkbox"><span>超时值按依赖的延迟分位数设定</span></label></li><li><label><input type="checkbox"><span>总预算向下游传播</span></label></li><li><label><input type="checkbox"><span>超时后能取消并释放资源</span></label></li><li><label><input type="checkbox"><span>超时有指标和告警</span></label></li><li><label><input type="checkbox"><span>LLM 调用设超时并支持流式中断</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>超时值应该怎么定？</summary><p>参考依赖的 P99/P99.9 延迟留适当余量，同时不超过上游剩余预算与用户可接受时间。太短误杀正常请求，太长失去保护作用；需结合监控持续调整。</p></details><details class="iv"><summary>读取超时 5 秒，为什么请求可能跑 1 分钟？</summary><p>多数库的读取超时是两次收到数据之间的间隔；服务端持续缓慢发送数据，每次间隔都没超时，总时长就会很长。需要另设总超时或截止时间。</p></details><details class="iv"><summary>gRPC 的 deadline 如何传播？</summary><p>客户端设置 deadline 后，gRPC 把剩余时间通过 grpc-timeout 元数据传给服务端；服务端的上下文带该截止时间，继续调用下游时使用同一上下文即可自动传播并在到期时取消。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://grpc.io/docs/guides/deadlines/" target="_blank" rel="noopener"><b>gRPC 文档：Deadlines</b><small>grpc.io ↗</small></a></li><li><a href="https://requests.readthedocs.io/en/latest/user/advanced/#timeouts" target="_blank" rel="noopener"><b>Requests 文档：Timeouts</b><small>requests.readthedocs.io ↗</small></a></li><li><a href="https://builder.aws.com/content/3EumjoZascWd1oZiEgL8ORlv3qE/timeouts-retries-and-backoff-with-jitter" target="_blank" rel="noopener"><b>AWS Builders&#x27; Library：Timeouts, retries, and backoff with jitter</b><small>builder.aws.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="circuit-breaker.pro.html" rel="prev"><small>‹ 上一个</small><b>🔌 熔断器 (Circuit Breaker)</b></a><a class="pn next" href="service-discovery.pro.html" rel="next"><small>下一个 ›</small><b>🧭 服务发现</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

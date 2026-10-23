@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="级联故障 / 雪崩效应 专业模式：级联故障（Cascading Failure）是指一个组件的故障或过载通过依赖关系、共享资源和正反馈传播到其他组件，最终导致大范围服务不可用。它是分布式系统可靠">
+<title>🎓 级联故障 / 雪崩效应 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="cascading-failures" data-answer="0" data-prev="retry-storms.pro.html" data-next="thundering-herd.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#dist">🔮 高级 · 🕸️ 分布式</a><span>›</span><a href="cascading-failures.html">级联故障 / 雪崩效应</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.290 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="retry-storms.pro.html" rel="prev"><small>‹ 上一个</small><b>🌪️ 重试风暴</b></a><a class="pn next" href="thundering-herd.pro.html" rel="next"><small>下一个 ›</small><b>🐟 惊群效应 / 缓存击穿</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🌊</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>级联故障 / 雪崩效应</h1><p class="en">Cascading Failures</p>
+    <div class="hbtns"><a class="prosw back" href="cascading-failures.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">级联故障（Cascading Failure）是指一个组件的故障或过载通过依赖关系、共享资源和正反馈传播到其他组件，最终导致大范围服务不可用。它是分布式系统可靠性的核心风险，常见诱因是过载、资源耗尽和重试放大；防护重点在于限制传播路径：超时、熔断、舱壁、负载卸载和降级。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>某个实例或依赖变慢或宕机，原本由它承担的流量转移到剩余实例上。</p></li><li><span class="sn">2</span><p>剩余实例负载升高，延迟上升，线程、连接、内存等资源逐渐被占满。</p></li><li><span class="sn">3</span><p>上游调用方因等待而堆积请求并开始重试，自身资源也被耗尽，故障沿调用链向上蔓延。</p></li><li><span class="sn">4</span><p>健康检查失败触发实例重启或摘除，可用容量进一步减少，形成正反馈循环。</p></li><li><span class="sn">5</span><p>阻断手段是快速失败：超时、熔断、舱壁隔离、卸载与降级，必要时人工减流。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>正反馈环 (Positive Feedback Loop)</dt><dd>故障结果反过来加剧故障原因，如过载导致重试再加重过载。</dd></div><div class="term"><dt>熔断器 (Circuit Breaker)</dt><dd>依赖失败率过高时暂停调用、快速失败，定期试探恢复。</dd></div><div class="term"><dt>资源耗尽 (Resource Exhaustion)</dt><dd>CPU、内存、线程、文件描述符等被占满导致服务失效。</dd></div><div class="term"><dt>故障域 (Failure Domain)</dt><dd>会因同一原因一起失效的组件集合。</dd></div><div class="term"><dt>容量余量 (Headroom)</dt><dd>在峰值之外预留的处理能力，用于吸收故障转移流量。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>最小熔断器实现</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import time
+
+class CircuitBreaker:
+    def __init__(self, threshold=5, reset_after=30.0):
+        self.threshold, self.reset_after = threshold, reset_after
+        self.failures, self.opened_at = 0, None
+
+    def call(self, fn, *args, **kwargs):
+        if self.opened_at is not None:
+            if time.monotonic() - self.opened_at &lt; self.reset_after:
+                raise RuntimeError(&quot;circuit open&quot;)  # 快速失败，不打下游
+            self.opened_at = None                    # 半开：放行一次试探
+        try:
+            result = fn(*args, **kwargs)
+        except Exception:
+            self.failures += 1
+            if self.failures &gt;= self.threshold:
+                self.opened_at = time.monotonic()    # 打开熔断
+            raise
+        self.failures = 0                            # 成功则复位
+        return result</code></pre></div><p class="cnote">连续失败达到阈值后熔断，冷却期内直接拒绝，之后放行请求试探恢复。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">传播路径与阻断手段</h3><div class="tw"><table><thead><tr><th>传播路径</th><th>表现</th><th>阻断手段</th></tr></thead><tbody><tr><td data-h="传播路径">流量转移</td><td data-h="表现">剩余实例过载</td><td data-h="阻断手段">容量余量、负载卸载</td></tr><tr><td data-h="传播路径">调用链等待</td><td data-h="表现">上游线程被占满</td><td data-h="阻断手段">超时、熔断、舱壁</td></tr><tr><td data-h="传播路径">重试放大</td><td data-h="表现">请求量倍增</td><td data-h="阻断手段">重试预算、退避抖动</td></tr><tr><td data-h="传播路径">健康检查误杀</td><td data-h="表现">实例被反复重启</td><td data-h="阻断手段">存活探针只查进程自身</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>熔断快速失败</h4><p><b class="k-p">优点</b>保护上游资源，给下游恢复时间</p><p><b class="k-c">代价</b>阈值不当会误伤正常流量</p><p><b class="k-w">适用</b>依赖可能持续故障</p></div><div class="trd"><h4>降级返回兜底数据</h4><p><b class="k-p">优点</b>用户体验平滑</p><p><b class="k-c">代价</b>数据可能过期或不完整</p><p><b class="k-w">适用</b>非核心功能依赖</p></div><div class="trd"><h4>预留容量余量</h4><p><b class="k-p">优点</b>吸收单点故障的流量转移</p><p><b class="k-c">代价</b>平时资源利用率低</p><p><b class="k-w">适用</b>关键服务的 N+1/N+2 规划</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>存活探针检查数据库连通性，数据库一抖所有 Pod 被重启。</p><p class="fix"><b>✓</b>存活探针只反映进程自身是否卡死，依赖状态放就绪探针或不检查。</p></li><li><p class="bad"><b>✗</b>超时设得比上游还长，上游先放弃了下游还在算。</p><p class="fix"><b>✓</b>超时自外向内递减，并传播截止时间。</p></li><li><p class="bad"><b>✗</b>故障时自动扩容，但新实例启动要预热，反而加重数据库负担。</p><p class="fix"><b>✓</b>扩容配合限流，冷启动实例逐步接流。</p></li><li><p class="bad"><b>✗</b>容量规划按平均负载，没考虑一个可用区宕机。</p><p class="fix"><b>✓</b>按失去一个故障域后的剩余容量规划。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有远程调用有超时且自外向内递减</span></label></li><li><label><input type="checkbox"><span>关键依赖配置熔断与降级方案</span></label></li><li><label><input type="checkbox"><span>重试有上限、退避与预算</span></label></li><li><label><input type="checkbox"><span>容量规划覆盖失去一个故障域</span></label></li><li><label><input type="checkbox"><span>健康检查不会因依赖故障误杀实例</span></label></li><li><label><input type="checkbox"><span>有紧急减流开关</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>举例说明一次典型的级联故障。</summary><p>缓存集群故障使请求直达数据库，数据库延迟升高，应用线程等待耗尽，上游超时重试使流量翻倍，健康检查失败导致实例被重启，剩余实例负载更高，最终全站不可用。每一步都是前一步的放大。</p></details><details class="iv"><summary>为什么说超时是最基础的防线？</summary><p>没有超时，慢依赖会无限期占用线程和连接，故障直接转化为资源耗尽并向上蔓延。合理超时让调用方及时释放资源，是熔断、降级、重试能够生效的前提。</p></details><details class="iv"><summary>如何从级联故障中恢复？</summary><p>先减负载：关闭非关键功能、卸载流量、暂停重试或批任务；再恢复容量：扩容并逐步放量，避免新实例被瞬间打垮；最后复盘反馈环，加熔断、预算和余量。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://sre.google/sre-book/addressing-cascading-failures/" target="_blank" rel="noopener"><b>Google SRE Book：Addressing Cascading Failures</b><small>sre.google ↗</small></a></li><li><a href="https://learn.microsoft.com/en-us/azure/architecture/patterns/circuit-breaker" target="_blank" rel="noopener"><b>Azure 架构中心：Circuit Breaker 模式</b><small>learn.microsoft.com ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Cascading_failure" target="_blank" rel="noopener"><b>Wikipedia：Cascading failure</b><small>en.wikipedia.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="retry-storms.pro.html" rel="prev"><small>‹ 上一个</small><b>🌪️ 重试风暴</b></a><a class="pn next" href="thundering-herd.pro.html" rel="next"><small>下一个 ›</small><b>🐟 惊群效应 / 缓存击穿</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

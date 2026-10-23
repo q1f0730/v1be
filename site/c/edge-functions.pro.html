@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="边缘函数 (Edge Functions) 专业模式：边缘函数（Edge Functions）是部署在 CDN 或边缘网络众多节点上的轻量无服务器函数，请求在离用户最近的节点执行。它属于部署与网络层，多基于 V8 ">
+<title>🎓 边缘函数 (Edge Functions) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="edge-functions" data-answer="0" data-prev="audit-logs.pro.html" data-next="flaky-tests.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#ship">🔮 高级 · 🚀 上线与测试</a><span>›</span><a href="edge-functions.html">边缘函数 (Edge Functions)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.399 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="audit-logs.pro.html" rel="prev"><small>‹ 上一个</small><b>📒 审计日志</b></a><a class="pn next" href="flaky-tests.pro.html" rel="next"><small>下一个 ›</small><b>🎲 不稳定测试 (Flaky Tests)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🌍</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🚀 上线与测试</span><span>⏱ 约 10 分钟</span></div>
+    <h1>边缘函数 (Edge Functions)</h1><p class="en">Edge Functions</p>
+    <div class="hbtns"><a class="prosw back" href="edge-functions.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">边缘函数（Edge Functions）是部署在 CDN 或边缘网络众多节点上的轻量无服务器函数，请求在离用户最近的节点执行。它属于部署与网络层，多基于 V8 isolate 等轻量运行时，启动快、冷启动低，但 API 与资源受限。代表有 Cloudflare Workers、Vercel Edge Functions/Middleware、Deno Deploy、Supabase Edge Functions，常用于鉴权、重定向、个性化与 A/B。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>开发者编写处理 Request、返回 Response 的函数，平台把代码分发到全球边缘节点。</p></li><li><span class="sn">2</span><p>用户请求经 Anycast/DNS 路由到最近节点，在该节点的隔离环境中执行函数。</p></li><li><span class="sn">3</span><p>函数可读取请求头、Cookie 与平台提供的地理信息，决定重写、重定向、直接响应或回源。</p></li><li><span class="sn">4</span><p>运行时多为 Web 标准 API（fetch、Request、Response、Web Crypto），通常不支持完整 Node.js 内置模块与原生扩展。</p></li><li><span class="sn">5</span><p>需要数据时访问边缘 KV、全球分布式数据库或回源；访问单区域数据库会引入跨地域往返延迟。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>V8 Isolate</dt><dd>同一进程内相互隔离的轻量 JS 执行环境，启动远快于容器。</dd></div><div class="term"><dt>Anycast</dt><dd>多个节点共享同一 IP，网络把用户路由到最近节点。</dd></div><div class="term"><dt>边缘中间件 (Edge Middleware)</dt><dd>在请求到达页面或 API 前运行的边缘逻辑。</dd></div><div class="term"><dt>边缘 KV (Edge KV)</dt><dd>在边缘节点间复制的键值存储，读快、写入最终一致。</dd></div><div class="term"><dt>回源 (Origin Fetch)</dt><dd>边缘节点向源站请求内容或数据。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Cloudflare Worker 按国家跳转</span><em>javascript</em><button class="ccopy">复制</button></div><pre><code>// 使用 Workers 的 ES Module 语法，部署：npx wrangler deploy
+const LANG_BY_COUNTRY = { CN: &quot;zh&quot;, TW: &quot;zh&quot;, JP: &quot;ja&quot;, DE: &quot;de&quot; };
+
+export default {
+  async fetch(request) {
+    const url = new URL(request.url);
+    // 已在语言路径下则直接回源，避免循环跳转
+    if (/^\/(zh|ja|de|en)(\/|$)/.test(url.pathname)) {
+      return fetch(request);
+    }
+    // request.cf 由 Cloudflare 注入，包含访问者国家代码
+    const country = request.cf?.country ?? &quot;US&quot;;
+    const lang = LANG_BY_COUNTRY[country] ?? &quot;en&quot;;
+    url.pathname = `/${lang}${url.pathname}`;
+    return Response.redirect(url.toString(), 302);
+  },
+};</code></pre></div><p class="cnote">地理判断在最近节点完成，无需回源；国家代码来自平台注入的 request.cf。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">边缘函数 vs 区域无服务器函数</h3><div class="tw"><table><thead><tr><th>维度</th><th>边缘函数</th><th>区域无服务器函数</th></tr></thead><tbody><tr><td data-h="维度">执行位置</td><td data-h="边缘函数">全球众多节点</td><td data-h="区域无服务器函数">选定的一个或几个区域</td></tr><tr><td data-h="维度">冷启动</td><td data-h="边缘函数">通常很低</td><td data-h="区域无服务器函数">可能较明显</td></tr><tr><td data-h="维度">运行时能力</td><td data-h="边缘函数">Web 标准 API，限制较多</td><td data-h="区域无服务器函数">完整语言运行时</td></tr><tr><td data-h="维度">数据访问</td><td data-h="边缘函数">离单区域数据库远</td><td data-h="区域无服务器函数">可与数据库同区域</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>边缘函数</h4><p><b class="k-p">优点</b>全球低延迟、冷启动低</p><p><b class="k-c">代价</b>运行时受限，访问中心数据库慢</p><p><b class="k-w">适用</b>鉴权、重定向、个性化、A/B</p></div><div class="trd"><h4>区域无服务器函数</h4><p><b class="k-p">优点</b>完整运行时，靠近数据库</p><p><b class="k-c">代价</b>远端用户延迟较高</p><p><b class="k-w">适用</b>业务 API、数据库密集逻辑</p></div><div class="trd"><h4>边缘 + 区域混合</h4><p><b class="k-p">优点</b>边缘做轻逻辑，重活回源</p><p><b class="k-c">代价</b>架构更复杂</p><p><b class="k-w">适用</b>全球用户的 Web 应用</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>在边缘函数中多次查询单区域数据库</p><p class="fix"><b>✓</b>把数据库逻辑放在靠近数据库的区域函数，或使用边缘缓存/复制数据</p></li><li><p class="bad"><b>✗</b>引入依赖 Node 内置模块的库导致运行失败</p><p class="fix"><b>✓</b>选择支持 Web 标准运行时的库，部署前在对应运行时测试</p></li><li><p class="bad"><b>✗</b>在边缘做 CPU 密集计算</p><p class="fix"><b>✓</b>边缘通常有 CPU 时间限制，重计算移到区域函数或队列</p></li><li><p class="bad"><b>✗</b>把密钥硬编码在边缘代码中</p><p class="fix"><b>✓</b>使用平台的 Secret/环境变量绑定</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>边缘逻辑轻量且无重度数据库访问</span></label></li><li><label><input type="checkbox"><span>依赖库兼容边缘运行时</span></label></li><li><label><input type="checkbox"><span>设置并测试 CPU/内存限制</span></label></li><li><label><input type="checkbox"><span>密钥通过平台绑定注入</span></label></li><li><label><input type="checkbox"><span>有回退路径避免跳转循环</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>什么时候不适合用边缘函数？</summary><p>逻辑需要多次访问单一区域的数据库、依赖完整 Node API 或原生模块、CPU 密集或长时间运行时。此时用区域函数或容器，边缘只做前置的轻逻辑。</p></details><details class="iv"><summary>V8 isolate 为什么冷启动快？</summary><p>多个 isolate 运行在同一进程中，无需为每个函数启动容器或虚拟机与完整运行时，只需创建隔离的堆和上下文，开销远小于容器冷启动。</p></details><details class="iv"><summary>边缘 KV 的一致性如何？</summary><p>通常读多写少、写入在全球传播需要时间，属于最终一致；不适合需要强一致的计数或库存。强一致需求可用 Durable Objects 一类单点协调对象或中心数据库。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://developers.cloudflare.com/workers/" target="_blank" rel="noopener"><b>Cloudflare Workers 文档</b><small>developers.cloudflare.com ↗</small></a></li><li><a href="https://developers.cloudflare.com/workers/reference/how-workers-works/" target="_blank" rel="noopener"><b>Cloudflare Workers：How Workers works</b><small>developers.cloudflare.com ↗</small></a></li><li><a href="https://supabase.com/docs/guides/functions" target="_blank" rel="noopener"><b>Supabase 文档：Edge Functions</b><small>supabase.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="audit-logs.pro.html" rel="prev"><small>‹ 上一个</small><b>📒 审计日志</b></a><a class="pn next" href="flaky-tests.pro.html" rel="next"><small>下一个 ›</small><b>🎲 不稳定测试 (Flaky Tests)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="指标基数控制 专业模式：指标基数（Metrics Cardinality）指一个指标名下由不同标签取值组合产生的独立时间序列数量。每个唯一组合都要单独存储和索引，总序列数约等于各标签取">
+<title>🎓 指标基数控制 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="metrics-cardinality" data-answer="0" data-prev="opentelemetry.pro.html" data-next="terraform-state.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#devops">🔥 进阶 · 🔭 可观测与交付</a><span>›</span><a href="metrics-cardinality.html">指标基数控制</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.446 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="opentelemetry.pro.html" rel="prev"><small>‹ 上一个</small><b>🔌 OTel统一可观测标准</b></a><a class="pn next" href="terraform-state.pro.html" rel="next"><small>下一个 ›</small><b>📒 Terraform状态文件</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🗄️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>指标基数控制</h1><p class="en">Metrics Cardinality</p>
+    <div class="hbtns"><a class="prosw back" href="metrics-cardinality.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">指标基数（Metrics Cardinality）指一个指标名下由不同标签取值组合产生的独立时间序列数量。每个唯一组合都要单独存储和索引，总序列数约等于各标签取值数的乘积。把用户 ID、请求 URL、trace ID 等无界值放进标签会导致基数爆炸，使监控系统内存、查询和费用急剧上升。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>序列生成：指标名加上一组标签键值唯一确定一条时间序列，例如按 method 和 status 区分。</p></li><li><span class="sn">2</span><p>乘积效应：各标签取值数相乘，10 个路由×5 种方法×6 个状态码即为 300 条序列。</p></li><li><span class="sn">3</span><p>存储压力：时序数据库为每条活跃序列维护内存索引，序列越多内存占用越高。</p></li><li><span class="sn">4</span><p>爆炸来源：无界标签（用户 ID、原始 URL、错误消息）导致序列数随流量持续增长。</p></li><li><span class="sn">5</span><p>治理：埋点时限制标签取值，采集端丢弃或聚合高基数标签，并监控序列总数。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>时间序列 (Time Series)</dt><dd>指标名加唯一标签组合对应的一串带时间戳的样本。</dd></div><div class="term"><dt>标签 (Label / Attribute)</dt><dd>附加在指标上的维度键值对，用于筛选与聚合。</dd></div><div class="term"><dt>活跃序列 (Active Series)</dt><dd>近期仍在产生样本的序列，决定内存占用。</dd></div><div class="term"><dt>序列流失 (Churn)</dt><dd>序列频繁新建与消失，如 Pod 名随每次发布变化。</dd></div><div class="term"><dt>Exemplar</dt><dd>附在指标样本上的示例 trace ID，避免把 trace ID 当标签。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>采集端丢弃高基数标签</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code># prometheus.yml
+scrape_configs:
+  - job_name: api
+    static_configs:
+      - targets: [&quot;api:9100&quot;]
+    metric_relabel_configs:
+      # 删除不该存在的高基数标签
+      - action: labeldrop
+        regex: &quot;user_id|session_id|request_id&quot;
+      # 整个丢弃某个调试用的高基数指标
+      - source_labels: [__name__]
+        regex: &quot;http_request_duration_by_path_seconds.*&quot;
+        action: drop
+
+# 排查：哪些指标序列最多（在 Prometheus 中执行）
+#   topk(10, count by (__name__) ({__name__=~&quot;.+&quot;}))
+# 某指标的某标签有多少种取值
+#   count(count by (path) (http_requests_total))</code></pre></div><p class="cnote">采集端兜底只是止血，根本办法是在埋点处把路径归一为路由模板等有界值。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">标签取值是否合适</h3><div class="tw"><table><thead><tr><th>标签</th><th>取值范围</th><th>建议</th></tr></thead><tbody><tr><td data-h="标签">method / status_code</td><td data-h="取值范围">有界、很小</td><td data-h="建议">适合</td></tr><tr><td data-h="标签">route（路由模板）</td><td data-h="取值范围">有界</td><td data-h="建议">适合，如 /users/{id}</td></tr><tr><td data-h="标签">原始 URL path</td><td data-h="取值范围">无界</td><td data-h="建议">不适合，需归一化</td></tr><tr><td data-h="标签">user_id / trace_id</td><td data-h="取值范围">无界</td><td data-h="建议">不适合，放日志或 exemplar</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>埋点时控制标签</h4><p><b class="k-p">优点</b>从源头解决，成本最低</p><p><b class="k-c">代价</b>需开发规范与代码审查</p><p><b class="k-w">适用</b>所有新指标</p></div><div class="trd"><h4>采集端 relabel 丢弃</h4><p><b class="k-p">优点</b>无需改应用，快速止血</p><p><b class="k-c">代价</b>信息丢失，规则需维护</p><p><b class="k-w">适用</b>线上已出现基数爆炸</p></div><div class="trd"><h4>高维分析交给日志/链路</h4><p><b class="k-p">优点</b>保留细粒度上下文</p><p><b class="k-c">代价</b>查询成本高，不适合告警</p><p><b class="k-w">适用</b>需要按用户排查问题</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>把原始 URL 作为标签，带 ID 的路径产生海量序列</p><p class="fix"><b>✓</b>使用框架的路由模板作为标签值</p></li><li><p class="bad"><b>✗</b>把错误消息全文放进标签</p><p class="fix"><b>✓</b>用有限的错误类别或错误码作为标签</p></li><li><p class="bad"><b>✗</b>在 Kubernetes 中以 Pod 名为维度长期聚合，发布后序列大量流失</p><p class="fix"><b>✓</b>告警与看板按服务或 Deployment 聚合</p></li><li><p class="bad"><b>✗</b>直方图桶数过多且叠加多个标签</p><p class="fix"><b>✓</b>精简桶数量，减少直方图上的标签维度</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>新指标标签取值有界</span></label></li><li><label><input type="checkbox"><span>路径使用路由模板</span></label></li><li><label><input type="checkbox"><span>无用户/请求级 ID 标签</span></label></li><li><label><input type="checkbox"><span>监控活跃序列总数</span></label></li><li><label><input type="checkbox"><span>有基数告警阈值</span></label></li><li><label><input type="checkbox"><span>采集端有兜底丢弃规则</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么不能把 user_id 当指标标签？</summary><p>每个用户一个序列，序列数随用户量无界增长，时序库为每条活跃序列维护索引和内存，很快耗尽资源，查询也变慢，按序列计费的服务费用飙升。按用户分析应使用日志或链路数据。</p></details><details class="iv"><summary>如何估算一个指标的基数？</summary><p>各标签可能取值数相乘，再乘以产生该指标的实例数。例如 20 个路由、4 种方法、5 类状态码、50 个 Pod 约为 2 万条序列；直方图还需乘以桶数加上 sum 与 count 序列。</p></details><details class="iv"><summary>指标、日志、链路在高维数据上怎么分工？</summary><p>指标适合低基数、可聚合、用于告警和趋势的数据；日志和链路保留高维细节，如用户、请求 ID、参数，用于排查。通过 exemplar 或 trace ID 关联，从异常指标跳转到具体请求。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://prometheus.io/docs/practices/naming/" target="_blank" rel="noopener"><b>Prometheus: Metric and label naming</b><small>prometheus.io ↗</small></a></li><li><a href="https://prometheus.io/docs/practices/instrumentation/" target="_blank" rel="noopener"><b>Prometheus: Instrumentation best practices</b><small>prometheus.io ↗</small></a></li><li><a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/" target="_blank" rel="noopener"><b>Prometheus Configuration (metric_relabel_configs)</b><small>prometheus.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="opentelemetry.pro.html" rel="prev"><small>‹ 上一个</small><b>🔌 OTel统一可观测标准</b></a><a class="pn next" href="terraform-state.pro.html" rel="next"><small>下一个 ›</small><b>📒 Terraform状态文件</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

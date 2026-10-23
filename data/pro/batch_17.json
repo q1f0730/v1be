@@ -1,0 +1,3461 @@
+[
+ {
+  "slug": "data-warehouse",
+  "def": "数据仓库（Data Warehouse）是面向分析的集中式数据存储，属于数据平台的存储与计算层。它把来自业务数据库、日志、SaaS 等多个来源的数据按统一模型整合，用列式存储和大规模并行计算支撑报表、BI 与即席查询，把分析负载与在线业务库隔离。BigQuery、Snowflake、Redshift 是常见的云数仓。",
+  "how": [
+   "数据通过 ETL/ELT 管道从业务库、事件流、第三方 API 抽取，批量或增量加载进仓库的原始层（staging/raw）。",
+   "在仓库内用 SQL 转换（常配合 dbt）清洗、去重、关联，产出按主题组织的事实表与维度表。",
+   "存储多为列式格式并做压缩与分区，查询只读涉及的列和分区，以减少扫描量。",
+   "云数仓普遍存算分离：存储按量计费，计算以虚拟仓库/slot 等形式按需扩缩，并行执行查询。",
+   "BI 工具、Notebook 或应用通过 SQL 读取汇总层（mart），按扫描量或计算时长计费。"
+  ],
+  "terms": [
+   {
+    "t": "星型模型 (Star Schema)",
+    "d": "中心事实表连接多张维度表的建模方式，便于聚合分析。"
+   },
+   {
+    "t": "事实表 (Fact Table)",
+    "d": "记录业务事件与度量（如订单金额），通常行数最多。"
+   },
+   {
+    "t": "维度表 (Dimension Table)",
+    "d": "描述事实的上下文属性，如用户、商品、日期。"
+   },
+   {
+    "t": "缓慢变化维 (SCD)",
+    "d": "处理维度属性随时间变化的建模方法，如 Type 2 保留历史版本。"
+   },
+   {
+    "t": "存算分离 (Separation of Storage and Compute)",
+    "d": "存储与计算独立扩缩、分别计费的架构。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "按分区查询控制扫描量",
+   "src": "-- BigQuery：建按日分区、按用户聚簇的事实表\nCREATE TABLE analytics.fct_orders (\n  order_id STRING,\n  user_id STRING,\n  amount NUMERIC,\n  created_at TIMESTAMP\n)\nPARTITION BY DATE(created_at)\nCLUSTER BY user_id;\n\n-- 只扫最近 7 天的分区，而不是全表\nSELECT user_id, SUM(amount) AS gmv\nFROM analytics.fct_orders\nWHERE created_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)\nGROUP BY user_id\nORDER BY gmv DESC\nLIMIT 100;",
+   "note": "按时间分区过滤可显著减少扫描字节数，在按量计费的数仓里直接等于省钱。"
+  },
+  "table": {
+   "title": "主流云数仓对比",
+   "head": [
+    "产品",
+    "计费模型",
+    "特点"
+   ],
+   "rows": [
+    [
+     "BigQuery",
+     "按扫描字节或预留 slot",
+     "Serverless，无需管集群"
+    ],
+    [
+     "Snowflake",
+     "按虚拟仓库运行时长",
+     "存算分离，多云可选"
+    ],
+    [
+     "Redshift",
+     "按节点或 Serverless 用量",
+     "与 AWS 生态集成深"
+    ],
+    [
+     "ClickHouse",
+     "自建或云托管",
+     "开源，实时分析性能强"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "云托管数仓",
+    "pros": "免运维、弹性扩缩、生态成熟",
+    "cons": "按量费用易失控，存在厂商锁定",
+    "when": "团队小、数据量增长快"
+   },
+   {
+    "opt": "自建开源 OLAP",
+    "pros": "成本可控、可深度调优",
+    "cons": "需要专人运维与容量规划",
+    "when": "数据量大且有运维能力"
+   },
+   {
+    "opt": "直接查业务库只读副本",
+    "pros": "零额外系统，最快上手",
+    "cons": "复杂分析仍慢，模型混乱",
+    "when": "早期、报表需求少"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "SELECT * 扫全表，按量计费的数仓一次查询扣掉大笔费用",
+    "fix": "只选需要的列，按分区过滤，并开启查询字节上限"
+   },
+   {
+    "bad": "原始数据直接给 BI 用，各报表口径不一致",
+    "fix": "建分层模型（raw→staging→mart），统一指标定义"
+   },
+   {
+    "bad": "把数仓当 OLTP 用，频繁单行更新",
+    "fix": "数仓适合批量追加；高频点更新留在业务库"
+   },
+   {
+    "bad": "没有数据新鲜度监控，上游断了几天才发现",
+    "fix": "对关键表设置新鲜度与行数检查并告警"
+   }
+  ],
+  "checklist": [
+   "大表都有分区/聚簇，查询带分区过滤",
+   "设置单查询字节上限或预算告警",
+   "指标口径在模型层统一定义",
+   "PII 字段有脱敏或列级权限",
+   "关键表有新鲜度监控",
+   "AI 生成的 SQL 先估算扫描量再执行"
+  ],
+  "interview": [
+   {
+    "q": "数据仓库和数据湖、湖仓有什么区别？",
+    "a": "数仓存清洗后的结构化数据，Schema-on-write，查询快；数据湖用对象存储放原始多格式数据，便宜但治理难；湖仓在对象存储上加表格式（如 Iceberg、Delta）提供事务与 Schema，试图兼得二者。"
+   },
+   {
+    "q": "如何控制 BigQuery 之类按量计费数仓的成本？",
+    "a": "分区+聚簇减少扫描；禁止 SELECT *；设置 maximum bytes billed；常用聚合做物化视图；稳定负载考虑预留容量；按项目/标签拆账单监控 Top 查询。"
+   },
+   {
+    "q": "为什么分析查询不应直接跑在生产主库？",
+    "a": "分析查询扫大量行，占用 CPU、I/O 与缓冲池，会挤压在线事务延迟；行存不适合大聚合；长查询还可能阻塞清理或复制。应隔离到副本或数仓。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Google Cloud：BigQuery 概览",
+    "url": "https://docs.cloud.google.com/bigquery/docs/introduction"
+   },
+   {
+    "title": "Snowflake 文档：Key Concepts & Architecture",
+    "url": "https://docs.snowflake.com/en/user-guide/intro-key-concepts"
+   },
+   {
+    "title": "Wikipedia: Data warehouse",
+    "url": "https://en.wikipedia.org/wiki/Data_warehouse"
+   }
+  ]
+ },
+ {
+  "slug": "olap-vs-oltp",
+  "def": "OLTP（Online Transaction Processing，联机事务处理）与 OLAP（Online Analytical Processing，联机分析处理）是两类数据负载。OLTP 面向大量并发的短事务，强调低延迟、ACID 与单行读写；OLAP 面向少量但扫描海量数据的聚合查询，强调吞吐与扫描效率。区分二者决定了数据库选型、存储格式与架构隔离方式。",
+  "how": [
+   "OLTP 请求通常按主键或索引读写少量行，要求毫秒级延迟和事务一致性，典型如下单、扣库存。",
+   "OLTP 系统多用行式存储与 B-tree 索引，一行的所有列连续存放，适合整行读写。",
+   "OLAP 查询常对数亿行做 GROUP BY、JOIN、窗口函数，只用少数列，瓶颈在扫描与聚合吞吐。",
+   "OLAP 系统多用列式存储、压缩、向量化执行与 MPP 并行，提升每秒处理的行数。",
+   "实际架构通过 CDC 或批量 ETL 把 OLTP 数据同步到 OLAP 系统，二者负载物理隔离。"
+  ],
+  "terms": [
+   {
+    "t": "ACID",
+    "d": "原子性、一致性、隔离性、持久性，事务型数据库的核心保证。"
+   },
+   {
+    "t": "MPP (Massively Parallel Processing)",
+    "d": "把查询拆到多节点并行执行的架构。"
+   },
+   {
+    "t": "向量化执行 (Vectorized Execution)",
+    "d": "一次处理一批列值而非逐行，提升 CPU 效率。"
+   },
+   {
+    "t": "HTAP",
+    "d": "混合事务/分析处理，同一系统兼顾两类负载。"
+   },
+   {
+    "t": "CDC (Change Data Capture)",
+    "d": "捕获数据库变更并实时同步到下游系统。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "两类查询的典型形态",
+   "src": "-- OLTP：按主键改一行，要求毫秒级 + 事务\nBEGIN;\nUPDATE inventory SET stock = stock - 1\n WHERE sku = 'A100' AND stock > 0;\nINSERT INTO orders (user_id, sku, amount)\n VALUES (42, 'A100', 99.00);\nCOMMIT;\n\n-- OLAP：扫全年数据做聚合，只用 3 列\nSELECT date_trunc('month', created_at) AS m,\n       sku,\n       SUM(amount) AS revenue\nFROM orders\nWHERE created_at >= '2025-01-01'\nGROUP BY 1, 2\nORDER BY 1, 3 DESC;",
+   "note": "第一段是高并发短事务，第二段是低频大扫描；后者应放到分析库执行。"
+  },
+  "table": {
+   "title": "OLTP 与 OLAP 关键差异",
+   "head": [
+    "维度",
+    "OLTP",
+    "OLAP"
+   ],
+   "rows": [
+    [
+     "访问模式",
+     "点查/小范围读写",
+     "大范围扫描聚合"
+    ],
+    [
+     "存储格式",
+     "行式 + B-tree",
+     "列式 + 压缩"
+    ],
+    [
+     "优化目标",
+     "延迟、并发、一致性",
+     "吞吐、扫描效率"
+    ],
+    [
+     "代表系统",
+     "PostgreSQL、MySQL",
+     "ClickHouse、BigQuery、Snowflake"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "分析查询走只读副本",
+    "pros": "改动最小，数据准实时",
+    "cons": "仍是行存，复杂聚合慢，可能拖累复制",
+    "when": "报表量小、早期产品"
+   },
+   {
+    "opt": "同步到专用 OLAP 库",
+    "pros": "隔离彻底，分析性能高",
+    "cons": "多一套系统和同步链路",
+    "when": "分析需求稳定增长"
+   },
+   {
+    "opt": "HTAP 数据库",
+    "pros": "一套系统、数据新鲜",
+    "cons": "选型受限，极端负载仍需拆分",
+    "when": "需要实时分析且团队想少运维"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在 OLTP 主库上跑长时间报表查询",
+    "fix": "迁到只读副本或分析库，并设置 statement_timeout"
+   },
+   {
+    "bad": "为了报表在业务表上加大量索引",
+    "fix": "索引拖慢写入；聚合需求交给列式分析库"
+   },
+   {
+    "bad": "把 OLAP 库当业务库，做高频单行更新",
+    "fix": "OLAP 擅长批量追加，点更新代价高，保留在 OLTP"
+   },
+   {
+    "bad": "同步链路无监控，分析数据静默滞后",
+    "fix": "监控 CDC 延迟与行数对账，异常告警"
+   }
+  ],
+  "checklist": [
+   "区分并标注查询属于事务型还是分析型",
+   "主库设置查询超时上限",
+   "分析负载有独立资源（副本/数仓）",
+   "同步延迟有监控与 SLO",
+   "BI 账号无权访问主库"
+  ],
+  "interview": [
+   {
+    "q": "为什么列式存储适合 OLAP 而不适合 OLTP？",
+    "a": "OLAP 只读少数列、扫描大量行，列存只读所需列且同列压缩率高；OLTP 常整行读写，列存要把一行拆到多列文件中更新，写放大且点查需拼行，延迟高。"
+   },
+   {
+    "q": "如何把 OLTP 数据实时同步给 OLAP？",
+    "a": "用 CDC（如 Debezium 读 binlog/WAL）推到 Kafka 等消息系统，再写入分析库；注意顺序、幂等、Schema 演进和删除事件处理，并监控端到端延迟。"
+   },
+   {
+    "q": "HTAP 能否完全替代分离架构？",
+    "a": "能减少同步链路与数据延迟，但两类负载仍在争用资源，通常靠行列双存或副本隔离实现；超大规模分析或复杂建模场景仍常用独立数仓。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Wikipedia: Online transaction processing",
+    "url": "https://en.wikipedia.org/wiki/Online_transaction_processing"
+   },
+   {
+    "title": "Wikipedia: Online analytical processing",
+    "url": "https://en.wikipedia.org/wiki/Online_analytical_processing"
+   },
+   {
+    "title": "ClickHouse：What is OLAP?",
+    "url": "https://clickhouse.com/resources/engineering/what-is-olap"
+   }
+  ]
+ },
+ {
+  "slug": "columnar-storage",
+  "def": "列式存储（Columnar Storage）是一种数据物理布局：同一列的值连续存放，而不是同一行的所有列连续存放。它属于存储引擎与文件格式层，代表有 Apache Parquet、ORC 以及 ClickHouse 等数据库的存储引擎。分析查询只读涉及的列、同类型数据压缩率高，因此能大幅降低 I/O，是数仓与湖仓的基础。",
+  "how": [
+   "表被切成行组（row group），每个行组内每列单独存为一个列块（column chunk）。",
+   "列块内再分页，并按列类型使用字典编码、RLE、位压缩等编码，再叠加 Snappy/ZSTD 等压缩。",
+   "文件尾部元数据记录每列块的 min/max 等统计信息，查询可据此跳过不满足条件的行组（谓词下推）。",
+   "查询引擎只读取 SELECT 与 WHERE 用到的列（列裁剪），未用到的列完全不读。",
+   "读出的列以批为单位进入向量化执行，最终在需要时再拼回行（延迟物化）。"
+  ],
+  "terms": [
+   {
+    "t": "列裁剪 (Projection Pushdown)",
+    "d": "只读取查询涉及的列，跳过其余列的数据。"
+   },
+   {
+    "t": "谓词下推 (Predicate Pushdown)",
+    "d": "利用统计信息在读取前过滤掉不可能命中的数据块。"
+   },
+   {
+    "t": "行组 (Row Group)",
+    "d": "Parquet 中按行水平切分的数据块，内部按列存放。"
+   },
+   {
+    "t": "字典编码 (Dictionary Encoding)",
+    "d": "把重复值替换成小整数编号，低基数列压缩效果好。"
+   },
+   {
+    "t": "延迟物化 (Late Materialization)",
+    "d": "先在列上过滤，最后才拼装需要输出的整行。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Parquet 列裁剪与过滤读取",
+   "src": "import pandas as pd\nimport pyarrow.parquet as pq\n\n# CSV 转 Parquet（需安装 pyarrow），默认 snappy 压缩\ndf = pd.read_csv(\"events.csv\")\ndf.to_parquet(\"events.parquet\", index=False)\n\n# 只读两列，并把过滤条件下推到文件层\ntable = pq.read_table(\n    \"events.parquet\",\n    columns=[\"user_id\", \"amount\"],\n    filters=[(\"amount\", \">\", 100)],\n)\nprint(table.num_rows)\n\n# 查看行组与每列的统计信息\nmeta = pq.ParquetFile(\"events.parquet\").metadata\nprint(meta.num_row_groups, meta.row_group(0).column(0).statistics)",
+   "note": "columns 实现列裁剪，filters 借助行组统计跳过数据块，两者共同减少 I/O。"
+  },
+  "table": {
+   "title": "常见数据文件格式对比",
+   "head": [
+    "格式",
+    "布局",
+    "适用场景"
+   ],
+   "rows": [
+    [
+     "CSV",
+     "行式文本，无类型",
+     "交换小数据、人工查看"
+    ],
+    [
+     "JSON Lines",
+     "行式文本，半结构化",
+     "日志、事件原始落地"
+    ],
+    [
+     "Avro",
+     "行式二进制，带 Schema",
+     "消息流、写多读整行"
+    ],
+    [
+     "Parquet / ORC",
+     "列式二进制，带统计",
+     "分析查询、数仓与湖仓"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Parquet 等列式文件",
+    "pros": "压缩率高、分析读取快、生态广",
+    "cons": "单行更新难，小文件多时性能差",
+    "when": "批量分析、数据湖"
+   },
+   {
+    "opt": "行式数据库",
+    "pros": "单行读写快、事务完整",
+    "cons": "大聚合要读全行，I/O 浪费",
+    "when": "在线业务"
+   },
+   {
+    "opt": "列式数据库（如 ClickHouse）",
+    "pros": "实时写入+快速聚合",
+    "cons": "更新删除代价较高，需额外运维",
+    "when": "实时分析看板"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把大量 KB 级小 Parquet 文件写入数据湖",
+    "fix": "合并为较大文件（常见做法是数百 MB 级），减少元数据与打开开销"
+   },
+   {
+    "bad": "查询仍 SELECT *，列存优势全无",
+    "fix": "只选需要的列，让引擎做列裁剪"
+   },
+   {
+    "bad": "排序/分区键选得与过滤条件无关",
+    "fix": "按常用过滤列排序或分区，统计信息才能有效跳过数据"
+   },
+   {
+    "bad": "用列式格式承载高频单行更新",
+    "fix": "高频更新留在 OLTP；湖仓用 Iceberg/Delta 管理批量 upsert"
+   }
+  ],
+  "checklist": [
+   "分析数据统一存成 Parquet/ORC 而非 CSV",
+   "文件大小合理，定期 compaction",
+   "按常用过滤列分区或排序",
+   "查询只选所需列",
+   "Schema 变更有兼容策略"
+  ],
+  "interview": [
+   {
+    "q": "Parquet 如何实现谓词下推？",
+    "a": "每个行组/页记录列的 min/max、空值数等统计；读取前引擎用 WHERE 条件与统计比较，区间不可能命中的行组直接跳过。数据按过滤列有序时效果最好。"
+   },
+   {
+    "q": "为什么列存压缩率高于行存？",
+    "a": "同列数据类型相同、取值相近，适合字典、RLE、增量等编码；行存把不同类型交错存放，通用压缩算法能找到的重复模式少得多，因此列存往往能省下数倍存储与 I/O。"
+   },
+   {
+    "q": "列存写入为何偏向批量？",
+    "a": "一行要拆写到多个列块，且编码与压缩以块为单位；逐行写会产生大量小块和小文件，所以通常先在内存缓冲再批量落盘；ClickHouse 等引擎还会在后台合并小数据块。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Apache Parquet 官方文档",
+    "url": "https://parquet.apache.org/docs/"
+   },
+   {
+    "title": "Wikipedia: Apache Parquet",
+    "url": "https://en.wikipedia.org/wiki/Apache_Parquet"
+   },
+   {
+    "title": "Wikipedia: Column-oriented DBMS",
+    "url": "https://en.wikipedia.org/wiki/Column-oriented_DBMS"
+   }
+  ]
+ },
+ {
+  "slug": "workflow-orchestration",
+  "def": "工作流编排（Workflow Orchestration）指用调度系统按依赖关系、时间表和重试策略自动执行一组任务，属于数据平台的控制层。它把「先抽数、再转换、再出报表」这类流程建模为 DAG（有向无环图），提供调度、依赖管理、重试、回填、告警与可观测性。代表工具有 Apache Airflow、Dagster、Prefect。",
+  "how": [
+   "开发者用代码定义 DAG：节点是任务或数据资产，边是依赖关系，同时声明调度周期。",
+   "调度器（Scheduler）按时间表或上游事件创建一次运行（run），判断哪些任务的依赖已满足。",
+   "就绪任务被交给执行器（Executor）分发到 worker、容器或 K8s Pod 中运行。",
+   "任务失败按配置重试，超过次数则标记失败、阻塞下游并触发告警。",
+   "元数据库记录每次运行的状态与日志，支持重跑失败节点和对历史区间回填（backfill）。"
+  ],
+  "terms": [
+   {
+    "t": "DAG (Directed Acyclic Graph)",
+    "d": "有向无环图，表示任务间依赖且不允许循环。"
+   },
+   {
+    "t": "回填 (Backfill)",
+    "d": "对过去一段时间区间补跑任务，常用于修复或新上线。"
+   },
+   {
+    "t": "幂等任务 (Idempotent Task)",
+    "d": "同一输入重复执行结果一致，是安全重试的前提。"
+   },
+   {
+    "t": "软件定义资产 (Software-defined Asset)",
+    "d": "Dagster 的建模方式，以产出的数据表为中心而非任务。"
+   },
+   {
+    "t": "传感器 (Sensor)",
+    "d": "轮询外部条件（文件到达、表更新）满足后触发运行。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Airflow TaskFlow 定义 DAG",
+   "src": "from datetime import datetime, timedelta\nfrom airflow.sdk import dag, task  # Airflow 3；2.x 用 airflow.decorators\n\n@dag(schedule=\"@daily\", start_date=datetime(2026, 1, 1),\n     catchup=False,\n     default_args={\"retries\": 2, \"retry_delay\": timedelta(minutes=5)})\ndef daily_report():\n    @task\n    def extract() -> list[dict]:\n        return [{\"sku\": \"A100\", \"amount\": 99}]  # 实际中从 API/数据库读取\n\n    @task\n    def transform(rows: list[dict]) -> float:\n        return sum(r[\"amount\"] for r in rows)\n\n    @task\n    def load(total: float):\n        print(f\"GMV = {total}\")  # 实际中写入数仓\n\n    load(transform(extract()))  # 函数调用关系即依赖\n\ndaily_report()",
+   "note": "函数间传参自动形成 extract→transform→load 依赖；失败重试 2 次，间隔 5 分钟。"
+  },
+  "table": {
+   "title": "主流编排工具对比",
+   "head": [
+    "工具",
+    "建模核心",
+    "特点"
+   ],
+   "rows": [
+    [
+     "Apache Airflow",
+     "任务 (Task) DAG",
+     "历史最久、插件与社区最多"
+    ],
+    [
+     "Dagster",
+     "数据资产 (Asset)",
+     "强调血缘、类型与本地测试"
+    ],
+    [
+     "Prefect",
+     "Python 函数流",
+     "动态流程友好，上手轻"
+    ],
+    [
+     "cron",
+     "单条定时命令",
+     "无依赖、无重试、无可观测"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "cron + 脚本",
+    "pros": "零依赖、最简单",
+    "cons": "无依赖管理、失败无感知",
+    "when": "单个独立小任务"
+   },
+   {
+    "opt": "Airflow",
+    "pros": "生态成熟、托管服务多",
+    "cons": "调度器较重，本地开发体验一般",
+    "when": "任务多、团队已有经验"
+   },
+   {
+    "opt": "Dagster",
+    "pros": "以资产为中心，血缘清晰",
+    "cons": "概念较多，需要学习",
+    "when": "新建数据平台、重视数据质量"
+   },
+   {
+    "opt": "持久化执行框架（如 Temporal）",
+    "pros": "长流程状态可靠恢复",
+    "cons": "偏应用工作流，不专为数据设计",
+    "when": "业务流程编排"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "任务非幂等，重试导致数据重复写入",
+    "fix": "按分区覆盖写或 MERGE，用运行日期作为参数"
+   },
+   {
+    "bad": "在 DAG 顶层代码里查数据库或调 API",
+    "fix": "调度器会反复解析 DAG 文件；重操作放进任务内部"
+   },
+   {
+    "bad": "任务内部用 now() 取时间，回填结果错乱",
+    "fix": "使用调度传入的逻辑日期/数据区间"
+   },
+   {
+    "bad": "通过 XCom 等机制传大数据集",
+    "fix": "只传引用（路径、表名），数据放对象存储或数仓"
+   }
+  ],
+  "checklist": [
+   "每个任务幂等，可安全重跑",
+   "设置重试、超时与失败告警",
+   "使用逻辑日期而非系统当前时间",
+   "关键产出有数据质量检查",
+   "DAG 代码有 CI 测试",
+   "密钥走 Connection/Secret 后端，不写死"
+  ],
+  "interview": [
+   {
+    "q": "为什么编排任务必须设计为幂等？",
+    "a": "重试、回填、手动重跑都会让同一任务对同一区间执行多次；非幂等写入会重复或丢失数据。常用按分区 overwrite、MERGE upsert，以逻辑日期为键。"
+   },
+   {
+    "q": "Airflow 的 logical date 和实际运行时间有何不同？",
+    "a": "logical date 表示这次运行负责的数据区间起点；按日调度通常在区间结束后才运行，所以实际执行时间晚于它。任务应据数据区间取数，回填才正确。"
+   },
+   {
+    "q": "任务编排和持久化执行（durable execution）的区别？",
+    "a": "前者以定时批处理 DAG 为主，关注调度、回填与数据依赖；后者把任意长时业务流程的状态持久化，崩溃后从断点继续，适合订单、审批等应用工作流。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Apache Airflow 文档：Core Concepts",
+    "url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/index.html"
+   },
+   {
+    "title": "Dagster 文档",
+    "url": "https://dagster.io/docs"
+   },
+   {
+    "title": "Prefect 文档",
+    "url": "https://docs.prefect.io/v3/get-started"
+   }
+  ]
+ },
+ {
+  "slug": "composite-indexes",
+  "def": "联合索引（Composite Index / 复合索引）是在多列上按指定顺序建立的单个索引，属于数据库索引与查询优化层。B-tree 联合索引按 (a, b, c) 字典序排序，因此遵循最左前缀原则：查询必须从最左列开始连续使用才能高效定位。列顺序设计决定它能服务哪些查询、能否同时满足过滤、排序与覆盖。",
+  "how": [
+   "索引条目按第一列排序，第一列相同时按第二列排序，依此类推，形成字典序。",
+   "等值条件依次匹配最左的连续列，可把搜索范围收窄到很小的区间。",
+   "遇到范围条件（>、<、BETWEEN）后，后续列通常无法再用于定位，只能在区间内过滤。",
+   "若 ORDER BY 与索引列顺序一致，数据库可直接按索引顺序输出，省去额外排序。",
+   "索引包含查询所需全部列时成为覆盖索引，无需回表读取数据行。"
+  ],
+  "terms": [
+   {
+    "t": "最左前缀 (Leftmost Prefix)",
+    "d": "联合索引只能从第一列开始、连续使用若干列来定位。"
+   },
+   {
+    "t": "等值优先，范围在后 (ESR)",
+    "d": "常见设计经验：等值列在前，排序列其次，范围列最后。"
+   },
+   {
+    "t": "回表 (Table Lookup)",
+    "d": "通过索引找到行位置后，再去表中读取其他列。"
+   },
+   {
+    "t": "索引下推 (Index Condition Pushdown)",
+    "d": "MySQL 在存储引擎层用索引列先过滤，减少回表。"
+   },
+   {
+    "t": "选择性 (Selectivity)",
+    "d": "列不同值越多、过滤后剩余行越少，选择性越高。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "列顺序与最左前缀验证",
+   "src": "-- 常见查询：某租户下某状态的订单，按时间倒序\nCREATE INDEX idx_orders_tenant_status_created\n  ON orders (tenant_id, status, created_at DESC);\n\n-- ✅ 用到全部三列：两列等值 + 按第三列有序输出\nEXPLAIN SELECT id FROM orders\n WHERE tenant_id = 7 AND status = 'paid'\n ORDER BY created_at DESC LIMIT 20;\n\n-- ✅ 只用最左列也能走索引\nEXPLAIN SELECT id FROM orders WHERE tenant_id = 7;\n\n-- ❌ 跳过最左列，通常无法用该索引定位\nEXPLAIN SELECT id FROM orders WHERE status = 'paid';\n\n-- 覆盖索引：INCLUDE 附带列（PostgreSQL 11+）\nCREATE INDEX idx_cover ON orders (tenant_id, status) INCLUDE (amount);",
+   "note": "等值列在前、排序列在后，可同时满足过滤与 ORDER BY；跳过首列则失效。"
+  },
+  "table": {
+   "title": "索引 (a,b,c) 能否命中",
+   "head": [
+    "查询条件",
+    "可用列",
+    "说明"
+   ],
+   "rows": [
+    [
+     "a = ? AND b = ?",
+     "a, b",
+     "最左连续等值"
+    ],
+    [
+     "a = ? AND c = ?",
+     "a（c 仅过滤）",
+     "跳过 b，c 无法定位"
+    ],
+    [
+     "a > ? AND b = ?",
+     "a（b 仅过滤）",
+     "范围后列无法定位"
+    ],
+    [
+     "b = ? AND c = ?",
+     "通常不可用",
+     "缺最左列"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "一个宽联合索引",
+    "pros": "一份索引服务多种前缀查询，可覆盖",
+    "cons": "写放大、体积大，列序难兼顾",
+    "when": "查询模式集中且稳定"
+   },
+   {
+    "opt": "多个单列索引",
+    "pros": "灵活，各自简单",
+    "cons": "多条件时依赖索引合并，常不如联合索引",
+    "when": "查询条件组合多变"
+   },
+   {
+    "opt": "覆盖索引（含 INCLUDE）",
+    "pros": "避免回表，读最快",
+    "cons": "索引更大、写入更慢",
+    "when": "热点只读查询"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "按列的「重要性」排序，而不是按查询模式",
+    "fix": "按 ESR：等值过滤列→排序列→范围列，再结合选择性"
+   },
+   {
+    "bad": "建了 (a,b) 又建 (a)，形成冗余索引",
+    "fix": "(a,b) 已覆盖只按 a 的查询，删除冗余索引减少写开销"
+   },
+   {
+    "bad": "认为 WHERE 条件书写顺序影响命中",
+    "fix": "优化器会重排 AND 条件，关键是索引列顺序"
+   },
+   {
+    "bad": "依赖 skip scan 让跳过首列的查询变快",
+    "fix": "部分数据库支持但取决于首列基数，不可作为设计前提"
+   }
+  ],
+  "checklist": [
+   "每个联合索引对应明确的高频查询",
+   "列顺序符合等值→排序→范围",
+   "用 EXPLAIN 确认命中与无额外排序",
+   "清理被更长索引覆盖的冗余索引",
+   "评估写入放大与索引体积"
+  ],
+  "interview": [
+   {
+    "q": "为什么范围条件之后的列无法用于定位？",
+    "a": "B-tree 按字典序排列，a 取某个范围时，b 在这个区间内并不有序，无法二分定位，只能逐条过滤。等值条件则保证后续列在区间内有序。"
+   },
+   {
+    "q": "WHERE a=? ORDER BY b 与 WHERE a>? ORDER BY b，索引(a,b) 表现有何不同？",
+    "a": "前者 a 固定，b 在区间内有序，可直接按索引输出无需排序；后者跨越多个 a 值，b 整体无序，通常需要额外排序（filesort/Sort 节点）。"
+   },
+   {
+    "q": "如何在索引数量和写性能之间权衡？",
+    "a": "每个索引都要在写入时维护，增加 I/O 与锁争用。用 pg_stat_user_indexes 或 sys schema 找未使用和冗余索引；优先一个联合索引服务多个前缀查询。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL 文档：Multicolumn Indexes",
+    "url": "https://www.postgresql.org/docs/current/indexes-multicolumn.html"
+   },
+   {
+    "title": "MySQL 文档：Multiple-Column Indexes",
+    "url": "https://dev.mysql.com/doc/refman/8.0/en/multiple-column-indexes.html"
+   },
+   {
+    "title": "Use The Index, Luke：Concatenated Indexes",
+    "url": "https://use-the-index-luke.com/sql/where-clause/the-equals-operator/concatenated-keys"
+   }
+  ]
+ },
+ {
+  "slug": "database-branching",
+  "def": "数据库分支（Database Branching）指像 Git 分支一样，从某个时间点快速派生出一个独立可写的数据库副本，属于开发流程与数据库平台层。以 Neon 为代表的实现基于存算分离与写时复制（copy-on-write），创建分支不需要完整拷贝数据；PlanetScale 的分支则用于在隔离环境中开发 Schema 变更并通过部署请求合入生产。",
+  "how": [
+   "存储层把数据保存为按页的版本历史，分支只是指向某个时间点（LSN）的元数据指针。",
+   "创建分支时不复制数据，读取未修改的页直接共享父分支的历史版本。",
+   "分支上发生写入时，只为被修改的页写入新版本（写时复制），父分支不受影响。",
+   "每个分支有独立的连接串和计算资源，可接入预览部署或 CI 跑迁移与测试。",
+   "验证通过后把 Schema 迁移应用到主分支（或 PlanetScale 的部署请求），临时分支删除。"
+  ],
+  "terms": [
+   {
+    "t": "写时复制 (Copy-on-Write)",
+    "d": "共享未修改数据，只在写入时为改动部分创建副本。"
+   },
+   {
+    "t": "LSN (Log Sequence Number)",
+    "d": "WAL 中的位置编号，可用于指定分支起点的时间点。"
+   },
+   {
+    "t": "部署请求 (Deploy Request)",
+    "d": "PlanetScale 中把分支的 Schema 变更合入生产的审核流程。"
+   },
+   {
+    "t": "存算分离 (Separation of Storage and Compute)",
+    "d": "存储与计算节点独立，分支可各自挂载计算。"
+   },
+   {
+    "t": "数据脱敏 (Data Masking)",
+    "d": "复制生产数据到分支时替换敏感字段，降低泄露风险。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "PR 自动创建 Neon 分支",
+   "src": "# .github/workflows/preview-db.yml\nname: Preview DB\non:\n  pull_request:\n    types: [opened, reopened, synchronize]\njobs:\n  branch:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - id: neon\n        uses: neondatabase/create-branch-action@v6\n        with:\n          project_id: ${{ vars.NEON_PROJECT_ID }}\n          branch_name: preview/pr-${{ github.event.number }}\n          api_key: ${{ secrets.NEON_API_KEY }}\n      # 在分支上跑迁移，主库不受影响\n      - run: npx prisma migrate deploy\n        env:\n          DATABASE_URL: ${{ steps.neon.outputs.db_url }}",
+   "note": "每个 PR 得到独立数据库分支并先跑迁移；PR 关闭时可用 delete-branch-action 清理。"
+  },
+  "table": {
+   "title": "隔离开发数据库方案对比",
+   "head": [
+    "方案",
+    "创建速度",
+    "数据真实度",
+    "成本"
+   ],
+   "rows": [
+    [
+     "共享测试库",
+     "无需创建",
+     "低，常被改乱",
+     "低"
+    ],
+    [
+     "本地 Docker 库",
+     "秒级",
+     "低，需种子数据",
+     "低"
+    ],
+    [
+     "dump/restore 副本",
+     "随数据量变慢",
+     "高",
+     "存储翻倍"
+    ],
+    [
+     "写时复制分支",
+     "通常很快，与数据量关系小",
+     "高，可从生产派生",
+     "按增量计费"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "每个 PR 一个分支",
+    "pros": "迁移与测试完全隔离，可配预览环境",
+    "cons": "分支数量多，需自动清理",
+    "when": "团队并行开发多"
+   },
+   {
+    "opt": "长期 dev/staging 分支",
+    "pros": "简单稳定",
+    "cons": "数据漂移，与生产差异变大",
+    "when": "小团队、变更少"
+   },
+   {
+    "opt": "从生产派生并脱敏",
+    "pros": "数据贴近真实，复现问题容易",
+    "cons": "需要脱敏流程，合规要求高",
+    "when": "排查生产数据相关 Bug"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "直接从生产派生分支给开发者，含真实用户隐私",
+    "fix": "派生后做脱敏，或从已脱敏的父分支派生"
+   },
+   {
+    "bad": "以为分支能像 Git 一样自动合并数据",
+    "fix": "通常只合并 Schema 迁移，数据改动不会回流主库"
+   },
+   {
+    "bad": "PR 关闭后分支不删，费用与连接数累积",
+    "fix": "CI 中在 PR 关闭事件里自动删除分支"
+   },
+   {
+    "bad": "迁移只在分支上验证 Schema，没测锁与耗时",
+    "fix": "在接近生产数据量的分支上计时，评估锁表风险"
+   }
+  ],
+  "checklist": [
+   "分支随 PR 自动创建与删除",
+   "分支连接串通过 CI 输出注入，不写死",
+   "生产派生数据已脱敏",
+   "迁移在分支验证后再进主库",
+   "分支有过期或数量上限策略"
+  ],
+  "interview": [
+   {
+    "q": "Neon 创建分支为什么快？",
+    "a": "存储层保存页的历史版本，分支只是指向某个 LSN 的元数据；未修改的页与父分支共享，写入时才复制修改页，所以创建时间基本不随数据量增长。"
+   },
+   {
+    "q": "数据库分支和 Git 分支有何关键区别？",
+    "a": "Git 能三方合并任意文件改动；数据库分支一般只把 Schema 迁移合入主库，数据写入不会合并回去。分支的价值在于隔离测试与快速派生，而非数据合并。"
+   },
+   {
+    "q": "在 AI 编程流程中数据库分支有什么用？",
+    "a": "Agent 生成的迁移和破坏性操作可先在独立分支执行，失败直接丢弃；配合预览部署，让每个 Agent/PR 拥有隔离数据库，避免互相覆盖或误伤主库。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Neon 文档：Branching",
+    "url": "https://neon.com/docs/introduction/branching"
+   },
+   {
+    "title": "PlanetScale 文档：Branching",
+    "url": "https://planetscale.com/docs/vitess/schema-changes/branching"
+   },
+   {
+    "title": "neondatabase/create-branch-action (GitHub)",
+    "url": "https://github.com/neondatabase/create-branch-action"
+   }
+  ]
+ },
+ {
+  "slug": "helm",
+  "def": "Helm 是 Kubernetes 的包管理器，属于应用交付层。它把一组 K8s 资源清单模板化为 Chart，用 values 文件参数化不同环境，安装后形成带版本历史的 Release，支持升级、回滚和卸载。CNCF 毕业项目，是分发第三方组件（数据库、监控、Ingress）最常用的方式。",
+  "how": [
+   "Chart 由 Chart.yaml（元数据）、values.yaml（默认参数）和 templates/（Go 模板写的资源清单）组成。",
+   "执行 helm install/upgrade 时，Helm 合并默认 values、-f 文件与 --set 参数，渲染模板得到最终 YAML。",
+   "渲染结果提交给 Kubernetes API Server 创建或更新资源，Helm 3 不再需要集群内的 Tiller 组件。",
+   "每次安装或升级生成一个 Release 修订版本，默认以 Secret 形式存储在所在命名空间中。",
+   "helm rollback 用历史修订的清单重新应用；helm uninstall 删除该 Release 管理的资源。"
+  ],
+  "terms": [
+   {
+    "t": "Chart",
+    "d": "Helm 的打包格式，包含模板、默认配置与元数据。"
+   },
+   {
+    "t": "Values",
+    "d": "注入模板的参数，可分层覆盖以区分环境。"
+   },
+   {
+    "t": "Release",
+    "d": "Chart 在集群中的一次安装实例，带修订历史。"
+   },
+   {
+    "t": "Repository / OCI Registry",
+    "d": "存放和分发 Chart 的仓库，Helm 3 支持 OCI 镜像仓库。"
+   },
+   {
+    "t": "Hook",
+    "d": "在安装、升级等生命周期节点执行的特殊资源，如迁移 Job。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "安装、升级与回滚",
+   "src": "# 添加仓库并安装（Bitnami 等仓库也提供 OCI 地址）\nhelm repo add bitnami https://charts.bitnami.com/bitnami\nhelm repo update\n\n# 先渲染查看最终 YAML，不真正部署\nhelm template my-redis bitnami/redis -f values-prod.yaml | less\n\n# 安装或升级（不存在则安装），失败自动回滚\nhelm upgrade --install my-redis bitnami/redis \\\n  -n data --create-namespace \\\n  -f values-prod.yaml --atomic --timeout 5m\n\n# 查看修订历史并回滚到修订 1\nhelm history my-redis -n data\nhelm rollback my-redis 1 -n data",
+   "note": "upgrade --install 实现幂等部署；--atomic 在失败时自动回滚，适合放进 CI。"
+  },
+  "table": {
+   "title": "K8s 配置管理方案对比",
+   "head": [
+    "方案",
+    "机制",
+    "适用"
+   ],
+   "rows": [
+    [
+     "原生 YAML + kubectl",
+     "直接应用清单",
+     "资源少、单环境"
+    ],
+    [
+     "Kustomize",
+     "基础清单 + 补丁叠加",
+     "自有应用多环境"
+    ],
+    [
+     "Helm",
+     "模板 + values + 版本历史",
+     "分发与复用第三方组件"
+    ],
+    [
+     "Helm + GitOps",
+     "Argo CD/Flux 拉取同步",
+     "需要审计与自动对齐"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "使用社区 Chart",
+    "pros": "开箱即用，维护者负责升级",
+    "cons": "模板复杂、默认值未必安全",
+    "when": "标准组件如 Redis、Prometheus"
+   },
+   {
+    "opt": "自写 Chart",
+    "pros": "完全掌控，贴合业务",
+    "cons": "模板维护成本，Go 模板可读性差",
+    "when": "需分发给多团队/多客户的应用"
+   },
+   {
+    "opt": "Kustomize 替代",
+    "pros": "纯 YAML 无模板，直观",
+    "cons": "缺少打包分发与版本历史",
+    "when": "只有自家应用、环境差异小"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在集群里 kubectl edit 改 Helm 管理的资源",
+    "fix": "所有修改走 values 并 helm upgrade，或交给 GitOps"
+   },
+   {
+    "bad": "Secret 明文写进 values 并提交 Git",
+    "fix": "用外部密钥管理（如 External Secrets、SOPS）注入"
+   },
+   {
+    "bad": "不固定 Chart 版本，upgrade 时意外升大版本",
+    "fix": "安装时用 --version 锁定，升级前读变更说明"
+   },
+   {
+    "bad": "只看 values 不看渲染结果就上生产",
+    "fix": "用 helm template 或 helm diff 插件审查最终清单"
+   }
+  ],
+  "checklist": [
+   "Chart 版本已锁定",
+   "values 按环境分文件且进版本控制",
+   "敏感值不以明文进入 values",
+   "部署使用 --atomic 或等价失败回滚",
+   "上线前审查渲染后的 YAML",
+   "Release 历史保留数量合理（--history-max）"
+  ],
+  "interview": [
+   {
+    "q": "Helm 3 相比 Helm 2 最大的架构变化？",
+    "a": "移除了集群内的 Tiller 服务端组件，客户端直接以用户凭据调用 API Server，权限由 K8s RBAC 控制；Release 信息默认存为命名空间内的 Secret；引入三方合并补丁与 OCI 支持。"
+   },
+   {
+    "q": "Helm 和 Kustomize 怎么选？",
+    "a": "Helm 适合需要打包、分发、参数化和版本回滚的场景，尤其第三方组件；Kustomize 用纯 YAML 补丁叠加，透明无模板，适合自家应用多环境。二者也可组合使用。"
+   },
+   {
+    "q": "helm rollback 能恢复数据吗？",
+    "a": "不能。它只重新应用旧版本的 K8s 清单；数据库 Schema 变更、PVC 中的数据不会回退。有状态升级需另做备份和迁移回滚方案。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Helm 官方文档",
+    "url": "https://helm.sh/docs/"
+   },
+   {
+    "title": "Helm 文档：Charts",
+    "url": "https://helm.sh/docs/topics/charts/"
+   },
+   {
+    "title": "Artifact Hub（Chart 仓库索引）",
+    "url": "https://artifacthub.io/"
+   }
+  ]
+ },
+ {
+  "slug": "monorepo",
+  "def": "单体仓库（Monorepo）指把多个相关项目（应用、库、服务）放在同一个版本控制仓库中统一管理，属于代码组织与工程效能层。它不等于单体架构：仓库里可以有多个独立部署的服务。核心价值是原子化跨项目改动、共享代码与统一工具链；代价是需要工作区、增量构建、缓存和代码归属等工具支撑规模。",
+  "how": [
+   "仓库按约定划分目录，常见为 apps/（可部署应用）与 packages/（共享库）。",
+   "包管理器工作区（pnpm/npm/Yarn workspaces）把内部包相互链接，无需发布即可引用。",
+   "构建工具（Turborepo、Nx、Bazel）分析包依赖图，按拓扑顺序执行任务并并行化。",
+   "对任务输入做哈希，命中本地或远程缓存则直接复用输出，避免重复构建和测试。",
+   "CI 根据改动文件计算受影响的包（affected），只构建、测试、部署这些包。"
+  ],
+  "terms": [
+   {
+    "t": "工作区 (Workspace)",
+    "d": "包管理器在一个仓库内管理多个包并本地互相链接。"
+   },
+   {
+    "t": "任务图 (Task Graph)",
+    "d": "按包依赖关系推导出的任务执行顺序与并行度。"
+   },
+   {
+    "t": "远程缓存 (Remote Cache)",
+    "d": "团队和 CI 共享的构建产物缓存，以输入哈希为键。"
+   },
+   {
+    "t": "受影响分析 (Affected)",
+    "d": "根据改动推算哪些项目需要重新构建和测试。"
+   },
+   {
+    "t": "CODEOWNERS",
+    "d": "按路径指定代码负责人，PR 自动请求对应人评审。"
+   }
+  ],
+  "code": {
+   "lang": "json",
+   "title": "Turborepo 任务配置",
+   "src": "// turbo.json（Turborepo 2.x 使用 tasks 字段）\n{\n  \"$schema\": \"https://turborepo.com/schema.json\",\n  \"tasks\": {\n    \"build\": {\n      \"dependsOn\": [\"^build\"],\n      \"outputs\": [\"dist/**\", \".next/**\", \"!.next/cache/**\"]\n    },\n    \"test\": {\n      \"dependsOn\": [\"^build\"]\n    },\n    \"lint\": {},\n    \"dev\": {\n      \"cache\": false,\n      \"persistent\": true\n    }\n  }\n}",
+   "note": "^build 表示先构建依赖的内部包；outputs 声明可缓存产物，命中缓存即跳过。"
+  },
+  "table": {
+   "title": "Monorepo 工具对比",
+   "head": [
+    "工具",
+    "定位",
+    "特点"
+   ],
+   "rows": [
+    [
+     "pnpm workspaces",
+     "包管理层",
+     "链接内部包，严格依赖隔离"
+    ],
+    [
+     "Turborepo",
+     "JS/TS 任务编排",
+     "配置轻，本地+远程缓存"
+    ],
+    [
+     "Nx",
+     "多语言工程平台",
+     "依赖图、affected、代码生成"
+    ],
+    [
+     "Bazel",
+     "通用构建系统",
+     "严格可复现，适合超大规模"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Monorepo",
+    "pros": "原子改动、共享代码、工具统一",
+    "cons": "需要缓存与增量 CI，权限粒度粗",
+    "when": "多项目强耦合、同一团队维护"
+   },
+   {
+    "opt": "Polyrepo（多仓库）",
+    "pros": "边界清晰、权限独立、仓库小",
+    "cons": "共享代码要发版，跨仓改动协调难",
+    "when": "团队/服务高度独立"
+   },
+   {
+    "opt": "混合模式",
+    "pros": "按领域分组成几个中型仓库",
+    "cons": "边界划分需要判断",
+    "when": "组织规模中等、领域分明"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把 Monorepo 当成单体架构，所有服务一起部署",
+    "fix": "仓库统一不等于部署统一，按应用独立构建发布"
+   },
+   {
+    "bad": "CI 每次跑全量构建与测试，越来越慢",
+    "fix": "用 affected 分析与远程缓存只跑受影响部分"
+   },
+   {
+    "bad": "内部包之间随意深层引用对方内部文件",
+    "fix": "通过 package.json exports 暴露公共入口，设边界规则"
+   },
+   {
+    "bad": "缓存未声明全部输入（如环境变量），产物错误复用",
+    "fix": "在任务配置中声明影响输出的 env 与文件"
+   }
+  ],
+  "checklist": [
+   "目录结构区分 apps 与 packages",
+   "任务依赖与缓存输出已声明",
+   "CI 使用受影响分析",
+   "配置 CODEOWNERS 与分支保护",
+   "依赖版本在仓库内统一",
+   "Agent 改动范围限定在相关包"
+  ],
+  "interview": [
+   {
+    "q": "Monorepo 与单体架构有什么区别？",
+    "a": "Monorepo 是代码存放方式，单体是部署架构。Google 等公司在一个仓库里维护大量独立服务；反之一个单体应用也可以拆在多个仓库。二者正交。"
+   },
+   {
+    "q": "远程缓存如何保证不会用错产物？",
+    "a": "对任务输入（源码、依赖锁、配置、声明的环境变量、上游产物）计算哈希作为键，输入变化即缓存失效。风险在于未声明的输入，必须在配置里显式列出。"
+   },
+   {
+    "q": "AI 编码 Agent 在 Monorepo 中要注意什么？",
+    "a": "上下文巨大，需通过规则文件说明目录结构与边界，限定 Agent 工作的包；跨包改动要跑受影响测试；可为每个子项目放置独立的说明文件。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Turborepo 文档",
+    "url": "https://turborepo.dev/docs"
+   },
+   {
+    "title": "Nx 文档：What is a Monorepo?",
+    "url": "https://nx.dev/docs/kb/what-is-a-monorepo"
+   },
+   {
+    "title": "monorepo.tools",
+    "url": "https://monorepo.tools/"
+   }
+  ]
+ },
+ {
+  "slug": "finops",
+  "def": "FinOps 是把财务责任引入云的运营实践，属于组织流程与平台治理层。FinOps Foundation 将其描述为工程、财务与业务协作、按价值做云支出决策的框架，常以「Inform（可见）→ Optimize（优化）→ Operate（运营）」循环推进。AI 时代它同样覆盖 GPU 与模型 Token 费用。",
+  "how": [
+   "Inform：采集账单与用量数据，用标签/账户把成本分摊到团队、产品与环境，形成可见性。",
+   "建立单位经济指标，如每用户、每请求、每千次 AI 调用的成本，衡量支出是否创造价值。",
+   "Optimize：削减闲置资源、调整规格（rightsizing）、使用承诺折扣或抢占式实例。",
+   "AI 负载额外优化模型选择、提示缓存、批处理接口与输出长度，降低每次调用的 Token 成本。",
+   "Operate：设预算与异常告警、制定标签与审批策略，把成本检查纳入日常发布流程。"
+  ],
+  "terms": [
+   {
+    "t": "成本分摊 (Cost Allocation)",
+    "d": "通过标签、账户或项目把共享账单归属到具体团队。"
+   },
+   {
+    "t": "单位经济 (Unit Economics)",
+    "d": "每单位业务产出（用户、请求）对应的云成本。"
+   },
+   {
+    "t": "规格优化 (Rightsizing)",
+    "d": "按实际利用率调整实例或容器资源规格。"
+   },
+   {
+    "t": "承诺折扣 (Commitment Discounts)",
+    "d": "以一定期限用量承诺换取折扣，如 Savings Plans、预留实例。"
+   },
+   {
+    "t": "Showback / Chargeback",
+    "d": "向团队展示成本 / 实际向团队内部计费。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "AWS 设置月度预算告警",
+   "src": "# 创建每月 500 美元成本预算，实际花费超过 80% 时邮件告警\naws budgets create-budget \\\n  --account-id 123456789012 \\\n  --budget '{\n    \"BudgetName\": \"monthly-total\",\n    \"BudgetLimit\": {\"Amount\": \"500\", \"Unit\": \"USD\"},\n    \"TimeUnit\": \"MONTHLY\",\n    \"BudgetType\": \"COST\"\n  }' \\\n  --notifications-with-subscribers '[{\n    \"Notification\": {\n      \"NotificationType\": \"ACTUAL\",\n      \"ComparisonOperator\": \"GREATER_THAN\",\n      \"Threshold\": 80,\n      \"ThresholdType\": \"PERCENTAGE\"\n    },\n    \"Subscribers\": [{\"SubscriptionType\": \"EMAIL\", \"Address\": \"ops@example.com\"}]\n  }]'",
+   "note": "预算告警是最低成本的护栏；账号 ID 与邮箱为示例值，需替换。"
+  },
+  "table": {
+   "title": "常见降本手段",
+   "head": [
+    "手段",
+    "适用对象",
+    "注意事项"
+   ],
+   "rows": [
+    [
+     "关停闲置/定时开关",
+     "开发测试环境",
+     "确认无人依赖"
+    ],
+    [
+     "规格优化",
+     "长期低利用率实例",
+     "以峰值与 P95 利用率为依据"
+    ],
+    [
+     "承诺折扣",
+     "稳定基线负载",
+     "有锁定期，估算要保守"
+    ],
+    [
+     "抢占式/Spot 实例",
+     "可中断批处理",
+     "需能处理随时回收"
+    ],
+    [
+     "模型路由与提示缓存",
+     "LLM 调用",
+     "评估质量回退"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "集中式 FinOps 团队",
+    "pros": "专业度高，统一谈判折扣",
+    "cons": "离工程远，推动改动慢",
+    "when": "云支出大、多团队"
+   },
+   {
+    "opt": "工程团队自管成本",
+    "pros": "决策快，懂业务",
+    "cons": "缺全局视角，口径不一",
+    "when": "小团队、初创"
+   },
+   {
+    "opt": "平台内置护栏",
+    "pros": "默认安全，自动执行",
+    "cons": "前期建设投入",
+    "when": "规模化后防止反复失控"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "没有标签规范，账单无法归属到团队",
+    "fix": "强制必填标签（团队、环境、服务），用策略拦截无标签资源"
+   },
+   {
+    "bad": "只看总额，不看单位成本",
+    "fix": "跟踪每用户/每请求成本，增长带来的支出与浪费要分开看"
+   },
+   {
+    "bad": "一次性大扫除后不再跟进，成本反弹",
+    "fix": "预算+异常检测常态化，月度复盘纳入流程"
+   },
+   {
+    "bad": "忽视 LLM 调用成本，Agent 循环无上限",
+    "fix": "设置每任务 Token/步数上限，监控每用户 AI 成本"
+   }
+  ],
+  "checklist": [
+   "账单导出并可按团队/服务拆分",
+   "关键资源带必填标签",
+   "预算与异常告警已配置",
+   "定义了单位经济指标",
+   "闲置与低利用率资源定期清理",
+   "AI 调用有用量上限与成本看板"
+  ],
+  "interview": [
+   {
+    "q": "FinOps 的三个阶段是什么？",
+    "a": "Inform：建立成本可见与分摊；Optimize：基于数据优化用量和费率；Operate：把目标、策略与告警固化为持续运营。三者循环迭代，而非一次性项目。"
+   },
+   {
+    "q": "用量优化和费率优化有什么区别？",
+    "a": "用量优化减少消耗量，如关闲置、规格优化、缓存；费率优化降低单价，如承诺折扣、Spot、谈判。通常先做用量优化，避免为浪费的资源签长期承诺。"
+   },
+   {
+    "q": "如何控制 LLM 应用的成本？",
+    "a": "按任务难度路由模型；启用提示缓存；非实时任务走批处理接口；限制上下文与输出长度；为 Agent 设步数和 Token 上限；按用户/功能统计成本并告警。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "FinOps Foundation：What is FinOps",
+    "url": "https://www.finops.org/introduction/what-is-finops/"
+   },
+   {
+    "title": "FinOps Framework",
+    "url": "https://www.finops.org/framework/"
+   },
+   {
+    "title": "AWS CLI：create-budget",
+    "url": "https://docs.aws.amazon.com/cli/latest/reference/budgets/create-budget.html"
+   }
+  ]
+ },
+ {
+  "slug": "idempotency-keys",
+  "def": "幂等键（Idempotency Key）是客户端为一次逻辑操作生成的唯一标识，随请求发送；服务端据此识别重试，保证同一操作无论请求几次只产生一次副作用。它属于 API 设计与分布式可靠性层，用于让本不幂等的 POST（支付、下单、发消息）可以安全重试，Stripe 等支付 API 以此为标准做法。",
+  "how": [
+   "客户端在用户发起操作时生成唯一键（通常 UUID v4），首次请求与所有重试都携带同一个键。",
+   "服务端收到请求，先在存储中以「键 + 调用方」原子地占位，若已存在则不再执行业务逻辑。",
+   "首个请求执行业务并把响应状态码与响应体与该键一起持久化。",
+   "后续同键请求：若前一次已完成，直接返回存储的结果；若仍在处理中，返回冲突或让其稍后重试。",
+   "服务端校验同键请求的参数是否一致，不一致报错；键在保留期后过期清理。"
+  ],
+  "terms": [
+   {
+    "t": "幂等性 (Idempotency)",
+    "d": "同一操作执行一次和多次，对系统状态的影响相同。"
+   },
+   {
+    "t": "Idempotency-Key 头",
+    "d": "IETF 草案定义的 HTTP 请求头，用于携带幂等键。"
+   },
+   {
+    "t": "请求指纹 (Request Fingerprint)",
+    "d": "请求参数的哈希，用于检测同键不同参数的误用。"
+   },
+   {
+    "t": "至少一次投递 (At-least-once)",
+    "d": "消息可能重复送达的投递语义，消费端需幂等。"
+   },
+   {
+    "t": "原子占位 (Atomic Claim)",
+    "d": "用唯一约束或 SET NX 保证同一个键只有一个请求获得执行权。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Redis 实现幂等处理",
+   "src": "import json, redis\nr = redis.Redis()\n\ndef handle_payment(key: str, payload: dict, charge):\n    slot = f\"idem:{key}\"\n    # 原子占位：只有第一个请求能写入，24 小时后过期\n    if r.set(slot, json.dumps({\"state\": \"processing\"}), nx=True, ex=86400):\n        result = charge(payload)  # 真正扣款，只会执行一次\n        r.set(slot, json.dumps({\"state\": \"done\", \"result\": result}), ex=86400)\n        return 201, result\n    saved = json.loads(r.get(slot))\n    if saved[\"state\"] == \"processing\":\n        return 409, {\"error\": \"same request in progress\"}\n    return 200, saved[\"result\"]  # 重复请求：返回首次结果\n\n# 客户端：同一次点击的所有重试使用同一个 key\n# headers = {\"Idempotency-Key\": str(uuid.uuid4())}",
+   "note": "SET NX 保证只有一个请求获得执行权；生产中还需处理执行中崩溃与参数一致性校验。"
+  },
+  "table": {
+   "title": "幂等实现方式对比",
+   "head": [
+    "方式",
+    "适用场景",
+    "局限"
+   ],
+   "rows": [
+    [
+     "幂等键 + 结果存储",
+     "支付、下单等 POST",
+     "需额外存储与过期策略"
+    ],
+    [
+     "业务唯一约束",
+     "订单号、外部事件 ID",
+     "只防重复写，不返回原响应"
+    ],
+    [
+     "条件更新 / 乐观锁",
+     "状态机流转、扣库存",
+     "需要版本或状态字段"
+    ],
+    [
+     "天然幂等方法",
+     "PUT、DELETE 按资源覆盖",
+     "不适用于创建类操作"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Redis 存幂等记录",
+    "pros": "延迟低、TTL 自动清理",
+    "cons": "与业务数据库非同一事务",
+    "when": "高并发、可接受极端情况补偿"
+   },
+   {
+    "opt": "数据库表存幂等记录",
+    "pros": "可与业务写入同事务，强一致",
+    "cons": "增加数据库写压力",
+    "when": "资金类操作"
+   },
+   {
+    "opt": "只依赖下游幂等（如支付网关）",
+    "pros": "实现最省事",
+    "cons": "自身副作用（发货、通知）仍会重复",
+    "when": "单一外部调用且下游支持"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "每次重试都生成新的幂等键",
+    "fix": "键在用户操作发起时生成并随重试复用，存在客户端状态里"
+   },
+   {
+    "bad": "先执行业务、后检查键，存在并发窗口",
+    "fix": "先原子占位再执行，或用唯一约束保证互斥"
+   },
+   {
+    "bad": "同键不同参数时静默返回旧结果",
+    "fix": "存参数指纹，不一致返回 422 等明确错误"
+   },
+   {
+    "bad": "执行中进程崩溃，键永远停在 processing",
+    "fix": "为处理中状态设较短超时或可恢复机制，允许安全重试"
+   }
+  ],
+  "checklist": [
+   "所有有副作用的 POST 接口支持幂等键",
+   "键与调用方/租户绑定，避免跨用户冲突",
+   "存储首次响应并原样返回",
+   "校验同键请求参数一致",
+   "幂等记录有保留期与清理",
+   "Webhook 消费按事件 ID 去重"
+  ],
+  "interview": [
+   {
+    "q": "为什么 POST 需要幂等键，而 PUT 通常不需要？",
+    "a": "PUT 语义是把资源设为指定状态，重复执行结果相同，天然幂等；POST 常用于创建或触发动作，每次执行都产生新副作用，重试会重复，所以需要显式幂等键。"
+   },
+   {
+    "q": "两个同键请求同时到达怎么办？",
+    "a": "必须原子占位：数据库唯一约束或 Redis SET NX。抢到的执行；另一个看到处理中状态，返回 409 或等待后读取结果。否则会出现检查后执行的竞态。"
+   },
+   {
+    "q": "幂等键能实现 exactly-once 吗？",
+    "a": "网络层无法保证恰好一次投递，幂等键是在至少一次投递基础上，让副作用只生效一次，即 effectively-once。前提是副作用与幂等记录的写入一致。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Stripe API：Idempotent requests",
+    "url": "https://docs.stripe.com/api/idempotent_requests"
+   },
+   {
+    "title": "IETF Draft：The Idempotency-Key HTTP Header Field",
+    "url": "https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/"
+   },
+   {
+    "title": "MDN：Idempotent",
+    "url": "https://developer.mozilla.org/en-US/docs/Glossary/Idempotent"
+   }
+  ]
+ },
+ {
+  "slug": "circuit-breaker",
+  "def": "熔断器（Circuit Breaker）是一种容错模式：当对某个依赖的调用失败率或超时超过阈值时，暂时停止调用并快速失败，过一段时间再放少量请求探测恢复。它属于服务间通信的韧性层，防止下游故障耗尽调用方的线程、连接与重试预算，从而阻断连锁故障。Michael Nygard 在《Release It!》中推广了此模式。",
+  "how": [
+   "闭合（Closed）：正常调用，同时在滑动窗口内统计失败率与慢调用比例。",
+   "当失败率超过阈值（且窗口内调用数达到最小样本量）时，切换到断开（Open）。",
+   "断开状态下调用直接失败或走降级逻辑，不再请求下游，给下游恢复时间。",
+   "等待时间到期后进入半开（Half-Open），只放行有限个探测请求。",
+   "探测成功率达标则回到闭合；仍失败则重新断开，并重新计时。"
+  ],
+  "terms": [
+   {
+    "t": "滑动窗口 (Sliding Window)",
+    "d": "按最近 N 次调用或最近 N 秒统计失败率。"
+   },
+   {
+    "t": "最小调用数 (Minimum Calls)",
+    "d": "窗口内样本不足时不触发熔断，避免偶发失败误判。"
+   },
+   {
+    "t": "降级 (Fallback)",
+    "d": "熔断时返回缓存、默认值或简化结果。"
+   },
+   {
+    "t": "慢调用阈值 (Slow Call Threshold)",
+    "d": "超过指定耗时即视为失败，计入熔断统计。"
+   },
+   {
+    "t": "舱壁 (Bulkhead)",
+    "d": "按依赖隔离线程池/连接池，常与熔断配合使用。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "pybreaker 包装外部调用",
+   "src": "import pybreaker, requests\n\n# 连续失败 5 次断开，30 秒后进入半开试探\nbreaker = pybreaker.CircuitBreaker(fail_max=5, reset_timeout=30)\n\n@breaker\ndef get_rate(currency: str) -> float:\n    resp = requests.get(f\"https://api.example.com/rates/{currency}\", timeout=2)\n    resp.raise_for_status()\n    return resp.json()[\"rate\"]\n\ndef rate_with_fallback(currency: str) -> float:\n    try:\n        return get_rate(currency)\n    except pybreaker.CircuitBreakerError:\n        return cached_rate(currency)   # 熔断中：直接用缓存，不打下游\n    except requests.RequestException:\n        return cached_rate(currency)   # 单次失败也降级\n\ndef cached_rate(currency: str) -> float:\n    return 7.0  # 示例：实际应读本地缓存",
+   "note": "超时与熔断配合：先用 timeout 限制单次等待，再用熔断阻止持续打向故障依赖。"
+  },
+  "table": {
+   "title": "熔断关键参数",
+   "head": [
+    "参数",
+    "作用",
+    "设置思路"
+   ],
+   "rows": [
+    [
+     "失败率阈值",
+     "触发断开的失败比例",
+     "高于正常波动，留余量"
+    ],
+    [
+     "最小调用数",
+     "防止小样本误判",
+     "按流量设置，低流量需更大窗口"
+    ],
+    [
+     "断开等待时间",
+     "给下游恢复的时间",
+     "参考下游典型恢复时长"
+    ],
+    [
+     "半开探测数",
+     "恢复时放行的请求量",
+     "少量即可，避免冲垮下游"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "客户端库熔断",
+    "pros": "粒度细、可定制降级",
+    "cons": "每种语言各自实现，配置分散",
+    "when": "单语言服务、逻辑复杂的降级"
+   },
+   {
+    "opt": "服务网格/代理熔断（如 Envoy）",
+    "pros": "语言无关、统一配置",
+    "cons": "降级能力有限，多为拒绝或摘除实例",
+    "when": "多语言微服务"
+   },
+   {
+    "opt": "仅超时+重试",
+    "pros": "实现简单",
+    "cons": "下游故障时持续施压，易引发重试风暴",
+    "when": "依赖稳定、调用量小"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "熔断只看错误，不看慢调用",
+    "fix": "把超时与慢调用计入失败，避免线程被拖死"
+   },
+   {
+    "bad": "所有下游共用一个熔断器",
+    "fix": "按依赖（必要时按接口）分别熔断"
+   },
+   {
+    "bad": "熔断后没有降级，用户直接看到 500",
+    "fix": "设计降级：缓存、默认值、功能隐藏或明确提示"
+   },
+   {
+    "bad": "把 4xx 业务错误也计为失败",
+    "fix": "只统计下游故障类错误（超时、5xx、连接失败）"
+   }
+  ],
+  "checklist": [
+   "每个外部依赖有独立熔断器",
+   "超时、重试、熔断参数协同设计",
+   "定义了降级行为",
+   "熔断状态变化有指标与告警",
+   "做过下游故障注入演练"
+  ],
+  "interview": [
+   {
+    "q": "熔断器与重试如何配合？",
+    "a": "重试放在熔断器内部或之前需谨慎：每次重试都计入统计；熔断打开后重试应立即停止。重试需有限次数+指数退避+抖动，避免在下游恢复瞬间造成冲击。"
+   },
+   {
+    "q": "半开状态为什么只放少量请求？",
+    "a": "下游可能刚恢复、容量有限；全量流量瞬间涌入会再次压垮它。少量探测成功后再闭合，失败则重新断开，相当于渐进恢复。"
+   },
+   {
+    "q": "熔断器和限流有什么区别？",
+    "a": "限流保护自己（或下游）不被过量请求压垮，按速率拒绝；熔断根据下游健康状况决定是否调用，保护调用方并给下游恢复时间。一个看流量，一个看错误。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Martin Fowler：CircuitBreaker",
+    "url": "https://martinfowler.com/bliki/CircuitBreaker.html"
+   },
+   {
+    "title": "Microsoft Azure 架构中心：Circuit Breaker pattern",
+    "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/circuit-breaker"
+   },
+   {
+    "title": "pybreaker (GitHub)",
+    "url": "https://github.com/danielfm/pybreaker"
+   }
+  ]
+ },
+ {
+  "slug": "timeouts-and-deadlines",
+  "def": "超时（Timeout）是单次操作允许等待的最长时间；截止时间（Deadline）是整个请求链路必须完成的绝对时间点，并随调用向下游传播。它们属于分布式系统可靠性层：没有超时的调用会在下游卡住时无限占用线程和连接，逐级堆积成连锁故障；截止时间传播则避免上游已放弃、下游仍在白做工。",
+  "how": [
+   "每次网络调用至少区分连接超时（建立连接）和读取超时（等待响应），也可设置总超时。",
+   "入口服务为请求确定总预算，例如用户可接受的等待时间，换算成绝对截止时间。",
+   "调用下游时把剩余时间传递下去（如 gRPC deadline、自定义请求头），下游据此设置自己的超时。",
+   "每一跳都扣除已用时间；剩余预算不足时直接放弃，不再发起注定超时的调用。",
+   "超时触发后取消进行中的工作（关闭连接、取消上下文），并返回错误或降级结果。"
+  ],
+  "terms": [
+   {
+    "t": "连接超时 (Connect Timeout)",
+    "d": "建立 TCP/TLS 连接允许的最长时间。"
+   },
+   {
+    "t": "读取超时 (Read Timeout)",
+    "d": "两次收到数据之间允许的最长间隔，并非总耗时。"
+   },
+   {
+    "t": "截止时间传播 (Deadline Propagation)",
+    "d": "把请求的绝对截止时间沿调用链传给下游。"
+   },
+   {
+    "t": "取消 (Cancellation)",
+    "d": "超时后通知下游停止工作，释放资源。"
+   },
+   {
+    "t": "超时预算 (Timeout Budget)",
+    "d": "把总时限按调用链分配给各环节。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "requests 超时与剩余预算",
+   "src": "import time, requests\n\nTOTAL_BUDGET = 3.0  # 整个请求最多 3 秒\n\ndef handle(user_id: str):\n    deadline = time.monotonic() + TOTAL_BUDGET\n    profile = call(f\"https://users.internal/{user_id}\", deadline)\n    orders = call(f\"https://orders.internal/{user_id}\", deadline)\n    return profile, orders\n\ndef call(url: str, deadline: float):\n    remaining = deadline - time.monotonic()\n    if remaining <= 0.05:\n        raise TimeoutError(\"budget exhausted\")  # 不再发注定超时的请求\n    # (连接超时, 读取超时)；读取超时不超过剩余预算\n    resp = requests.get(url, timeout=(0.5, remaining),\n                        headers={\"X-Deadline-Ms\": str(int(remaining * 1000))})\n    resp.raise_for_status()\n    return resp.json()",
+   "note": "requests 默认不设超时会一直等；这里用剩余预算限制每一跳并告知下游。"
+  },
+  "table": {
+   "title": "常见默认超时行为",
+   "head": [
+    "组件",
+    "默认行为",
+    "建议"
+   ],
+   "rows": [
+    [
+     "Python requests",
+     "不设置则无超时",
+     "每次调用显式传 timeout"
+    ],
+    [
+     "Node fetch",
+     "无内置请求超时",
+     "用 AbortSignal.timeout()"
+    ],
+    [
+     "gRPC",
+     "默认无 deadline",
+     "客户端每次调用设置 deadline"
+    ],
+    [
+     "PostgreSQL",
+     "statement_timeout 默认 0（不限）",
+     "按角色/会话设置上限"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "固定超时",
+    "pros": "简单可预测",
+    "cons": "链路长时各层叠加，总耗时失控",
+    "when": "单跳调用"
+   },
+   {
+    "opt": "截止时间传播",
+    "pros": "全链路共享预算，避免白做工",
+    "cons": "需要框架或协议支持",
+    "when": "多跳微服务、gRPC"
+   },
+   {
+    "opt": "自适应超时（按延迟分位数）",
+    "pros": "贴合实际延迟分布",
+    "cons": "实现复杂，异常时可能放大",
+    "when": "延迟波动大的依赖"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只设连接超时，没设读取超时",
+    "fix": "两者都设，并对总耗时设上限"
+   },
+   {
+    "bad": "下游超时比上游还长",
+    "fix": "下游超时应小于上游剩余预算"
+   },
+   {
+    "bad": "超时后不取消下游工作，资源继续被占用",
+    "fix": "传递取消信号，数据库查询同样设语句超时"
+   },
+   {
+    "bad": "超时与重试叠加，总耗时远超用户可接受范围",
+    "fix": "重试计入总预算，剩余时间不足即停止"
+   }
+  ],
+  "checklist": [
+   "所有出站 HTTP/RPC/数据库调用都有超时",
+   "超时值按依赖的延迟分位数设定",
+   "总预算向下游传播",
+   "超时后能取消并释放资源",
+   "超时有指标和告警",
+   "LLM 调用设超时并支持流式中断"
+  ],
+  "interview": [
+   {
+    "q": "超时值应该怎么定？",
+    "a": "参考依赖的 P99/P99.9 延迟留适当余量，同时不超过上游剩余预算与用户可接受时间。太短误杀正常请求，太长失去保护作用；需结合监控持续调整。"
+   },
+   {
+    "q": "读取超时 5 秒，为什么请求可能跑 1 分钟？",
+    "a": "多数库的读取超时是两次收到数据之间的间隔；服务端持续缓慢发送数据，每次间隔都没超时，总时长就会很长。需要另设总超时或截止时间。"
+   },
+   {
+    "q": "gRPC 的 deadline 如何传播？",
+    "a": "客户端设置 deadline 后，gRPC 把剩余时间通过 grpc-timeout 元数据传给服务端；服务端的上下文带该截止时间，继续调用下游时使用同一上下文即可自动传播并在到期时取消。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "gRPC 文档：Deadlines",
+    "url": "https://grpc.io/docs/guides/deadlines/"
+   },
+   {
+    "title": "Requests 文档：Timeouts",
+    "url": "https://requests.readthedocs.io/en/latest/user/advanced/#timeouts"
+   },
+   {
+    "title": "AWS Builders' Library：Timeouts, retries, and backoff with jitter",
+    "url": "https://builder.aws.com/content/3EumjoZascWd1oZiEgL8ORlv3qE/timeouts-retries-and-backoff-with-jitter"
+   }
+  ]
+ },
+ {
+  "slug": "service-discovery",
+  "def": "服务发现（Service Discovery）是在动态环境中把逻辑服务名解析为当前可用实例地址的机制，属于分布式系统的网络与控制面层。容器和自动扩缩让实例 IP 随时变化，服务发现通过注册表、健康检查和解析（DNS、API 或代理）让调用方无需写死地址。Kubernetes Service、Consul、etcd 是常见实现。",
+  "how": [
+   "实例启动后注册到注册表（自注册或由平台/第三方代为注册），记录服务名、地址、端口与元数据。",
+   "注册表通过心跳、TTL 或主动健康检查维护实例状态，不健康实例被剔除。",
+   "客户端发现：调用方查询注册表获得实例列表，自行做负载均衡选择目标。",
+   "服务端发现：调用方请求一个稳定入口（负载均衡器、K8s Service 虚拟 IP、Sidecar 代理），由它转发。",
+   "Kubernetes 中 CoreDNS 把 Service 名解析为 ClusterIP，EndpointSlice 记录后端 Pod，kube-proxy 或 eBPF 负责转发。"
+  ],
+  "terms": [
+   {
+    "t": "注册表 (Service Registry)",
+    "d": "保存服务名到实例地址映射的数据库，需高可用。"
+   },
+   {
+    "t": "客户端发现 (Client-side Discovery)",
+    "d": "调用方直接查询注册表并自行负载均衡。"
+   },
+   {
+    "t": "服务端发现 (Server-side Discovery)",
+    "d": "调用方访问固定入口，由路由层选择实例。"
+   },
+   {
+    "t": "EndpointSlice",
+    "d": "Kubernetes 中记录 Service 后端 Pod 地址的资源。"
+   },
+   {
+    "t": "Headless Service",
+    "d": "不分配 ClusterIP 的 Service，DNS 直接返回各 Pod 地址。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "Kubernetes Service 与 DNS 访问",
+   "src": "# 为带 app=orders 标签的 Pod 提供稳定的服务名\napiVersion: v1\nkind: Service\nmetadata:\n  name: orders\n  namespace: shop\nspec:\n  selector:\n    app: orders        # 只把就绪（Ready）的匹配 Pod 加入后端\n  ports:\n    - port: 80\n      targetPort: 8080\n# 同命名空间内访问：http://orders\n# 跨命名空间访问：http://orders.shop.svc.cluster.local\n# Pod 扩缩或重建后 IP 变化，调用方地址不变",
+   "note": "Service 以标签选择后端 Pod，结合 readiness 探针剔除未就绪实例，DNS 名保持不变。"
+  },
+  "table": {
+   "title": "服务发现实现对比",
+   "head": [
+    "实现",
+    "模式",
+    "特点"
+   ],
+   "rows": [
+    [
+     "Kubernetes Service + DNS",
+     "服务端发现",
+     "平台内置，零代码"
+    ],
+    [
+     "Consul",
+     "注册表 + DNS/API",
+     "支持多数据中心与健康检查"
+    ],
+    [
+     "etcd / ZooKeeper",
+     "强一致 KV 存储",
+     "常作底层，需自行封装"
+    ],
+    [
+     "服务网格（Istio 等）",
+     "Sidecar 代理",
+     "附带重试、熔断、mTLS"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "DNS 解析",
+    "pros": "通用、语言无关",
+    "cons": "TTL 与客户端缓存导致更新滞后",
+    "when": "平台内服务调用"
+   },
+   {
+    "opt": "客户端发现 + SDK",
+    "pros": "可做智能负载均衡",
+    "cons": "每种语言需 SDK，耦合注册表",
+    "when": "单语言、需精细路由"
+   },
+   {
+    "opt": "服务网格",
+    "pros": "统一流量治理与可观测",
+    "cons": "增加延迟与运维复杂度",
+    "when": "大量微服务、多语言"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "代码或配置中写死 Pod/虚拟机 IP",
+    "fix": "通过服务名访问，地址交给平台解析"
+   },
+   {
+    "bad": "客户端长期缓存 DNS 结果，不随实例变化更新",
+    "fix": "遵守 TTL，长连接定期重建或使用支持重解析的客户端"
+   },
+   {
+    "bad": "只注册不做健康检查，故障实例仍接收流量",
+    "fix": "配置 readiness/健康检查，失败即摘除"
+   },
+   {
+    "bad": "注册表单点部署",
+    "fix": "注册表多副本、跨可用区部署，客户端有缓存兜底"
+   }
+  ],
+  "checklist": [
+   "服务间调用全部使用服务名",
+   "实例有就绪/健康检查",
+   "注册表或控制面高可用",
+   "DNS 缓存与长连接策略已评估",
+   "跨命名空间/集群访问规则明确"
+  ],
+  "interview": [
+   {
+    "q": "客户端发现与服务端发现的优缺点？",
+    "a": "客户端发现少一跳、可定制负载均衡，但每个语言要实现并与注册表耦合；服务端发现对调用方透明、语言无关，但多一个转发组件，需保证其高可用与性能。"
+   },
+   {
+    "q": "Kubernetes 中访问一个 Service 发生了什么？",
+    "a": "Pod 通过 CoreDNS 把服务名解析为 ClusterIP；发往该 IP 的流量被 kube-proxy 规则（iptables/IPVS）或 eBPF 转换到 EndpointSlice 中某个就绪 Pod 的地址。"
+   },
+   {
+    "q": "为什么基于 DNS 的发现会出现流量不均？",
+    "a": "客户端或运行时缓存 DNS 结果，长连接（HTTP/2、gRPC）建立后长期复用同一后端；新扩容实例收不到流量。需要客户端负载均衡、连接定期轮换或 L7 代理。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Kubernetes 文档：Service",
+    "url": "https://kubernetes.io/docs/concepts/services-networking/service/"
+   },
+   {
+    "title": "Kubernetes 文档：DNS for Services and Pods",
+    "url": "https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/"
+   },
+   {
+    "title": "microservices.io：Service registry",
+    "url": "https://microservices.io/patterns/service-registry.html"
+   }
+  ]
+ },
+ {
+  "slug": "static-site-generation",
+  "def": "静态站点生成（SSG）指在构建阶段预先把页面渲染成 HTML，部署后由 CDN 直接返回；增量静态再生（ISR）在此基础上允许页面在运行时按时间或按需在后台重新生成。二者属于前端渲染策略层，兼顾首屏速度、低服务器成本与 SEO，代表实现有 Next.js、Astro、Hugo 等。",
+  "how": [
+   "构建时框架执行数据获取（读 CMS、数据库或文件），为每个路由渲染出 HTML 与所需资源。",
+   "动态路由需在构建时枚举参数（如 generateStaticParams），生成对应的静态页面。",
+   "产物部署到 CDN 或静态托管，请求直接命中缓存文件，无需运行服务端渲染。",
+   "ISR：页面带重新验证时间，过期后的首个请求仍先拿到旧页面，同时后台触发重新生成。",
+   "按需重新验证：内容更新时由 Webhook 调用 revalidatePath/revalidateTag，立即使对应缓存失效。"
+  ],
+  "terms": [
+   {
+    "t": "SSG (Static Site Generation)",
+    "d": "构建时预渲染页面为静态 HTML。"
+   },
+   {
+    "t": "ISR (Incremental Static Regeneration)",
+    "d": "运行时按周期或按需在后台重建静态页面。"
+   },
+   {
+    "t": "重新验证 (Revalidation)",
+    "d": "判定缓存页面过期并触发重新生成的过程。"
+   },
+   {
+    "t": "stale-while-revalidate",
+    "d": "先返回旧内容、后台刷新的缓存策略，ISR 采用类似语义。"
+   },
+   {
+    "t": "按需重新验证 (On-demand Revalidation)",
+    "d": "由事件主动触发失效，而非等待时间到期。"
+   }
+  ],
+  "code": {
+   "lang": "typescript",
+   "title": "Next.js App Router 的 ISR",
+   "src": "// app/products/[id]/page.tsx\n// 页面最多每 600 秒在后台重新生成一次\nexport const revalidate = 600;\n\n// 构建时预生成热门商品，其余在首次访问时生成\nexport async function generateStaticParams() {\n  const top = await fetch(\"https://api.example.com/products/top\").then(r => r.json());\n  return top.map((p: { id: string }) => ({ id: p.id }));\n}\n\nexport default async function Page({ params }: { params: Promise<{ id: string }> }) {\n  const { id } = await params;  // Next.js 15 起 params 为 Promise\n  const p = await fetch(`https://api.example.com/products/${id}`).then(r => r.json());\n  return <h1>{p.name} - ¥{p.price}</h1>;\n}\n\n// 另在 Route Handler 中按需失效：\n// import { revalidatePath } from \"next/cache\";\n// revalidatePath(`/products/${id}`);",
+   "note": "revalidate 定义时间驱动的 ISR；内容变更时可用 revalidatePath 立即刷新。"
+  },
+  "table": {
+   "title": "渲染策略对比",
+   "head": [
+    "策略",
+    "生成时机",
+    "数据新鲜度",
+    "服务器成本"
+   ],
+   "rows": [
+    [
+     "SSG",
+     "构建时",
+     "到下次构建前不变",
+     "最低"
+    ],
+    [
+     "ISR",
+     "构建时 + 后台周期/按需",
+     "分钟级或事件触发",
+     "低"
+    ],
+    [
+     "SSR",
+     "每次请求",
+     "实时",
+     "高"
+    ],
+    [
+     "CSR",
+     "浏览器运行时",
+     "实时",
+     "低（但首屏慢、SEO 弱）"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "纯 SSG",
+    "pros": "最快最便宜，可部署到任意静态托管",
+    "cons": "内容更新需重新构建，页面多时构建慢",
+    "when": "文档、博客、营销页"
+   },
+   {
+    "opt": "ISR",
+    "pros": "静态速度 + 定期更新，构建时间可控",
+    "cons": "存在过期窗口，依赖平台支持",
+    "when": "商品页、文章列表"
+   },
+   {
+    "opt": "SSR",
+    "pros": "每次实时、可个性化",
+    "cons": "每请求消耗算力，TTFB 较高",
+    "when": "强个性化或实时数据页面"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "对用户个性化内容（购物车、登录态）用 SSG/ISR",
+    "fix": "个性化部分放客户端或 SSR，静态页只放公共内容"
+   },
+   {
+    "bad": "构建时生成数十万页，构建时间爆炸",
+    "fix": "只预生成热门页，其余首次访问时生成并缓存"
+   },
+   {
+    "bad": "以为 revalidate 到期立刻更新，用户看到的都是新内容",
+    "fix": "到期后首个请求仍返回旧页并触发重建，需要即时性用按需失效"
+   },
+   {
+    "bad": "自托管时多实例各自缓存，页面版本不一致",
+    "fix": "配置共享缓存处理器，或使用支持 ISR 的托管平台"
+   }
+  ],
+  "checklist": [
+   "区分公共内容页与个性化页",
+   "每类页面明确 revalidate 周期",
+   "CMS 更新触发按需重新验证",
+   "大站只预生成热门路由",
+   "自托管多实例时缓存共享"
+  ],
+  "interview": [
+   {
+    "q": "ISR 的 stale-while-revalidate 语义是什么？",
+    "a": "页面过期后，下一个请求仍立即拿到旧版本，同时后台重新生成；生成成功后替换缓存，之后的请求拿到新版本。生成失败则继续提供旧页面，保证可用性。"
+   },
+   {
+    "q": "什么时候不该用 SSG？",
+    "a": "内容高度个性化、强实时（行情、库存精确数）、或页面数量巨大且更新频繁时。此时用 SSR、客户端获取或 ISR 结合按需失效。"
+   },
+   {
+    "q": "SSG 对 SEO 和性能为何有利？",
+    "a": "爬虫和用户直接拿到完整 HTML，无需等待 JS 渲染；文件可被 CDN 边缘缓存，TTFB 低，有利于 LCP；同时服务器无需在每次请求时执行渲染，抗突发流量能力强。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Next.js 文档：Incremental Static Regeneration",
+    "url": "https://nextjs.org/docs/app/guides/incremental-static-regeneration"
+   },
+   {
+    "title": "Next.js 文档：generateStaticParams",
+    "url": "https://nextjs.org/docs/app/api-reference/functions/generate-static-params"
+   },
+   {
+    "title": "web.dev：Rendering on the Web",
+    "url": "https://web.dev/articles/rendering-on-the-web"
+   }
+  ]
+ },
+ {
+  "slug": "hydration",
+  "def": "水合（Hydration）是客户端 JavaScript 接管服务端渲染（SSR/SSG）HTML 的过程：框架在浏览器中重新执行组件，把生成的虚拟树与已有 DOM 对齐，并绑定事件处理和状态，使静态页面变得可交互。它属于前端渲染层，常见问题是服务端与客户端首次渲染结果不一致导致的 hydration mismatch。",
+  "how": [
+   "服务端执行组件生成 HTML，浏览器先显示这份 HTML，用户能看到内容但还不能交互。",
+   "浏览器下载并执行页面 JS bundle，框架入口调用如 React 的 hydrateRoot。",
+   "框架在客户端重新渲染组件树，逐个复用已有 DOM 节点，而不是重新创建。",
+   "对齐过程中绑定事件监听、恢复状态；若某处文本或结构不同，即报告 mismatch，React 可能放弃该部分转为客户端重新渲染。",
+   "完成后页面进入可交互状态；从显示到可交互之间的空窗影响 INP 与用户体验。"
+  ],
+  "terms": [
+   {
+    "t": "Hydration Mismatch",
+    "d": "服务端 HTML 与客户端首次渲染结果不一致的错误。"
+   },
+   {
+    "t": "hydrateRoot",
+    "d": "React 18 起用于在已有 SSR HTML 上挂载并水合的 API。"
+   },
+   {
+    "t": "选择性水合 (Selective Hydration)",
+    "d": "React 18 结合 Suspense 按优先级分块水合，用户交互的部分优先。"
+   },
+   {
+    "t": "岛屿架构 (Islands Architecture)",
+    "d": "页面大部分静态，只水合少数交互组件，如 Astro。"
+   },
+   {
+    "t": "可恢复性 (Resumability)",
+    "d": "Qwik 的思路：序列化状态，客户端无需重新执行即可恢复交互。"
+   }
+  ],
+  "code": {
+   "lang": "typescript",
+   "title": "修复时间导致的 mismatch",
+   "src": "\"use client\";\nimport { useEffect, useState } from \"react\";\n\n// ❌ 服务端与客户端执行时刻不同，文本必然不一致\n// export function Clock() { return <span>{new Date().toLocaleTimeString()}</span>; }\n\n// ✅ 首次渲染输出与服务端一致，挂载后再取浏览器时间\nexport function Clock() {\n  const [now, setNow] = useState<string | null>(null);\n  useEffect(() => {\n    setNow(new Date().toLocaleTimeString());\n    const t = setInterval(() => setNow(new Date().toLocaleTimeString()), 1000);\n    return () => clearInterval(t);\n  }, []);\n  return <span>{now ?? \"--:--:--\"}</span>;\n}\n\n// 少数无法避免的差异（如时间戳文本）可在该元素上\n// 使用 suppressHydrationWarning，它只作用于一层文本\n",
+   "note": "useEffect 只在客户端执行，把依赖浏览器环境的值推迟到水合之后。"
+  },
+  "table": {
+   "title": "常见 mismatch 来源",
+   "head": [
+    "来源",
+    "例子",
+    "修复"
+   ],
+   "rows": [
+    [
+     "时间与时区",
+     "new Date()、toLocaleString",
+     "挂载后计算或服务端固定时区"
+    ],
+    [
+     "随机值",
+     "Math.random() 生成 key/ID",
+     "用 useId 或服务端传入"
+    ],
+    [
+     "浏览器专属 API",
+     "window、localStorage",
+     "放进 useEffect"
+    ],
+    [
+     "无效 HTML 嵌套",
+     "<p> 里嵌 <div>",
+     "修正标签结构"
+    ],
+    [
+     "浏览器扩展改 DOM",
+     "翻译、广告拦截插件",
+     "确认后忽略或隔离"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "完整水合",
+    "pros": "实现简单，框架默认",
+    "cons": "JS 体积大时交互延迟明显",
+    "when": "交互密集的应用"
+   },
+   {
+    "opt": "岛屿架构/部分水合",
+    "pros": "大幅减少客户端 JS",
+    "cons": "跨岛共享状态较麻烦",
+    "when": "内容为主的站点"
+   },
+   {
+    "opt": "React Server Components",
+    "pros": "服务端组件不发 JS、不水合",
+    "cons": "需理解服务端/客户端边界",
+    "when": "Next.js App Router 项目"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "组件渲染中直接读 window/localStorage",
+    "fix": "放到 useEffect 或使用动态导入并关闭 SSR"
+   },
+   {
+    "bad": "用 suppressHydrationWarning 掩盖所有警告",
+    "fix": "只用于确知无害的单个文本差异，先修根因"
+   },
+   {
+    "bad": "在 <p> 内嵌套块级元素",
+    "fix": "浏览器会自动修正 DOM 导致结构不一致，改用合法嵌套"
+   },
+   {
+    "bad": "服务端与客户端使用不同时区格式化日期",
+    "fix": "统一时区或传入已格式化的字符串"
+   }
+  ],
+  "checklist": [
+   "开发环境控制台无 hydration 警告",
+   "依赖浏览器环境的逻辑在挂载后执行",
+   "HTML 嵌套合法",
+   "交互组件尽量下沉到叶子节点",
+   "监控 TTI/INP，评估水合成本"
+  ],
+  "interview": [
+   {
+    "q": "为什么会出现「页面能看但点不动」？",
+    "a": "SSR HTML 已显示，但 JS 尚未下载、执行或水合完成，事件还没绑定。JS 越大、主线程越忙，这段空窗越长。可通过代码分割、减少客户端组件、选择性水合缓解。"
+   },
+   {
+    "q": "React 18 的选择性水合解决了什么？",
+    "a": "以前水合必须整棵树一次完成；配合 Suspense 后可分块进行，并优先水合用户正在交互的区域，避免一个慢组件阻塞全页交互。"
+   },
+   {
+    "q": "Server Components 与水合是什么关系？",
+    "a": "Server Components 只在服务端运行，输出不需要客户端 JS，也不参与水合；只有标记 \"use client\" 的组件会被打包并水合，从而减少水合成本。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "React 文档：hydrateRoot",
+    "url": "https://react.dev/reference/react-dom/client/hydrateRoot"
+   },
+   {
+    "title": "Next.js 文档：Hydration error",
+    "url": "https://nextjs.org/docs/messages/react-hydration-error"
+   },
+   {
+    "title": "Patterns.dev：Islands Architecture",
+    "url": "https://www.patterns.dev/vanilla/islands-architecture/"
+   }
+  ]
+ },
+ {
+  "slug": "tree-shaking",
+  "def": "摇树优化（Tree Shaking）是打包器基于 ES 模块静态结构做的死代码消除：分析 import/export 依赖图，标记实际被使用的导出，把未使用的导出从最终产物中删除。它属于前端构建优化层，Rollup 首先推广此概念，webpack、esbuild、Vite（生产构建）等都支持，目标是减少 bundle 体积。",
+  "how": [
+   "打包器从入口开始解析 ES 模块，import/export 是静态声明，可在不执行代码的情况下确定依赖。",
+   "构建模块依赖图，标记每个模块中哪些导出被其他模块真正引用。",
+   "检查未引用的代码是否有副作用；无副作用或 package.json 声明 sideEffects: false 的模块可整体跳过。",
+   "压缩器（Terser、esbuild 等）在此基础上删除不可达代码与未使用变量。",
+   "CommonJS 的 require 是动态的，难以静态分析，通常只能整体保留。"
+  ],
+  "terms": [
+   {
+    "t": "ES 模块 (ESM)",
+    "d": "使用静态 import/export 的标准模块系统，是摇树的前提。"
+   },
+   {
+    "t": "副作用 (Side Effects)",
+    "d": "模块被导入时就执行的影响，如修改全局、注入样式。"
+   },
+   {
+    "t": "sideEffects 字段",
+    "d": "package.json 中声明哪些文件有副作用，供打包器安全删除。"
+   },
+   {
+    "t": "死代码消除 (Dead Code Elimination)",
+    "d": "移除不会被执行或结果未使用的代码。"
+   },
+   {
+    "t": "/*#__PURE__*/ 注释",
+    "d": "标记函数调用无副作用，未使用时可被删除。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "按需引入与 sideEffects",
+   "src": "// ❌ 引入 CommonJS 版整库，难以摇树\nimport _ from \"lodash\";\n_.debounce(save, 300);\n\n// ✅ 使用 ESM 版本并按名引入，只打包 debounce 及其依赖\nimport { debounce } from \"lodash-es\";\ndebounce(save, 300);\n\n// 库作者在 package.json 声明无副作用，允许打包器删除未用模块\n// {\n//   \"type\": \"module\",\n//   \"sideEffects\": [\"*.css\"],   // 仅 CSS 导入有副作用\n//   \"exports\": { \".\": \"./dist/index.js\" }\n// }\n\n// 分析产物体积（Vite 项目可用 rollup-plugin-visualizer）\n// npx vite build && 打开生成的 stats.html\n",
+   "note": "lodash 主包为 CommonJS，lodash-es 为 ESM；sideEffects 声明决定未使用模块能否整体删除。"
+  },
+  "table": {
+   "title": "影响摇树效果的因素",
+   "head": [
+    "因素",
+    "有利",
+    "不利"
+   ],
+   "rows": [
+    [
+     "模块格式",
+     "ESM",
+     "CommonJS / UMD"
+    ],
+    [
+     "引入方式",
+     "具名导入",
+     "整体导入后动态取属性"
+    ],
+    [
+     "副作用声明",
+     "sideEffects: false 或精确列表",
+     "未声明，打包器保守保留"
+    ],
+    [
+     "代码写法",
+     "纯函数、顶层无执行",
+     "顶层修改全局对象"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "依赖摇树",
+    "pros": "自动、无需改架构",
+    "cons": "受库格式与副作用声明限制",
+    "when": "常规项目默认开启"
+   },
+   {
+    "opt": "换用更小的库",
+    "pros": "直接减小体积",
+    "cons": "迁移成本，功能可能不全",
+    "when": "大库只用少量功能"
+   },
+   {
+    "opt": "代码分割",
+    "pros": "把非首屏代码延后加载",
+    "cons": "不减少总量，只调整加载时机",
+    "when": "体积大但功能必需"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "误把有副作用的 CSS 导入写进 sideEffects: false",
+    "fix": "用数组精确列出 *.css 等有副作用的文件"
+   },
+   {
+    "bad": "开发模式下检查体积，得出摇树无效结论",
+    "fix": "以生产构建结果为准，开发模式通常不做完整优化"
+   },
+   {
+    "bad": "用 import * as lib 后通过动态键访问属性",
+    "fix": "具名导入，避免打包器无法静态判断使用了什么"
+   },
+   {
+    "bad": "Babel 把 ESM 转成 CommonJS 后再交给打包器",
+    "fix": "保留 ESM（如 preset-env 设 modules: false）交给打包器处理"
+   }
+  ],
+  "checklist": [
+   "依赖优先选择提供 ESM 的版本",
+   "生产构建后用可视化工具检查 bundle",
+   "自研库声明 sideEffects 与 exports",
+   "避免整库引入大型工具库",
+   "AI 生成的导入语句检查是否按需"
+  ],
+  "interview": [
+   {
+    "q": "为什么 CommonJS 难以摇树？",
+    "a": "require 可以出现在条件、循环中，参数可以是变量，导出对象可在运行时修改，打包器无法在不执行代码的情况下确定用到了什么，只能保守保留整个模块。"
+   },
+   {
+    "q": "sideEffects: false 有什么风险？",
+    "a": "它告诉打包器未被使用的导入可直接删除；若某文件导入时会注册全局、注入样式或打补丁，就会被误删，导致功能缺失。应精确列出有副作用的文件。"
+   },
+   {
+    "q": "摇树和代码分割的区别？",
+    "a": "摇树删除根本没用到的代码，减少总量；代码分割把用到但不急需的代码拆成异步块延后加载，总量不变，改善首屏。二者互补。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "webpack 文档：Tree Shaking",
+    "url": "https://webpack.js.org/guides/tree-shaking/"
+   },
+   {
+    "title": "MDN：Tree shaking",
+    "url": "https://developer.mozilla.org/en-US/docs/Glossary/Tree_shaking"
+   },
+   {
+    "title": "Rollup 文档：Tree-shaking",
+    "url": "https://rollupjs.org/introduction/#tree-shaking"
+   }
+  ]
+ },
+ {
+  "slug": "code-splitting",
+  "def": "代码分割（Code Splitting）是把应用 JavaScript 拆成多个按需加载的块（chunk），而不是打成一个大 bundle；懒加载（Lazy Loading）是在需要时才请求这些块。它属于前端构建与性能层，借助动态 import() 让打包器自动生成分割点，减少首屏下载与解析的代码量，改善 LCP 与交互指标。",
+  "how": [
+   "开发者在代码中使用动态 import()，或框架按路由自动生成分割点。",
+   "打包器为每个分割点生成独立 chunk，并把公共依赖提取为共享块，避免重复。",
+   "首屏只加载入口块和当前路由所需块；其他块在路由切换、组件渲染或用户交互时请求。",
+   "React 中用 React.lazy 包装动态导入，配合 Suspense 在加载期间显示占位内容。",
+   "可通过预取（prefetch）在空闲时提前下载可能用到的块，减少切换等待。"
+  ],
+  "terms": [
+   {
+    "t": "动态导入 (Dynamic import())",
+    "d": "返回 Promise 的运行时模块加载语法，打包器据此分割。"
+   },
+   {
+    "t": "Chunk",
+    "d": "打包器输出的一个独立 JS 文件，可单独缓存与加载。"
+   },
+   {
+    "t": "路由级分割 (Route-based Splitting)",
+    "d": "按页面路由拆分代码，最常见、收益最大。"
+   },
+   {
+    "t": "预取 / 预加载 (Prefetch / Preload)",
+    "d": "提前低优先级或高优先级获取资源。"
+   },
+   {
+    "t": "Suspense",
+    "d": "React 中在异步组件就绪前显示 fallback 的机制。"
+   }
+  ],
+  "code": {
+   "lang": "typescript",
+   "title": "React.lazy 懒加载图表组件",
+   "src": "import { lazy, Suspense, useState } from \"react\";\n\n// 图表库体积大且不在首屏：拆成独立 chunk，用到时才下载\nconst SalesChart = lazy(() => import(\"./SalesChart\"));\n\nexport default function Dashboard() {\n  const [show, setShow] = useState(false);\n  return (\n    <main>\n      <h1>销售概览</h1>\n      <button onClick={() => setShow(true)}>查看图表</button>\n      {show && (\n        <Suspense fallback={<div className=\"skeleton\">图表加载中…</div>}>\n          <SalesChart />\n        </Suspense>\n      )}\n    </main>\n  );\n}\n// Next.js 中可用 next/dynamic 实现同样效果",
+   "note": "点击后才请求图表 chunk，首屏 bundle 不包含图表库。"
+  },
+  "table": {
+   "title": "分割策略对比",
+   "head": [
+    "策略",
+    "分割粒度",
+    "适用"
+   ],
+   "rows": [
+    [
+     "路由级",
+     "每个页面一个块",
+     "多页面 SPA，默认首选"
+    ],
+    [
+     "组件级",
+     "大组件单独成块",
+     "弹窗、图表、编辑器"
+    ],
+    [
+     "第三方库拆分",
+     "vendor 独立缓存",
+     "依赖稳定、业务代码常变"
+    ],
+    [
+     "交互触发",
+     "用户操作后再加载",
+     "低频功能"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "激进细粒度分割",
+    "pros": "首屏最小",
+    "cons": "请求数多，瀑布式加载延迟",
+    "when": "首屏极度敏感的移动端"
+   },
+   {
+    "opt": "路由级分割",
+    "pros": "收益大、实现简单",
+    "cons": "单页内仍可能有大组件",
+    "when": "大多数应用"
+   },
+   {
+    "opt": "不分割单 bundle",
+    "pros": "无加载等待，配置最简",
+    "cons": "首屏下载解析全部代码",
+    "when": "非常小的应用"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把首屏可见的组件也懒加载，导致 LCP 变差",
+    "fix": "只懒加载首屏外或交互后才需要的部分"
+   },
+   {
+    "bad": "懒加载块依次请求形成瀑布",
+    "fix": "并行触发或对关键路径做 preload/prefetch"
+   },
+   {
+    "bad": "没有加载占位，内容出现时布局跳动",
+    "fix": "Suspense fallback 预留与真实内容相同的尺寸"
+   },
+   {
+    "bad": "部署新版本后旧 chunk 被删，用户切路由报错",
+    "fix": "保留旧版本资源一段时间，捕获加载失败并提示刷新"
+   }
+  ],
+  "checklist": [
+   "主 bundle 体积有预算并在 CI 检查",
+   "路由级分割已启用",
+   "大型低频组件懒加载",
+   "fallback 预留布局空间",
+   "处理 chunk 加载失败"
+  ],
+  "interview": [
+   {
+    "q": "代码分割会不会让性能变差？",
+    "a": "会，如果分割过细或把首屏关键内容延后：增加请求往返、产生瀑布、推迟 LCP。原则是首屏关键路径完整加载，非关键部分延后，并用预取掩盖切换延迟。"
+   },
+   {
+    "q": "动态 import() 如何被打包器处理？",
+    "a": "打包器把 import() 的目标模块及其依赖作为新的异步 chunk 输出，原位置替换为运行时加载代码（创建 script 或 fetch 模块），返回解析为模块对象的 Promise。"
+   },
+   {
+    "q": "部署后出现 ChunkLoadError 怎么办？",
+    "a": "通常是旧页面引用的 chunk 文件已被新部署删除。保留历史资源、使用内容哈希文件名、捕获错误后提示刷新或自动重载；部署平台的版本偏差保护（skew protection）也可缓解。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "React 文档：lazy",
+    "url": "https://react.dev/reference/react/lazy"
+   },
+   {
+    "title": "webpack 文档：Code Splitting",
+    "url": "https://webpack.js.org/guides/code-splitting/"
+   },
+   {
+    "title": "MDN：Lazy loading",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/Performance/Guides/Lazy_loading"
+   }
+  ]
+ },
+ {
+  "slug": "core-web-vitals",
+  "def": "Core Web Vitals 是 Google 定义的一组衡量真实用户体验的网页指标，当前为 LCP（加载）、INP（交互响应）和 CLS（视觉稳定）。它属于前端性能与可观测层，以真实用户数据（字段数据）的第 75 百分位评估，是 Google 搜索页面体验信号的一部分。INP 于 2024 年 3 月取代 FID。",
+  "how": [
+   "LCP（Largest Contentful Paint）测量视口内最大图片或文本块渲染完成的时间，良好阈值为 2.5 秒以内。",
+   "INP（Interaction to Next Paint）观察页面生命周期内的点击、触摸、按键交互，取接近最差的交互到下一帧绘制的延迟，良好为 200 毫秒以内。",
+   "CLS（Cumulative Layout Shift）累计意外布局偏移得分，取会话窗口中最大的一段，良好为 0.1 以内。",
+   "评估以页面访问的第 75 百分位为准，区分移动端和桌面端分别统计。",
+   "数据来源分字段数据（CrUX、RUM 埋点）与实验室数据（Lighthouse），排名与诊断以字段数据为准。"
+  ],
+  "terms": [
+   {
+    "t": "LCP (Largest Contentful Paint)",
+    "d": "最大内容元素渲染完成时间，衡量感知加载速度。"
+   },
+   {
+    "t": "INP (Interaction to Next Paint)",
+    "d": "交互到下一次绘制的延迟，衡量整体响应性。"
+   },
+   {
+    "t": "CLS (Cumulative Layout Shift)",
+    "d": "意外布局偏移的累计得分，衡量视觉稳定性。"
+   },
+   {
+    "t": "CrUX (Chrome UX Report)",
+    "d": "Chrome 真实用户体验数据集，PageSpeed Insights 字段数据来源。"
+   },
+   {
+    "t": "长任务 (Long Task)",
+    "d": "主线程上超过 50 毫秒的任务，是 INP 变差的常见原因。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "用 web-vitals 采集真实数据",
+   "src": "import { onLCP, onINP, onCLS } from \"web-vitals\";\n\n// 把指标发送到自己的分析端点\nfunction send(metric) {\n  const body = JSON.stringify({\n    name: metric.name,        // \"LCP\" | \"INP\" | \"CLS\"\n    value: metric.value,      // LCP/INP 为毫秒，CLS 无单位\n    rating: metric.rating,    // \"good\" | \"needs-improvement\" | \"poor\"\n    id: metric.id,\n    page: location.pathname,\n  });\n  // 页面关闭时也能可靠发送\n  navigator.sendBeacon(\"/analytics/vitals\", body);\n}\n\nonLCP(send);\nonINP(send);\nonCLS(send);",
+   "note": "web-vitals 是 Google 维护的库；字段数据比本地 Lighthouse 分数更能反映真实体验。"
+  },
+  "table": {
+   "title": "指标阈值（第 75 百分位）",
+   "head": [
+    "指标",
+    "良好",
+    "需改进",
+    "较差"
+   ],
+   "rows": [
+    [
+     "LCP",
+     "≤ 2.5 s",
+     "2.5–4 s",
+     "> 4 s"
+    ],
+    [
+     "INP",
+     "≤ 200 ms",
+     "200–500 ms",
+     "> 500 ms"
+    ],
+    [
+     "CLS",
+     "≤ 0.1",
+     "0.1–0.25",
+     "> 0.25"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "实验室测试（Lighthouse）",
+    "pros": "可复现、适合 CI 回归",
+    "cons": "不代表真实设备与网络，测不了真实交互",
+    "when": "开发阶段与 PR 检查"
+   },
+   {
+    "opt": "字段数据（CrUX / RUM）",
+    "pros": "反映真实用户",
+    "cons": "有延迟，需流量积累",
+    "when": "评估效果与 SEO"
+   },
+   {
+    "opt": "两者结合",
+    "pros": "既能定位又能验证",
+    "cons": "需要维护埋点与看板",
+    "when": "成熟产品"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只盯 Lighthouse 分数，忽略真实用户数据",
+    "fix": "以 CrUX/RUM 的 P75 为准，Lighthouse 用于诊断"
+   },
+   {
+    "bad": "LCP 图片懒加载或低优先级",
+    "fix": "首屏主图不要 loading=lazy，可加 fetchpriority=high"
+   },
+   {
+    "bad": "图片、广告、嵌入未预留尺寸",
+    "fix": "设置 width/height 或 aspect-ratio，动态内容预留空间"
+   },
+   {
+    "bad": "事件处理里执行大量同步计算",
+    "fix": "拆分长任务、让出主线程，重计算放 Web Worker"
+   }
+  ],
+  "checklist": [
+   "已采集三项指标的字段数据",
+   "首屏 LCP 资源优先加载",
+   "媒体与动态内容预留尺寸",
+   "监控长任务与 INP 慢交互",
+   "CI 有性能预算防回归"
+  ],
+  "interview": [
+   {
+    "q": "为什么 INP 替代了 FID？",
+    "a": "FID 只测首次交互的输入延迟，不含处理与渲染时间；INP 覆盖整个访问期间所有交互、包含输入延迟+处理时间+呈现延迟，更能反映真实响应性。"
+   },
+   {
+    "q": "LCP 慢如何拆解排查？",
+    "a": "可拆为 TTFB、资源加载延迟、资源加载时长、元素渲染延迟四段。对症处理：优化服务器与 CDN、尽早发现 LCP 资源（preload）、压缩图片、减少阻塞渲染的 JS/CSS。"
+   },
+   {
+    "q": "CLS 为什么不是整个页面生命周期的总和？",
+    "a": "早期定义会随页面停留时间不断累积，对长会话不公平；现在把偏移分组为会话窗口（间隔小于 1 秒、窗口最长 5 秒），取最大窗口得分。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "web.dev：Web Vitals",
+    "url": "https://web.dev/articles/vitals"
+   },
+   {
+    "title": "web.dev：Interaction to Next Paint (INP)",
+    "url": "https://web.dev/articles/inp"
+   },
+   {
+    "title": "GoogleChrome/web-vitals (GitHub)",
+    "url": "https://github.com/GoogleChrome/web-vitals"
+   }
+  ]
+ },
+ {
+  "slug": "browser-rendering-pipeline",
+  "def": "浏览器渲染流程（Rendering Pipeline）是浏览器把 HTML、CSS、JS 转为屏幕像素的一系列阶段：解析构建 DOM 与 CSSOM、样式计算、布局（Layout/Reflow）、绘制（Paint）、合成（Composite）。它属于浏览器引擎与前端性能层，理解哪些改动触发哪些阶段，是排查卡顿、掉帧和 INP 问题的基础。",
+  "how": [
+   "解析 HTML 生成 DOM 树，解析 CSS 生成 CSSOM；遇到同步脚本会阻塞解析。",
+   "样式计算（Recalculate Style）为每个 DOM 节点确定最终的计算样式。",
+   "布局阶段计算每个可见元素的几何信息（位置、尺寸）；几何改变需要重新布局，即重排。",
+   "绘制阶段把元素的文本、颜色、边框、阴影等记录为绘制指令并栅格化为像素，即重绘。",
+   "合成阶段把分层后的图层按顺序组合输出到屏幕，transform 与 opacity 通常只需合成，可由合成线程/GPU 处理。"
+  ],
+  "terms": [
+   {
+    "t": "重排 (Reflow / Layout)",
+    "d": "重新计算元素几何信息，代价通常最高，可能波及大量节点。"
+   },
+   {
+    "t": "重绘 (Repaint)",
+    "d": "外观变化但几何不变时重新绘制像素。"
+   },
+   {
+    "t": "合成层 (Compositing Layer)",
+    "d": "单独栅格化、可独立变换的图层，如 will-change 元素。"
+   },
+   {
+    "t": "强制同步布局 (Forced Synchronous Layout)",
+    "d": "JS 修改样式后立即读取布局属性，迫使浏览器提前布局。"
+   },
+   {
+    "t": "布局抖动 (Layout Thrashing)",
+    "d": "循环中交替读写布局属性，反复触发强制布局。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "避免布局抖动",
+   "src": "const items = document.querySelectorAll(\".card\");\n\n// ❌ 读写交替：每次读 offsetWidth 都强制浏览器重新布局\nitems.forEach(el => {\n  el.style.width = el.parentElement.offsetWidth / 2 + \"px\";\n});\n\n// ✅ 先批量读，再批量写，只触发一次布局\nconst widths = [...items].map(el => el.parentElement.offsetWidth);\nitems.forEach((el, i) => {\n  el.style.width = widths[i] / 2 + \"px\";\n});\n\n// ✅ 动画优先用 transform/opacity，并在下一帧前统一写入\nrequestAnimationFrame(() => {\n  items.forEach(el => (el.style.transform = \"translateX(100px)\"));\n});",
+   "note": "读写分离避免强制同步布局；transform 动画通常跳过布局与绘制。"
+  },
+  "table": {
+   "title": "CSS 属性触发的阶段",
+   "head": [
+    "属性示例",
+    "布局",
+    "绘制",
+    "合成"
+   ],
+   "rows": [
+    [
+     "width / height / top / margin",
+     "是",
+     "是",
+     "是"
+    ],
+    [
+     "color / background / box-shadow",
+     "否",
+     "是",
+     "是"
+    ],
+    [
+     "transform / opacity",
+     "否",
+     "否",
+     "是"
+    ],
+    [
+     "font-size",
+     "是",
+     "是",
+     "是"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "transform/opacity 动画",
+    "pros": "通常只需合成，帧率稳定",
+    "cons": "不改变布局，其他元素不会让位",
+    "when": "位移、缩放、淡入淡出"
+   },
+   {
+    "opt": "will-change 提升图层",
+    "pros": "提前创建合成层，动画更顺",
+    "cons": "每层占用显存，过多反而变慢",
+    "when": "确定即将动画的少量元素"
+   },
+   {
+    "opt": "CSS containment / content-visibility",
+    "pros": "限制布局与绘制影响范围",
+    "cons": "需理解副作用，兼容性需确认",
+    "when": "长列表、复杂独立区块"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用 top/left 或 width 做动画",
+    "fix": "改用 transform: translate/scale"
+   },
+   {
+    "bad": "给大量元素加 will-change 作为「优化」",
+    "fix": "只对即将动画的元素临时设置，结束后移除"
+   },
+   {
+    "bad": "循环中读取 offsetHeight、getBoundingClientRect 后又写样式",
+    "fix": "先批量读再批量写，或使用 requestAnimationFrame 分帧"
+   },
+   {
+    "bad": "长列表全部渲染，滚动时大面积重绘",
+    "fix": "虚拟列表或 content-visibility: auto"
+   }
+  ],
+  "checklist": [
+   "动画只使用 transform 与 opacity",
+   "无循环内读写交替布局属性",
+   "关键 CSS 不被阻塞，脚本使用 defer/async",
+   "用 Performance 面板确认无长时间 Layout",
+   "长列表已虚拟化"
+  ],
+  "interview": [
+   {
+    "q": "一帧内浏览器大致做哪些事？",
+    "a": "处理输入与任务 → 执行 requestAnimationFrame 回调 → 样式计算 → 布局 → 绘制 → 合成。60Hz 屏幕每帧约 16.7ms，主线程工作超出预算就会掉帧。"
+   },
+   {
+    "q": "为什么 transform 动画比 left 动画流畅？",
+    "a": "left 改变几何，需要重新布局与绘制；transform 作用于合成层，浏览器可只重新合成，且常可在合成线程上执行，不受主线程繁忙影响。"
+   },
+   {
+    "q": "什么是强制同步布局，如何发现？",
+    "a": "JS 写入样式后立即读取布局属性，浏览器必须立刻执行布局来返回准确值。在 DevTools Performance 面板中会看到紫色 Layout 块并带有强制重排警告。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "web.dev：Rendering performance",
+    "url": "https://web.dev/articles/rendering-performance"
+   },
+   {
+    "title": "web.dev：Avoid large, complex layouts and layout thrashing",
+    "url": "https://web.dev/articles/avoid-large-complex-layouts-and-layout-thrashing"
+   },
+   {
+    "title": "MDN：How browsers work",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/Performance/Guides/How_browsers_work"
+   }
+  ]
+ },
+ {
+  "slug": "event-loop",
+  "def": "事件循环（Event Loop）是 JavaScript 运行时调度代码执行的机制。JS 在单个主线程上运行，事件循环不断从任务队列取出任务执行，每个任务结束后清空微任务队列，在浏览器中还会择机进行渲染。它属于语言运行时层（浏览器由 HTML 规范定义，Node.js 由 libuv 实现），决定异步代码的执行顺序与页面响应性。",
+  "how": [
+   "同步代码在调用栈上执行，直到栈清空，期间无法被其他 JS 打断。",
+   "定时器、网络、I/O、用户事件完成后，其回调作为任务（宏任务）进入对应任务队列。",
+   "每执行完一个任务，运行时清空微任务队列：Promise 回调、queueMicrotask、MutationObserver 等，新加入的微任务也在本轮执行。",
+   "浏览器在任务之间判断是否需要渲染，需要时执行 requestAnimationFrame 回调、样式、布局与绘制。",
+   "Node.js 的事件循环分为 timers、poll、check 等阶段；process.nextTick 队列优先于 Promise 微任务执行。"
+  ],
+  "terms": [
+   {
+    "t": "调用栈 (Call Stack)",
+    "d": "记录当前正在执行的函数调用，栈空时才处理下一个任务。"
+   },
+   {
+    "t": "任务 / 宏任务 (Task)",
+    "d": "由 setTimeout、事件、消息等产生的回调，每轮循环取一个执行。"
+   },
+   {
+    "t": "微任务 (Microtask)",
+    "d": "Promise.then 等回调，在当前任务结束后、渲染前全部执行。"
+   },
+   {
+    "t": "requestAnimationFrame",
+    "d": "在下一次渲染前调用的回调，适合视觉更新。"
+   },
+   {
+    "t": "长任务 (Long Task)",
+    "d": "超过 50ms 的任务，阻塞输入响应与渲染。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "判断执行顺序",
+   "src": "console.log(\"1 同步\");\n\nsetTimeout(() => console.log(\"5 宏任务 setTimeout\"), 0);\n\nPromise.resolve()\n  .then(() => console.log(\"3 微任务 then\"))\n  .then(() => console.log(\"4 微任务链中的下一个 then\"));\n\nqueueMicrotask(() => console.log(\"3.5 微任务 queueMicrotask\"));\n\n(async () => {\n  console.log(\"2 async 函数中 await 之前是同步\");\n  await null;\n  console.log(\"3.6 await 之后进入微任务\");\n})();\n\n// 实际输出顺序：1 → 2 → 3 → 3.5 → 3.6 → 4 → 5\n// 规则：同步代码 → 清空微任务（按入队顺序）→ 下一个宏任务",
+   "note": "微任务按入队顺序执行，链式 then 在前一个执行后才入队；setTimeout 最后。"
+  },
+  "table": {
+   "title": "常见异步 API 归类",
+   "head": [
+    "API",
+    "队列类型",
+    "执行时机"
+   ],
+   "rows": [
+    [
+     "Promise.then / await 之后",
+     "微任务",
+     "当前任务结束后立即"
+    ],
+    [
+     "queueMicrotask",
+     "微任务",
+     "同上"
+    ],
+    [
+     "setTimeout / setInterval",
+     "任务（宏任务）",
+     "延时到期后排队"
+    ],
+    [
+     "requestAnimationFrame",
+     "渲染步骤",
+     "下一帧绘制前"
+    ],
+    [
+     "process.nextTick（Node）",
+     "nextTick 队列",
+     "先于 Promise 微任务"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "拆分长任务（分块 + 让出）",
+    "pros": "保持页面响应",
+    "cons": "总耗时略增，代码变复杂",
+    "when": "主线程必须处理的大量计算"
+   },
+   {
+    "opt": "Web Worker",
+    "pros": "真正并行，不阻塞主线程",
+    "cons": "不能直接操作 DOM，需消息通信",
+    "when": "CPU 密集计算"
+   },
+   {
+    "opt": "scheduler.postTask / yield",
+    "pros": "按优先级调度",
+    "cons": "浏览器支持需确认",
+    "when": "需要精细调度的应用"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "以为 setTimeout(fn, 0) 会立即执行",
+    "fix": "它至少要等当前同步代码和所有微任务完成"
+   },
+   {
+    "bad": "在微任务里无限递归添加微任务",
+    "fix": "会饿死渲染和其他任务，循环处理应放进宏任务分批"
+   },
+   {
+    "bad": "事件处理中做大量同步计算导致卡顿",
+    "fix": "拆分任务、让出主线程或移到 Worker"
+   },
+   {
+    "bad": "Node 中用 nextTick 递归，阻塞 I/O",
+    "fix": "优先使用 setImmediate 或 Promise，避免饿死事件循环"
+   }
+  ],
+  "checklist": [
+   "事件处理函数无长任务",
+   "CPU 密集逻辑放 Worker",
+   "视觉更新放在 requestAnimationFrame",
+   "监控 Long Tasks 与 INP",
+   "异步错误都有 catch 处理"
+  ],
+  "interview": [
+   {
+    "q": "微任务和宏任务的核心区别？",
+    "a": "每个宏任务执行完后，引擎会清空整个微任务队列，包括执行过程中新加入的微任务，然后才可能渲染并取下一个宏任务。因此微任务优先级更高，但滥用会阻塞渲染。"
+   },
+   {
+    "q": "await 之后的代码在哪执行？",
+    "a": "await 会暂停 async 函数，后续代码作为 Promise 的回调进入微任务队列；await 之前的部分是同步执行的。即使 await 一个非 Promise 值，后续代码也至少要等到当前同步代码结束后才执行。"
+   },
+   {
+    "q": "JS 是单线程，如何处理大量并发请求？",
+    "a": "I/O 由宿主环境（浏览器网络线程、libuv 线程池/系统异步接口）在后台完成，JS 线程只处理完成后的回调。单线程限制的是 JS 代码执行，而不是 I/O 并发。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "MDN：JavaScript execution model",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Execution_model"
+   },
+   {
+    "title": "HTML 规范：Event loops",
+    "url": "https://html.spec.whatwg.org/multipage/webappapis.html#event-loops"
+   },
+   {
+    "title": "Node.js 文档：The Node.js Event Loop",
+    "url": "https://nodejs.org/learn/asynchronous-work/event-loop-timers-and-nexttick"
+   }
+  ]
+ },
+ {
+  "slug": "optimistic-ui",
+  "def": "乐观更新（Optimistic UI）是一种前端交互模式：在服务器确认前就按预期成功的结果更新界面，请求失败时再回滚并提示。它属于前端状态管理与交互设计层，用于掩盖网络延迟，让高成功率操作（点赞、收藏、发消息、拖拽排序）感觉即时。React 19 提供 useOptimistic，TanStack Query 等库支持基于缓存的乐观更新。",
+  "how": [
+   "用户触发操作，前端先保存当前状态（或缓存数据）的快照，用于请求失败时回滚。",
+   "立即把预期结果写入本地状态或请求缓存，界面马上反映变化，可附加「发送中」等待定标记。",
+   "同时向服务器发送变更请求，并取消可能覆盖乐观值的进行中查询。",
+   "成功：用服务器返回的权威数据替换乐观值，或使相关缓存失效后重新获取。",
+   "失败：恢复快照、用 toast 等方式提示用户，并视情况提供重试或撤销入口。"
+  ],
+  "terms": [
+   {
+    "t": "乐观更新 (Optimistic Update)",
+    "d": "假设请求成功，先更新界面再等待确认。"
+   },
+   {
+    "t": "回滚 (Rollback)",
+    "d": "请求失败时把界面恢复到操作前的状态。"
+   },
+   {
+    "t": "useOptimistic",
+    "d": "React 19 Hook，在异步操作进行期间显示临时状态。"
+   },
+   {
+    "t": "onMutate",
+    "d": "TanStack Query 变更前回调，常用于写入乐观值并返回快照。"
+   },
+   {
+    "t": "权威状态 (Source of Truth)",
+    "d": "服务器上的真实数据，最终以它为准。"
+   }
+  ],
+  "code": {
+   "lang": "typescript",
+   "title": "TanStack Query 乐观点赞",
+   "src": "import { useMutation, useQueryClient } from \"@tanstack/react-query\";\n\nexport function useLike(postId: string) {\n  const qc = useQueryClient();\n  const key = [\"post\", postId];\n  return useMutation({\n    mutationFn: () => fetch(`/api/posts/${postId}/like`, { method: \"POST\" }),\n    onMutate: async () => {\n      await qc.cancelQueries({ queryKey: key });   // 防止旧请求覆盖乐观值\n      const prev = qc.getQueryData<{ likes: number; liked: boolean }>(key);\n      qc.setQueryData(key, (old: any) => ({ ...old, likes: old.likes + 1, liked: true }));\n      return { prev };                              // 快照，用于回滚\n    },\n    onError: (_err, _vars, ctx) => {\n      qc.setQueryData(key, ctx?.prev);              // 失败回滚\n    },\n    onSettled: () => qc.invalidateQueries({ queryKey: key }), // 以服务器为准\n  });\n}",
+   "note": "onMutate 写入乐观值并返回快照，onError 回滚，onSettled 重新获取权威数据。"
+  },
+  "table": {
+   "title": "乐观更新适用性判断",
+   "head": [
+    "维度",
+    "适合",
+    "不适合"
+   ],
+   "rows": [
+    [
+     "失败概率",
+     "极低（点赞、收藏）",
+     "较高（库存、竞价）"
+    ],
+    [
+     "失败代价",
+     "可轻松撤销",
+     "涉及资金、法律、不可逆"
+    ],
+    [
+     "结果可预测性",
+     "前端能算出结果",
+     "依赖服务端计算（如价格）"
+    ],
+    [
+     "并发冲突",
+     "个人数据",
+     "多人同时编辑同一记录"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "乐观更新",
+    "pros": "零感知延迟，体验流畅",
+    "cons": "需写回滚逻辑，失败时界面跳变",
+    "when": "高成功率、可撤销操作"
+   },
+   {
+    "opt": "悲观更新（等待确认）",
+    "pros": "界面始终真实",
+    "cons": "延迟明显，需加载状态",
+    "when": "支付、下单、权限变更"
+   },
+   {
+    "opt": "乐观 + 待定标记",
+    "pros": "即时又诚实，如消息「发送中」",
+    "cons": "需要额外 UI 状态",
+    "when": "聊天、评论、上传"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "没有保存快照，失败后无法正确回滚",
+    "fix": "在变更前保存先前状态，失败时整体恢复"
+   },
+   {
+    "bad": "乐观更新后不与服务器对齐",
+    "fix": "成功后用响应数据或重新获取覆盖乐观值"
+   },
+   {
+    "bad": "进行中的旧查询返回后覆盖了乐观值",
+    "fix": "变更前取消相关查询，再写入乐观值"
+   },
+   {
+    "bad": "对涉及金额或库存的操作使用乐观更新",
+    "fix": "关键业务等待服务器确认，可用加载态与禁用重复提交"
+   }
+  ],
+  "checklist": [
+   "只对高成功率、可撤销操作使用",
+   "失败有回滚与用户提示",
+   "最终以服务器数据校准",
+   "处理快速重复点击与并发请求",
+   "断网/慢网场景已测试"
+  ],
+  "interview": [
+   {
+    "q": "乐观更新失败时如何避免糟糕体验？",
+    "a": "回滚要平滑并给出明确提示与重试入口；对可能失败的操作显示待定状态而非完全成功；失败率高的操作不应使用乐观更新。"
+   },
+   {
+    "q": "用户快速连点点赞/取消，如何保证最终一致？",
+    "a": "可对请求排队或只发送最终状态（防抖）；每次变更前取消进行中查询；成功或失败后统一重新获取服务器状态。后端接口最好设计成设置状态（PUT liked=true）而非切换。"
+   },
+   {
+    "q": "useOptimistic 与 TanStack Query 乐观更新有何不同？",
+    "a": "useOptimistic 管组件内的临时状态，在 Action 进行期间显示，结束后自动回到真实状态；TanStack Query 直接修改共享的查询缓存，所有用该数据的组件同步更新，需要手动回滚与失效。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "React 文档：useOptimistic",
+    "url": "https://react.dev/reference/react/useOptimistic"
+   },
+   {
+    "title": "TanStack Query 文档：Optimistic Updates",
+    "url": "https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates"
+   }
+  ]
+ },
+ {
+  "slug": "server-state-caching",
+  "def": "服务端状态缓存指在前端用专门的库管理「来自服务器的数据」：缓存响应、请求去重、后台重新获取、过期判断、变更后失效。它属于前端数据层，与 UI 本地状态不同——服务端状态由远端拥有、可能被他人修改、随时可能过期。TanStack Query 与 SWR 是代表实现，核心思想是 stale-while-revalidate。",
+  "how": [
+   "每个查询由唯一的查询键（queryKey）标识，相同键的组件共享一份缓存与一次进行中的请求。",
+   "数据在 staleTime 内视为新鲜，直接使用缓存；超过后变为过期，但仍先展示旧数据。",
+   "过期数据在组件挂载、窗口重新聚焦、网络重连或定时轮询时触发后台重新获取。",
+   "没有组件使用的查询在 gcTime（v4 前称 cacheTime）后被垃圾回收。",
+   "变更（mutation）成功后通过 invalidateQueries 让相关查询失效并重新获取，或直接写入缓存。"
+  ],
+  "terms": [
+   {
+    "t": "查询键 (Query Key)",
+    "d": "唯一标识一份服务端数据的数组键，参数变化即为新缓存。"
+   },
+   {
+    "t": "staleTime",
+    "d": "数据保持新鲜的时长，期间不会自动重新获取。TanStack Query 默认 0。"
+   },
+   {
+    "t": "gcTime",
+    "d": "无订阅者的缓存保留时长，TanStack Query 默认 5 分钟。"
+   },
+   {
+    "t": "请求去重 (Deduplication)",
+    "d": "同一键的并发请求合并为一次网络请求。"
+   },
+   {
+    "t": "失效 (Invalidation)",
+    "d": "把缓存标记为过期并触发重新获取。"
+   }
+  ],
+  "code": {
+   "lang": "typescript",
+   "title": "TanStack Query 查询与失效",
+   "src": "import { useQuery, useMutation, useQueryClient } from \"@tanstack/react-query\";\n\nfunction useTodos() {\n  return useQuery({\n    queryKey: [\"todos\"],\n    queryFn: () => fetch(\"/api/todos\").then(r => r.json()),\n    staleTime: 30_000,   // 30 秒内视为新鲜，多组件共享不重复请求\n  });\n}\n\nfunction useAddTodo() {\n  const qc = useQueryClient();\n  return useMutation({\n    mutationFn: (title: string) =>\n      fetch(\"/api/todos\", { method: \"POST\", body: JSON.stringify({ title }) }),\n    // 写入成功后让列表失效，自动重新获取\n    onSuccess: () => qc.invalidateQueries({ queryKey: [\"todos\"] }),\n  });\n}\n\n// 组件中：const { data, isPending, error } = useTodos();",
+   "note": "多个组件调用 useTodos 只发一次请求；新增后失效列表即可刷新，无需手动管理。"
+  },
+  "table": {
+   "title": "服务端状态 vs 客户端状态",
+   "head": [
+    "维度",
+    "服务端状态",
+    "客户端状态"
+   ],
+   "rows": [
+    [
+     "归属",
+     "远端数据库/API",
+     "当前浏览器"
+    ],
+    [
+     "是否会过期",
+     "会，可能被他人修改",
+     "不会自行变化"
+    ],
+    [
+     "典型数据",
+     "用户资料、订单列表",
+     "弹窗开关、表单输入"
+    ],
+    [
+     "推荐工具",
+     "TanStack Query、SWR",
+     "useState、Zustand"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "TanStack Query",
+    "pros": "功能全：变更、分页、无限加载、DevTools",
+    "cons": "概念较多，包体略大",
+    "when": "数据交互复杂的应用"
+   },
+   {
+    "opt": "SWR",
+    "pros": "API 简洁、轻量",
+    "cons": "复杂变更与缓存操作需自行组织",
+    "when": "以读取为主的应用"
+   },
+   {
+    "opt": "全局状态库手动管理",
+    "pros": "完全掌控",
+    "cons": "需自写去重、过期、重试，易出错",
+    "when": "极简场景或特殊需求"
+   },
+   {
+    "opt": "框架内置数据获取（RSC/loader）",
+    "pros": "服务端获取，减少客户端 JS",
+    "cons": "客户端交互后的缓存同步需另行处理",
+    "when": "Next.js/Remix 等全栈框架"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把服务端数据复制进 Redux/Zustand 再手动同步",
+    "fix": "服务端数据交给查询缓存，全局状态只放 UI 状态"
+   },
+   {
+    "bad": "查询键没包含所有参数，不同筛选条件共用缓存",
+    "fix": "把影响结果的参数都放进 queryKey"
+   },
+   {
+    "bad": "staleTime 保持默认 0，挂载和聚焦时频繁重新获取",
+    "fix": "根据数据变化频率设置合理的 staleTime"
+   },
+   {
+    "bad": "变更后忘记失效相关查询，列表显示旧数据",
+    "fix": "在 onSuccess/onSettled 中失效所有相关键"
+   }
+  ],
+  "checklist": [
+   "服务端数据与 UI 状态分开管理",
+   "queryKey 包含全部请求参数",
+   "按数据特性设置 staleTime",
+   "所有变更后有失效或缓存写入策略",
+   "错误与加载状态在 UI 中处理"
+  ],
+  "interview": [
+   {
+    "q": "staleTime 和 gcTime 的区别？",
+    "a": "staleTime 决定数据多久后变为过期、需要后台刷新；gcTime 决定没有组件使用时缓存还保留多久才删除。数据可以过期但仍在缓存中，用于先展示再刷新。"
+   },
+   {
+    "q": "为什么不建议把服务端数据放进 Redux？",
+    "a": "服务端数据需要去重、过期、重试、后台刷新、失效等能力，手写易出错且代码冗长；专门的查询缓存库内置这些能力，Redux 更适合纯客户端状态。"
+   },
+   {
+    "q": "SSR 场景下如何避免客户端重复请求？",
+    "a": "在服务端预取数据填充 QueryClient，将缓存脱水（dehydrate）随 HTML 下发，客户端水合（HydrationBoundary）后直接使用，并设置大于 0 的 staleTime 防止挂载即重新获取。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "TanStack Query 文档：Overview",
+    "url": "https://tanstack.com/query/latest/docs/framework/react/overview"
+   },
+   {
+    "title": "TanStack Query 文档：Important Defaults",
+    "url": "https://tanstack.com/query/latest/docs/framework/react/guides/important-defaults"
+   },
+   {
+    "title": "vercel/swr (GitHub)",
+    "url": "https://github.com/vercel/swr"
+   }
+  ]
+ },
+ {
+  "slug": "git-bisect",
+  "def": "git bisect 是 Git 内置的二分查找工具，用于在提交历史中定位首个引入问题的提交。用户标记一个已知好的提交和一个已知坏的提交，Git 每次检出中间的提交供测试，根据结果缩小一半范围，N 个提交约需 log₂N 次测试。它属于版本控制与调试层，可配合脚本 git bisect run 完全自动化。",
+  "how": [
+   "git bisect start 开启会话，git bisect bad 标记当前（或指定）坏提交，git bisect good <rev> 标记已知好提交。",
+   "Git 检出两者之间大约中点的提交，进入分离 HEAD 状态，等待判断。",
+   "开发者测试后执行 good 或 bad；无法测试（如编译失败）时执行 skip。",
+   "重复直到范围缩小到一个提交，Git 输出 first bad commit 及其信息。",
+   "git bisect reset 结束会话并回到开始前的分支；git bisect log 可保存过程并 replay 重放。"
+  ],
+  "terms": [
+   {
+    "t": "二分查找 (Binary Search)",
+    "d": "每次排除一半候选，复杂度为对数级。"
+   },
+   {
+    "t": "git bisect run",
+    "d": "传入脚本自动判断：退出码 0 为好，125 为跳过，1–127 其他值为坏。"
+   },
+   {
+    "t": "git bisect skip",
+    "d": "跳过无法判断的提交，可能导致结果给出一个范围。"
+   },
+   {
+    "t": "回归 (Regression)",
+    "d": "以前正常的功能在某次变更后出错。"
+   },
+   {
+    "t": "分离 HEAD (Detached HEAD)",
+    "d": "HEAD 直接指向某个提交而非分支，bisect 期间处于此状态。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "用脚本自动二分",
+   "src": "# 当前版本有 Bug，v1.4.0 时是正常的\ngit bisect start\ngit bisect bad HEAD\ngit bisect good v1.4.0\n\n# 写一个判断脚本：退出码 0=好，1=坏，125=无法测试跳过\ncat > /tmp/check.sh <<'EOF'\n#!/bin/sh\nnpm ci --silent || exit 125        # 依赖装不上就跳过这个提交\nnpx vitest run tests/login.test.ts  # 测试通过返回 0，失败返回非 0\nEOF\nchmod +x /tmp/check.sh\n\n# 全自动二分，结束时打印 first bad commit\ngit bisect run /tmp/check.sh\n\n# 查看过程并结束会话，回到原分支\ngit bisect log\ngit bisect reset",
+   "note": "测试脚本放在仓库外，避免检出旧提交时脚本消失；依赖安装失败用 125 跳过。"
+  },
+  "table": {
+   "title": "bisect 常用命令",
+   "head": [
+    "命令",
+    "作用",
+    "备注"
+   ],
+   "rows": [
+    [
+     "start / reset",
+     "开始 / 结束会话",
+     "reset 回到原分支"
+    ],
+    [
+     "good / bad",
+     "标记好坏",
+     "可用 old/new 自定义术语"
+    ],
+    [
+     "skip",
+     "跳过当前提交",
+     "过多会降低精度"
+    ],
+    [
+     "run <cmd>",
+     "脚本自动判断",
+     "按退出码决定结果"
+    ],
+    [
+     "log / replay",
+     "保存与重放过程",
+     "误标时可修正后重放"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "手动 bisect",
+    "pros": "无需写脚本，适合 UI 类问题",
+    "cons": "每步需人工判断，易误标",
+    "when": "难以自动化验证的 Bug"
+   },
+   {
+    "opt": "git bisect run",
+    "pros": "全自动、可复现",
+    "cons": "需要可靠的判断脚本",
+    "when": "能用测试或命令复现的 Bug"
+   },
+   {
+    "opt": "阅读 git log/blame 推断",
+    "pros": "快，无需检出",
+    "cons": "多因素问题容易判断错",
+    "when": "范围很小或线索明确"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把测试脚本放在仓库内，检出旧提交时脚本不存在",
+    "fix": "脚本放仓库外，或在脚本里从固定路径读取测试"
+   },
+   {
+    "bad": "构建失败的提交被标记为 bad，误导结果",
+    "fix": "用退出码 125 / git bisect skip 跳过"
+   },
+   {
+    "bad": "测试本身不稳定（flaky），结果随机",
+    "fix": "先保证复现脚本稳定，必要时多跑几次再判断"
+   },
+   {
+    "bad": "结束后忘记 git bisect reset，仍在分离 HEAD",
+    "fix": "完成后立即 reset，或先用 bisect log 保存记录"
+   }
+  ],
+  "checklist": [
+   "确认有稳定的复现方法",
+   "找到确定的好提交与坏提交",
+   "判断脚本位于仓库外",
+   "无法构建的提交用 125 跳过",
+   "结束后 reset 并记录 first bad commit"
+  ],
+  "interview": [
+   {
+    "q": "git bisect run 如何根据退出码判断？",
+    "a": "退出码 0 表示好；125 表示无法测试，跳过；1 到 127 之间除 125 外表示坏；大于 127 或小于 0 会中止二分。脚本应只在确实复现 Bug 时返回非 0。"
+   },
+   {
+    "q": "为什么保持小提交有助于 bisect？",
+    "a": "二分定位的粒度是提交；一个提交混了大量改动，定位后仍要在大 diff 里找原因。原子化、能独立构建的小提交让定位结果直接指向根因。"
+   },
+   {
+    "q": "合并提交多的历史能用 bisect 吗？",
+    "a": "能。Git 会在提交图上选择中点；可用 --first-parent 只沿主干的第一父提交二分，先定位到哪次合并引入问题，再进入该分支细查。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Git 官方文档：git-bisect",
+    "url": "https://git-scm.com/docs/git-bisect"
+   },
+   {
+    "title": "Pro Git：Debugging with Git",
+    "url": "https://git-scm.com/book/en/v2/Git-Tools-Debugging-with-Git"
+   }
+  ]
+ },
+ {
+  "slug": "trunk-based-development",
+  "def": "主干开发（Trunk-Based Development）是一种版本控制分支策略：开发者把小批量改动频繁合入单一主干（main/trunk），功能分支寿命通常不超过一两天，未完成功能通过功能开关隐藏，主干始终保持可发布。它属于工程流程与持续集成层，是持续交付的前提，DORA 研究将其列为与高交付效能相关的能力之一。",
+  "how": [
+   "开发者从主干拉出短命分支（或直接在主干提交），只包含一个小的、可独立集成的改动。",
+   "提交前在本地和 CI 中运行快速测试；PR 小、评审快，当天合并。",
+   "未完成功能用功能开关（feature flag）或抽象分支（branch by abstraction）隐藏，代码合入但不对用户生效。",
+   "每次合并触发 CI 构建与测试，主干一旦失败优先修复或回滚。",
+   "发布从主干直接部署，或按需切出短期发布分支，只做必要的修复挑拣（cherry-pick）。"
+  ],
+  "terms": [
+   {
+    "t": "主干 (Trunk)",
+    "d": "团队共享的唯一长期分支，如 main。"
+   },
+   {
+    "t": "短命分支 (Short-lived Branch)",
+    "d": "存在时间通常不超过一两天的功能分支。"
+   },
+   {
+    "t": "功能开关 (Feature Flag)",
+    "d": "运行时开关，使未完成代码合入但不生效。"
+   },
+   {
+    "t": "抽象分支 (Branch by Abstraction)",
+    "d": "先引入抽象层，在主干上逐步替换实现的大改方法。"
+   },
+   {
+    "t": "GitFlow",
+    "d": "使用 develop、feature、release、hotfix 等长期分支的模型，与主干开发相对。"
+   }
+  ],
+  "code": {
+   "lang": "typescript",
+   "title": "功能开关隐藏未完成功能",
+   "src": "// 新结算流程还没做完，但代码每天合入 main\nimport { isEnabled } from \"./flags\";\n\nexport function CheckoutPage({ user }: { user: { id: string } }) {\n  // 开关默认关闭；内部员工可先打开测试\n  if (isEnabled(\"new-checkout\", user)) {\n    return <NewCheckout />;      // 半成品，只对白名单可见\n  }\n  return <LegacyCheckout />;     // 线上用户仍走旧流程\n}\n\n// flags.ts：最简单的实现，可替换为 LaunchDarkly、Unleash 等\nconst internal = new Set([\"u_001\", \"u_002\"]);\nexport function isEnabled(flag: string, user: { id: string }) {\n  if (flag === \"new-checkout\") return internal.has(user.id);\n  return false;\n}",
+   "note": "代码先合入主干但默认不生效；功能完成并验证后移除开关与旧代码。"
+  },
+  "table": {
+   "title": "分支策略对比",
+   "head": [
+    "策略",
+    "长期分支",
+    "集成频率",
+    "适用"
+   ],
+   "rows": [
+    [
+     "主干开发",
+     "仅 main",
+     "每天多次",
+     "持续部署的 Web/SaaS"
+    ],
+    [
+     "GitHub Flow",
+     "main + 短期 PR 分支",
+     "每个 PR",
+     "中小团队、持续交付"
+    ],
+    [
+     "GitFlow",
+     "main、develop 等多个",
+     "按版本周期",
+     "有固定版本节奏的软件"
+    ],
+    [
+     "发布分支 + 主干",
+     "main + 短期 release",
+     "每天，发布时切分支",
+     "需要版本稳定期的产品"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "主干开发",
+    "pros": "冲突少、反馈快、随时可发布",
+    "cons": "依赖完善测试与功能开关纪律",
+    "when": "CI 成熟、部署频繁的团队"
+   },
+   {
+    "opt": "长期功能分支",
+    "pros": "隔离开发，主干不受未完成代码影响",
+    "cons": "合并地狱、集成风险后置",
+    "when": "实验性、可能被放弃的大改动"
+   },
+   {
+    "opt": "GitFlow",
+    "pros": "版本边界清晰",
+    "cons": "流程重，分支多，交付慢",
+    "when": "需维护多个已发布版本"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "名义上主干开发，分支却活一两周",
+    "fix": "设置分支寿命目标，把功能拆成可独立合并的小步"
+   },
+   {
+    "bad": "功能开关用完不删，代码里堆满死分支",
+    "fix": "开关设负责人与到期日，发布稳定后清理"
+   },
+   {
+    "bad": "测试慢且不稳定，主干经常红",
+    "fix": "保证快速可靠的 CI，主干失败时停止合并优先修复"
+   },
+   {
+    "bad": "把大重构一次性合进主干",
+    "fix": "用抽象分支或并行实现逐步替换"
+   }
+  ],
+  "checklist": [
+   "分支平均寿命不超过一两天",
+   "每次合并都跑自动化测试",
+   "未完成功能都有开关保护",
+   "主干失败有立即修复或回滚机制",
+   "开关有清理计划",
+   "AI Agent 生成的改动拆成小 PR"
+  ],
+  "interview": [
+   {
+    "q": "主干开发如何保证主干稳定？",
+    "a": "依靠小批量改动、合并前自动化测试、快速代码评审、功能开关隐藏未完成功能，以及主干失败时的停线修复文化。必要时用合并队列（merge queue）确保合入的组合也通过测试。"
+   },
+   {
+    "q": "功能开关会带来哪些问题？",
+    "a": "开关组合导致测试路径增加；长期不清理形成技术债；开关配置错误可能误放功能。需给开关分类（发布、实验、运维），设置负责人与到期日并定期清理。"
+   },
+   {
+    "q": "AI 编码 Agent 和主干开发如何配合？",
+    "a": "Agent 适合产出小而独立的改动；每个任务一个短命分支与小 PR，让 CI 和人工评审快速通过。避免让 Agent 长时间在大分支上累积大量改动，否则合并冲突与评审成本陡增。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "trunkbaseddevelopment.com",
+    "url": "https://trunkbaseddevelopment.com/"
+   },
+   {
+    "title": "DORA：Trunk-based development",
+    "url": "https://dora.dev/capabilities/trunk-based-development/"
+   },
+   {
+    "title": "Martin Fowler：Patterns for Managing Source Code Branches",
+    "url": "https://martinfowler.com/articles/branching-patterns.html"
+   }
+  ]
+ }
+]

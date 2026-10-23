@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="联合索引与最左前缀 专业模式：联合索引（Composite Index / 复合索引）是在多列上按指定顺序建立的单个索引，属于数据库索引与查询优化层。B-tree 联合索引按 (a, b, ">
+<title>🎓 联合索引与最左前缀 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="composite-indexes" data-answer="0" data-prev="workflow-orchestration.pro.html" data-next="database-branching.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#db">🔮 高级 · 🗄️ 数据库</a><span>›</span><a href="composite-indexes.html">联合索引与最左前缀</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.363 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="workflow-orchestration.pro.html" rel="prev"><small>‹ 上一个</small><b>🎼 数据任务编排 (Airflow / Dagster)</b></a><a class="pn next" href="database-branching.pro.html" rel="next"><small>下一个 ›</small><b>🌿 数据库分支 (Neon / PlanetScale)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📇</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>联合索引与最左前缀</h1><p class="en">Composite Indexes</p>
+    <div class="hbtns"><a class="prosw back" href="composite-indexes.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">联合索引（Composite Index / 复合索引）是在多列上按指定顺序建立的单个索引，属于数据库索引与查询优化层。B-tree 联合索引按 (a, b, c) 字典序排序，因此遵循最左前缀原则：查询必须从最左列开始连续使用才能高效定位。列顺序设计决定它能服务哪些查询、能否同时满足过滤、排序与覆盖。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>索引条目按第一列排序，第一列相同时按第二列排序，依此类推，形成字典序。</p></li><li><span class="sn">2</span><p>等值条件依次匹配最左的连续列，可把搜索范围收窄到很小的区间。</p></li><li><span class="sn">3</span><p>遇到范围条件（&gt;、&lt;、BETWEEN）后，后续列通常无法再用于定位，只能在区间内过滤。</p></li><li><span class="sn">4</span><p>若 ORDER BY 与索引列顺序一致，数据库可直接按索引顺序输出，省去额外排序。</p></li><li><span class="sn">5</span><p>索引包含查询所需全部列时成为覆盖索引，无需回表读取数据行。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>最左前缀 (Leftmost Prefix)</dt><dd>联合索引只能从第一列开始、连续使用若干列来定位。</dd></div><div class="term"><dt>等值优先，范围在后 (ESR)</dt><dd>常见设计经验：等值列在前，排序列其次，范围列最后。</dd></div><div class="term"><dt>回表 (Table Lookup)</dt><dd>通过索引找到行位置后，再去表中读取其他列。</dd></div><div class="term"><dt>索引下推 (Index Condition Pushdown)</dt><dd>MySQL 在存储引擎层用索引列先过滤，减少回表。</dd></div><div class="term"><dt>选择性 (Selectivity)</dt><dd>列不同值越多、过滤后剩余行越少，选择性越高。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>列顺序与最左前缀验证</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- 常见查询：某租户下某状态的订单，按时间倒序
+CREATE INDEX idx_orders_tenant_status_created
+  ON orders (tenant_id, status, created_at DESC);
+
+-- ✅ 用到全部三列：两列等值 + 按第三列有序输出
+EXPLAIN SELECT id FROM orders
+ WHERE tenant_id = 7 AND status = &#x27;paid&#x27;
+ ORDER BY created_at DESC LIMIT 20;
+
+-- ✅ 只用最左列也能走索引
+EXPLAIN SELECT id FROM orders WHERE tenant_id = 7;
+
+-- ❌ 跳过最左列，通常无法用该索引定位
+EXPLAIN SELECT id FROM orders WHERE status = &#x27;paid&#x27;;
+
+-- 覆盖索引：INCLUDE 附带列（PostgreSQL 11+）
+CREATE INDEX idx_cover ON orders (tenant_id, status) INCLUDE (amount);</code></pre></div><p class="cnote">等值列在前、排序列在后，可同时满足过滤与 ORDER BY；跳过首列则失效。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">索引 (a,b,c) 能否命中</h3><div class="tw"><table><thead><tr><th>查询条件</th><th>可用列</th><th>说明</th></tr></thead><tbody><tr><td data-h="查询条件">a = ? AND b = ?</td><td data-h="可用列">a, b</td><td data-h="说明">最左连续等值</td></tr><tr><td data-h="查询条件">a = ? AND c = ?</td><td data-h="可用列">a（c 仅过滤）</td><td data-h="说明">跳过 b，c 无法定位</td></tr><tr><td data-h="查询条件">a &gt; ? AND b = ?</td><td data-h="可用列">a（b 仅过滤）</td><td data-h="说明">范围后列无法定位</td></tr><tr><td data-h="查询条件">b = ? AND c = ?</td><td data-h="可用列">通常不可用</td><td data-h="说明">缺最左列</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>一个宽联合索引</h4><p><b class="k-p">优点</b>一份索引服务多种前缀查询，可覆盖</p><p><b class="k-c">代价</b>写放大、体积大，列序难兼顾</p><p><b class="k-w">适用</b>查询模式集中且稳定</p></div><div class="trd"><h4>多个单列索引</h4><p><b class="k-p">优点</b>灵活，各自简单</p><p><b class="k-c">代价</b>多条件时依赖索引合并，常不如联合索引</p><p><b class="k-w">适用</b>查询条件组合多变</p></div><div class="trd"><h4>覆盖索引（含 INCLUDE）</h4><p><b class="k-p">优点</b>避免回表，读最快</p><p><b class="k-c">代价</b>索引更大、写入更慢</p><p><b class="k-w">适用</b>热点只读查询</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>按列的「重要性」排序，而不是按查询模式</p><p class="fix"><b>✓</b>按 ESR：等值过滤列→排序列→范围列，再结合选择性</p></li><li><p class="bad"><b>✗</b>建了 (a,b) 又建 (a)，形成冗余索引</p><p class="fix"><b>✓</b>(a,b) 已覆盖只按 a 的查询，删除冗余索引减少写开销</p></li><li><p class="bad"><b>✗</b>认为 WHERE 条件书写顺序影响命中</p><p class="fix"><b>✓</b>优化器会重排 AND 条件，关键是索引列顺序</p></li><li><p class="bad"><b>✗</b>依赖 skip scan 让跳过首列的查询变快</p><p class="fix"><b>✓</b>部分数据库支持但取决于首列基数，不可作为设计前提</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个联合索引对应明确的高频查询</span></label></li><li><label><input type="checkbox"><span>列顺序符合等值→排序→范围</span></label></li><li><label><input type="checkbox"><span>用 EXPLAIN 确认命中与无额外排序</span></label></li><li><label><input type="checkbox"><span>清理被更长索引覆盖的冗余索引</span></label></li><li><label><input type="checkbox"><span>评估写入放大与索引体积</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么范围条件之后的列无法用于定位？</summary><p>B-tree 按字典序排列，a 取某个范围时，b 在这个区间内并不有序，无法二分定位，只能逐条过滤。等值条件则保证后续列在区间内有序。</p></details><details class="iv"><summary>WHERE a=? ORDER BY b 与 WHERE a&gt;? ORDER BY b，索引(a,b) 表现有何不同？</summary><p>前者 a 固定，b 在区间内有序，可直接按索引输出无需排序；后者跨越多个 a 值，b 整体无序，通常需要额外排序（filesort/Sort 节点）。</p></details><details class="iv"><summary>如何在索引数量和写性能之间权衡？</summary><p>每个索引都要在写入时维护，增加 I/O 与锁争用。用 pg_stat_user_indexes 或 sys schema 找未使用和冗余索引；优先一个联合索引服务多个前缀查询。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.postgresql.org/docs/current/indexes-multicolumn.html" target="_blank" rel="noopener"><b>PostgreSQL 文档：Multicolumn Indexes</b><small>postgresql.org ↗</small></a></li><li><a href="https://dev.mysql.com/doc/refman/8.0/en/multiple-column-indexes.html" target="_blank" rel="noopener"><b>MySQL 文档：Multiple-Column Indexes</b><small>dev.mysql.com ↗</small></a></li><li><a href="https://use-the-index-luke.com/sql/where-clause/the-equals-operator/concatenated-keys" target="_blank" rel="noopener"><b>Use The Index, Luke：Concatenated Indexes</b><small>use-the-index-luke.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="workflow-orchestration.pro.html" rel="prev"><small>‹ 上一个</small><b>🎼 数据任务编排 (Airflow / Dagster)</b></a><a class="pn next" href="database-branching.pro.html" rel="next"><small>下一个 ›</small><b>🌿 数据库分支 (Neon / PlanetScale)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="服务端状态缓存 (TanStack Query / SWR) 专业模式：服务端状态缓存指在前端用专门的库管理「来自服务器的数据」：缓存响应、请求去重、后台重新获取、过期判断、变更后失效。它属于前端数据层，与 UI 本地状态不同——服">
+<title>🎓 服务端状态缓存 (TanStack Query / SWR) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="server-state-caching" data-answer="0" data-prev="optimistic-ui.pro.html" data-next="git-bisect.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#fe">🔮 高级 · 🎨 前端工程</a><span>›</span><a href="server-state-caching.html">服务端状态缓存 (TanStack Query / SWR)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.380 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="optimistic-ui.pro.html" rel="prev"><small>‹ 上一个</small><b>😊 乐观更新 (Optimistic UI)</b></a><a class="pn next" href="git-bisect.pro.html" rel="next"><small>下一个 ›</small><b>🔎 二分定位 (Bisect)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🗃️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🎨 前端工程</span><span>⏱ 约 10 分钟</span></div>
+    <h1>服务端状态缓存 (TanStack Query / SWR)</h1><p class="en">Server State Caching</p>
+    <div class="hbtns"><a class="prosw back" href="server-state-caching.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">服务端状态缓存指在前端用专门的库管理「来自服务器的数据」：缓存响应、请求去重、后台重新获取、过期判断、变更后失效。它属于前端数据层，与 UI 本地状态不同——服务端状态由远端拥有、可能被他人修改、随时可能过期。TanStack Query 与 SWR 是代表实现，核心思想是 stale-while-revalidate。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>每个查询由唯一的查询键（queryKey）标识，相同键的组件共享一份缓存与一次进行中的请求。</p></li><li><span class="sn">2</span><p>数据在 staleTime 内视为新鲜，直接使用缓存；超过后变为过期，但仍先展示旧数据。</p></li><li><span class="sn">3</span><p>过期数据在组件挂载、窗口重新聚焦、网络重连或定时轮询时触发后台重新获取。</p></li><li><span class="sn">4</span><p>没有组件使用的查询在 gcTime（v4 前称 cacheTime）后被垃圾回收。</p></li><li><span class="sn">5</span><p>变更（mutation）成功后通过 invalidateQueries 让相关查询失效并重新获取，或直接写入缓存。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>查询键 (Query Key)</dt><dd>唯一标识一份服务端数据的数组键，参数变化即为新缓存。</dd></div><div class="term"><dt>staleTime</dt><dd>数据保持新鲜的时长，期间不会自动重新获取。TanStack Query 默认 0。</dd></div><div class="term"><dt>gcTime</dt><dd>无订阅者的缓存保留时长，TanStack Query 默认 5 分钟。</dd></div><div class="term"><dt>请求去重 (Deduplication)</dt><dd>同一键的并发请求合并为一次网络请求。</dd></div><div class="term"><dt>失效 (Invalidation)</dt><dd>把缓存标记为过期并触发重新获取。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>TanStack Query 查询与失效</span><em>typescript</em><button class="ccopy">复制</button></div><pre><code>import { useQuery, useMutation, useQueryClient } from &quot;@tanstack/react-query&quot;;
+
+function useTodos() {
+  return useQuery({
+    queryKey: [&quot;todos&quot;],
+    queryFn: () =&gt; fetch(&quot;/api/todos&quot;).then(r =&gt; r.json()),
+    staleTime: 30_000,   // 30 秒内视为新鲜，多组件共享不重复请求
+  });
+}
+
+function useAddTodo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (title: string) =&gt;
+      fetch(&quot;/api/todos&quot;, { method: &quot;POST&quot;, body: JSON.stringify({ title }) }),
+    // 写入成功后让列表失效，自动重新获取
+    onSuccess: () =&gt; qc.invalidateQueries({ queryKey: [&quot;todos&quot;] }),
+  });
+}
+
+// 组件中：const { data, isPending, error } = useTodos();</code></pre></div><p class="cnote">多个组件调用 useTodos 只发一次请求；新增后失效列表即可刷新，无需手动管理。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">服务端状态 vs 客户端状态</h3><div class="tw"><table><thead><tr><th>维度</th><th>服务端状态</th><th>客户端状态</th></tr></thead><tbody><tr><td data-h="维度">归属</td><td data-h="服务端状态">远端数据库/API</td><td data-h="客户端状态">当前浏览器</td></tr><tr><td data-h="维度">是否会过期</td><td data-h="服务端状态">会，可能被他人修改</td><td data-h="客户端状态">不会自行变化</td></tr><tr><td data-h="维度">典型数据</td><td data-h="服务端状态">用户资料、订单列表</td><td data-h="客户端状态">弹窗开关、表单输入</td></tr><tr><td data-h="维度">推荐工具</td><td data-h="服务端状态">TanStack Query、SWR</td><td data-h="客户端状态">useState、Zustand</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>TanStack Query</h4><p><b class="k-p">优点</b>功能全：变更、分页、无限加载、DevTools</p><p><b class="k-c">代价</b>概念较多，包体略大</p><p><b class="k-w">适用</b>数据交互复杂的应用</p></div><div class="trd"><h4>SWR</h4><p><b class="k-p">优点</b>API 简洁、轻量</p><p><b class="k-c">代价</b>复杂变更与缓存操作需自行组织</p><p><b class="k-w">适用</b>以读取为主的应用</p></div><div class="trd"><h4>全局状态库手动管理</h4><p><b class="k-p">优点</b>完全掌控</p><p><b class="k-c">代价</b>需自写去重、过期、重试，易出错</p><p><b class="k-w">适用</b>极简场景或特殊需求</p></div><div class="trd"><h4>框架内置数据获取（RSC/loader）</h4><p><b class="k-p">优点</b>服务端获取，减少客户端 JS</p><p><b class="k-c">代价</b>客户端交互后的缓存同步需另行处理</p><p><b class="k-w">适用</b>Next.js/Remix 等全栈框架</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>把服务端数据复制进 Redux/Zustand 再手动同步</p><p class="fix"><b>✓</b>服务端数据交给查询缓存，全局状态只放 UI 状态</p></li><li><p class="bad"><b>✗</b>查询键没包含所有参数，不同筛选条件共用缓存</p><p class="fix"><b>✓</b>把影响结果的参数都放进 queryKey</p></li><li><p class="bad"><b>✗</b>staleTime 保持默认 0，挂载和聚焦时频繁重新获取</p><p class="fix"><b>✓</b>根据数据变化频率设置合理的 staleTime</p></li><li><p class="bad"><b>✗</b>变更后忘记失效相关查询，列表显示旧数据</p><p class="fix"><b>✓</b>在 onSuccess/onSettled 中失效所有相关键</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>服务端数据与 UI 状态分开管理</span></label></li><li><label><input type="checkbox"><span>queryKey 包含全部请求参数</span></label></li><li><label><input type="checkbox"><span>按数据特性设置 staleTime</span></label></li><li><label><input type="checkbox"><span>所有变更后有失效或缓存写入策略</span></label></li><li><label><input type="checkbox"><span>错误与加载状态在 UI 中处理</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>staleTime 和 gcTime 的区别？</summary><p>staleTime 决定数据多久后变为过期、需要后台刷新；gcTime 决定没有组件使用时缓存还保留多久才删除。数据可以过期但仍在缓存中，用于先展示再刷新。</p></details><details class="iv"><summary>为什么不建议把服务端数据放进 Redux？</summary><p>服务端数据需要去重、过期、重试、后台刷新、失效等能力，手写易出错且代码冗长；专门的查询缓存库内置这些能力，Redux 更适合纯客户端状态。</p></details><details class="iv"><summary>SSR 场景下如何避免客户端重复请求？</summary><p>在服务端预取数据填充 QueryClient，将缓存脱水（dehydrate）随 HTML 下发，客户端水合（HydrationBoundary）后直接使用，并设置大于 0 的 staleTime 防止挂载即重新获取。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://tanstack.com/query/latest/docs/framework/react/overview" target="_blank" rel="noopener"><b>TanStack Query 文档：Overview</b><small>tanstack.com ↗</small></a></li><li><a href="https://tanstack.com/query/latest/docs/framework/react/guides/important-defaults" target="_blank" rel="noopener"><b>TanStack Query 文档：Important Defaults</b><small>tanstack.com ↗</small></a></li><li><a href="https://github.com/vercel/swr" target="_blank" rel="noopener"><b>vercel/swr (GitHub)</b><small>github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="optimistic-ui.pro.html" rel="prev"><small>‹ 上一个</small><b>😊 乐观更新 (Optimistic UI)</b></a><a class="pn next" href="git-bisect.pro.html" rel="next"><small>下一个 ›</small><b>🔎 二分定位 (Bisect)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

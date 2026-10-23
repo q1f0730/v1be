@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="投机解码 (Speculative Decoding) 专业模式：投机解码（Speculative Decoding）是一种无损的 LLM 推理加速方法：用一个更小更快的草稿模型（或其他机制）一次性猜测接下来的若干个 Toke">
+<title>🎓 投机解码 (Speculative Decoding) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="speculative-decoding" data-answer="0" data-prev="webassembly.pro.html" data-next="continuous-batching.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#llmops">🔥 进阶 · 🧠 模型工程与推理部署</a><span>›</span><a href="speculative-decoding.html">投机解码 (Speculative Decoding)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.480 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="webassembly.pro.html" rel="prev"><small>‹ 上一个</small><b>🧱 WebAssembly (Wasm)</b></a><a class="pn next" href="continuous-batching.pro.html" rel="next"><small>下一个 ›</small><b>🚌 连续批处理 (Continuous Batching)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🏃</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🧠 模型工程与推理部署</span><span>⏱ 约 10 分钟</span></div>
+    <h1>投机解码 (Speculative Decoding)</h1><p class="en">Speculative Decoding</p>
+    <div class="hbtns"><a class="prosw back" href="speculative-decoding.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">投机解码（Speculative Decoding）是一种无损的 LLM 推理加速方法：用一个更小更快的草稿模型（或其他机制）一次性猜测接下来的若干个 Token，再由目标大模型在一次前向传播中并行验证，按特定的接受-拒绝规则保留正确前缀。在标准算法下输出分布与目标模型单独生成完全一致，因而不损失质量。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>草稿器连续自回归生成 k 个候选 Token，草稿器可以是小模型、目标模型的附加预测头（如 Medusa、EAGLE），或从提示中匹配 n-gram。</p></li><li><span class="sn">2</span><p>目标模型对「上下文 + k 个候选」做一次前向，得到每个位置自己的概率分布；由于解码受显存带宽限制，这次前向的耗时接近生成单个 Token。</p></li><li><span class="sn">3</span><p>从第一个候选开始依次验证：以 min(1, p/q) 的概率接受（p 为目标概率，q 为草稿概率）。</p></li><li><span class="sn">4</span><p>遇到第一个被拒绝的位置时，从调整后的分布 max(0, p−q) 归一化中重新采样一个 Token，丢弃其后的候选。</p></li><li><span class="sn">5</span><p>若全部接受，额外获得目标模型在下一位置采样的 Token。每轮至少产出 1 个 Token，接受率越高加速越明显。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>草稿模型 (Draft Model)</dt><dd>生成候选 Token 的小模型，需与目标模型使用相同的分词器。</dd></div><div class="term"><dt>接受率 (Acceptance Rate)</dt><dd>草稿 Token 被目标模型接受的比例，决定实际加速比。</dd></div><div class="term"><dt>推测长度 k</dt><dd>每轮草稿生成的 Token 数，过大会增加被拒绝的浪费。</dd></div><div class="term"><dt>提示查找解码 (Prompt Lookup)</dt><dd>从输入文本中匹配 n-gram 作为草稿，无需额外模型，适合摘要与代码编辑。</dd></div><div class="term"><dt>EAGLE / Medusa</dt><dd>在目标模型上附加轻量预测头生成草稿的变体方法。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>transformers 辅助生成</span><em>python</em><button class="ccopy">复制</button></div><pre><code># pip install transformers accelerate torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+# 目标模型与草稿模型必须共享分词器；模型名以官方文档为准
+target_id = &quot;Qwen/Qwen2.5-7B-Instruct&quot;
+draft_id = &quot;Qwen/Qwen2.5-0.5B-Instruct&quot;
+
+tok = AutoTokenizer.from_pretrained(target_id)
+target = AutoModelForCausalLM.from_pretrained(target_id, torch_dtype=&quot;auto&quot;, device_map=&quot;auto&quot;)
+draft = AutoModelForCausalLM.from_pretrained(draft_id, torch_dtype=&quot;auto&quot;, device_map=&quot;auto&quot;)
+
+inputs = tok(&quot;用三句话解释什么是投机解码。&quot;, return_tensors=&quot;pt&quot;).to(target.device)
+
+# 1) 草稿模型投机解码
+out = target.generate(**inputs, assistant_model=draft, max_new_tokens=128)
+print(tok.decode(out[0], skip_special_tokens=True))
+
+# 2) 无需草稿模型：从输入中查找 n-gram 作为候选
+out2 = target.generate(**inputs, prompt_lookup_num_tokens=10, max_new_tokens=128)</code></pre></div><p class="cnote">贪心解码下结果应与不加速时一致；生产部署通常在 vLLM、SGLang 等推理引擎中开启对应配置。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">投机解码的草稿来源</h3><div class="tw"><table><thead><tr><th>方案</th><th>草稿来源</th><th>额外成本</th><th>适用</th></tr></thead><tbody><tr><td data-h="方案">独立草稿模型</td><td data-h="草稿来源">同系列小模型</td><td data-h="额外成本">额外显存与一次小模型推理</td><td data-h="适用">有合适小模型的开源系列</td></tr><tr><td data-h="方案">Medusa / EAGLE</td><td data-h="草稿来源">目标模型上的附加预测头</td><td data-h="额外成本">需训练预测头</td><td data-h="适用">追求更高接受率</td></tr><tr><td data-h="方案">提示查找 (n-gram)</td><td data-h="草稿来源">输入文本中的片段</td><td data-h="额外成本">几乎为零</td><td data-h="适用">摘要、改写、代码编辑等复制较多的任务</td></tr><tr><td data-h="方案">自投机</td><td data-h="草稿来源">目标模型跳层或早退</td><td data-h="额外成本">无需第二个模型</td><td data-h="适用">显存紧张时</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>开启投机解码</h4><p><b class="k-p">优点</b>单请求延迟显著降低，输出质量不变</p><p><b class="k-c">代价</b>额外显存与算力，接受率低时可能变慢</p><p><b class="k-w">适用</b>低并发、延迟敏感的交互场景</p></div><div class="trd"><h4>只用连续批处理</h4><p><b class="k-p">优点</b>高并发下吞吐最好，配置简单</p><p><b class="k-c">代价</b>单请求生成速度不变</p><p><b class="k-w">适用</b>高并发、吞吐优先的批量服务</p></div><div class="trd"><h4>换更小或量化模型</h4><p><b class="k-p">优点</b>速度与成本同时下降</p><p><b class="k-c">代价</b>可能损失质量</p><p><b class="k-w">适用</b>质量要求可以放宽的任务</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>草稿模型与目标模型分词器不同</p><p class="fix"><b>✓</b>选用同系列共享词表的模型，或使用支持通用辅助解码的实现</p></li><li><p class="bad"><b>✗</b>在 GPU 已打满的高并发下仍开启，吞吐反而下降</p><p class="fix"><b>✓</b>按负载压测，必要时只在低负载时启用或调小 k</p></li><li><p class="bad"><b>✗</b>只看论文加速比，不测自己任务的接受率</p><p class="fix"><b>✓</b>在真实提示分布上记录接受率与端到端延迟</p></li><li><p class="bad"><b>✗</b>以为采样设置下结果逐字相同</p><p class="fix"><b>✓</b>保证的是分布一致；随机采样时具体文本仍会随机变化</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>草稿与目标模型分词器一致</span></label></li><li><label><input type="checkbox"><span>记录接受率与每秒输出 Token 数</span></label></li><li><label><input type="checkbox"><span>在目标并发水平下做 A/B 压测</span></label></li><li><label><input type="checkbox"><span>确认额外显存不影响 KV 缓存容量</span></label></li><li><label><input type="checkbox"><span>推测长度 k 经过调优</span></label></li><li><label><input type="checkbox"><span>评测集验证输出质量未变化</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么投机解码能在不损失质量下加速？</summary><p>自回归解码受显存带宽限制，目标模型前向处理 1 个或 k 个 Token 耗时相近。让小模型先猜 k 个，大模型一次验证，多个 Token 共享一次大模型前向。接受-拒绝采样规则经过证明，最终分布与目标模型直接采样完全相同。</p></details><details class="iv"><summary>什么情况下投机解码收益很小甚至为负？</summary><p>草稿与目标分布差距大导致接受率低；高并发时 GPU 已处于计算瓶颈，验证多余 Token 占用了本可服务其他请求的算力；草稿模型本身不够快。因此需要在真实负载下测量，而不是默认开启。</p></details><details class="iv"><summary>提示查找解码为什么对代码编辑特别有效？</summary><p>代码编辑与摘要等任务的输出大量复制输入中的片段。提示查找直接在输入里匹配当前末尾的 n-gram，把其后续作为草稿，不需要额外模型，命中时一次可接受很多 Token，对 Agent 改写文件这类场景加速明显。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://arxiv.org/abs/2211.17192" target="_blank" rel="noopener"><b>Leviathan et al.: Fast Inference from Transformers via Speculative Decoding</b><small>arxiv.org ↗</small></a></li><li><a href="https://arxiv.org/abs/2302.01318" target="_blank" rel="noopener"><b>Chen et al.: Accelerating LLM Decoding with Speculative Sampling</b><small>arxiv.org ↗</small></a></li><li><a href="https://huggingface.co/blog/assisted-generation" target="_blank" rel="noopener"><b>Hugging Face: Assisted Generation</b><small>huggingface.co ↗</small></a></li><li><a href="https://docs.vllm.ai/en/latest/features/spec_decode.html" target="_blank" rel="noopener"><b>vLLM: Speculative Decoding</b><small>docs.vllm.ai ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="webassembly.pro.html" rel="prev"><small>‹ 上一个</small><b>🧱 WebAssembly (Wasm)</b></a><a class="pn next" href="continuous-batching.pro.html" rel="next"><small>下一个 ›</small><b>🚌 连续批处理 (Continuous Batching)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

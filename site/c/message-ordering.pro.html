@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="消息顺序性保证 专业模式：消息顺序性保证是消息系统按发送顺序把消息交给消费者处理的能力。分布式消息系统通常只在一个分区或一个消息组内保证顺序，不提供全局顺序，因为全局有序意味着无法并行。">
+<title>🎓 消息顺序性保证 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="message-ordering" data-answer="0" data-prev="exactly-once-semantics.pro.html" data-next="kafka-consumer-groups.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#cache">🔥 进阶 · ⚡ 缓存与队列</a><span>›</span><a href="message-ordering.html">消息顺序性保证</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.425 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="exactly-once-semantics.pro.html" rel="prev"><small>‹ 上一个</small><b>1️⃣ 精确一次语义 (EOS)</b></a><a class="pn next" href="kafka-consumer-groups.pro.html" rel="next"><small>下一个 ›</small><b>👥 Kafka消费者组</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔢</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>⚡ 缓存与队列</span><span>⏱ 约 10 分钟</span></div>
+    <h1>消息顺序性保证</h1><p class="en">Message Ordering</p>
+    <div class="hbtns"><a class="prosw back" href="message-ordering.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">消息顺序性保证是消息系统按发送顺序把消息交给消费者处理的能力。分布式消息系统通常只在一个分区或一个消息组内保证顺序，不提供全局顺序，因为全局有序意味着无法并行。设计时要先确定「需要在什么范围内有序」，再用分区键、消息组和消费策略来保证。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>确定有序范围：通常是同一实体（订单、账户）的消息需要有序，不同实体可并行。</p></li><li><span class="sn">2</span><p>按键路由：用实体 ID 作为分区键或消息组 ID，让同一实体的消息进入同一有序通道。</p></li><li><span class="sn">3</span><p>生产端保序：重试时防止乱序，如 Kafka 开启幂等生产者，SQS FIFO 用消息组。</p></li><li><span class="sn">4</span><p>消费端保序：同一分区或消息组内串行处理，避免多线程并发消费打乱顺序。</p></li><li><span class="sn">5</span><p>兜底：消息携带版本号或时间序号，消费者丢弃比当前状态更旧的消息。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>分区内有序 (Per-partition Ordering)</dt><dd>Kafka 只保证同一分区内消息的写入与读取顺序。</dd></div><div class="term"><dt>消息组 (Message Group)</dt><dd>SQS FIFO 中同一组内消息严格有序、逐条投递。</dd></div><div class="term"><dt>队头阻塞 (Head-of-line Blocking)</dt><dd>有序通道中一条消息处理失败会阻塞后续消息。</dd></div><div class="term"><dt>乱序重试</dt><dd>前一批发送失败重试时，后一批已成功写入导致顺序颠倒。</dd></div><div class="term"><dt>版本号 (Sequence Number)</dt><dd>随实体变更递增的序号，用于检测和丢弃过期消息。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>SQS FIFO 按订单保序</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import json, boto3
+
+sqs = boto3.client(&quot;sqs&quot;)
+QUEUE = &quot;https://sqs.us-east-1.amazonaws.com/123456789012/orders.fifo&quot;
+
+def publish(order_id: str, seq: int, event: dict):
+    sqs.send_message(
+        QueueUrl=QUEUE,
+        MessageBody=json.dumps({**event, &quot;seq&quot;: seq}),
+        # 同一订单的事件进入同一消息组 → 组内严格有序
+        MessageGroupId=order_id,
+        # 去重 ID：同一 ID 在去重窗口内只会入队一次
+        MessageDeduplicationId=f&quot;{order_id}-{seq}&quot;,
+    )
+
+publish(&quot;order-1001&quot;, 1, {&quot;type&quot;: &quot;Created&quot;})
+publish(&quot;order-1001&quot;, 2, {&quot;type&quot;: &quot;Paid&quot;})
+publish(&quot;order-2002&quot;, 1, {&quot;type&quot;: &quot;Created&quot;})   # 不同组可并行消费</code></pre></div><p class="cnote">不同订单可并行，同一订单按序；消息带 seq 便于消费者再做兜底校验。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">主流系统的顺序保证</h3><div class="tw"><table><thead><tr><th>系统</th><th>有序范围</th><th>实现方式</th></tr></thead><tbody><tr><td data-h="系统">Kafka</td><td data-h="有序范围">单个分区</td><td data-h="实现方式">按 key 哈希到分区</td></tr><tr><td data-h="系统">SQS FIFO</td><td data-h="有序范围">单个消息组</td><td data-h="实现方式">MessageGroupId</td></tr><tr><td data-h="系统">SQS 标准队列</td><td data-h="有序范围">不保证</td><td data-h="实现方式">需业务自行处理</td></tr><tr><td data-h="系统">RabbitMQ</td><td data-h="有序范围">单队列单消费者时</td><td data-h="实现方式">多消费者或重新入队会打乱</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>按实体分区有序</h4><p><b class="k-p">优点</b>兼顾顺序与并行度</p><p><b class="k-c">代价</b>热点实体会形成热点分区</p><p><b class="k-w">适用</b>大多数业务事件</p></div><div class="trd"><h4>全局单分区</h4><p><b class="k-p">优点</b>严格全局顺序</p><p><b class="k-c">代价</b>无法水平扩展，吞吐受限</p><p><b class="k-w">适用</b>量很小且确需全局序</p></div><div class="trd"><h4>不保序+版本号</h4><p><b class="k-p">优点</b>最大并行，系统简单</p><p><b class="k-c">代价</b>消费者需处理乱序与过期消息</p><p><b class="k-w">适用</b>只关心最终状态</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>同一分区内用线程池并发处理，顺序被打乱</p><p class="fix"><b>✓</b>按 key 分配到固定的工作线程，或分区内串行处理</p></li><li><p class="bad"><b>✗</b>扩容分区数后，同一 key 映射到新分区，短期乱序</p><p class="fix"><b>✓</b>规划好初始分区数，扩容时评估顺序影响或停写切换</p></li><li><p class="bad"><b>✗</b>处理失败的消息被丢到重试队列，后续消息先处理</p><p class="fix"><b>✓</b>有序场景中失败要阻塞重试或整组转入死信并告警</p></li><li><p class="bad"><b>✗</b>要求全局有序，导致系统无法扩展</p><p class="fix"><b>✓</b>分析业务真正需要的有序范围，通常按实体即可</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>已明确需要有序的范围</span></label></li><li><label><input type="checkbox"><span>分区键/消息组按实体设置</span></label></li><li><label><input type="checkbox"><span>生产端重试不会乱序</span></label></li><li><label><input type="checkbox"><span>消费端分区内串行</span></label></li><li><label><input type="checkbox"><span>消息带版本号可检测过期</span></label></li><li><label><input type="checkbox"><span>失败重试策略不破坏顺序</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Kafka 如何保证同一订单的消息有序？</summary><p>生产时用订单 ID 作 key，使其哈希到同一分区；开启幂等生产者避免重试乱序；消费端每个分区只由组内一个消费者读取，并在分区内串行处理。注意扩容分区会改变 key 映射。</p></details><details class="iv"><summary>为什么不提供全局有序？</summary><p>全局有序需要所有消息经过单一序列化点，只能单分区单消费者，吞吐无法扩展且有单点问题。多数业务只需同一实体内有序，按实体分区即可同时获得顺序和并行度。</p></details><details class="iv"><summary>有序消费中一条消息一直失败怎么办？</summary><p>有序意味着后续消息必须等待，因此先有限次重试；仍失败则需决策：阻塞并告警人工介入，或把该实体后续消息一起转入死信，避免跳过它导致状态错乱。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/FIFO-queues.html" target="_blank" rel="noopener"><b>Amazon SQS FIFO queues</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://kafka.apache.org/documentation/" target="_blank" rel="noopener"><b>Apache Kafka Documentation</b><small>kafka.apache.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="exactly-once-semantics.pro.html" rel="prev"><small>‹ 上一个</small><b>1️⃣ 精确一次语义 (EOS)</b></a><a class="pn next" href="kafka-consumer-groups.pro.html" rel="next"><small>下一个 ›</small><b>👥 Kafka消费者组</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

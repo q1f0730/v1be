@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="优雅停机机制 专业模式：优雅停机（Graceful Shutdown）是进程收到终止信号后，停止接收新工作、完成或妥善移交在途工作、释放资源再退出的过程。它位于应用与编排平台的生命周期">
+<title>🎓 优雅停机机制 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="graceful-shutdown" data-answer="0" data-prev="liveness-vs-readiness-probes.pro.html" data-next="connection-draining.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sre">🔮 高级 · 🩺 高可用 SRE</a><span>›</span><a href="graceful-shutdown.html">优雅停机机制</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.293 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="liveness-vs-readiness-probes.pro.html" rel="prev"><small>‹ 上一个</small><b>🩺 存活与就绪探针分野</b></a><a class="pn next" href="connection-draining.pro.html" rel="next"><small>下一个 ›</small><b>🚪 连接排空</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🌙</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>优雅停机机制</h1><p class="en">Graceful Shutdown</p>
+    <div class="hbtns"><a class="prosw back" href="graceful-shutdown.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">优雅停机（Graceful Shutdown）是进程收到终止信号后，停止接收新工作、完成或妥善移交在途工作、释放资源再退出的过程。它位于应用与编排平台的生命周期契约层：Kubernetes、systemd、容器运行时先发 SIGTERM，等待宽限期后才发 SIGKILL。做好它是零停机发布和自动扩缩容不丢请求的前提。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>平台决定终止实例，向主进程发送 SIGTERM，并开始计时宽限期，Kubernetes 默认 30 秒。</p></li><li><span class="sn">2</span><p>应用捕获信号后先把自身标记为未就绪，让负载均衡器停止发来新请求。</p></li><li><span class="sn">3</span><p>停止接受新连接和新任务，消费者停止拉取消息，定时任务不再调度。</p></li><li><span class="sn">4</span><p>等待在途请求和任务处理完成，或在超时之前把未完成的任务退回队列。</p></li><li><span class="sn">5</span><p>关闭数据库连接池、刷新日志和指标缓冲后退出；超时未退出将被 SIGKILL 强杀。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>SIGTERM</dt><dd>请求进程终止的可捕获信号，优雅停机的起点。</dd></div><div class="term"><dt>SIGKILL</dt><dd>不可捕获的强制终止信号，宽限期到后发送。</dd></div><div class="term"><dt>宽限期 (terminationGracePeriodSeconds)</dt><dd>Kubernetes 从发 SIGTERM 到强杀的时间，默认 30 秒。</dd></div><div class="term"><dt>preStop 钩子 (preStop Hook)</dt><dd>容器终止前执行的命令或请求，常用于等待摘流。</dd></div><div class="term"><dt>PID 1 问题</dt><dd>容器中 PID 1 进程不转发信号或无默认处理，导致应用收不到 SIGTERM。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Node.js 处理 SIGTERM</span><em>javascript</em><button class="ccopy">复制</button></div><pre><code>const http = require(&quot;node:http&quot;);
+
+let shuttingDown = false;
+const server = http.createServer((req, res) =&gt; {
+  if (req.url === &quot;/readyz&quot;) {
+    res.writeHead(shuttingDown ? 503 : 200).end();  // 停机时就绪失败
+    return;
+  }
+  setTimeout(() =&gt; res.end(&quot;ok&quot;), 200);             // 模拟业务处理
+});
+server.listen(8080);
+
+process.on(&quot;SIGTERM&quot;, () =&gt; {
+  shuttingDown = true;
+  // 停止接新连接，等在途请求结束后回调
+  server.close(() =&gt; process.exit(0));
+  server.closeIdleConnections();                    // 关闭空闲 keep-alive 连接
+  // 兜底：宽限期前强制退出
+  setTimeout(() =&gt; process.exit(1), 25_000).unref();
+});</code></pre></div><p class="cnote">收到 SIGTERM 后就绪失败、停止接新连接，在途请求完成再退出，并设兜底超时。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见运行环境的终止流程</h3><div class="tw"><table><thead><tr><th>环境</th><th>终止信号</th><th>默认宽限</th></tr></thead><tbody><tr><td data-h="环境">Kubernetes</td><td data-h="终止信号">SIGTERM，超时后 SIGKILL</td><td data-h="默认宽限">30 秒</td></tr><tr><td data-h="环境">docker stop</td><td data-h="终止信号">SIGTERM，超时后 SIGKILL</td><td data-h="默认宽限">10 秒</td></tr><tr><td data-h="环境">systemd</td><td data-h="终止信号">默认 SIGTERM，超时后 SIGKILL</td><td data-h="默认宽限">TimeoutStopSec，常见默认 90 秒</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>等待全部在途工作完成</h4><p><b class="k-p">优点</b>不丢请求</p><p><b class="k-c">代价</b>长任务会拖长停机甚至被强杀</p><p><b class="k-w">适用</b>请求短、可预期</p></div><div class="trd"><h4>中断并退回队列</h4><p><b class="k-p">优点</b>停机快</p><p><b class="k-c">代价</b>任务需幂等可重做</p><p><b class="k-w">适用</b>长任务、批处理</p></div><div class="trd"><h4>preStop 先等待再处理信号</h4><p><b class="k-p">优点</b>覆盖摘流传播延迟</p><p><b class="k-c">代价</b>占用宽限期时间</p><p><b class="k-w">适用</b>Kubernetes 后面挂负载均衡</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>Dockerfile 用 shell 形式 CMD，SIGTERM 发给 sh，应用收不到。</p><p class="fix"><b>✓</b>用 exec 形式 CMD 或加 tini 等 init 进程转发信号。</p></li><li><p class="bad"><b>✗</b>收到 SIGTERM 立即退出，正在处理的请求全部 502。</p><p class="fix"><b>✓</b>先摘流、再关监听、等在途完成后退出。</p></li><li><p class="bad"><b>✗</b>应用清理时间比宽限期还长，总被 SIGKILL。</p><p class="fix"><b>✓</b>让应用超时小于宽限期，或调大 terminationGracePeriodSeconds。</p></li><li><p class="bad"><b>✗</b>消息消费者停机时没归还未确认消息。</p><p class="fix"><b>✓</b>停止拉取，处理完或 nack 后再关闭连接。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>应用作为 PID 1 或经 init 正确接收 SIGTERM</span></label></li><li><label><input type="checkbox"><span>停机时就绪探针先失败</span></label></li><li><label><input type="checkbox"><span>在途请求与任务有完成或退回逻辑</span></label></li><li><label><input type="checkbox"><span>应用内超时小于平台宽限期</span></label></li><li><label><input type="checkbox"><span>关闭连接池并刷新日志指标</span></label></li><li><label><input type="checkbox"><span>发布时验证无 5xx 尖峰</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Kubernetes 删除 Pod 时发生了什么？</summary><p>Pod 标记为 Terminating，同时并行地从端点中移除并执行 preStop，之后发 SIGTERM；宽限期到仍未退出则 SIGKILL。由于摘流传播与 SIGTERM 并行，常在 preStop 里等几秒，避免新请求打到正在关闭的进程。</p></details><details class="iv"><summary>为什么容器里经常收不到 SIGTERM？</summary><p>shell 形式的 CMD 会让 /bin/sh 成为 PID 1，它默认不转发信号；PID 1 对未注册处理器的信号也不执行默认终止。解决方法是 exec 形式启动、使用 tini 或 docker run --init。</p></details><details class="iv"><summary>长时间任务如何优雅停机？</summary><p>设计成可中断：分段提交进度或保存检查点；收到信号后停止领取新任务，当前任务在宽限期内完成，否则退回队列由其他实例接手，要求任务幂等。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination" target="_blank" rel="noopener"><b>Kubernetes：Pod 生命周期 - Pod 终止</b><small>kubernetes.io ↗</small></a></li><li><a href="https://nodejs.org/api/http.html#serverclosecallback" target="_blank" rel="noopener"><b>Node.js 文档：server.close()</b><small>nodejs.org ↗</small></a></li><li><a href="https://12factor.net/disposability" target="_blank" rel="noopener"><b>The Twelve-Factor App：Disposability</b><small>12factor.net ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="liveness-vs-readiness-probes.pro.html" rel="prev"><small>‹ 上一个</small><b>🩺 存活与就绪探针分野</b></a><a class="pn next" href="connection-draining.pro.html" rel="next"><small>下一个 ›</small><b>🚪 连接排空</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

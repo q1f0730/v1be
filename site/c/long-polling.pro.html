@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="HTTP长轮询 专业模式：长轮询（Long Polling）是用普通 HTTP 模拟服务端推送的技术：客户端发出请求后，服务端在有新数据或超时之前不返回响应；客户端收到响应后立刻发起下一">
+<title>🎓 HTTP长轮询 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="long-polling" data-answer="0" data-prev="server-sent-events.pro.html" data-next="grpc.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#net">🔮 高级 · 🌐 网络与 API</a><span>›</span><a href="long-polling.html">HTTP长轮询</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.261 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="server-sent-events.pro.html" rel="prev"><small>‹ 上一个</small><b>📡 服务端发送事件 (SSE)</b></a><a class="pn next" href="grpc.pro.html" rel="next"><small>下一个 ›</small><b>🚄 高性能远程过程调用</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">☎️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>HTTP长轮询</h1><p class="en">Long Polling</p>
+    <div class="hbtns"><a class="prosw back" href="long-polling.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">长轮询（Long Polling）是用普通 HTTP 模拟服务端推送的技术：客户端发出请求后，服务端在有新数据或超时之前不返回响应；客户端收到响应后立刻发起下一次请求。它无需特殊协议，兼容性最好，但每条消息都要一次完整请求往返，连接与资源开销较大。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>客户端带上游标（上次收到的最后一条消息 ID）发起普通 HTTP 请求。</p></li><li><span class="sn">2</span><p>服务端若已有游标之后的新数据，立即返回；否则把请求挂起等待。</p></li><li><span class="sn">3</span><p>有新消息时唤醒挂起的请求并返回；等待超过时限则返回空响应（如 204）。</p></li><li><span class="sn">4</span><p>客户端处理结果、更新游标后立刻发起下一轮请求，出错时退避重试。</p></li><li><span class="sn">5</span><p>游标保证两次请求之间的空档期内产生的消息，在下一轮请求时被补发而不丢失。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>短轮询 (Short Polling)</dt><dd>固定间隔请求，无论有无数据立即返回。</dd></div><div class="term"><dt>挂起请求 (Hanging Request)</dt><dd>服务端暂不响应、保持打开的请求。</dd></div><div class="term"><dt>游标 (Cursor)</dt><dd>标记客户端已接收位置的 ID 或时间戳。</dd></div><div class="term"><dt>轮询超时 (Poll Timeout)</dt><dd>服务端最长挂起时间，需小于各层代理超时。</dd></div><div class="term"><dt>惊群 (Thundering Herd)</dt><dd>大量挂起请求同时被唤醒、同时重连。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>带游标的长轮询</span><em>javascript</em><button class="ccopy">复制</button></div><pre><code>// 服务端（Express）：有新消息立即返回，否则最多挂起 25 秒
+const messages = [];           // 示例用内存，生产用数据库或 Redis
+const waiters = new Set();
+
+app.get(&#x27;/poll&#x27;, (req, res) =&gt; {
+  const since = Number(req.query.since ?? 0);
+  const fresh = messages.filter((m) =&gt; m.id &gt; since);
+  if (fresh.length) return res.json(fresh);
+
+  const done = (msg) =&gt; { clearTimeout(timer); waiters.delete(done); res.json([msg]); };
+  const timer = setTimeout(() =&gt; { waiters.delete(done); res.status(204).end(); }, 25_000);
+  waiters.add(done);
+  req.on(&#x27;close&#x27;, () =&gt; { clearTimeout(timer); waiters.delete(done); });
+});
+
+function publish(text) {
+  const msg = { id: messages.length + 1, text };
+  messages.push(msg);
+  for (const w of [...waiters]) w(msg);
+}
+
+// 客户端：收到响应立刻发下一轮，出错时等待后重试
+async function poll(since = 0) {
+  for (;;) {
+    try {
+      const r = await fetch(`/poll?since=${since}`);
+      if (r.status === 200) { const msgs = await r.json(); since = msgs.at(-1).id; render(msgs); }
+    } catch { await new Promise((ok) =&gt; setTimeout(ok, 2000)); }
+  }
+}</code></pre></div><p class="cnote">游标防止请求间隙丢消息；挂起时限要短于代理与负载均衡的超时。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">推送方案开销对比</h3><div class="tw"><table><thead><tr><th>方案</th><th>每条消息开销</th><th>实时性</th><th>兼容性</th></tr></thead><tbody><tr><td data-h="方案">短轮询</td><td data-h="每条消息开销">固定频率请求，多为空</td><td data-h="实时性">取决于间隔</td><td data-h="兼容性">最好</td></tr><tr><td data-h="方案">长轮询</td><td data-h="每条消息开销">一次完整请求往返</td><td data-h="实时性">接近实时</td><td data-h="兼容性">很好</td></tr><tr><td data-h="方案">SSE</td><td data-h="每条消息开销">一个事件帧</td><td data-h="实时性">实时</td><td data-h="兼容性">现代浏览器</td></tr><tr><td data-h="方案">WebSocket</td><td data-h="每条消息开销">一个数据帧</td><td data-h="实时性">实时、双向</td><td data-h="兼容性">现代浏览器</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>长轮询</h4><p><b class="k-p">优点</b>纯 HTTP，穿透企业代理最稳</p><p><b class="k-c">代价</b>请求头开销大，挂起占资源</p><p><b class="k-w">适用</b>兼容兜底或低频推送</p></div><div class="trd"><h4>SSE</h4><p><b class="k-p">优点</b>单连接持续推送，自动重连</p><p><b class="k-c">代价</b>单向，部分代理需配置</p><p><b class="k-w">适用</b>服务端单向推送</p></div><div class="trd"><h4>短轮询</h4><p><b class="k-p">优点</b>实现最简单，易缓存</p><p><b class="k-c">代价</b>延迟与空请求浪费</p><p><b class="k-w">适用</b>数据分钟级变化</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>挂起 60 秒，被负载均衡 60 秒空闲超时切断</p><p class="fix"><b>✓</b>挂起时长设为明显小于各层超时，如 20–30 秒</p></li><li><p class="bad"><b>✗</b>不带游标，两次请求之间的消息丢失</p><p class="fix"><b>✓</b>请求带上最后收到的 ID，服务端补发</p></li><li><p class="bad"><b>✗</b>同步阻塞式服务器每个挂起请求占一个线程</p><p class="fix"><b>✓</b>使用异步 IO 框架承载挂起连接</p></li><li><p class="bad"><b>✗</b>服务端故障时客户端立即疯狂重试</p><p class="fix"><b>✓</b>错误时指数退避并加随机抖动</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>请求携带游标，服务端支持补发</span></label></li><li><label><input type="checkbox"><span>挂起时长小于所有中间层超时</span></label></li><li><label><input type="checkbox"><span>服务端使用异步 IO</span></label></li><li><label><input type="checkbox"><span>客户端错误时退避重试</span></label></li><li><label><input type="checkbox"><span>多实例时消息经共享存储分发</span></label></li><li><label><input type="checkbox"><span>监控挂起请求数量</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>长轮询和短轮询的本质区别？</summary><p>短轮询无论是否有数据都立即返回，客户端按固定间隔重复请求，延迟取决于间隔且大量请求为空。长轮询在没有数据时挂起请求，数据一到即返回，延迟接近实时，空请求只在超时时出现。</p></details><details class="iv"><summary>长轮询如何在多实例部署下工作？</summary><p>请求可能落在任意实例，因此消息不能只存在某实例内存中。需把消息写入共享存储（数据库、Redis），并通过 Pub/Sub 通知各实例唤醒挂起的请求；游标基于全局递增 ID。</p></details><details class="iv"><summary>现在还有理由用长轮询吗？</summary><p>有。某些企业代理或老旧网络环境会阻断 WebSocket 或缓冲流式响应，长轮询最可靠；Telegram Bot API 的 getUpdates 就采用长轮询。Socket.IO 等库也把它作为降级传输。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.rfc-editor.org/rfc/rfc6202" target="_blank" rel="noopener"><b>RFC 6202: Long Polling and Streaming in Bidirectional HTTP</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://core.telegram.org/bots/api#getupdates" target="_blank" rel="noopener"><b>Telegram Bot API: getUpdates</b><small>core.telegram.org ↗</small></a></li><li><a href="https://javascript.info/long-polling" target="_blank" rel="noopener"><b>javascript.info: Long polling</b><small>javascript.info ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="server-sent-events.pro.html" rel="prev"><small>‹ 上一个</small><b>📡 服务端发送事件 (SSE)</b></a><a class="pn next" href="grpc.pro.html" rel="next"><small>下一个 ›</small><b>🚄 高性能远程过程调用</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

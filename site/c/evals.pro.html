@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="AI 评测 (Evals) 专业模式：AI 评测（Evals）是用一组带期望结果或评分标准的测试用例，系统地衡量 LLM 应用输出质量的过程，评分方式包括代码断言、人工标注和 LLM 评审（LLM-">
+<title>🎓 AI 评测 (Evals) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="evals" data-answer="0" data-prev="subagents.pro.html" data-next="fine-tuning.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#ai">🔮 高级 · 🤖 AI 与提示词</a><span>›</span><a href="evals.html">AI 评测 (Evals)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.205 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="subagents.pro.html" rel="prev"><small>‹ 上一个</small><b>🧑‍🔧 子代理</b></a><a class="pn next" href="fine-tuning.pro.html" rel="next"><small>下一个 ›</small><b>🎓 微调 (Fine-tuning)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📝</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>AI 评测 (Evals)</h1><p class="en">Evals</p>
+    <div class="hbtns"><a class="prosw back" href="evals.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">AI 评测（Evals）是用一组带期望结果或评分标准的测试用例，系统地衡量 LLM 应用输出质量的过程，评分方式包括代码断言、人工标注和 LLM 评审（LLM-as-a-Judge）。它是 AI 工程的质量保障层，相当于传统软件的测试套件，用于比较提示词、模型与架构改动，防止回归。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>明确成功标准：任务正确性、格式、事实性、安全性、延迟与成本等可衡量维度。</p></li><li><span class="sn">2</span><p>构建数据集：从真实日志、失败案例和边界场景收集输入，并标注期望输出或评分细则。</p></li><li><span class="sn">3</span><p>运行被测系统得到输出，用确定性检查、相似度、LLM 评审或人工打分逐条评分。</p></li><li><span class="sn">4</span><p>汇总为通过率、平均分等指标，按类别切片分析，定位具体失败模式。</p></li><li><span class="sn">5</span><p>接入 CI，每次修改提示词或换模型都自动跑评测，与基线对比后再发布。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>LLM 评审 (LLM-as-a-Judge)</dt><dd>用模型按评分细则给输出打分，需与人工校准。</dd></div><div class="term"><dt>黄金数据集 (Golden Dataset)</dt><dd>经人工确认的标准输入与期望输出集合。</dd></div><div class="term"><dt>回归测试 (Regression Eval)</dt><dd>确保改动不破坏原本能通过的用例。</dd></div><div class="term"><dt>评分细则 (Rubric)</dt><dd>把主观质量拆成可判定的具体标准。</dd></div><div class="term"><dt>pass@k</dt><dd>k 次采样中至少一次通过的概率，常用于代码生成。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>最小评测脚本</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import json
+
+# 每条用例：输入 + 可程序化检查的期望
+CASES = [
+    {&quot;input&quot;: &quot;把 2026-03-05 转成 05/03/2026 格式&quot;, &quot;expect&quot;: &quot;05/03/2026&quot;},
+    {&quot;input&quot;: &quot;提取邮箱：联系 ada@example.com&quot;, &quot;expect&quot;: &quot;ada@example.com&quot;},
+    {&quot;input&quot;: &quot;只回答 yes 或 no：1+1=2 吗？&quot;, &quot;expect&quot;: &quot;yes&quot;},
+]
+
+def run_system(prompt: str) -&gt; str:
+    &quot;&quot;&quot;替换为真实调用：你的提示词 + 模型&quot;&quot;&quot;
+    raise NotImplementedError
+
+def grade(output: str, expect: str) -&gt; bool:
+    return expect.lower() in output.strip().lower()   # 确定性检查优先
+
+def main():
+    results = []
+    for c in CASES:
+        out = run_system(c[&quot;input&quot;])
+        results.append({**c, &quot;output&quot;: out, &quot;pass&quot;: grade(out, c[&quot;expect&quot;])})
+    rate = sum(r[&quot;pass&quot;] for r in results) / len(results)
+    print(f&quot;通过率 {rate:.0%}&quot;)
+    json.dump(results, open(&quot;eval_results.json&quot;, &quot;w&quot;), ensure_ascii=False, indent=2)
+
+if __name__ == &quot;__main__&quot;:
+    main()</code></pre></div><p class="cnote">数据集、被测系统、评分函数三件套；能用代码判定的先用代码，结果落盘便于对比。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">评分方式对比</h3><div class="tw"><table><thead><tr><th>方式</th><th>成本</th><th>适用</th><th>风险</th></tr></thead><tbody><tr><td data-h="方式">代码断言/精确匹配</td><td data-h="成本">极低</td><td data-h="适用">格式、抽取、分类</td><td data-h="风险">覆盖不了开放式回答</td></tr><tr><td data-h="方式">LLM 评审</td><td data-h="成本">中</td><td data-h="适用">语气、相关性、完整性</td><td data-h="风险">评审偏差，需人工校准</td></tr><tr><td data-h="方式">人工评审</td><td data-h="成本">高</td><td data-h="适用">高风险、主观质量</td><td data-h="风险">慢，标准不一致</td></tr><tr><td data-h="方式">线上 A/B 指标</td><td data-h="成本">中</td><td data-h="适用">真实用户效果</td><td data-h="风险">滞后，噪声大</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>小而精的手工数据集</h4><p><b class="k-p">优点</b>快速起步，覆盖关键场景</p><p><b class="k-c">代价</b>代表性有限</p><p><b class="k-w">适用</b>项目早期</p></div><div class="trd"><h4>从线上日志持续采样</h4><p><b class="k-p">优点</b>贴近真实分布</p><p><b class="k-c">代价</b>需脱敏与标注成本</p><p><b class="k-w">适用</b>已有用户流量</p></div><div class="trd"><h4>合成数据扩充</h4><p><b class="k-p">优点</b>快速覆盖边界情况</p><p><b class="k-c">代价</b>可能偏离真实分布</p><p><b class="k-w">适用</b>补充稀有场景</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>凭几次手动试用就判断新提示词更好</p><p class="fix"><b>✓</b>固定数据集批量评测，与基线对比再决定</p></li><li><p class="bad"><b>✗</b>LLM 评审未经校准就当真值</p><p class="fix"><b>✓</b>抽样与人工标注比对一致性，迭代评审提示词</p></li><li><p class="bad"><b>✗</b>只看总分，不看失败案例</p><p class="fix"><b>✓</b>按类别切片并逐条阅读失败输出，归纳错误模式</p></li><li><p class="bad"><b>✗</b>评测集被用来反复调提示词，产生过拟合</p><p class="fix"><b>✓</b>保留不参与调优的留出集定期验证</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>成功标准书面且可衡量</span></label></li><li><label><input type="checkbox"><span>数据集覆盖主流场景与边界</span></label></li><li><label><input type="checkbox"><span>优先使用确定性评分</span></label></li><li><label><input type="checkbox"><span>LLM 评审与人工校准过</span></label></li><li><label><input type="checkbox"><span>评测接入 CI 并有基线</span></label></li><li><label><input type="checkbox"><span>同时记录成本与延迟</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>如何让 LLM 评审更可靠？</summary><p>使用具体评分细则而非笼统打分，优先二元或少档位判断；让评审先给理由再给结论；与人工标注比较一致率；注意位置偏差与偏好自身风格等问题，可交换顺序或换模型评审。</p></details><details class="iv"><summary>评测数据从哪来？</summary><p>从真实用户日志与客服反馈中挑选典型与失败案例，补充领域专家写的边界场景，再用合成数据扩展覆盖；每次线上发现的新问题都转成一条回归用例。</p></details><details class="iv"><summary>Agent 类系统怎么评测？</summary><p>除最终结果外，还要评估过程：是否选对工具、步骤数、是否越权操作、成本与耗时。可在可复现的沙箱环境中运行任务，用状态检查判定结果，并记录完整轨迹供分析。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.claude.com/en/docs/test-and-evaluate/develop-tests" target="_blank" rel="noopener"><b>Anthropic 文档：Create strong empirical evaluations</b><small>docs.claude.com ↗</small></a></li><li><a href="https://hamel.dev/blog/posts/evals/" target="_blank" rel="noopener"><b>Hamel Husain：Your AI Product Needs Evals</b><small>hamel.dev ↗</small></a></li><li><a href="https://inspect.aisi.org.uk/" target="_blank" rel="noopener"><b>Inspect（UK AISI 评测框架）</b><small>inspect.aisi.org.uk ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="subagents.pro.html" rel="prev"><small>‹ 上一个</small><b>🧑‍🔧 子代理</b></a><a class="pn next" href="fine-tuning.pro.html" rel="next"><small>下一个 ›</small><b>🎓 微调 (Fine-tuning)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

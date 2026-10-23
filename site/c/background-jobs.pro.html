@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="后台异步任务队列 专业模式：后台任务（Background Jobs）是把耗时或可延后的工作（发邮件、生成报表、调用外部 API、处理图片）从请求路径中拆出，写入任务队列，由独立的 wor">
+<title>🎓 后台异步任务队列 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="background-jobs" data-answer="0" data-prev="cdns.pro.html" data-next="health-checks.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#cache">🌊 中级 · ⚡ 缓存与队列</a><span>›</span><a href="background-jobs.html">后台异步任务队列</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.143 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="cdns.pro.html" rel="prev"><small>‹ 上一个</small><b>🌏 内容分发网络 (CDN)</b></a><a class="pn next" href="health-checks.pro.html" rel="next"><small>下一个 ›</small><b>🩺 健康检查机制</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🧺</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>⚡ 缓存与队列</span><span>⏱ 约 10 分钟</span></div>
+    <h1>后台异步任务队列</h1><p class="en">Background Jobs</p>
+    <div class="hbtns"><a class="prosw back" href="background-jobs.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">后台任务（Background Jobs）是把耗时或可延后的工作（发邮件、生成报表、调用外部 API、处理图片）从请求路径中拆出，写入任务队列，由独立的 worker 进程异步消费执行。它位于应用架构的异步处理层，缩短接口响应时间、削峰填谷，并通过重试提升可靠性。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>Web 进程把任务名与参数序列化后推入 broker（如 Redis、RabbitMQ、SQS），立即返回。</p></li><li><span class="sn">2</span><p>一个或多个 worker 进程从队列拉取任务并执行，可按队列划分优先级与资源。</p></li><li><span class="sn">3</span><p>执行失败时按退避策略重试，超过最大次数后进入死信队列或标记失败。</p></li><li><span class="sn">4</span><p>确认机制决定消息何时删除：执行后确认可防丢，但 worker 崩溃时任务可能被重复执行。</p></li><li><span class="sn">5</span><p>调度器（如 Celery beat、cron）按时间周期投递定时任务，结果可写回数据库或结果后端。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>Broker</dt><dd>存储与分发任务消息的中间件，如 Redis、RabbitMQ。</dd></div><div class="term"><dt>Worker</dt><dd>消费队列并执行任务的独立进程。</dd></div><div class="term"><dt>确认 (Ack)</dt><dd>worker 告知 broker 任务已处理，可删除消息。</dd></div><div class="term"><dt>指数退避 (Exponential Backoff)</dt><dd>每次重试间隔成倍增长，避免压垮下游。</dd></div><div class="term"><dt>Outbox 模式</dt><dd>业务数据与待发消息同库同事务写入，再异步投递。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Celery 任务与重试</span><em>python</em><button class="ccopy">复制</button></div><pre><code>from celery import Celery
+import requests
+
+app = Celery(&quot;tasks&quot;, broker=&quot;redis://localhost:6379/0&quot;)
+app.conf.task_acks_late = True              # 执行完再确认，崩溃可重投
+app.conf.worker_prefetch_multiplier = 1     # 长任务避免预取堆积
+
+@app.task(
+    autoretry_for=(requests.RequestException,),
+    retry_backoff=True,      # 指数退避
+    retry_jitter=True,       # 随机抖动
+    max_retries=5,
+)
+def send_receipt(order_id: int):
+    # 幂等：已发送则跳过（acks_late 下可能重复执行）
+    # if already_sent(order_id): return
+    resp = requests.post(&quot;https://mail.example.com/send&quot;,
+                         json={&quot;order_id&quot;: order_id}, timeout=10)
+    resp.raise_for_status()
+
+# Web 端：只入队，不等待结果
+# send_receipt.delay(981)
+# 启动 worker：celery -A tasks worker --loglevel=INFO</code></pre></div><p class="cnote">入队后立即返回；失败自动退避重试；acks_late 换来不丢任务，代价是任务必须幂等。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见任务队列框架</h3><div class="tw"><table><thead><tr><th>框架</th><th>语言</th><th>常用 Broker</th></tr></thead><tbody><tr><td data-h="框架">Celery</td><td data-h="语言">Python</td><td data-h="常用 Broker">Redis、RabbitMQ</td></tr><tr><td data-h="框架">BullMQ</td><td data-h="语言">Node.js</td><td data-h="常用 Broker">Redis</td></tr><tr><td data-h="框架">Sidekiq</td><td data-h="语言">Ruby</td><td data-h="常用 Broker">Redis</td></tr><tr><td data-h="框架">云队列 + 函数</td><td data-h="语言">多语言</td><td data-h="常用 Broker">SQS、Cloud Tasks 等托管服务</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>同步在请求内处理</h4><p><b class="k-p">优点</b>简单，结果立即可见</p><p><b class="k-c">代价</b>接口慢，失败影响用户请求</p><p><b class="k-w">适用</b>耗时很短且必须立即完成</p></div><div class="trd"><h4>Redis 队列</h4><p><b class="k-p">优点</b>部署简单、延迟低</p><p><b class="k-c">代价</b>持久化与投递保证弱于专业 MQ</p><p><b class="k-w">适用</b>中小规模、已有 Redis</p></div><div class="trd"><h4>专业 MQ / 托管队列</h4><p><b class="k-p">优点</b>持久化、确认、死信完善</p><p><b class="k-c">代价</b>运维或费用成本更高</p><p><b class="k-w">适用</b>关键业务、高吞吐</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>在数据库事务提交前就入队，worker 读不到新数据</p><p class="fix"><b>✓</b>事务提交后再入队（如 on_commit 钩子），或使用 outbox</p></li><li><p class="bad"><b>✗</b>任务参数传整个 ORM 对象</p><p class="fix"><b>✓</b>只传 ID 等小参数，worker 执行时重新读取最新数据</p></li><li><p class="bad"><b>✗</b>任务不幂等，重试导致重复扣款或重复邮件</p><p class="fix"><b>✓</b>以业务键去重，或检查状态后再执行</p></li><li><p class="bad"><b>✗</b>没有监控，队列积压数小时无人察觉</p><p class="fix"><b>✓</b>监控队列长度、任务耗时与失败率并设置告警</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>任务幂等且参数可序列化</span></label></li><li><label><input type="checkbox"><span>外部调用设置超时</span></label></li><li><label><input type="checkbox"><span>重试带退避与上限</span></label></li><li><label><input type="checkbox"><span>失败任务进入死信并告警</span></label></li><li><label><input type="checkbox"><span>队列积压与 worker 健康可监控</span></label></li><li><label><input type="checkbox"><span>入队发生在事务提交之后</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>如何保证任务不丢也不重复？</summary><p>严格「恰好一次」很难。常规做法是至少一次投递：持久化 broker、执行后确认、失败重试，再在任务层实现幂等（业务唯一键、状态机检查），把重复执行的影响消除。</p></details><details class="iv"><summary>数据库写入和发消息怎么保证一致？</summary><p>用 outbox 模式：业务数据和待发送事件在同一本地事务写入，独立进程轮询或基于 CDC 把 outbox 记录投递到队列，投递成功后标记，避免「写库成功但消息丢失」。</p></details><details class="iv"><summary>长任务如何避免被重复执行？</summary><p>让可见性超时或确认超时大于任务最长耗时；降低或关闭预取；把长任务拆成可续跑的小步并记录进度；同时保证幂等，即使重复执行也无副作用。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.celeryq.dev/en/stable/userguide/tasks.html" target="_blank" rel="noopener"><b>Celery 文档：Tasks</b><small>docs.celeryq.dev ↗</small></a></li><li><a href="https://docs.bullmq.io/" target="_blank" rel="noopener"><b>BullMQ 文档</b><small>docs.bullmq.io ↗</small></a></li><li><a href="https://microservices.io/patterns/data/transactional-outbox.html" target="_blank" rel="noopener"><b>microservices.io：Transactional outbox</b><small>microservices.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="cdns.pro.html" rel="prev"><small>‹ 上一个</small><b>🌏 内容分发网络 (CDN)</b></a><a class="pn next" href="health-checks.pro.html" rel="next"><small>下一个 ›</small><b>🩺 健康检查机制</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

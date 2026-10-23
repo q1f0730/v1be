@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="工具调用 (Function Calling) 专业模式：工具调用（Tool / Function Calling）是让大模型以结构化方式请求执行外部函数的机制：开发者声明工具名称、描述和参数 schema，模型判断是">
+<title>🎓 工具调用 (Function Calling) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="tool-function-calling" data-answer="0" data-prev="structured-output.pro.html" data-next="embeddings.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#ai">🌊 中级 · 🤖 AI 与提示词</a><span>›</span><a href="tool-function-calling.html">工具调用 (Function Calling)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.80 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="structured-output.pro.html" rel="prev"><small>‹ 上一个</small><b>🗂️ 结构化输出</b></a><a class="pn next" href="embeddings.pro.html" rel="next"><small>下一个 ›</small><b>📍 向量嵌入 (Embedding)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🛠️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>工具调用 (Function Calling)</h1><p class="en">Tool / Function Calling</p>
+    <div class="hbtns"><a class="prosw back" href="tool-function-calling.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">工具调用（Tool / Function Calling）是让大模型以结构化方式请求执行外部函数的机制：开发者声明工具名称、描述和参数 schema，模型判断是否需要调用并输出调用参数，由应用程序真正执行后把结果回传给模型。它是 Agent 与外部世界交互的基础接口，模型本身不直接执行任何代码。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>请求中附带 tools 列表，每个工具包括 name、description 和 JSON Schema 格式的参数定义。</p></li><li><span class="sn">2</span><p>模型推理后若决定调用工具，返回一个或多个工具调用块，包含调用 ID、工具名和参数 JSON。</p></li><li><span class="sn">3</span><p>应用解析参数、做校验和权限检查后执行真实函数，如查询数据库或调用第三方 API。</p></li><li><span class="sn">4</span><p>把执行结果作为工具结果消息回传，并带上对应调用 ID，模型据此继续推理或给出最终回答。</p></li><li><span class="sn">5</span><p>循环往复直到模型不再请求工具；tool_choice 可设置为自动、必须调用或指定某个工具。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>工具 schema (Tool Schema)</dt><dd>用 JSON Schema 描述工具参数，模型据此生成调用参数。</dd></div><div class="term"><dt>tool_choice</dt><dd>控制模型是否必须调用工具或调用指定工具的参数。</dd></div><div class="term"><dt>并行工具调用 (Parallel Tool Calls)</dt><dd>模型在一轮中同时请求多个互不依赖的工具。</dd></div><div class="term"><dt>工具调用 ID (Tool Call ID)</dt><dd>关联调用请求与执行结果的标识，回传时必须对应。</dd></div><div class="term"><dt>人在回路 (Human-in-the-Loop)</dt><dd>高风险工具执行前由人确认。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Anthropic 工具调用往返</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import anthropic, json
+client = anthropic.Anthropic()
+tools = [{
+    &quot;name&quot;: &quot;get_weather&quot;,
+    &quot;description&quot;: &quot;查询城市当前天气&quot;,
+    &quot;input_schema&quot;: {&quot;type&quot;: &quot;object&quot;,
+        &quot;properties&quot;: {&quot;city&quot;: {&quot;type&quot;: &quot;string&quot;}}, &quot;required&quot;: [&quot;city&quot;]},
+}]
+msgs = [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;上海现在热吗？&quot;}]
+r = client.messages.create(model=&quot;claude-sonnet-4-5&quot;, max_tokens=1024,
+                           tools=tools, messages=msgs)
+if r.stop_reason == &quot;tool_use&quot;:
+    call = next(b for b in r.content if b.type == &quot;tool_use&quot;)
+    result = {&quot;city&quot;: call.input[&quot;city&quot;], &quot;temp_c&quot;: 31}   # 这里应调用真实接口
+    msgs += [{&quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: r.content},
+             {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: [{&quot;type&quot;: &quot;tool_result&quot;,
+               &quot;tool_use_id&quot;: call.id, &quot;content&quot;: json.dumps(result)}]}]
+    r = client.messages.create(model=&quot;claude-sonnet-4-5&quot;, max_tokens=1024,
+                               tools=tools, messages=msgs)
+print(r.content[0].text)</code></pre></div><p class="cnote">模型只产出调用请求，执行由代码完成；结果通过 tool_result 和 tool_use_id 回传。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">工具设计要点</h3><div class="tw"><table><thead><tr><th>方面</th><th>建议</th><th>原因</th></tr></thead><tbody><tr><td data-h="方面">命名与描述</td><td data-h="建议">动词+对象，描述何时用、何时不用</td><td data-h="原因">模型靠描述选择工具</td></tr><tr><td data-h="方面">参数</td><td data-h="建议">少而明确，用枚举限定取值</td><td data-h="原因">降低参数幻觉</td></tr><tr><td data-h="方面">返回值</td><td data-h="建议">精简、结构化，含可读错误信息</td><td data-h="原因">节省上下文，便于自我纠错</td></tr><tr><td data-h="方面">数量</td><td data-h="建议">按任务提供相关子集</td><td data-h="原因">工具过多会降低选择准确率</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>细粒度工具</h4><p><b class="k-p">优点</b>组合灵活</p><p><b class="k-c">代价</b>调用轮次多，易选错</p><p><b class="k-w">适用</b>探索性 Agent 任务</p></div><div class="trd"><h4>粗粒度工作流工具</h4><p><b class="k-p">优点</b>一步完成，可控</p><p><b class="k-c">代价</b>灵活性差</p><p><b class="k-w">适用</b>固定业务流程</p></div><div class="trd"><h4>执行前人工确认</h4><p><b class="k-p">优点</b>防误操作</p><p><b class="k-c">代价</b>打断自动化</p><p><b class="k-w">适用</b>转账、删除、对外发送</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>直接执行模型给的参数，如拼 SQL 或 shell</p><p class="fix"><b>✓</b>严格校验参数，参数化执行，最小权限</p></li><li><p class="bad"><b>✗</b>工具报错时抛异常中断整个流程</p><p class="fix"><b>✓</b>把错误信息作为工具结果回传，让模型调整</p></li><li><p class="bad"><b>✗</b>把海量原始数据作为工具结果返回</p><p class="fix"><b>✓</b>在工具内过滤、分页、摘要后返回</p></li><li><p class="bad"><b>✗</b>工具描述含糊，多个工具功能重叠</p><p class="fix"><b>✓</b>明确边界与使用时机，合并或删除重叠工具</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个工具有清晰描述和参数 schema</span></label></li><li><label><input type="checkbox"><span>参数在执行前校验</span></label></li><li><label><input type="checkbox"><span>高风险工具需要确认</span></label></li><li><label><input type="checkbox"><span>工具结果有长度上限</span></label></li><li><label><input type="checkbox"><span>记录每次调用的参数与结果</span></label></li><li><label><input type="checkbox"><span>设置最大循环轮次防止死循环</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>模型是如何“调用”函数的？</summary><p>模型并不执行任何东西。工具定义被注入上下文，模型经过训练会在需要时输出特定格式的调用块，API 将其解析为结构化的工具名和参数返回给应用。应用执行后把结果放回对话，模型再基于结果继续生成。</p></details><details class="iv"><summary>如何提高工具选择的准确率？</summary><p>写好描述，说明适用和不适用场景；减少同时暴露的工具数量，按任务动态加载；参数用枚举和必填约束；给出调用示例；用评测集统计选错率和参数错误率，针对性改描述。</p></details><details class="iv"><summary>工具调用有哪些安全风险？</summary><p>参数注入导致 SQL/命令执行、越权访问数据、工具结果中的提示注入劫持后续行为、无限循环耗费资源。对策包括参数校验、最小权限凭证、高风险操作确认、把工具结果当不可信数据处理、限制轮次和预算。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/overview" target="_blank" rel="noopener"><b>Anthropic Docs: Tool use with Claude</b><small>docs.anthropic.com ↗</small></a></li><li><a href="https://platform.openai.com/docs/guides/function-calling" target="_blank" rel="noopener"><b>OpenAI Docs: Function calling</b><small>platform.openai.com ↗</small></a></li><li><a href="https://arxiv.org/abs/2302.04761" target="_blank" rel="noopener"><b>Toolformer (arXiv 2302.04761)</b><small>arxiv.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="structured-output.pro.html" rel="prev"><small>‹ 上一个</small><b>🗂️ 结构化输出</b></a><a class="pn next" href="embeddings.pro.html" rel="next"><small>下一个 ›</small><b>📍 向量嵌入 (Embedding)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

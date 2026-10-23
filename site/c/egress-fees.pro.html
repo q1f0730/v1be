@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="云网络出站流量费 专业模式：出站流量费（Egress Fees）是云厂商对数据从其网络流出时按量收取的费用，包括流向公网、跨区域、部分情况下跨可用区的传输。入站流量通常免费。它在架构图上不">
+<title>🎓 云网络出站流量费 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="egress-fees" data-answer="0" data-prev="latency-vs-throughput.pro.html" data-next="vpcs.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#net">🔮 高级 · 🌐 网络与 API</a><span>›</span><a href="egress-fees.html">云网络出站流量费</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.266 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="latency-vs-throughput.pro.html" rel="prev"><small>‹ 上一个</small><b>🚗 延迟与吞吐量权衡</b></a><a class="pn next" href="vpcs.pro.html" rel="next"><small>下一个 ›</small><b>🏰 虚拟私有云</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">💸</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>云网络出站流量费</h1><p class="en">Egress Fees</p>
+    <div class="hbtns"><a class="prosw back" href="egress-fees.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">出站流量费（Egress Fees）是云厂商对数据从其网络流出时按量收取的费用，包括流向公网、跨区域、部分情况下跨可用区的传输。入站流量通常免费。它在架构图上不显眼，却常是账单中增长最快、最难预测的一项，也是迁移出云的重要成本壁垒。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>云厂商按流量方向和目的地分别计价：流入通常免费，流出到公网按 GB 阶梯计费。</p></li><li><span class="sn">2</span><p>同一区域内不同可用区之间的传输也可能计费（AWS 等对跨 AZ 流量双向收费）。</p></li><li><span class="sn">3</span><p>经 NAT 网关访问公网或云服务时，除出站费外还有按 GB 计的数据处理费。</p></li><li><span class="sn">4</span><p>经 CDN 分发时，用户流量从 CDN 出站按 CDN 价格计，回源流量另计。</p></li><li><span class="sn">5</span><p>账单按用量类型（usage type）汇总，需要用成本分析工具拆解到具体服务与链路。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>出站流量 (Data Transfer Out)</dt><dd>从云厂商网络流向外部的数据量。</dd></div><div class="term"><dt>跨可用区流量 (Inter-AZ Transfer)</dt><dd>同区域不同可用区之间的流量，常按 GB 计费。</dd></div><div class="term"><dt>NAT 网关数据处理费</dt><dd>流经 NAT 网关的每 GB 额外处理费用。</dd></div><div class="term"><dt>回源 (Origin Fetch)</dt><dd>CDN 未命中时向源站拉取内容产生的流量。</dd></div><div class="term"><dt>VPC 端点 (VPC Endpoint)</dt><dd>私网访问云服务，可绕开 NAT 网关。</dd></div><div class="term"><dt>零出站费存储</dt><dd>如 Cloudflare R2，不对出站流量收费的对象存储。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>找出最贵的流量类型</span><em>bash</em><button class="ccopy">复制</button></div><pre><code>#!/usr/bin/env bash
+# 用 AWS Cost Explorer 按用量类型拆分上月费用，筛出流量相关项
+aws ce get-cost-and-usage \
+  --time-period Start=2026-09-01,End=2026-10-01 \
+  --granularity MONTHLY \
+  --metrics UnblendedCost UsageQuantity \
+  --group-by Type=DIMENSION,Key=USAGE_TYPE \
+  --query &#x27;ResultsByTime[0].Groups&#x27; --output json \
+| jq -r &#x27;.[]
+    | select(.Keys[0] | test(&quot;DataTransfer|NatGateway-Bytes|CloudFront&quot;))
+    | [.Keys[0], .Metrics.UsageQuantity.Amount, .Metrics.UnblendedCost.Amount]
+    | @tsv&#x27; \
+| sort -t$&#x27;\t&#x27; -k3 -gr | head -20
+
+# 常见用量类型含义：
+#   *-DataTransfer-Out-Bytes       流向公网
+#   *-DataTransfer-Regional-Bytes  同区域跨可用区
+#   *-NatGateway-Bytes             NAT 网关数据处理</code></pre></div><p class="cnote">先定位是公网出站、跨 AZ 还是 NAT 处理费，再决定用 CDN、端点还是同 AZ 部署。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">流量计费（以 AWS 为例）</h3><div class="tw"><table><thead><tr><th>流量路径</th><th>是否计费</th><th>优化方向</th></tr></thead><tbody><tr><td data-h="流量路径">公网流入</td><td data-h="是否计费">通常免费</td><td data-h="优化方向">—</td></tr><tr><td data-h="流量路径">流出到公网</td><td data-h="是否计费">按 GB 阶梯计费</td><td data-h="优化方向">CDN、压缩、缓存</td></tr><tr><td data-h="流量路径">同区域跨可用区</td><td data-h="是否计费">按 GB 双向计费</td><td data-h="优化方向">同 AZ 优先路由</td></tr><tr><td data-h="流量路径">经 NAT 访问 S3 等</td><td data-h="是否计费">出站外加处理费</td><td data-h="优化方向">改用 VPC 网关端点</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>CDN 分发静态与下载内容</h4><p><b class="k-p">优点</b>降低源站出站与延迟</p><p><b class="k-c">代价</b>增加 CDN 费用与缓存管理</p><p><b class="k-w">适用</b>下载、图片、视频流量大</p></div><div class="trd"><h4>零出站费对象存储</h4><p><b class="k-p">优点</b>出站成本几乎可忽略</p><p><b class="k-c">代价</b>多云架构、生态与功能差异</p><p><b class="k-w">适用</b>公网分发大文件</p></div><div class="trd"><h4>服务同 AZ 部署</h4><p><b class="k-p">优点</b>省跨 AZ 费并降延迟</p><p><b class="k-c">代价</b>可用性降低</p><p><b class="k-w">适用</b>非关键或可快速重建的组件</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>私有子网服务经 NAT 网关拉取 S3 大文件</p><p class="fix"><b>✓</b>配置 S3 网关端点，流量不经 NAT</p></li><li><p class="bad"><b>✗</b>多 AZ 部署后服务间调用随机跨 AZ</p><p class="fix"><b>✓</b>启用拓扑感知路由，优先同 AZ</p></li><li><p class="bad"><b>✗</b>日志和监控数据全部发往外部 SaaS</p><p class="fix"><b>✓</b>本地采样、过滤、压缩后再发送</p></li><li><p class="bad"><b>✗</b>架构评审只算计算和存储，不算流量</p><p class="fix"><b>✓</b>按数据流图估算各段流量与单价</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>成本看板拆分出各类流量费用</span></label></li><li><label><input type="checkbox"><span>私网访问云服务使用 VPC 端点</span></label></li><li><label><input type="checkbox"><span>公网静态内容走 CDN 并压缩</span></label></li><li><label><input type="checkbox"><span>跨 AZ 调用量已评估并优化</span></label></li><li><label><input type="checkbox"><span>流量费设有预算与异常告警</span></label></li><li><label><input type="checkbox"><span>迁移计划评估了出站费与减免政策</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么云厂商入站免费、出站收费？</summary><p>一方面网络传输确有成本；另一方面这是商业策略：数据进来容易、出去昂贵，形成数据引力和迁移壁垒。2024 年起三大云陆续为彻底迁出的客户提供出站费减免，但需申请并满足条件。</p></details><details class="iv"><summary>NAT 网关费用异常高通常是什么原因？</summary><p>私有子网中的服务通过 NAT 访问 S3、ECR、DynamoDB 等云服务或拉取大镜像，每 GB 都要付处理费。为这些服务配置网关端点或接口端点，可让流量走私网，绕过 NAT。</p></details><details class="iv"><summary>设计多区域架构时如何考虑流量费？</summary><p>跨区域复制、同步调用都会产生流量费。应尽量让请求在区域内闭环，只复制必要数据，压缩并批量传输，异步复制替代同步调用，并在方案评审中按预估流量乘单价算清成本。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://aws.amazon.com/ec2/pricing/on-demand/" target="_blank" rel="noopener"><b>Amazon EC2 On-Demand Pricing（含 Data Transfer）</b><small>aws.amazon.com ↗</small></a></li><li><a href="https://cloud.google.com/vpc/network-pricing" target="_blank" rel="noopener"><b>Google Cloud: VPC network pricing</b><small>cloud.google.com ↗</small></a></li><li><a href="https://developers.cloudflare.com/r2/pricing/" target="_blank" rel="noopener"><b>Cloudflare R2 Pricing</b><small>developers.cloudflare.com ↗</small></a></li><li><a href="https://aws.amazon.com/blogs/aws/free-data-transfer-out-to-internet-when-moving-out-of-aws/" target="_blank" rel="noopener"><b>AWS Blog: Free data transfer out when moving out of AWS</b><small>aws.amazon.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="latency-vs-throughput.pro.html" rel="prev"><small>‹ 上一个</small><b>🚗 延迟与吞吐量权衡</b></a><a class="pn next" href="vpcs.pro.html" rel="next"><small>下一个 ›</small><b>🏰 虚拟私有云</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

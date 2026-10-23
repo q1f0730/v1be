@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="故障自动转移 专业模式：故障转移（Failover）是主组件失效时，由备用组件接管其工作负载的过程，可以自动或手动触发。它是高可用架构的核心机制，常见于数据库主从、负载均衡后端、DNS">
+<title>🎓 故障自动转移 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="failover" data-answer="0" data-prev="stateless-services.pro.html" data-next="availability-zones.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sre">🔮 高级 · 🩺 高可用 SRE</a><span>›</span><a href="failover.html">故障自动转移</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.296 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="stateless-services.pro.html" rel="prev"><small>‹ 上一个</small><b>🧑‍🍳 无状态服务架构</b></a><a class="pn next" href="availability-zones.pro.html" rel="next"><small>下一个 ›</small><b>🏢 可用区 (AZ)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔀</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>故障自动转移</h1><p class="en">Failover</p>
+    <div class="hbtns"><a class="prosw back" href="failover.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">故障转移（Failover）是主组件失效时，由备用组件接管其工作负载的过程，可以自动或手动触发。它是高可用架构的核心机制，常见于数据库主从、负载均衡后端、DNS 和多区域部署。关键问题包括如何可靠地检测故障、如何避免两个节点同时认为自己是主（脑裂），以及切换期间数据是否会丢失。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>主节点与备节点之间进行数据复制，同步复制保证不丢数据，异步复制有延迟但性能好。</p></li><li><span class="sn">2</span><p>监控组件通过心跳或健康检查探测主节点，连续失败超过阈值即判定故障。</p></li><li><span class="sn">3</span><p>多个观察者投票或借助共识系统决定是否切换，减少因网络分区导致的误判。</p></li><li><span class="sn">4</span><p>选出新主并提升，隔离旧主（Fencing），防止它恢复后继续接受写入。</p></li><li><span class="sn">5</span><p>更新路由：修改 DNS、虚拟 IP、服务发现或客户端配置，让流量指向新主。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>脑裂 (Split-Brain)</dt><dd>网络分区下两个节点都认为自己是主，各自接受写入导致数据冲突。</dd></div><div class="term"><dt>隔离 (Fencing)</dt><dd>确保旧主无法继续写入，如断电、撤销存储访问或递增任期号。</dd></div><div class="term"><dt>法定人数 (Quorum)</dt><dd>做出决策所需的最少投票节点数，通常为多数。</dd></div><div class="term"><dt>复制延迟 (Replication Lag)</dt><dd>备节点落后主节点的数据量或时间，决定切换时可能丢失的数据。</dd></div><div class="term"><dt>故障回切 (Failback)</dt><dd>原主节点修复后把服务切回的过程。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>通过 Sentinel 自动找主</span><em>python</em><button class="ccopy">复制</button></div><pre><code>from redis.sentinel import Sentinel
+
+# 连接 3 个哨兵（奇数个，便于形成多数派）
+sentinel = Sentinel(
+    [(&quot;sentinel-1&quot;, 26379), (&quot;sentinel-2&quot;, 26379), (&quot;sentinel-3&quot;, 26379)],
+    socket_timeout=0.5,
+)
+
+# 客户端不写死主节点地址，而是向哨兵询问当前主
+print(sentinel.discover_master(&quot;mymaster&quot;))
+
+master = sentinel.master_for(&quot;mymaster&quot;, socket_timeout=0.5)
+replica = sentinel.slave_for(&quot;mymaster&quot;, socket_timeout=0.5)
+
+master.set(&quot;greeting&quot;, &quot;hello&quot;)   # 写走主
+print(replica.get(&quot;greeting&quot;))      # 读可走从，可能有复制延迟
+# 主宕机后，哨兵选出新主，master_for 返回的连接会自动指向新主</code></pre></div><p class="cnote">redis-py 通过 Sentinel 发现主节点，故障转移后客户端自动跟随新主。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">故障转移方式对比</h3><div class="tw"><table><thead><tr><th>方式</th><th>切换速度</th><th>主要风险</th></tr></thead><tbody><tr><td data-h="方式">DNS 切换</td><td data-h="切换速度">受 TTL 与客户端缓存影响</td><td data-h="主要风险">客户端缓存旧解析</td></tr><tr><td data-h="方式">虚拟 IP / 负载均衡</td><td data-h="切换速度">秒级到数十秒</td><td data-h="主要风险">需健康检查准确</td></tr><tr><td data-h="方式">哨兵/共识选主</td><td data-h="切换速度">秒级到数十秒</td><td data-h="主要风险">配置不当导致脑裂</td></tr><tr><td data-h="方式">手动切换</td><td data-h="切换速度">分钟级以上</td><td data-h="主要风险">依赖值班人员和手册</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>自动故障转移</h4><p><b class="k-p">优点</b>恢复快，不依赖人工</p><p><b class="k-c">代价</b>误判时可能引发不必要切换或脑裂</p><p><b class="k-w">适用</b>检测可靠、有法定人数机制</p></div><div class="trd"><h4>手动故障转移</h4><p><b class="k-p">优点</b>人可判断数据一致性</p><p><b class="k-c">代价</b>恢复慢</p><p><b class="k-w">适用</b>切换代价高、数据一致性要求极严</p></div><div class="trd"><h4>同步复制</h4><p><b class="k-p">优点</b>切换不丢已确认数据</p><p><b class="k-c">代价</b>写延迟高，备库故障影响写入</p><p><b class="k-w">适用</b>金融等不允许丢数据场景</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>只有两个节点互相探测，网络分区时双方都升为主。</p><p class="fix"><b>✓</b>使用奇数个观察者或共识系统，并实施 fencing。</p></li><li><p class="bad"><b>✗</b>应用缓存了数据库 IP，切换后仍连旧主。</p><p class="fix"><b>✓</b>通过服务发现或哨兵获取地址，连接失败时重新解析。</p></li><li><p class="bad"><b>✗</b>从未演练过故障转移，真出事时才发现脚本失效。</p><p class="fix"><b>✓</b>定期演练，记录切换耗时与数据损失。</p></li><li><p class="bad"><b>✗</b>故障检测阈值过于敏感，网络抖动就切换。</p><p class="fix"><b>✓</b>多次连续失败才判定，并结合多个观察点。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>故障检测有法定人数，避免单点误判</span></label></li><li><label><input type="checkbox"><span>有防脑裂的隔离机制</span></label></li><li><label><input type="checkbox"><span>客户端能自动发现新主</span></label></li><li><label><input type="checkbox"><span>复制延迟有监控与告警</span></label></li><li><label><input type="checkbox"><span>定期演练并记录切换耗时</span></label></li><li><label><input type="checkbox"><span>回切流程已文档化</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>如何防止故障转移中的脑裂？</summary><p>用奇数个节点做多数派决策，少数派一侧不能选主；实施 fencing，例如递增任期号让旧主写入被拒、或撤销其存储访问；客户端只认可最新任期的主。</p></details><details class="iv"><summary>异步复制下故障转移会丢数据吗？</summary><p>会。主节点已确认但尚未复制到备节点的写入，在切换后会丢失或产生冲突，丢失量取决于复制延迟。可用半同步或同步复制降低风险，代价是写延迟增加。</p></details><details class="iv"><summary>为什么 DNS 故障转移常常比预期慢？</summary><p>切换时间受记录 TTL、递归解析器缓存以及客户端自身缓存影响，有的运行时会长时间缓存解析结果。因此要设较短 TTL，并确保客户端遵守 TTL 或在连接失败时重新解析。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://en.wikipedia.org/wiki/Failover" target="_blank" rel="noopener"><b>Wikipedia：Failover</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/" target="_blank" rel="noopener"><b>Redis 文档：High availability with Redis Sentinel</b><small>redis.io ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/high-availability.html" target="_blank" rel="noopener"><b>PostgreSQL 文档：High Availability, Load Balancing, and Replication</b><small>postgresql.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="stateless-services.pro.html" rel="prev"><small>‹ 上一个</small><b>🧑‍🍳 无状态服务架构</b></a><a class="pn next" href="availability-zones.pro.html" rel="next"><small>下一个 ›</small><b>🏢 可用区 (AZ)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

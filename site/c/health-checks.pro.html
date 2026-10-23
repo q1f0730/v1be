@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="健康检查机制 专业模式：健康检查（Health Check）是由负载均衡器、容器编排器或监控系统周期性探测服务实例状态的机制，根据结果决定是否转发流量、重启实例或发出告警。它位于运维与">
+<title>🎓 健康检查机制 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="health-checks" data-answer="0" data-prev="background-jobs.pro.html" data-next="slas.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#sre">🌊 中级 · 🩺 高可用 SRE</a><span>›</span><a href="health-checks.html">健康检查机制</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.144 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="background-jobs.pro.html" rel="prev"><small>‹ 上一个</small><b>🧺 后台异步任务队列</b></a><a class="pn next" href="slas.pro.html" rel="next"><small>下一个 ›</small><b>📜 服务等级协议</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🩺</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>健康检查机制</h1><p class="en">Health Checks</p>
+    <div class="hbtns"><a class="prosw back" href="health-checks.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">健康检查（Health Check）是由负载均衡器、容器编排器或监控系统周期性探测服务实例状态的机制，根据结果决定是否转发流量、重启实例或发出告警。它位于运维与流量调度层，通常分为存活检查（是否需要重启）和就绪检查（能否接流量），是自动故障转移与滚动发布的前提。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>服务暴露健康端点（如 /healthz、/readyz）或可被探测的 TCP 端口、命令。</p></li><li><span class="sn">2</span><p>探测方按固定周期请求端点，在超时时间内收到成功响应（如 2xx）即记为一次成功。</p></li><li><span class="sn">3</span><p>连续失败次数达到阈值后判定不健康：就绪失败则摘除流量，存活失败则重启容器。</p></li><li><span class="sn">4</span><p>启动较慢的服务用启动探针（startup probe）延后其他探针，避免启动中被误杀。</p></li><li><span class="sn">5</span><p>实例恢复后连续成功达到阈值再重新加入负载均衡，避免状态频繁抖动。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>存活探针 (Liveness Probe)</dt><dd>判断进程是否卡死，失败则重启容器。</dd></div><div class="term"><dt>就绪探针 (Readiness Probe)</dt><dd>判断实例能否接流量，失败则从服务端点摘除。</dd></div><div class="term"><dt>启动探针 (Startup Probe)</dt><dd>启动完成前屏蔽其他探针，保护慢启动应用。</dd></div><div class="term"><dt>失败阈值 (failureThreshold)</dt><dd>连续失败多少次才判定不健康。</dd></div><div class="term"><dt>级联故障 (Cascading Failure)</dt><dd>一个依赖故障通过检查连锁导致全体下线。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Kubernetes 三类探针</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code>apiVersion: v1
+kind: Pod
+metadata:
+  name: api
+spec:
+  containers:
+    - name: api
+      image: example/api:1.4.2
+      ports: [{ containerPort: 8080 }]
+      startupProbe:            # 最多给 30×5=150 秒启动
+        httpGet: { path: /healthz, port: 8080 }
+        periodSeconds: 5
+        failureThreshold: 30
+      livenessProbe:           # 只检查进程自身，不查数据库
+        httpGet: { path: /healthz, port: 8080 }
+        periodSeconds: 10
+        timeoutSeconds: 2
+        failureThreshold: 3
+      readinessProbe:          # 关键依赖不可用时暂停接流量
+        httpGet: { path: /readyz, port: 8080 }
+        periodSeconds: 5
+        failureThreshold: 2</code></pre></div><p class="cnote">存活只看自身，就绪可看关键依赖，慢启动用 startupProbe 兜住。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">三类探针对比</h3><div class="tw"><table><thead><tr><th>探针</th><th>失败后动作</th><th>应检查什么</th></tr></thead><tbody><tr><td data-h="探针">Liveness</td><td data-h="失败后动作">重启容器</td><td data-h="应检查什么">进程是否响应、是否死锁</td></tr><tr><td data-h="探针">Readiness</td><td data-h="失败后动作">摘除流量，不重启</td><td data-h="应检查什么">初始化完成、关键依赖可用</td></tr><tr><td data-h="探针">Startup</td><td data-h="失败后动作">超限后重启</td><td data-h="应检查什么">应用是否已完成启动</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>浅检查（只返回 200）</h4><p><b class="k-p">优点</b>快速稳定，不受依赖影响</p><p><b class="k-c">代价</b>发现不了依赖或内部异常</p><p><b class="k-w">适用</b>Liveness 探针</p></div><div class="trd"><h4>深检查（含依赖）</h4><p><b class="k-p">优点</b>能反映真实服务能力</p><p><b class="k-c">代价</b>依赖抖动可能导致全体摘除</p><p><b class="k-w">适用</b>Readiness 或外部监控</p></div><div class="trd"><h4>外部合成监控</h4><p><b class="k-p">优点</b>从用户视角验证端到端</p><p><b class="k-c">代价</b>定位粒度粗，有成本</p><p><b class="k-w">适用</b>关键用户路径与 SLA 监控</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>存活探针检查数据库，库一抖所有 Pod 被重启</p><p class="fix"><b>✓</b>Liveness 只检查进程自身，依赖检查放到 Readiness</p></li><li><p class="bad"><b>✗</b>超时与阈值过小，GC 停顿就被误判</p><p class="fix"><b>✓</b>按 P99 响应时间设置超时，失败阈值至少数次</p></li><li><p class="bad"><b>✗</b>健康端点需要鉴权或经过限流</p><p class="fix"><b>✓</b>健康端点轻量、免鉴权，仅暴露在内网或不含敏感信息</p></li><li><p class="bad"><b>✗</b>进程收到终止信号仍报告就绪</p><p class="fix"><b>✓</b>优雅停机时先让 Readiness 失败，等流量摘除再退出</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>Liveness 与 Readiness 分离</span></label></li><li><label><input type="checkbox"><span>Liveness 不依赖外部服务</span></label></li><li><label><input type="checkbox"><span>超时与阈值基于实测</span></label></li><li><label><input type="checkbox"><span>慢启动服务配置 startupProbe</span></label></li><li><label><input type="checkbox"><span>优雅停机与就绪状态联动</span></label></li><li><label><input type="checkbox"><span>健康端点不泄露内部信息</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Readiness 检查依赖数据库有什么风险？</summary><p>数据库短暂抖动会让所有实例同时不就绪，负载均衡无可用后端，局部问题放大为全站不可用。可只检查关键且实例独有的依赖，加缓存结果与容忍阈值，或在全部失败时保留流量。</p></details><details class="iv"><summary>滚动发布中健康检查起什么作用？</summary><p>新实例通过 Readiness 才接流量，编排器据此决定是否继续替换旧实例；若新版本始终不就绪，发布会停滞而不是把坏版本推满，为回滚争取时间。</p></details><details class="iv"><summary>如何实现优雅停机？</summary><p>收到 SIGTERM 后先让就绪检查失败或从注册中心注销，等待负载均衡摘除并处理完在途请求，再关闭连接和进程；配合 preStop 钩子与足够的终止宽限期。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/" target="_blank" rel="noopener"><b>Kubernetes 文档：Configure Liveness, Readiness and Startup Probes</b><small>kubernetes.io ↗</small></a></li><li><a href="https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/" target="_blank" rel="noopener"><b>Kubernetes 文档：Pod Lifecycle</b><small>kubernetes.io ↗</small></a></li><li><a href="https://sre.google/sre-book/monitoring-distributed-systems/" target="_blank" rel="noopener"><b>Google SRE Book：Monitoring Distributed Systems</b><small>sre.google ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="background-jobs.pro.html" rel="prev"><small>‹ 上一个</small><b>🧺 后台异步任务队列</b></a><a class="pn next" href="slas.pro.html" rel="next"><small>下一个 ›</small><b>📜 服务等级协议</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

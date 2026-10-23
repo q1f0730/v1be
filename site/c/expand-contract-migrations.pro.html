@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="扩展-收缩式零停机迁移 专业模式：扩展-收缩（Expand-Contract）迁移，也称并行变更（Parallel Change），是把破坏性的数据库或接口变更拆成多个各自向后兼容的步骤：先扩展">
+<title>🎓 扩展-收缩式零停机迁移 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="expand-contract-migrations" data-answer="0" data-prev="btree-vs-lsm-tree.pro.html" data-next="distributed-sql.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#db">🔥 进阶 · 🗄️ 数据库</a><span>›</span><a href="expand-contract-migrations.html">扩展-收缩式零停机迁移</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.468 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="btree-vs-lsm-tree.pro.html" rel="prev"><small>‹ 上一个</small><b>🌳 B+ 树与 LSM 树</b></a><a class="pn next" href="distributed-sql.pro.html" rel="next"><small>下一个 ›</small><b>🌐 分布式 SQL 数据库 (NewSQL)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🪗</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>扩展-收缩式零停机迁移</h1><p class="en">Expand-Contract Migrations</p>
+    <div class="hbtns"><a class="prosw back" href="expand-contract-migrations.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">扩展-收缩（Expand-Contract）迁移，也称并行变更（Parallel Change），是把破坏性的数据库或接口变更拆成多个各自向后兼容的步骤：先扩展出新结构并让新旧共存，再迁移数据和调用方，最后收缩删除旧结构。它让滚动发布期间新旧版本代码同时运行而不出错，实现零停机变更。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>扩展：新增列、表或索引，且不影响旧代码，例如新增可空列、在线创建索引。</p></li><li><span class="sn">2</span><p>双写：新版本代码同时写旧结构与新结构，读仍以旧结构为准，确保回滚安全。</p></li><li><span class="sn">3</span><p>回填：分批把历史数据迁移到新结构，控制每批大小与速率，避免长事务和复制延迟。</p></li><li><span class="sn">4</span><p>切换读取：校验新旧数据一致后，代码改为读新结构，可用功能开关逐步放量。</p></li><li><span class="sn">5</span><p>收缩：确认没有任何调用方再读写旧结构后，停止双写并删除旧列或旧表，每一步可单独发布与回退。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>并行变更 (Parallel Change)</dt><dd>Martin Fowler 命名的模式，即 expand、migrate、contract 三阶段。</dd></div><div class="term"><dt>回填 (Backfill)</dt><dd>为新结构补齐历史数据的批量任务。</dd></div><div class="term"><dt>双写 (Dual Write)</dt><dd>过渡期同时写入新旧两处，保证任一侧都完整。</dd></div><div class="term"><dt>锁超时 (lock_timeout)</dt><dd>PostgreSQL 参数，DDL 等锁超时即放弃，避免长时间阻塞业务。</dd></div><div class="term"><dt>NOT VALID 约束</dt><dd>PostgreSQL 先添加不校验存量数据的约束，再单独 VALIDATE，减少锁表时间。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>PostgreSQL 拆分 name 字段</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- 第 1 次发布（扩展）：只加可空列，元数据操作，很快
+SET lock_timeout = &#x27;3s&#x27;;
+ALTER TABLE users ADD COLUMN first_name text, ADD COLUMN last_name text;
+
+-- 第 2 次发布：应用双写 name 与 first/last；后台分批回填
+UPDATE users
+SET first_name = split_part(name, &#x27; &#x27;, 1),
+    last_name  = substr(name, length(split_part(name, &#x27; &#x27;, 1)) + 2)
+WHERE id BETWEEN 1 AND 10000 AND first_name IS NULL;   -- 循环推进区间
+
+-- 在线建索引，不阻塞写入（不能放在事务块中）
+CREATE INDEX CONCURRENTLY idx_users_last_name ON users (last_name);
+
+-- 加非空约束：先 NOT VALID，再单独校验
+ALTER TABLE users ADD CONSTRAINT first_name_nn
+  CHECK (first_name IS NOT NULL) NOT VALID;
+ALTER TABLE users VALIDATE CONSTRAINT first_name_nn;
+
+-- 第 3 次发布：读改为新列；观察稳定后（收缩）
+ALTER TABLE users DROP COLUMN name;</code></pre></div><p class="cnote">每段对应一次独立发布；拆名规则仅为演示，真实姓名拆分需按业务规则处理。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见变更的零停机做法</h3><div class="tw"><table><thead><tr><th>变更</th><th>危险做法</th><th>扩展-收缩做法</th></tr></thead><tbody><tr><td data-h="变更">重命名列</td><td data-h="危险做法">直接 RENAME</td><td data-h="扩展-收缩做法">加新列、双写、切读、删旧列</td></tr><tr><td data-h="变更">改列类型</td><td data-h="危险做法">ALTER TYPE 重写全表</td><td data-h="扩展-收缩做法">新建列回填后切换</td></tr><tr><td data-h="变更">加非空列</td><td data-h="危险做法">带校验一次加上</td><td data-h="扩展-收缩做法">可空列、回填、NOT VALID 后 VALIDATE</td></tr><tr><td data-h="变更">加索引</td><td data-h="危险做法">普通 CREATE INDEX 锁写</td><td data-h="扩展-收缩做法">CREATE INDEX CONCURRENTLY</td></tr><tr><td data-h="变更">拆表</td><td data-h="危险做法">一次迁移并改代码</td><td data-h="扩展-收缩做法">新表双写、回填、切读、删旧</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>扩展-收缩多次发布</h4><p><b class="k-p">优点</b>全程不停机，每步可回退</p><p><b class="k-c">代价</b>周期长，过渡期代码更复杂</p><p><b class="k-w">适用</b>高可用在线服务</p></div><div class="trd"><h4>维护窗口一次迁移</h4><p><b class="k-p">优点</b>步骤简单，数据只有一种形态</p><p><b class="k-c">代价</b>需要停机，失败回退压力大</p><p><b class="k-w">适用</b>内部系统或能接受停机</p></div><div class="trd"><h4>在线 schema 变更工具</h4><p><b class="k-p">优点</b>自动处理影子表与切换（如 gh-ost）</p><p><b class="k-c">代价</b>引入额外工具与运维成本</p><p><b class="k-w">适用</b>MySQL 大表结构变更</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>迁移与新代码同一次发布，旧实例读不到旧列</p><p class="fix"><b>✓</b>结构变更先行发布，代码变更随后，保证新旧代码都兼容</p></li><li><p class="bad"><b>✗</b>一个大 UPDATE 回填整张表</p><p class="fix"><b>✓</b>按主键分批、限速，并监控复制延迟与锁等待</p></li><li><p class="bad"><b>✗</b>DDL 等锁时排在长查询后面，阻塞所有后续请求</p><p class="fix"><b>✓</b>设置 lock_timeout 并重试，避开长事务</p></li><li><p class="bad"><b>✗</b>忘记收缩，旧列和双写代码长期残留</p><p class="fix"><b>✓</b>为收缩步骤建工单或截止日期，纳入技术债跟踪</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每一步迁移都与当前和上一版本代码兼容</span></label></li><li><label><input type="checkbox"><span>DDL 设置了 lock_timeout</span></label></li><li><label><input type="checkbox"><span>回填分批执行且可断点续跑</span></label></li><li><label><input type="checkbox"><span>切换读取前有新旧数据一致性校验</span></label></li><li><label><input type="checkbox"><span>每一步都有回退方案</span></label></li><li><label><input type="checkbox"><span>收缩步骤有明确时间与负责人</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么不能在同一次发布里加列并删旧列？</summary><p>滚动发布期间新旧两版代码会同时运行。若删掉旧列，旧版本实例的查询立刻报错；若改名，同理。扩展-收缩保证任一时刻数据库结构同时满足正在运行的所有代码版本，也让每一步可以独立回滚。</p></details><details class="iv"><summary>回填大表时需要注意什么？</summary><p>按主键区间分批、每批独立小事务，避免长事务导致 MVCC 膨胀和锁等待；限速并监控复制延迟与 CPU；任务可幂等、可断点续跑；回填期间新写入由双写保证，最后做一致性核对。</p></details><details class="iv"><summary>AI 生成迁移脚本时如何把关？</summary><p>检查是否包含会重写全表或长时间持锁的操作（改列类型、普通建索引、带校验的约束）；要求拆成多次发布并说明每步兼容哪些代码版本；确认有 lock_timeout、分批回填和回退脚本，先在生产规模数据的副本上演练。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://martinfowler.com/bliki/ParallelChange.html" target="_blank" rel="noopener"><b>Martin Fowler: ParallelChange</b><small>martinfowler.com ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/sql-altertable.html" target="_blank" rel="noopener"><b>PostgreSQL: ALTER TABLE</b><small>postgresql.org ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/sql-createindex.html" target="_blank" rel="noopener"><b>PostgreSQL: CREATE INDEX (CONCURRENTLY)</b><small>postgresql.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="btree-vs-lsm-tree.pro.html" rel="prev"><small>‹ 上一个</small><b>🌳 B+ 树与 LSM 树</b></a><a class="pn next" href="distributed-sql.pro.html" rel="next"><small>下一个 ›</small><b>🌐 分布式 SQL 数据库 (NewSQL)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

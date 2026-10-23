@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="批量推理接口 (Batch API) 专业模式：批量推理接口（Batch API）让调用方把大量独立请求打包成一个任务异步提交，由服务商在完成窗口内（OpenAI 与 Anthropic 文档均为 24 小时">
+<title>🎓 批量推理接口 (Batch API) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="batch-inference-api" data-answer="0" data-prev="openai-compatible-api.pro.html" data-next="tcp-vs-udp.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#llmops">🌊 中级 · 🧠 模型工程与推理部署</a><span>›</span><a href="batch-inference-api.html">批量推理接口 (Batch API)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.189 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="openai-compatible-api.pro.html" rel="prev"><small>‹ 上一个</small><b>🔌 OpenAI 兼容接口</b></a><a class="pn next" href="tcp-vs-udp.pro.html" rel="next"><small>下一个 ›</small><b>📬 TCP 与 UDP</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📮</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🧠 模型工程与推理部署</span><span>⏱ 约 10 分钟</span></div>
+    <h1>批量推理接口 (Batch API)</h1><p class="en">Batch Inference API</p>
+    <div class="hbtns"><a class="prosw back" href="batch-inference-api.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">批量推理接口（Batch API）让调用方把大量独立请求打包成一个任务异步提交，由服务商在完成窗口内（OpenAI 与 Anthropic 文档均为 24 小时内）利用闲置算力处理，价格通常比同步调用低约一半（以官方定价为准），且限额独立于实时接口。适合分类、抽取、翻译、评测等不需要即时结果的离线任务。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>把每个请求写成一行 JSON（JSONL），包含自定义 ID 与完整请求体，ID 用于结果回填。</p></li><li><span class="sn">2</span><p>上传文件（OpenAI 需先上传 purpose=batch 的文件；Anthropic 可直接在请求中提交请求数组）并创建批任务。</p></li><li><span class="sn">3</span><p>服务端排队并分批调度执行，任务状态经历 validating、in_progress、completed 等阶段，可轮询查询。</p></li><li><span class="sn">4</span><p>完成后下载结果文件，每行含对应的自定义 ID 与响应或错误；结果顺序不保证与输入一致。</p></li><li><span class="sn">5</span><p>失败或过期的单条请求单独列出，调用方按 ID 重试，而不必重跑整批。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>JSONL</dt><dd>每行一个 JSON 对象的文本格式，批任务的输入输出格式。</dd></div><div class="term"><dt>custom_id</dt><dd>每条请求的自定义标识，用于把结果映射回原始数据。</dd></div><div class="term"><dt>完成窗口 (Completion Window)</dt><dd>服务商承诺处理完成的最长时间，如 24h。</dd></div><div class="term"><dt>批处理限额 (Batch Quota)</dt><dd>批任务的排队 token 上限，与实时速率限制分开计算。</dd></div><div class="term"><dt>幂等重试</dt><dd>按 custom_id 只重提失败条目，避免重复计费。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>OpenAI Batch API 提交与取回</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import json
+from openai import OpenAI
+
+client = OpenAI()
+reviews = [&quot;物流很快&quot;, &quot;质量太差了&quot;, &quot;一般般&quot;]
+
+with open(&quot;in.jsonl&quot;, &quot;w&quot;, encoding=&quot;utf-8&quot;) as f:
+    for i, text in enumerate(reviews):
+        f.write(json.dumps({
+            &quot;custom_id&quot;: f&quot;r-{i}&quot;, &quot;method&quot;: &quot;POST&quot;,
+            &quot;url&quot;: &quot;/v1/chat/completions&quot;,
+            &quot;body&quot;: {&quot;model&quot;: &quot;gpt-4o-mini&quot;,  # 以官方文档为准
+                     &quot;messages&quot;: [{&quot;role&quot;: &quot;user&quot;,
+                                   &quot;content&quot;: f&quot;情感分类(正/负/中)：{text}&quot;}]},
+        }, ensure_ascii=False) + &quot;\n&quot;)
+
+file = client.files.create(file=open(&quot;in.jsonl&quot;, &quot;rb&quot;), purpose=&quot;batch&quot;)
+batch = client.batches.create(input_file_id=file.id,
+    endpoint=&quot;/v1/chat/completions&quot;, completion_window=&quot;24h&quot;)
+
+# 之后轮询：status == &quot;completed&quot; 时下载
+b = client.batches.retrieve(batch.id)
+if b.status == &quot;completed&quot;:
+    print(client.files.content(b.output_file_id).text)</code></pre></div><p class="cnote">构造 JSONL、上传、创建批任务、轮询并下载结果；结果按 custom_id 对齐。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">同步调用 vs 批量接口</h3><div class="tw"><table><thead><tr><th>维度</th><th>同步调用</th><th>批量接口</th></tr></thead><tbody><tr><td data-h="维度">延迟</td><td data-h="同步调用">秒级</td><td data-h="批量接口">分钟到 24 小时</td></tr><tr><td data-h="维度">单价</td><td data-h="同步调用">标准价</td><td data-h="批量接口">通常约为一半（以官方为准）</td></tr><tr><td data-h="维度">速率限制</td><td data-h="同步调用">RPM/TPM 限制</td><td data-h="批量接口">独立的批处理队列额度</td></tr><tr><td data-h="维度">失败处理</td><td data-h="同步调用">即时重试</td><td data-h="批量接口">按 custom_id 事后补跑</td></tr><tr><td data-h="维度">适用</td><td data-h="同步调用">交互式产品</td><td data-h="批量接口">离线标注、评测、数据处理</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>Batch API</h4><p><b class="k-p">优点</b>成本低、不占实时限额</p><p><b class="k-c">代价</b>结果延迟不可控</p><p><b class="k-w">适用</b>离线、量大、可等待</p></div><div class="trd"><h4>同步并发调用</h4><p><b class="k-p">优点</b>结果快、实现直观</p><p><b class="k-c">代价</b>触发限流，按标准价计费</p><p><b class="k-w">适用</b>量小或需要当天交付</p></div><div class="trd"><h4>自建推理批处理</h4><p><b class="k-p">优点</b>极大批量时单价可更低</p><p><b class="k-c">代价</b>需 GPU 与运维能力</p><p><b class="k-w">适用</b>长期、超大规模任务</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>custom_id 用行号，数据重排后无法对齐</p><p class="fix"><b>✓</b>使用稳定的业务主键作为 custom_id</p></li><li><p class="bad"><b>✗</b>默认结果按输入顺序返回</p><p class="fix"><b>✓</b>按 custom_id 建立映射，不依赖顺序</p></li><li><p class="bad"><b>✗</b>一个请求格式错导致整批校验失败才发现</p><p class="fix"><b>✓</b>提交前本地校验 JSONL，小批量先试跑</p></li><li><p class="bad"><b>✗</b>忽略单条失败与过期请求</p><p class="fix"><b>✓</b>解析错误文件，只重提失败条目</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>确认任务能接受最长 24 小时延迟</span></label></li><li><label><input type="checkbox"><span>custom_id 唯一且可映射业务数据</span></label></li><li><label><input type="checkbox"><span>本地校验 JSONL 格式</span></label></li><li><label><input type="checkbox"><span>先用小批量试跑验证提示词</span></label></li><li><label><input type="checkbox"><span>实现结果解析与失败重试</span></label></li><li><label><input type="checkbox"><span>记录成本与对比同步调用</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Batch API 为什么能更便宜？</summary><p>服务商可以把批任务安排在负载低谷，用更大的批大小和更灵活的调度提高 GPU 利用率，不必为其预留实时容量。用户用延迟换价格，服务商用灵活性换利用率，双方都受益。</p></details><details class="iv"><summary>如何设计批任务的容错？</summary><p>以稳定业务 ID 作为 custom_id；结果入库前做 schema 校验；把 errored、expired 条目收集起来重新组批；整个流程做成幂等的工作流，重复执行不会产生重复写入或重复计费。</p></details><details class="iv"><summary>什么场景不适合用 Batch API？</summary><p>需要即时反馈的交互式功能、后一步依赖前一步结果的多轮 Agent 流程，以及有严格时限（如几分钟内必须完成）的任务。这些场景应使用同步接口，配合并发控制和缓存降低成本。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://platform.openai.com/docs/guides/batch" target="_blank" rel="noopener"><b>OpenAI Batch API 指南</b><small>platform.openai.com ↗</small></a></li><li><a href="https://docs.anthropic.com/en/docs/build-with-claude/batch-processing" target="_blank" rel="noopener"><b>Anthropic Message Batches</b><small>docs.anthropic.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="openai-compatible-api.pro.html" rel="prev"><small>‹ 上一个</small><b>🔌 OpenAI 兼容接口</b></a><a class="pn next" href="tcp-vs-udp.pro.html" rel="next"><small>下一个 ›</small><b>📬 TCP 与 UDP</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

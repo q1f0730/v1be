@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="负载卸载 / 主动弃载 专业模式：负载卸载（Load Shedding）是服务在接近容量极限时主动拒绝一部分请求，以保证其余请求仍能在延迟目标内完成的过载保护手段。它位于服务入口或中间件层，核心">
+<title>🎓 负载卸载 / 主动弃载 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="load-shedding" data-answer="0" data-prev="backpressure.pro.html" data-next="bulkheads.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#dist">🔮 高级 · 🕸️ 分布式</a><span>›</span><a href="load-shedding.html">负载卸载 / 主动弃载</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.286 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="backpressure.pro.html" rel="prev"><small>‹ 上一个</small><b>🚰 反压 / 背压机制</b></a><a class="pn next" href="bulkheads.pro.html" rel="next"><small>下一个 ›</small><b>🚢 舱壁隔离模式</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🚧</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>负载卸载 / 主动弃载</h1><p class="en">Load Shedding</p>
+    <div class="hbtns"><a class="prosw back" href="load-shedding.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">负载卸载（Load Shedding）是服务在接近容量极限时主动拒绝一部分请求，以保证其余请求仍能在延迟目标内完成的过载保护手段。它位于服务入口或中间件层，核心思想是快速失败优于全部变慢：拒绝的成本远低于处理一个最终会超时的请求，从而避免吞吐崩塌（goodput 下降）。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>服务持续度量负载信号，如在途请求数、队列长度、排队时间或 CPU 使用率。</p></li><li><span class="sn">2</span><p>信号超过阈值时，新请求在最早阶段被拒绝，通常返回 503 或 429 并可带 Retry-After。</p></li><li><span class="sn">3</span><p>可按优先级卸载：健康检查、付费用户、关键写操作保留，批处理和低优先级先丢。</p></li><li><span class="sn">4</span><p>对已在队列中等待过久、客户端大概率已超时的请求直接丢弃，不再浪费算力。</p></li><li><span class="sn">5</span><p>客户端收到拒绝后配合退避重试，或降级显示，形成端到端的过载控制。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>有效吞吐 (Goodput)</dt><dd>在时限内成功完成、对用户有价值的请求吞吐量。</dd></div><div class="term"><dt>并发限制 (Concurrency Limit)</dt><dd>同时处理的请求数上限，超出即排队或拒绝。</dd></div><div class="term"><dt>请求优先级 (Criticality)</dt><dd>给请求打的重要程度标签，过载时决定先丢谁。</dd></div><div class="term"><dt>截止时间传播 (Deadline Propagation)</dt><dd>把客户端剩余超时随请求传下去，过期即放弃处理。</dd></div><div class="term"><dt>Retry-After</dt><dd>HTTP 响应头，告诉客户端多久后再重试。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>ASGI 并发限制卸载</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import asyncio
+
+class ShedMiddleware:
+    &quot;&quot;&quot;在途请求超过上限时直接返回 503&quot;&quot;&quot;
+    def __init__(self, app, max_inflight: int = 200):
+        self.app = app
+        self.sem = asyncio.Semaphore(max_inflight)
+
+    async def __call__(self, scope, receive, send):
+        if scope[&quot;type&quot;] != &quot;http&quot; or scope[&quot;path&quot;] == &quot;/healthz&quot;:
+            return await self.app(scope, receive, send)  # 探针不卸载
+        if self.sem.locked():                           # 已满，快速失败
+            await send({&quot;type&quot;: &quot;http.response.start&quot;, &quot;status&quot;: 503,
+                        &quot;headers&quot;: [(b&quot;retry-after&quot;, b&quot;1&quot;)]})
+            await send({&quot;type&quot;: &quot;http.response.body&quot;, &quot;body&quot;: b&quot;overloaded&quot;})
+            return
+        async with self.sem:
+            await self.app(scope, receive, send)</code></pre></div><p class="cnote">一个可套在 FastAPI/Starlette 外层的纯 ASGI 中间件，超并发时立刻返回 503。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见卸载信号</h3><div class="tw"><table><thead><tr><th>信号</th><th>优点</th><th>注意点</th></tr></thead><tbody><tr><td data-h="信号">在途请求数</td><td data-h="优点">简单、反应快</td><td data-h="注意点">上限需压测确定</td></tr><tr><td data-h="信号">排队等待时间</td><td data-h="优点">直接反映延迟</td><td data-h="注意点">需在入队时打时间戳</td></tr><tr><td data-h="信号">CPU 使用率</td><td data-h="优点">通用</td><td data-h="注意点">对 I/O 密集服务不敏感</td></tr><tr><td data-h="信号">自适应限流（如梯度算法）</td><td data-h="优点">自动找容量</td><td data-h="注意点">实现复杂，需调参</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>固定并发上限</h4><p><b class="k-p">优点</b>实现简单，行为可预测</p><p><b class="k-c">代价</b>容量变化时需手动调整</p><p><b class="k-w">适用</b>负载形态稳定的服务</p></div><div class="trd"><h4>自适应并发限制</h4><p><b class="k-p">优点</b>随延迟变化自动调整</p><p><b class="k-c">代价</b>算法复杂，可能振荡</p><p><b class="k-w">适用</b>依赖多变、容量难估</p></div><div class="trd"><h4>按优先级卸载</h4><p><b class="k-p">优点</b>保护核心业务</p><p><b class="k-c">代价</b>需全链路传递优先级</p><p><b class="k-w">适用</b>有明确关键与非关键流量</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>卸载逻辑放在请求处理很深的位置，拒绝前已花掉大量资源。</p><p class="fix"><b>✓</b>在入口最早阶段判断并拒绝。</p></li><li><p class="bad"><b>✗</b>连健康检查一起拒绝，编排系统误判实例死亡并重启，雪上加霜。</p><p class="fix"><b>✓</b>探针请求绕过卸载，或单独端口处理。</p></li><li><p class="bad"><b>✗</b>返回 503 但客户端立即无退避重试，负载反而翻倍。</p><p class="fix"><b>✓</b>带 Retry-After，客户端使用退避和重试预算。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>阈值来自压测得到的容量拐点</span></label></li><li><label><input type="checkbox"><span>卸载发生在请求处理最早阶段</span></label></li><li><label><input type="checkbox"><span>健康检查与关键流量不被卸载</span></label></li><li><label><input type="checkbox"><span>被拒请求有指标和告警</span></label></li><li><label><input type="checkbox"><span>客户端对 503/429 有退避逻辑</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么过载时拒绝请求反而提高可用性？</summary><p>超过容量后所有请求共享资源，排队延迟飙升，大部分请求都超时，有效吞吐趋近于零。卸载把一部分请求快速拒掉，剩余请求在时限内完成，goodput 保持在接近容量的水平。</p></details><details class="iv"><summary>负载卸载和限流有何不同？</summary><p>限流通常按调用方配额控制，即使服务空闲也会拒绝超额者，偏公平与防滥用；负载卸载依据服务自身健康信号，只在过载时触发，偏自我保护。两者常一起使用。</p></details><details class="iv"><summary>如何为卸载设置阈值？</summary><p>通过压测找出延迟开始急剧上升的并发拐点，留出余量设上限；结合排队时间信号；上线后用指标观察拒绝率与延迟，逐步调整，或采用自适应并发算法。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://aws.amazon.com/builders-library/using-load-shedding-to-avoid-overload/" target="_blank" rel="noopener"><b>AWS Builders&#x27; Library：Using load shedding to avoid overload</b><small>aws.amazon.com ↗</small></a></li><li><a href="https://sre.google/sre-book/handling-overload/" target="_blank" rel="noopener"><b>Google SRE Book：Handling Overload</b><small>sre.google ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="backpressure.pro.html" rel="prev"><small>‹ 上一个</small><b>🚰 反压 / 背压机制</b></a><a class="pn next" href="bulkheads.pro.html" rel="next"><small>下一个 ›</small><b>🚢 舱壁隔离模式</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

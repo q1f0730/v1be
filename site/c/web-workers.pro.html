@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="Web Worker 多线程 专业模式：Web Worker 是浏览器提供的后台线程机制，让 JavaScript 在主线程之外执行计算密集型任务，避免阻塞渲染与用户交互。Worker 拥有独立的全局">
+<title>🎓 Web Worker 多线程 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="web-workers" data-answer="0" data-prev="react-server-components.pro.html" data-next="webassembly.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#fe">🔥 进阶 · 🎨 前端工程</a><span>›</span><a href="web-workers.html">Web Worker 多线程</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.478 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="react-server-components.pro.html" rel="prev"><small>‹ 上一个</small><b>⚛️ React 服务端组件 (RSC)</b></a><a class="pn next" href="webassembly.pro.html" rel="next"><small>下一个 ›</small><b>🧱 WebAssembly (Wasm)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">👷</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🎨 前端工程</span><span>⏱ 约 10 分钟</span></div>
+    <h1>Web Worker 多线程</h1><p class="en">Web Workers</p>
+    <div class="hbtns"><a class="prosw back" href="web-workers.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">Web Worker 是浏览器提供的后台线程机制，让 JavaScript 在主线程之外执行计算密集型任务，避免阻塞渲染与用户交互。Worker 拥有独立的全局作用域和事件循环，不能访问 DOM，通过 postMessage 与主线程异步通信。常见类型有专用 Worker、共享 Worker，Service Worker 则主要用于网络代理与离线缓存。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>主线程用 new Worker(url) 创建 Worker，现代浏览器支持 type: &#x27;module&#x27; 以 ES 模块方式加载。</p></li><li><span class="sn">2</span><p>双方通过 postMessage 发送消息，数据默认经结构化克隆算法复制，监听 message 事件接收。</p></li><li><span class="sn">3</span><p>对 ArrayBuffer、MessagePort、OffscreenCanvas 等可转移对象，可在 postMessage 时转移所有权，实现零拷贝。</p></li><li><span class="sn">4</span><p>Worker 内可用 fetch、IndexedDB、WebAssembly 等能力，但不能访问 window 与 DOM，结果需发回主线程渲染。</p></li><li><span class="sn">5</span><p>需要真正共享内存时使用 SharedArrayBuffer 配合 Atomics，这要求页面启用跨源隔离（COOP 与 COEP 响应头）。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>主线程 (Main Thread)</dt><dd>负责执行页面 JS、样式计算、布局与绘制的线程，长任务会造成卡顿。</dd></div><div class="term"><dt>结构化克隆 (Structured Clone)</dt><dd>postMessage 默认使用的深拷贝算法，支持多数内置类型，不支持函数。</dd></div><div class="term"><dt>可转移对象 (Transferable)</dt><dd>可转移所有权而非复制的对象，转移后发送方不能再使用。</dd></div><div class="term"><dt>跨源隔离 (Cross-Origin Isolation)</dt><dd>通过 COOP/COEP 头启用的页面状态，是使用 SharedArrayBuffer 的前提。</dd></div><div class="term"><dt>长任务 (Long Task)</dt><dd>主线程上超过 50 毫秒的任务，会影响交互响应指标。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>模块 Worker 处理大数组</span><em>javascript</em><button class="ccopy">复制</button></div><pre><code>// main.js —— 主线程
+const worker = new Worker(new URL(&#x27;./worker.js&#x27;, import.meta.url), { type: &#x27;module&#x27; })
+
+const data = new Float64Array(10_000_000).map(() =&gt; Math.random())
+worker.postMessage(data.buffer, [data.buffer])   // 转移所有权，零拷贝
+// 此后 data.buffer 在主线程中已不可用（byteLength 变为 0）
+
+worker.onmessage = (e) =&gt; {
+  document.querySelector(&#x27;#result&#x27;).textContent = `均值：${e.data.mean.toFixed(4)}`
+  worker.terminate()                             // 用完释放线程
+}
+worker.onerror = (e) =&gt; console.error(&#x27;Worker 出错&#x27;, e.message)
+
+// worker.js —— 后台线程，无法访问 document
+self.onmessage = (e) =&gt; {
+  const arr = new Float64Array(e.data)
+  let sum = 0
+  for (let i = 0; i &lt; arr.length; i++) sum += arr[i]
+  self.postMessage({ mean: sum / arr.length })
+}</code></pre></div><p class="cnote">两段为两个文件；new URL(..., import.meta.url) 写法可被 Vite、webpack 5 等打包器识别。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">浏览器中的几种 Worker</h3><div class="tw"><table><thead><tr><th>类型</th><th>作用域</th><th>典型用途</th></tr></thead><tbody><tr><td data-h="类型">专用 Worker</td><td data-h="作用域">仅创建它的页面</td><td data-h="典型用途">解析文件、图像处理、加密计算</td></tr><tr><td data-h="类型">共享 Worker</td><td data-h="作用域">同源多个页面共享</td><td data-h="典型用途">多标签页共享连接或状态</td></tr><tr><td data-h="类型">Service Worker</td><td data-h="作用域">按作用域拦截网络请求</td><td data-h="典型用途">离线缓存、推送、PWA</td></tr><tr><td data-h="类型">Worklet</td><td data-h="作用域">渲染管线特定阶段</td><td data-h="典型用途">音频处理、CSS Paint</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>Web Worker</h4><p><b class="k-p">优点</b>真正并行，不阻塞界面</p><p><b class="k-c">代价</b>通信开销，无法直接操作 DOM</p><p><b class="k-w">适用</b>持续较长的 CPU 密集计算</p></div><div class="trd"><h4>主线程分片（时间切片）</h4><p><b class="k-p">优点</b>无需额外线程，可访问 DOM</p><p><b class="k-c">代价</b>总耗时不变，只是让出主线程</p><p><b class="k-w">适用</b>必须操作 DOM 的批量更新</p></div><div class="trd"><h4>交给服务器处理</h4><p><b class="k-p">优点</b>不受设备性能限制</p><p><b class="k-c">代价</b>网络延迟，数据需上传</p><p><b class="k-w">适用</b>数据量大或涉及敏感算法</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>频繁发送大对象，克隆开销抵消并行收益</p><p class="fix"><b>✓</b>使用可转移对象，或批量发送、减少消息次数</p></li><li><p class="bad"><b>✗</b>每个任务新建 Worker，启动开销大</p><p class="fix"><b>✓</b>复用 Worker 或使用 Worker 池</p></li><li><p class="bad"><b>✗</b>直接使用 SharedArrayBuffer 却报未定义</p><p class="fix"><b>✓</b>为页面配置 COOP/COEP 响应头启用跨源隔离</p></li><li><p class="bad"><b>✗</b>未处理 Worker 错误，任务静默失败</p><p class="fix"><b>✓</b>监听 error 与 messageerror 事件并向用户反馈</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>用性能面板确认瓶颈是主线程长任务</span></label></li><li><label><input type="checkbox"><span>大数据通过可转移对象传递</span></label></li><li><label><input type="checkbox"><span>Worker 有错误处理与超时机制</span></label></li><li><label><input type="checkbox"><span>不再使用时调用 terminate 释放</span></label></li><li><label><input type="checkbox"><span>打包器正确输出 Worker 文件</span></label></li><li><label><input type="checkbox"><span>低端设备上实测交互响应</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Web Worker 为什么不能访问 DOM？</summary><p>DOM 不是线程安全的，浏览器渲染引擎假设只有主线程修改它。若允许多线程并发修改，需要复杂锁机制并带来竞态。因此 Worker 只做计算，通过消息把结果交回主线程统一更新界面。</p></details><details class="iv"><summary>postMessage 的结构化克隆和转移有什么区别？</summary><p>克隆会复制一份数据，双方各持一份，大对象耗时耗内存；转移只移交底层内存所有权，几乎零开销，但发送方的对象随即失效。适合一次性交给 Worker 处理的大缓冲区。</p></details><details class="iv"><summary>在浏览器里跑本地 AI 模型时 Worker 有什么作用？</summary><p>模型加载与推理是重计算，放在主线程会冻结界面。常见做法是在 Worker 中加载 WebAssembly 或调用 WebGPU 推理，主线程只负责输入和渲染，通过消息流式接收生成结果，保持页面可滚动可点击。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers" target="_blank" rel="noopener"><b>MDN: Using Web Workers</b><small>developer.mozilla.org ↗</small></a></li><li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Transferable_objects" target="_blank" rel="noopener"><b>MDN: Transferable objects</b><small>developer.mozilla.org ↗</small></a></li><li><a href="https://html.spec.whatwg.org/multipage/workers.html" target="_blank" rel="noopener"><b>HTML Standard: Web workers</b><small>html.spec.whatwg.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="react-server-components.pro.html" rel="prev"><small>‹ 上一个</small><b>⚛️ React 服务端组件 (RSC)</b></a><a class="pn next" href="webassembly.pro.html" rel="next"><small>下一个 ›</small><b>🧱 WebAssembly (Wasm)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="幂等键 (Idempotency Key) 专业模式：幂等键（Idempotency Key）是客户端为一次逻辑操作生成的唯一标识，随请求发送；服务端据此识别重试，保证同一操作无论请求几次只产生一次副作用。它属于 ">
+<title>🎓 幂等键 (Idempotency Key) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="idempotency-keys" data-answer="0" data-prev="finops.pro.html" data-next="circuit-breaker.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#dist">🔮 高级 · 🕸️ 分布式</a><span>›</span><a href="idempotency-keys.html">幂等键 (Idempotency Key)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.368 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="finops.pro.html" rel="prev"><small>‹ 上一个</small><b>💸 云成本治理 (FinOps)</b></a><a class="pn next" href="circuit-breaker.pro.html" rel="next"><small>下一个 ›</small><b>🔌 熔断器 (Circuit Breaker)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔑</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>幂等键 (Idempotency Key)</h1><p class="en">Idempotency Keys</p>
+    <div class="hbtns"><a class="prosw back" href="idempotency-keys.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">幂等键（Idempotency Key）是客户端为一次逻辑操作生成的唯一标识，随请求发送；服务端据此识别重试，保证同一操作无论请求几次只产生一次副作用。它属于 API 设计与分布式可靠性层，用于让本不幂等的 POST（支付、下单、发消息）可以安全重试，Stripe 等支付 API 以此为标准做法。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>客户端在用户发起操作时生成唯一键（通常 UUID v4），首次请求与所有重试都携带同一个键。</p></li><li><span class="sn">2</span><p>服务端收到请求，先在存储中以「键 + 调用方」原子地占位，若已存在则不再执行业务逻辑。</p></li><li><span class="sn">3</span><p>首个请求执行业务并把响应状态码与响应体与该键一起持久化。</p></li><li><span class="sn">4</span><p>后续同键请求：若前一次已完成，直接返回存储的结果；若仍在处理中，返回冲突或让其稍后重试。</p></li><li><span class="sn">5</span><p>服务端校验同键请求的参数是否一致，不一致报错；键在保留期后过期清理。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>幂等性 (Idempotency)</dt><dd>同一操作执行一次和多次，对系统状态的影响相同。</dd></div><div class="term"><dt>Idempotency-Key 头</dt><dd>IETF 草案定义的 HTTP 请求头，用于携带幂等键。</dd></div><div class="term"><dt>请求指纹 (Request Fingerprint)</dt><dd>请求参数的哈希，用于检测同键不同参数的误用。</dd></div><div class="term"><dt>至少一次投递 (At-least-once)</dt><dd>消息可能重复送达的投递语义，消费端需幂等。</dd></div><div class="term"><dt>原子占位 (Atomic Claim)</dt><dd>用唯一约束或 SET NX 保证同一个键只有一个请求获得执行权。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Redis 实现幂等处理</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import json, redis
+r = redis.Redis()
+
+def handle_payment(key: str, payload: dict, charge):
+    slot = f&quot;idem:{key}&quot;
+    # 原子占位：只有第一个请求能写入，24 小时后过期
+    if r.set(slot, json.dumps({&quot;state&quot;: &quot;processing&quot;}), nx=True, ex=86400):
+        result = charge(payload)  # 真正扣款，只会执行一次
+        r.set(slot, json.dumps({&quot;state&quot;: &quot;done&quot;, &quot;result&quot;: result}), ex=86400)
+        return 201, result
+    saved = json.loads(r.get(slot))
+    if saved[&quot;state&quot;] == &quot;processing&quot;:
+        return 409, {&quot;error&quot;: &quot;same request in progress&quot;}
+    return 200, saved[&quot;result&quot;]  # 重复请求：返回首次结果
+
+# 客户端：同一次点击的所有重试使用同一个 key
+# headers = {&quot;Idempotency-Key&quot;: str(uuid.uuid4())}</code></pre></div><p class="cnote">SET NX 保证只有一个请求获得执行权；生产中还需处理执行中崩溃与参数一致性校验。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">幂等实现方式对比</h3><div class="tw"><table><thead><tr><th>方式</th><th>适用场景</th><th>局限</th></tr></thead><tbody><tr><td data-h="方式">幂等键 + 结果存储</td><td data-h="适用场景">支付、下单等 POST</td><td data-h="局限">需额外存储与过期策略</td></tr><tr><td data-h="方式">业务唯一约束</td><td data-h="适用场景">订单号、外部事件 ID</td><td data-h="局限">只防重复写，不返回原响应</td></tr><tr><td data-h="方式">条件更新 / 乐观锁</td><td data-h="适用场景">状态机流转、扣库存</td><td data-h="局限">需要版本或状态字段</td></tr><tr><td data-h="方式">天然幂等方法</td><td data-h="适用场景">PUT、DELETE 按资源覆盖</td><td data-h="局限">不适用于创建类操作</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>Redis 存幂等记录</h4><p><b class="k-p">优点</b>延迟低、TTL 自动清理</p><p><b class="k-c">代价</b>与业务数据库非同一事务</p><p><b class="k-w">适用</b>高并发、可接受极端情况补偿</p></div><div class="trd"><h4>数据库表存幂等记录</h4><p><b class="k-p">优点</b>可与业务写入同事务，强一致</p><p><b class="k-c">代价</b>增加数据库写压力</p><p><b class="k-w">适用</b>资金类操作</p></div><div class="trd"><h4>只依赖下游幂等（如支付网关）</h4><p><b class="k-p">优点</b>实现最省事</p><p><b class="k-c">代价</b>自身副作用（发货、通知）仍会重复</p><p><b class="k-w">适用</b>单一外部调用且下游支持</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>每次重试都生成新的幂等键</p><p class="fix"><b>✓</b>键在用户操作发起时生成并随重试复用，存在客户端状态里</p></li><li><p class="bad"><b>✗</b>先执行业务、后检查键，存在并发窗口</p><p class="fix"><b>✓</b>先原子占位再执行，或用唯一约束保证互斥</p></li><li><p class="bad"><b>✗</b>同键不同参数时静默返回旧结果</p><p class="fix"><b>✓</b>存参数指纹，不一致返回 422 等明确错误</p></li><li><p class="bad"><b>✗</b>执行中进程崩溃，键永远停在 processing</p><p class="fix"><b>✓</b>为处理中状态设较短超时或可恢复机制，允许安全重试</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有有副作用的 POST 接口支持幂等键</span></label></li><li><label><input type="checkbox"><span>键与调用方/租户绑定，避免跨用户冲突</span></label></li><li><label><input type="checkbox"><span>存储首次响应并原样返回</span></label></li><li><label><input type="checkbox"><span>校验同键请求参数一致</span></label></li><li><label><input type="checkbox"><span>幂等记录有保留期与清理</span></label></li><li><label><input type="checkbox"><span>Webhook 消费按事件 ID 去重</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么 POST 需要幂等键，而 PUT 通常不需要？</summary><p>PUT 语义是把资源设为指定状态，重复执行结果相同，天然幂等；POST 常用于创建或触发动作，每次执行都产生新副作用，重试会重复，所以需要显式幂等键。</p></details><details class="iv"><summary>两个同键请求同时到达怎么办？</summary><p>必须原子占位：数据库唯一约束或 Redis SET NX。抢到的执行；另一个看到处理中状态，返回 409 或等待后读取结果。否则会出现检查后执行的竞态。</p></details><details class="iv"><summary>幂等键能实现 exactly-once 吗？</summary><p>网络层无法保证恰好一次投递，幂等键是在至少一次投递基础上，让副作用只生效一次，即 effectively-once。前提是副作用与幂等记录的写入一致。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.stripe.com/api/idempotent_requests" target="_blank" rel="noopener"><b>Stripe API：Idempotent requests</b><small>docs.stripe.com ↗</small></a></li><li><a href="https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/" target="_blank" rel="noopener"><b>IETF Draft：The Idempotency-Key HTTP Header Field</b><small>datatracker.ietf.org ↗</small></a></li><li><a href="https://developer.mozilla.org/en-US/docs/Glossary/Idempotent" target="_blank" rel="noopener"><b>MDN：Idempotent</b><small>developer.mozilla.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="finops.pro.html" rel="prev"><small>‹ 上一个</small><b>💸 云成本治理 (FinOps)</b></a><a class="pn next" href="circuit-breaker.pro.html" rel="next"><small>下一个 ›</small><b>🔌 熔断器 (Circuit Breaker)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

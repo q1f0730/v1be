@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="限流 专业模式：限流（Rate Limiting）是在单位时间内限制某个主体（用户、IP、API Key、租户）可发起请求数的流量控制机制，超限请求被拒绝、排队或降级。它位于网">
+<title>🎓 限流 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="rate-limiting" data-answer="0" data-prev="webhook.pro.html" data-next="http-method-semantics.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#net">🌊 中级 · 🌐 网络与 API</a><span>›</span><a href="rate-limiting.html">限流</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.135 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="webhook.pro.html" rel="prev"><small>‹ 上一个</small><b>🔔 Webhook 回调</b></a><a class="pn next" href="http-method-semantics.pro.html" rel="next"><small>下一个 ›</small><b>🚥 HTTP方法安全性与幂等性</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🚦</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>限流</h1><p class="en">Rate Limiting</p>
+    <div class="hbtns"><a class="prosw back" href="rate-limiting.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">限流（Rate Limiting）是在单位时间内限制某个主体（用户、IP、API Key、租户）可发起请求数的流量控制机制，超限请求被拒绝、排队或降级。它位于网关或应用中间件层，用于保护后端容量、防滥用与暴力破解、保证多租户公平，并支撑按套餐计量的商业模式。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>请求到达时提取限流键，如 user_id、API Key 或客户端 IP，还可与接口路径组合成更细的维度。</p></li><li><span class="sn">2</span><p>在共享存储（常用 Redis）中按算法更新计数或令牌，多实例共享同一状态。</p></li><li><span class="sn">3</span><p>令牌桶按固定速率补充令牌，请求消耗令牌，允许一定突发；滑动窗口统计近期请求数。</p></li><li><span class="sn">4</span><p>未超限则放行；超限返回 429 Too Many Requests，并附 Retry-After 提示等待时间。</p></li><li><span class="sn">5</span><p>响应中可附带剩余额度等头部，客户端据此主动退避，减少无效请求。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>令牌桶 (Token Bucket)</dt><dd>按速率补令牌、按请求扣令牌，允许受控突发。</dd></div><div class="term"><dt>漏桶 (Leaky Bucket)</dt><dd>以恒定速率处理请求，平滑输出流量。</dd></div><div class="term"><dt>滑动窗口 (Sliding Window)</dt><dd>统计最近 N 秒请求数，避免固定窗口边界突刺。</dd></div><div class="term"><dt>429 Too Many Requests</dt><dd>RFC 6585 定义的限流状态码。</dd></div><div class="term"><dt>Retry-After</dt><dd>告诉客户端多久后可重试的响应头。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Redis 固定窗口限流</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import time
+import redis
+
+r = redis.Redis()
+
+def allow(key: str, limit: int = 100, window: int = 60) -&gt; tuple[bool, int]:
+    &quot;&quot;&quot;每 window 秒最多 limit 次；返回 (是否放行, 剩余次数)&quot;&quot;&quot;
+    bucket = int(time.time()) // window
+    rkey = f&quot;rl:{key}:{bucket}&quot;
+    pipe = r.pipeline()
+    pipe.incr(rkey)               # 原子自增
+    pipe.expire(rkey, window)     # 窗口过期自动清理
+    count, _ = pipe.execute()
+    return count &lt;= limit, max(0, limit - count)
+
+# 在中间件中使用
+ok, remaining = allow(f&quot;user:{42}:POST:/v1/messages&quot;)
+if not ok:
+    # 返回 429，并告诉客户端何时重试
+    status, headers = 429, {&quot;Retry-After&quot;: &quot;60&quot;}</code></pre></div><p class="cnote">固定窗口实现最简单但边界处可能放过约两倍流量；要求更平滑时改用令牌桶或滑动窗口。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">限流算法对比</h3><div class="tw"><table><thead><tr><th>算法</th><th>突发处理</th><th>实现复杂度</th><th>精度</th></tr></thead><tbody><tr><td data-h="算法">固定窗口</td><td data-h="突发处理">窗口边界可能翻倍</td><td data-h="实现复杂度">低</td><td data-h="精度">粗</td></tr><tr><td data-h="算法">滑动窗口日志</td><td data-h="突发处理">精确</td><td data-h="实现复杂度">高（存每次时间）</td><td data-h="精度">高</td></tr><tr><td data-h="算法">滑动窗口计数</td><td data-h="突发处理">较平滑</td><td data-h="实现复杂度">中</td><td data-h="精度">近似</td></tr><tr><td data-h="算法">令牌桶</td><td data-h="突发处理">允许受控突发</td><td data-h="实现复杂度">中</td><td data-h="精度">高</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>网关层限流</h4><p><b class="k-p">优点</b>统一入口，保护所有服务</p><p><b class="k-c">代价</b>难以感知业务维度</p><p><b class="k-w">适用</b>按 IP、Key 的粗粒度防护</p></div><div class="trd"><h4>应用层限流</h4><p><b class="k-p">优点</b>可按用户、套餐、接口精细控制</p><p><b class="k-c">代价</b>需每个服务实现，状态需共享</p><p><b class="k-w">适用</b>按业务规则计量与配额</p></div><div class="trd"><h4>本地内存限流</h4><p><b class="k-p">优点</b>无网络开销，极快</p><p><b class="k-c">代价</b>多实例下总量不准</p><p><b class="k-w">适用</b>单实例或作为第一层粗过滤</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>在代理之后直接取 remote_addr，所有人共用一个 IP</p><p class="fix"><b>✓</b>仅信任已知代理设置的 X-Forwarded-For 并正确解析</p></li><li><p class="bad"><b>✗</b>INCR 与 EXPIRE 分开执行，进程崩溃留下永不过期的键</p><p class="fix"><b>✓</b>用 pipeline/MULTI 或 Lua 脚本保证原子性</p></li><li><p class="bad"><b>✗</b>客户端收到 429 立即重试，形成重试风暴</p><p class="fix"><b>✓</b>客户端遵循 Retry-After，使用指数退避加随机抖动</p></li><li><p class="bad"><b>✗</b>登录、验证码等敏感接口与普通接口共用宽松额度</p><p class="fix"><b>✓</b>对敏感接口单独设置更严格的限流键与阈值</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>限流键选择合理且不可伪造</span></label></li><li><label><input type="checkbox"><span>超限返回 429 + Retry-After</span></label></li><li><label><input type="checkbox"><span>多实例共享限流状态</span></label></li><li><label><input type="checkbox"><span>敏感接口有独立严格限流</span></label></li><li><label><input type="checkbox"><span>限流命中有监控与告警</span></label></li><li><label><input type="checkbox"><span>客户端 SDK 实现退避重试</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>令牌桶和漏桶的区别？</summary><p>令牌桶以固定速率积累令牌，桶满前可攒下额度，允许短时突发；漏桶以恒定速率流出请求，输出平滑但不允许突发。API 限流多用令牌桶，流量整形多用漏桶。</p></details><details class="iv"><summary>分布式限流如何保证准确？</summary><p>把计数放在 Redis 等共享存储，用 Lua 脚本把读-判断-写合成原子操作；对精度要求不高时可本地预分配额度定期同步，以降低延迟与存储压力。</p></details><details class="iv"><summary>限流和熔断有什么区别？</summary><p>限流是服务端控制进入系统的请求速率，保护自身容量；熔断是调用方在下游持续失败时暂停调用并快速失败，防止故障级联扩散。二者常配合使用。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.rfc-editor.org/rfc/rfc6585" target="_blank" rel="noopener"><b>RFC 6585（429 Too Many Requests）</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429" target="_blank" rel="noopener"><b>MDN：429 Too Many Requests</b><small>developer.mozilla.org ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Token_bucket" target="_blank" rel="noopener"><b>Wikipedia: Token bucket</b><small>en.wikipedia.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="webhook.pro.html" rel="prev"><small>‹ 上一个</small><b>🔔 Webhook 回调</b></a><a class="pn next" href="http-method-semantics.pro.html" rel="next"><small>下一个 ›</small><b>🚥 HTTP方法安全性与幂等性</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

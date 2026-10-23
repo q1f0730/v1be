@@ -1,0 +1,3745 @@
+[
+ {
+  "slug": "large-language-model",
+  "def": "大语言模型（Large Language Model, LLM）是基于 Transformer 架构、在海量文本上做自监督预训练的神经网络，本质是「给定前文，预测下一个 Token 的概率分布」。经过指令微调和人类反馈对齐后，它成为对话、写代码、Agent 等上层应用的推理引擎，处在 AI 应用栈的模型层。",
+  "how": [
+   "分词：输入文本先被 Tokenizer 切成 Token 序列，再映射为向量（Embedding）。",
+   "编码上下文：多层 Transformer 用自注意力（Self-Attention）让每个 Token 参考前文所有 Token。",
+   "预测分布：最后一层输出整个词表上的概率分布，表示下一个 Token 是谁的可能性。",
+   "采样解码：按 temperature、top_p 等参数从分布中选出一个 Token，追加到序列末尾。",
+   "自回归循环：重复「预测—采样—追加」，直到遇到停止符或达到 max_tokens 上限。",
+   "训练三段：预训练学语言与知识，指令微调（SFT）学听话，RLHF 等对齐方法学偏好与安全。"
+  ],
+  "terms": [
+   {
+    "t": "Transformer",
+    "d": "2017 年提出的基于注意力机制的网络架构，几乎所有主流 LLM 的骨架。"
+   },
+   {
+    "t": "自回归 (Autoregressive)",
+    "d": "每次只生成一个 Token，并把它作为下一步的输入。"
+   },
+   {
+    "t": "预训练 (Pre-training)",
+    "d": "在大规模无标注语料上做下一个 Token 预测，学到通用语言能力。"
+   },
+   {
+    "t": "指令微调 (Instruction Tuning / SFT)",
+    "d": "用「指令—回答」样本继续训练，让模型按人类指令作答。"
+   },
+   {
+    "t": "RLHF",
+    "d": "基于人类反馈的强化学习，用偏好数据把模型输出往「有用、无害」方向调。"
+   },
+   {
+    "t": "参数量 (Parameters)",
+    "d": "模型中可训练权重的数量，影响能力上限与推理成本，但不是唯一指标。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "调用一次 LLM",
+   "src": "# pip install anthropic ；需设置环境变量 ANTHROPIC_API_KEY\nimport anthropic\n\nclient = anthropic.Anthropic()  # 自动读取环境变量中的 Key\n\nresp = client.messages.create(\n    model=\"claude-sonnet-4-5\",   # 模型名以官方模型列表为准\n    max_tokens=512,              # 输出上限，超出会被截断\n    messages=[\n        {\"role\": \"user\", \"content\": \"用三句话解释什么是自回归生成\"}\n    ],\n)\n\nprint(resp.content[0].text)      # 模型回复正文\nprint(resp.usage)                # 输入/输出 Token 数，用于核算成本\nprint(resp.stop_reason)          # end_turn 正常结束，max_tokens 表示被截断",
+   "note": "LLM 对外就是一个无状态的 HTTP 接口：传入消息，返回文本和用量；多轮记忆要自己把历史传回去。"
+  },
+  "table": {
+   "title": "LLM 选型关键维度",
+   "head": [
+    "维度",
+    "影响什么",
+    "评审时问什么"
+   ],
+   "rows": [
+    [
+     "上下文长度",
+     "一次能塞多少资料",
+     "真实任务需要多长？长了是否掉质量"
+    ],
+    [
+     "推理/思考能力",
+     "复杂多步任务成功率",
+     "有无扩展思考模式，延迟能否接受"
+    ],
+    [
+     "工具调用",
+     "能否接入 Agent 流程",
+     "函数调用、结构化输出是否稳定"
+    ],
+    [
+     "单价与延迟",
+     "成本和用户体验",
+     "按输入/输出分别计价，首 Token 延迟多少"
+    ],
+    [
+     "部署方式",
+     "数据合规与可控性",
+     "闭源 API、云托管还是开源自部署"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "闭源 API 模型",
+    "pros": "能力强、免运维、迭代快",
+    "cons": "按量付费，数据出境与供应商锁定风险",
+    "when": "原型期、追求效果、数据可外发"
+   },
+   {
+    "opt": "开源权重自部署",
+    "pros": "数据不出域，可微调，可控成本",
+    "cons": "需要 GPU 与运维，能力通常落后头部闭源",
+    "when": "强合规、高调用量、需定制"
+   },
+   {
+    "opt": "小模型 + 检索增强",
+    "pros": "便宜、快、知识可更新",
+    "cons": "推理深度有限，依赖检索质量",
+    "when": "问答、客服等知识密集场景"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把 LLM 当数据库，直接信它报出的事实和数字",
+    "fix": "关键事实走检索或工具调用，并要求给出来源再核对"
+   },
+   {
+    "bad": "以为 API 有记忆，第二次请求不带历史",
+    "fix": "接口是无状态的，多轮对话要自己维护并回传 messages"
+   },
+   {
+    "bad": "只看榜单分数选模型",
+    "fix": "用自己业务的真实样本做小规模评测（eval）再定"
+   },
+   {
+    "bad": "忽略 stop_reason，被截断的输出当完整结果用",
+    "fix": "检查是否因 max_tokens 截断，必要时续写或调大上限"
+   }
+  ],
+  "checklist": [
+   "明确模型名与版本，避免别名漂移",
+   "设置 max_tokens 和超时、重试策略",
+   "记录每次调用的 Token 用量与成本",
+   "关键输出有校验或人工复核环节",
+   "有业务样本组成的回归评测集",
+   "确认数据是否允许发送给模型供应商"
+  ],
+  "interview": [
+   {
+    "q": "LLM 为什么会「一本正经胡说」？",
+    "a": "训练目标是让续写在统计上合理，而非保证事实正确；模型没有内置的真假校验，知识有截止日期且被压缩在参数里。缓解手段：检索增强（RAG）、工具调用查实时数据、要求引用来源、降低 temperature、对输出做事后校验。"
+   },
+   {
+    "q": "上下文越长越好吗？",
+    "a": "不一定。长上下文增加成本和延迟；不少研究观察到模型对中间位置信息利用变差（Lost in the Middle）。实践上应检索最相关片段、精简历史、把关键指令放在开头或结尾，并用真实任务测长文效果。"
+   },
+   {
+    "q": "预训练、SFT、RLHF 各解决什么？",
+    "a": "预训练：在海量语料上学语言规律和世界知识；SFT：用指令—回答对教会模型按格式完成任务；RLHF 或 DPO 等偏好优化：让输出更符合人类偏好、更安全。三者依次叠加，分别对应「会说话」「听指令」「说得好」。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Attention Is All You Need（arXiv）",
+    "url": "https://arxiv.org/abs/1706.03762"
+   },
+   {
+    "title": "Wikipedia: Large language model",
+    "url": "https://en.wikipedia.org/wiki/Large_language_model"
+   },
+   {
+    "title": "Anthropic Messages API 文档",
+    "url": "https://docs.anthropic.com/en/api/messages"
+   }
+  ]
+ },
+ {
+  "slug": "token",
+  "def": "Token（词元）是 LLM 处理文本的基本单位，由分词器（Tokenizer）把文本切成子词片段并映射为整数 ID。它同时决定三件事：模型实际「看到」的输入、上下文窗口的占用量、API 计费数量。不同模型的分词器不同，同一段文字的 Token 数也不同。",
+  "how": [
+   "训练分词器：用 BPE 等算法在语料上统计高频字节/字符组合，生成固定大小的词表。",
+   "切分：推理时把输入文本按词表贪心合并成子词序列，常见英文单词可能是 1 个 Token。",
+   "映射：每个 Token 对应一个整数 ID，再查表得到向量送入模型。",
+   "生成：模型每一步输出一个 Token ID，解码器把 ID 拼回文本流式返回。",
+   "计量：服务端分别统计输入 Token 与输出 Token，作为上下文占用和计费依据。"
+  ],
+  "terms": [
+   {
+    "t": "分词器 (Tokenizer)",
+    "d": "把文本与 Token ID 互相转换的组件，与模型绑定，不能混用。"
+   },
+   {
+    "t": "BPE (Byte Pair Encoding)",
+    "d": "反复合并最高频相邻符号对来构建子词词表的算法。"
+   },
+   {
+    "t": "词表 (Vocabulary)",
+    "d": "分词器能产生的全部 Token 集合，规模常见为数万到二十多万。"
+   },
+   {
+    "t": "输入/输出 Token",
+    "d": "提示词与模型回复分开计数，输出单价通常高于输入。"
+   },
+   {
+    "t": "特殊 Token (Special Token)",
+    "d": "标记消息边界、角色或结束的保留符号，不对应普通文字。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "本地数 Token",
+   "src": "# pip install tiktoken  （OpenAI 开源的分词库）\nimport tiktoken\n\n# o200k_base 是 GPT-4o 系列使用的编码；cl100k_base 用于 GPT-4/3.5\nenc = tiktoken.get_encoding(\"o200k_base\")\n\nfor text in [\"Hello, world!\", \"你好，世界！\", \"def add(a, b): return a + b\"]:\n    ids = enc.encode(text)                  # 文本 -> Token ID 列表\n    pieces = [enc.decode([i]) for i in ids] # 每个 ID 还原成的片段\n    print(len(ids), pieces)\n\n# 注意：Claude 等其他模型分词器不同，\n# 精确计数请用各家官方的计数接口，例如\n# anthropic: client.messages.count_tokens(model=..., messages=[...])",
+   "note": "同一段话换模型 Token 数就变；本地估算用于预算，精确值以供应商接口为准。"
+  },
+  "table": {
+   "title": "影响 Token 消耗的因素",
+   "head": [
+    "因素",
+    "影响",
+    "工程做法"
+   ],
+   "rows": [
+    [
+     "语言与字符",
+     "中文、代码符号通常比英文更「费」Token",
+     "按实际语料实测，不套用固定换算"
+    ],
+    [
+     "多轮历史",
+     "每轮都要重发全部历史",
+     "摘要旧对话、截断无关轮次"
+    ],
+    [
+     "系统提示与工具定义",
+     "每次请求都计入输入",
+     "精简描述，利用提示缓存"
+    ],
+    [
+     "图片/文件",
+     "按分辨率或页数折算成 Token",
+     "压缩尺寸，只传相关页"
+    ],
+    [
+     "输出长度",
+     "输出单价更高",
+     "限制 max_tokens，要求简洁格式"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "本地分词库估算",
+    "pros": "零成本、离线、快",
+    "cons": "与目标模型分词器可能不一致",
+    "when": "粗略预算、批量预检"
+   },
+   {
+    "opt": "官方计数接口",
+    "pros": "与计费口径一致",
+    "cons": "多一次网络请求",
+    "when": "需要精确控制上下文或成本时"
+   },
+   {
+    "opt": "读取响应 usage 字段",
+    "pros": "真实发生值，无额外开销",
+    "cons": "只能事后得知",
+    "when": "成本监控与对账"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用「1 个汉字 = 1 个 Token」之类固定比例算预算",
+    "fix": "比例随模型和文本变化，用目标模型的分词器或计数接口实测"
+   },
+   {
+    "bad": "只算用户输入，忘了系统提示、工具定义和历史",
+    "fix": "以 usage.input_tokens 为准，把所有隐藏输入都计入"
+   },
+   {
+    "bad": "用 A 模型的分词器给 B 模型截断文本",
+    "fix": "截断与计数使用同一模型的分词方案，并预留余量"
+   }
+  ],
+  "checklist": [
+   "按输入/输出分开统计 Token 和费用",
+   "为每次请求设置 max_tokens 上限",
+   "长对话有摘要或截断策略",
+   "监控异常的 Token 突增（死循环、爆量）",
+   "大文件先切块筛选再发送"
+  ],
+  "interview": [
+   {
+    "q": "为什么用子词而不是按字或按词切分？",
+    "a": "按词切词表会巨大且无法处理新词；按字符切序列太长、效率低。子词（BPE 等）在两者间折中：高频词整体保留、罕见词拆成片段，词表可控，又基本不会出现未登录词。字节级 BPE 还能覆盖任意 Unicode。"
+   },
+   {
+    "q": "Agent 场景 Token 消耗为何远超聊天？",
+    "a": "Agent 多轮调用工具，每轮都把系统提示、工具定义、完整历史和工具返回（如文件内容、命令输出）重新发送，输入随轮数累积增长。优化：提示缓存、裁剪工具输出、子任务隔离上下文、定期压缩历史。"
+   },
+   {
+    "q": "如何控制一个功能的 Token 成本？",
+    "a": "先测基线：记录每请求输入/输出 Token；再优化：精简提示、检索只取相关片段、缓存可复用前缀、限制输出长度、简单任务路由到小模型；最后加预算告警和单用户限额。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OpenAI tiktoken（GitHub）",
+    "url": "https://github.com/openai/tiktoken"
+   },
+   {
+    "title": "Anthropic Token counting 文档",
+    "url": "https://docs.anthropic.com/en/docs/build-with-claude/token-counting"
+   },
+   {
+    "title": "Neural Machine Translation of Rare Words with Subword Units（BPE 论文）",
+    "url": "https://arxiv.org/abs/1508.07909"
+   }
+  ]
+ },
+ {
+  "slug": "context-window",
+  "def": "上下文窗口（Context Window）是模型单次请求能处理的最大 Token 数，输入（系统提示、历史、工具定义、附件）与输出共同占用这一额度。它是模型的「工作记忆」上限，超出部分要么报错要么被截断。窗口大小由模型架构和训练决定，应用层只能管理放进去的内容。",
+  "how": [
+   "拼装：应用把系统提示、工具定义、历史消息、检索资料、当前问题按顺序拼成一次请求。",
+   "计数：服务端把全部内容分词计数，加上 max_tokens 预留，超过窗口则拒绝或报错。",
+   "注意力计算：模型对窗口内所有 Token 做注意力，长度越长计算和显存开销越大。",
+   "生成输出：输出 Token 也写入同一窗口，生成到上限或停止符为止。",
+   "管理策略：应用层通过截断、摘要、检索、子任务隔离，把最相关的信息留在窗口内。"
+  ],
+  "terms": [
+   {
+    "t": "上下文长度 (Context Length)",
+    "d": "窗口能容纳的 Token 总数，输入与输出共享。"
+   },
+   {
+    "t": "Lost in the Middle",
+    "d": "研究发现模型对长上下文中间位置的信息利用较差的现象。"
+   },
+   {
+    "t": "上下文压缩 (Compaction)",
+    "d": "把旧对话总结成摘要以腾出空间，Claude Code 等工具内置此功能。"
+   },
+   {
+    "t": "提示缓存 (Prompt Caching)",
+    "d": "缓存重复的提示前缀，降低重复发送长上下文的成本与延迟。"
+   },
+   {
+    "t": "检索增强 (RAG)",
+    "d": "只把与问题相关的文档片段检索出来放入窗口，而非全文塞入。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "按预算裁剪历史",
+   "src": "# 保留系统提示 + 最近的若干轮对话，使总 Token 不超预算\nimport tiktoken\n\nenc = tiktoken.get_encoding(\"o200k_base\")  # 估算用，精确值以模型官方计数为准\n\ndef n_tokens(msg):\n    return len(enc.encode(msg[\"content\"]))\n\ndef trim_history(messages, budget):\n    \"\"\"messages: [{'role':..., 'content':...}]，从最新往回保留\"\"\"\n    kept, used = [], 0\n    for msg in reversed(messages):\n        cost = n_tokens(msg)\n        if used + cost > budget:\n            break\n        kept.append(msg)\n        used += cost\n    return list(reversed(kept))\n\n# 窗口 = 输入 + 输出：预算要扣掉给输出留的 max_tokens\nhistory = [{\"role\": \"user\", \"content\": \"...\"}]\nprint(trim_history(history, budget=8000))",
+   "note": "最朴素的滑动窗口策略；生产中常配合摘要旧轮次，避免丢失早期关键信息。"
+  },
+  "table": {
+   "title": "上下文管理策略对比",
+   "head": [
+    "策略",
+    "原理",
+    "适用",
+    "风险"
+   ],
+   "rows": [
+    [
+     "滑动窗口",
+     "只保留最近 N 轮",
+     "闲聊、短任务",
+     "丢失早期约定"
+    ],
+    [
+     "摘要压缩",
+     "旧内容总结成短摘要",
+     "长对话、长 Agent 会话",
+     "细节在摘要中丢失"
+    ],
+    [
+     "检索增强",
+     "按需检索相关片段",
+     "大文档库问答",
+     "检索不准则答错"
+    ],
+    [
+     "子任务隔离",
+     "子 Agent 独立窗口，只回传结论",
+     "复杂编码、调研",
+     "协调成本增加"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "直接塞满长上下文",
+    "pros": "实现简单，信息不丢",
+    "cons": "贵、慢，中段信息利用可能变差",
+    "when": "一次性分析中等长度文档"
+   },
+   {
+    "opt": "RAG 检索",
+    "pros": "成本低，可扩展到海量资料",
+    "cons": "需要建索引，检索质量决定上限",
+    "when": "资料远超窗口或频繁更新"
+   },
+   {
+    "opt": "定期摘要压缩",
+    "pros": "会话可无限延续",
+    "cons": "摘要有损，可能遗漏细节",
+    "when": "长时间运行的 Agent 会话"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "窗口标称很大就把整个代码库塞进去",
+    "fix": "只放与任务相关的文件，让 Agent 用搜索工具按需读取"
+   },
+   {
+    "bad": "忘记输出也占窗口，输入顶满后回复被截断",
+    "fix": "输入预算 = 窗口 − max_tokens − 安全余量"
+   },
+   {
+    "bad": "关键约束只在很早的对话里说过一次",
+    "fix": "写进系统提示或项目说明文件（如 CLAUDE.md），每次都在"
+   },
+   {
+    "bad": "长会话质量下降仍硬撑",
+    "fix": "开新会话并带上精炼的任务摘要，比拖着脏上下文更稳"
+   }
+  ],
+  "checklist": [
+   "确认模型窗口上限和输出上限",
+   "输入预算扣除输出预留与余量",
+   "有截断/摘要/检索中至少一种策略",
+   "关键指令放在稳定位置（系统提示）",
+   "监控单请求输入 Token 分布"
+  ],
+  "interview": [
+   {
+    "q": "窗口 200K 是否意味着能稳定用满 200K？",
+    "a": "不一定。标称值是上限；实际效果受位置偏差影响，长文检索类任务在中段可能变差，且成本和延迟随长度增加。应以自身任务做「大海捞针」类测试，并通过检索和精选内容控制实际长度。"
+   },
+   {
+    "q": "Claude Code 这类 Agent 怎么管理上下文？",
+    "a": "按需读取文件而非全量加载；工具输出过长时截断；会话接近上限时自动压缩历史；用子 Agent 处理独立子任务以隔离上下文；用项目说明文件持久化关键约定。核心思路是让窗口里只有当下最相关的信息。"
+   },
+   {
+    "q": "为什么长上下文推理更贵更慢？",
+    "a": "标准自注意力计算量随序列长度平方增长，KV 缓存显存随长度线性增长；每生成一个 Token 都要关注全部前文。所以供应商对长输入计价更高或限制更多，提示缓存能显著降低重复前缀成本。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Lost in the Middle: How Language Models Use Long Contexts（arXiv）",
+    "url": "https://arxiv.org/abs/2307.03172"
+   },
+   {
+    "title": "Anthropic Context windows 文档",
+    "url": "https://docs.anthropic.com/en/docs/build-with-claude/context-windows"
+   },
+   {
+    "title": "Anthropic Prompt caching 文档",
+    "url": "https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching"
+   }
+  ]
+ },
+ {
+  "slug": "prompt",
+  "def": "提示词（Prompt）是发送给 LLM 的全部输入文本，包括指令、上下文资料、示例和输出格式要求。由于模型行为完全由输入条件化，提示词就是「用自然语言编写的程序接口」。提示工程（Prompt Engineering）研究如何组织这些内容，让输出更准确、稳定、可解析。",
+  "how": [
+   "明确任务：说清目标、受众和成功标准，减少模型自行猜测的空间。",
+   "提供上下文：给出必要的背景资料、代码片段或数据，模型只能基于看到的内容作答。",
+   "给出示例：少样本（Few-shot）示例比抽象描述更能锁定格式与风格。",
+   "约束输出：指定结构（JSON、表格、标签包裹），便于程序解析和校验。",
+   "迭代评测：用一组固定样本对比不同版本提示词的效果，像改代码一样做回归。"
+  ],
+  "terms": [
+   {
+    "t": "零样本 (Zero-shot)",
+    "d": "不给示例，仅靠指令让模型完成任务。"
+   },
+   {
+    "t": "少样本 (Few-shot)",
+    "d": "在提示中放几个输入—输出示例，引导格式和判断标准。"
+   },
+   {
+    "t": "思维链 (Chain-of-Thought)",
+    "d": "让模型先写出推理步骤再给结论，常提升多步问题准确率。"
+   },
+   {
+    "t": "结构化输出 (Structured Output)",
+    "d": "要求或强制模型按 JSON Schema 等格式输出。"
+   },
+   {
+    "t": "提示注入 (Prompt Injection)",
+    "d": "外部内容中夹带指令，劫持模型行为的攻击方式。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "结构化提示词模板",
+   "src": "<role>你是资深前端代码审查员。</role>\n\n<task>\n审查下面的 React 组件，找出 bug 和可访问性问题。\n只报告确定的问题，不确定的标注「待确认」。\n</task>\n\n<context>\n项目使用 React 18 + TypeScript，样式用 Tailwind。\n</context>\n\n<code>\n{{在这里粘贴组件代码}}\n</code>\n\n<output_format>\n按 JSON 数组输出，每项包含：\n- line: 行号\n- severity: high | medium | low\n- issue: 问题描述\n- fix: 修改建议\n</output_format>",
+   "note": "用 XML 标签分隔角色、任务、资料和格式，是 Anthropic 文档推荐的写法，便于模型区分指令与数据。"
+  },
+  "table": {
+   "title": "提示技巧与适用场景",
+   "head": [
+    "技巧",
+    "作用",
+    "适用场景"
+   ],
+   "rows": [
+    [
+     "明确角色与受众",
+     "统一语气和专业深度",
+     "写作、解释、审查"
+    ],
+    [
+     "少样本示例",
+     "锁定格式与判断标准",
+     "分类、抽取、改写"
+    ],
+    [
+     "分步推理",
+     "提升复杂推理准确率",
+     "数学、调试、规划"
+    ],
+    [
+     "标签分隔资料",
+     "防止资料被当成指令",
+     "长文档、用户输入"
+    ],
+    [
+     "指定输出结构",
+     "便于程序解析",
+     "接入代码的任何场景"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "简短指令",
+    "pros": "省 Token、快",
+    "cons": "模型自由发挥多，结果不稳定",
+    "when": "简单、容错高的任务"
+   },
+   {
+    "opt": "详细指令 + 示例",
+    "pros": "稳定、可控",
+    "cons": "Token 成本高，示例可能过拟合",
+    "when": "生产环境、格式严格"
+   },
+   {
+    "opt": "拆成多步提示链",
+    "pros": "每步简单可测，易定位问题",
+    "cons": "调用次数和延迟增加",
+    "when": "复杂流程、需中间校验"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把用户输入直接拼进指令区",
+    "fix": "用标签包裹外部内容，并声明其中的指令不应执行"
+   },
+   {
+    "bad": "只说「不要做 X」",
+    "fix": "同时说明应该怎么做，正向描述比禁令更有效"
+   },
+   {
+    "bad": "凭感觉改提示词，没有对比",
+    "fix": "建立固定样本集，每次改动跑一遍对比结果"
+   },
+   {
+    "bad": "示例全是同一类，模型照抄",
+    "fix": "示例覆盖不同情况，包括边界与反例"
+   }
+  ],
+  "checklist": [
+   "任务目标和成功标准写清楚",
+   "外部数据与指令有明确分隔",
+   "输出格式可被程序解析并校验",
+   "提示词纳入版本管理",
+   "有回归样本集验证改动"
+  ],
+  "interview": [
+   {
+    "q": "提示工程会被更强的模型淘汰吗？",
+    "a": "技巧类花招会弱化，但核心不会：清楚表达需求、提供正确上下文、定义输出契约、做评测。模型越强，瓶颈越转向「给什么上下文」，即上下文工程（Context Engineering），本质仍是提示设计。"
+   },
+   {
+    "q": "怎样让模型稳定输出合法 JSON？",
+    "a": "优先用供应商的结构化输出或工具调用能力（按 Schema 约束）；其次在提示中给 Schema 和示例、低 temperature；最后在代码侧用 JSON 解析加 Schema 校验，失败时带错误信息重试。"
+   },
+   {
+    "q": "如何防御提示注入？",
+    "a": "无法单靠提示完全防住。分层做：外部内容用标签隔离并声明为数据；最小化工具权限；敏感操作需人工确认；对输出做过滤；把系统指令与用户数据分在不同角色。Agent 读网页、读邮件时风险最高。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Anthropic Prompt engineering overview",
+    "url": "https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview"
+   },
+   {
+    "title": "OpenAI Prompt engineering 指南",
+    "url": "https://platform.openai.com/docs/guides/prompt-engineering"
+   },
+   {
+    "title": "Chain-of-Thought Prompting（arXiv）",
+    "url": "https://arxiv.org/abs/2201.11903"
+   }
+  ]
+ },
+ {
+  "slug": "system-prompt",
+  "def": "系统提示词（System Prompt）是在对话开始前设定、通常对终端用户不可见的高优先级指令，用来定义模型的角色、行为边界、输出风格和可用工具规则。它在 API 中以独立的 system 字段或 system 角色传入，是产品方塑造模型行为的主要手段，每次请求都会随之发送。",
+  "how": [
+   "传入：API 调用时通过 system 参数（Anthropic）或 system/developer 角色消息（OpenAI）传入。",
+   "置顶：系统提示位于上下文最前端，模型训练时被教导更优先遵守这一层指令。",
+   "常驻：每轮请求都会重复发送，因此会持续占用 Token，可配合提示缓存降低成本。",
+   "分层：产品方系统提示 > 用户消息 > 工具返回内容，冲突时模型通常倾向更高层。",
+   "组合：Agent 框架常把角色、工具说明、项目规则（如 CLAUDE.md）拼装进系统提示。"
+  ],
+  "terms": [
+   {
+    "t": "指令层级 (Instruction Hierarchy)",
+    "d": "系统、开发者、用户、工具内容的优先级顺序。"
+   },
+   {
+    "t": "Developer Message",
+    "d": "OpenAI 新接口中替代 system 的开发者指令角色。"
+   },
+   {
+    "t": "护栏 (Guardrails)",
+    "d": "限制模型能做什么、不能说什么的规则与检测机制。"
+   },
+   {
+    "t": "提示泄露 (Prompt Leaking)",
+    "d": "用户诱导模型复述系统提示，暴露内部规则。"
+   },
+   {
+    "t": "项目记忆文件 (CLAUDE.md / AGENTS.md)",
+    "d": "编码 Agent 自动读入的项目级说明，作用类似系统提示。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "设置系统提示",
+   "src": "import anthropic\n\nclient = anthropic.Anthropic()\n\nSYSTEM = \"\"\"你是某 SaaS 产品的技术支持助手。\n- 只回答与本产品相关的问题，其他问题礼貌拒绝。\n- 不确定时说「我需要确认」，不要编造功能。\n- 回答用简体中文，先给结论，再给步骤。\"\"\"\n\nresp = client.messages.create(\n    model=\"claude-sonnet-4-5\",\n    max_tokens=400,\n    system=SYSTEM,               # Anthropic：独立的 system 参数\n    messages=[{\"role\": \"user\", \"content\": \"怎么导出数据？\"}],\n)\nprint(resp.content[0].text)\n\n# OpenAI Chat Completions 写法：\n# messages=[{\"role\": \"system\", \"content\": SYSTEM},\n#           {\"role\": \"user\", \"content\": \"怎么导出数据？\"}]",
+   "note": "两家接口放置位置不同，但作用一致：在用户消息之前设定角色和规则。"
+  },
+  "table": {
+   "title": "系统提示应包含什么",
+   "head": [
+    "模块",
+    "内容",
+    "示例"
+   ],
+   "rows": [
+    [
+     "角色与目标",
+     "身份、服务对象、核心任务",
+     "你是代码审查助手"
+    ],
+    [
+     "行为边界",
+     "能做与不能做",
+     "不执行删除类命令"
+    ],
+    [
+     "输出规范",
+     "语言、格式、长度",
+     "先结论后步骤，中文"
+    ],
+    [
+     "工具规则",
+     "何时调用哪个工具",
+     "查订单必须调用 get_order"
+    ],
+    [
+     "不确定处理",
+     "缺信息时怎么办",
+     "先追问，不要猜"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "规则写在系统提示",
+    "pros": "每轮生效，优先级高",
+    "cons": "常驻占 Token，过长会稀释重点",
+    "when": "全局稳定的角色和规则"
+   },
+   {
+    "opt": "规则写在用户消息",
+    "pros": "灵活、按需注入",
+    "cons": "优先级低，可能被后续对话冲淡",
+    "when": "单次任务的临时要求"
+   },
+   {
+    "opt": "规则用代码强制",
+    "pros": "确定性，不依赖模型自觉",
+    "cons": "开发成本高，覆盖面有限",
+    "when": "安全、权限、合规类硬约束"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把密钥或内部机密写进系统提示",
+    "fix": "系统提示可能被诱导泄露，机密留在后端代码里"
+   },
+   {
+    "bad": "系统提示越写越长，规则互相矛盾",
+    "fix": "定期精简，按优先级排序，删掉过时规则"
+   },
+   {
+    "bad": "把安全边界完全交给系统提示",
+    "fix": "权限和危险操作在工具层用代码拦截"
+   },
+   {
+    "bad": "改了系统提示不做回归",
+    "fix": "像改代码一样版本化并跑评测样本"
+   }
+  ],
+  "checklist": [
+   "角色、边界、格式、不确定处理都已写明",
+   "不含密钥、内部 URL 等敏感信息",
+   "规则间无冲突，重点靠前",
+   "纳入版本控制并有变更记录",
+   "硬约束另有代码层兜底"
+  ],
+  "interview": [
+   {
+    "q": "系统提示能防止越狱吗？",
+    "a": "只能提高门槛，不能保证。模型对指令层级的遵守是概率性的。可靠的做法是纵深防御：系统提示声明边界、输入输出检测、工具最小权限、敏感操作人工确认，把真正不可越过的边界放在代码层。"
+   },
+   {
+    "q": "CLAUDE.md 和系统提示是什么关系？",
+    "a": "Claude Code 会在会话开始时读取项目中的 CLAUDE.md 并注入上下文，作用类似项目级系统提示：记录构建命令、代码规范、目录约定。区别是它由仓库维护，团队共享，随代码一起版本化。Cursor 规则文件、AGENTS.md 思路相同。"
+   },
+   {
+    "q": "系统提示很长，如何控制成本？",
+    "a": "使用提示缓存：把系统提示和工具定义等稳定前缀放在最前并标记缓存，后续命中时输入成本和延迟显著下降。同时精简措辞、把很少用到的规则改为按需检索注入。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Anthropic: Giving Claude a role with a system prompt",
+    "url": "https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/system-prompts"
+   },
+   {
+    "title": "Claude Code: Manage Claude's memory（CLAUDE.md）",
+    "url": "https://docs.anthropic.com/en/docs/claude-code/memory"
+   },
+   {
+    "title": "The Instruction Hierarchy（arXiv）",
+    "url": "https://arxiv.org/abs/2404.13208"
+   }
+  ]
+ },
+ {
+  "slug": "hallucination",
+  "def": "幻觉（Hallucination）指模型生成流畅、自信但与事实或给定资料不符的内容，如编造论文、API、函数参数或引用。根源在于 LLM 以「生成合理续写」为目标而非检索事实，且缺乏可靠的不确定性表达。它是 LLM 应用最核心的可靠性风险，需在系统设计层面缓解。",
+  "how": [
+   "知识缺口：训练数据未覆盖或已过时，模型仍按语言模式补全出看似合理的答案。",
+   "参数化记忆有损：知识被压缩在权重里，相近概念容易混淆，如把两个库的 API 混用。",
+   "对齐偏差：训练中「给出答案」常被奖励，「不知道」较少被奖励，导致倾向作答。",
+   "解码放大：较高 temperature 增加选中低概率错误 Token 的机会，一步错后续自洽地错。",
+   "上下文不忠实：即使提供了资料，模型也可能忽略或曲解，称为忠实度（Faithfulness）问题。"
+  ],
+  "terms": [
+   {
+    "t": "事实性 (Factuality)",
+    "d": "输出是否与真实世界知识一致。"
+   },
+   {
+    "t": "忠实度 (Faithfulness)",
+    "d": "输出是否忠于提供的资料，而非自行添加内容。"
+   },
+   {
+    "t": "接地 (Grounding)",
+    "d": "让回答以检索资料或工具结果为依据，并可追溯来源。"
+   },
+   {
+    "t": "包幻觉 (Package Hallucination)",
+    "d": "模型推荐不存在的软件包名，可被攻击者抢注投毒。"
+   },
+   {
+    "t": "校准 (Calibration)",
+    "d": "模型表达的置信度与实际正确率是否匹配。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "核实 AI 给的依赖",
+   "src": "# AI 建议安装某个包时，先核实它真实存在、来源可信\n\n# 1. 查 PyPI 上是否存在及其元信息（不存在会返回 404）\ncurl -s https://pypi.org/pypi/requests/json | python3 -c \\\n  \"import sys,json; i=json.load(sys.stdin)['info']; print(i['name'], i['version'], i['home_page'] or i['project_urls'])\"\n\n# 2. 查 npm 包信息与维护者\nnpm view express name version repository.url maintainers\n\n# 3. 验证 AI 声称的函数/参数真的存在：直接查看帮助\npython3 -c \"import json; help(json.dumps)\" | head -20\n\n# 4. 安装后跑一遍再信，而不是只看 AI 的解释\npython3 -c \"import requests; print(requests.__version__)\"",
+   "note": "防代码幻觉的底线：包名、API、参数都以官方注册表和实际运行结果为准。"
+  },
+  "table": {
+   "title": "幻觉缓解手段对比",
+   "head": [
+    "手段",
+    "作用层",
+    "效果",
+    "成本"
+   ],
+   "rows": [
+    [
+     "检索增强 RAG",
+     "输入",
+     "补充知识，可给出处",
+     "需建索引"
+    ],
+    [
+     "工具调用",
+     "输入",
+     "实时数据、计算交给工具",
+     "需开发工具"
+    ],
+    [
+     "要求引用并校验",
+     "输出",
+     "可追溯、可自动核对",
+     "需后处理"
+    ],
+    [
+     "测试/编译/运行",
+     "输出",
+     "代码类幻觉立刻暴露",
+     "需测试环境"
+    ],
+    [
+     "降低 temperature",
+     "解码",
+     "减少随机错误，不治本",
+     "几乎为零"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "允许模型回答「不知道」",
+    "pros": "减少编造",
+    "cons": "回答率下降，用户可能不满",
+    "when": "医疗、法律、金融等高风险场景"
+   },
+   {
+    "opt": "强制基于检索资料作答",
+    "pros": "可溯源，忠实度高",
+    "cons": "资料缺失时无法回答",
+    "when": "企业知识库、客服"
+   },
+   {
+    "opt": "多次采样一致性检查",
+    "pros": "能发现不稳定答案",
+    "cons": "成本成倍增加",
+    "when": "关键判断、离线批处理"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "直接 pip/npm install AI 推荐的陌生包名",
+    "fix": "先在官方注册表核实存在、下载量和维护者"
+   },
+   {
+    "bad": "AI 给了引用链接就当已核实",
+    "fix": "实际打开链接，确认内容支持该说法"
+   },
+   {
+    "bad": "以为接入 RAG 就不会幻觉",
+    "fix": "仍需评估忠实度，并要求引用原文片段"
+   },
+   {
+    "bad": "让 AI 自己检查自己并全盘相信",
+    "fix": "用外部信号校验：测试、编译器、检索、人工"
+   }
+  ],
+  "checklist": [
+   "关键事实有来源且可点击核对",
+   "生成代码经过运行或测试验证",
+   "新依赖已在官方注册表核实",
+   "提示中允许并鼓励说「不确定」",
+   "有幻觉率相关的评测样本"
+  ],
+  "interview": [
+   {
+    "q": "幻觉能被彻底消除吗？",
+    "a": "目前不能。生成式模型的概率本质决定了始终有出错概率。工程目标是降低频率并让错误可被发现：接地到检索或工具、结构化输出加校验、关键路径人工复核、对用户展示来源与置信提示。"
+   },
+   {
+    "q": "编码场景如何系统性对抗幻觉？",
+    "a": "让 Agent 在真实环境中闭环：读实际源码和文档而非凭记忆、运行类型检查和测试、执行代码看结果；依赖版本以锁文件为准；为 Agent 提供文档检索工具（如 MCP 文档服务）；评审时重点核对新增依赖和外部 API 调用。"
+   },
+   {
+    "q": "如何度量幻觉？",
+    "a": "按任务定义：问答类用标注集算事实错误率；RAG 类测忠实度，检查每句话能否在检索内容中找到支撑；代码类看编译通过率和测试通过率。可用 LLM 评审辅助，但需抽样人工校准。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Wikipedia: Hallucination (artificial intelligence)",
+    "url": "https://en.wikipedia.org/wiki/Hallucination_(artificial_intelligence)"
+   },
+   {
+    "title": "Anthropic: Reduce hallucinations",
+    "url": "https://docs.anthropic.com/en/docs/test-and-evaluate/strengthen-guardrails/reduce-hallucinations"
+   },
+   {
+    "title": "Survey of Hallucination in Natural Language Generation（arXiv）",
+    "url": "https://arxiv.org/abs/2202.03629"
+   }
+  ]
+ },
+ {
+  "slug": "temperature",
+  "def": "温度（Temperature）是 LLM 解码阶段的采样参数，用于缩放输出概率分布的「尖锐程度」：低温让高概率 Token 更占优，输出更确定；高温拉平分布，输出更多样。它不改变模型知识，只改变选词的随机性，常与 top_p、top_k 一起控制生成风格。",
+  "how": [
+   "模型为词表中每个 Token 输出一个原始分数（logit）。",
+   "把每个 logit 除以温度 T，再做 softmax 得到概率分布。",
+   "T < 1 放大分数差距，分布变尖；T > 1 缩小差距，分布变平。",
+   "T 趋近 0 时近似贪心解码，总选最高概率 Token，但多数服务不保证完全确定。",
+   "可再叠加 top_p（核采样）或 top_k 截掉长尾，然后按概率随机抽取下一个 Token。"
+  ],
+  "terms": [
+   {
+    "t": "Logit",
+    "d": "softmax 之前的原始分数，温度作用在这一层。"
+   },
+   {
+    "t": "Softmax",
+    "d": "把一组分数转换成总和为 1 的概率分布的函数。"
+   },
+   {
+    "t": "Top-p (Nucleus Sampling)",
+    "d": "只在累计概率达到 p 的最小 Token 集合里采样。"
+   },
+   {
+    "t": "Top-k",
+    "d": "只在概率最高的 k 个 Token 中采样。"
+   },
+   {
+    "t": "贪心解码 (Greedy Decoding)",
+    "d": "每步直接取概率最高的 Token，不做随机采样。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "温度如何改变分布",
+   "src": "# pip install numpy ；演示温度对 softmax 分布的影响\nimport numpy as np\n\nlogits = np.array([4.0, 3.0, 1.0, 0.5])   # 4 个候选 Token 的原始分数\ntokens = [\"的\", \"了\", \"吧\", \"呢\"]\n\ndef softmax_t(x, t):\n    z = x / t\n    z = z - z.max()                # 数值稳定\n    p = np.exp(z)\n    return p / p.sum()\n\nfor t in [0.2, 0.7, 1.0, 1.5]:\n    p = softmax_t(logits, t)\n    print(f\"T={t}: \", {k: round(float(v), 3) for k, v in zip(tokens, p)})\n\n# 输出可见：T 越低，第一名概率越接近 1；T 越高，分布越平均",
+   "note": "温度只是对 logit 的缩放，跑一下就能直观看到分布尖锐度的变化。"
+  },
+  "table": {
+   "title": "主流 API 采样参数",
+   "head": [
+    "参数",
+    "Anthropic",
+    "OpenAI Chat"
+   ],
+   "rows": [
+    [
+     "temperature 范围",
+     "0–1，默认 1",
+     "0–2，默认 1"
+    ],
+    [
+     "top_p",
+     "支持",
+     "支持"
+    ],
+    [
+     "top_k",
+     "支持",
+     "不提供"
+    ],
+    [
+     "推理类模型",
+     "开启扩展思考时有限制",
+     "部分推理模型不支持调温度"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "低温（约 0–0.3）",
+    "pros": "稳定、可复现性更好",
+    "cons": "措辞单调，可能陷入重复",
+    "when": "抽取、分类、代码、结构化输出"
+   },
+   {
+    "opt": "中温（约 0.5–0.8）",
+    "pros": "兼顾准确与自然",
+    "cons": "偶有发散",
+    "when": "对话、解释、一般写作"
+   },
+   {
+    "opt": "高温（≥1）",
+    "pros": "多样、有创意",
+    "cons": "更易出错和跑题",
+    "when": "头脑风暴、多候选生成"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "以为 temperature=0 就完全可复现",
+    "fix": "服务端并行计算等因素仍可能有差异，需要缓存或记录输出"
+   },
+   {
+    "bad": "同时大幅调 temperature 和 top_p",
+    "fix": "官方通常建议只调其中一个，便于定位效果"
+   },
+   {
+    "bad": "用高温度「治」回答单调",
+    "fix": "先改提示词和示例，温度只做微调"
+   }
+  ],
+  "checklist": [
+   "按任务类型设定默认温度",
+   "确认所用模型是否支持该参数",
+   "温度值写入配置并记录在日志",
+   "评测时固定温度对比提示词效果",
+   "需要多样性时用多次采样而非极高温"
+  ],
+  "interview": [
+   {
+    "q": "温度为 0 时为什么输出仍可能变化？",
+    "a": "服务端推理涉及浮点运算顺序、批处理和硬件并行，相同输入的 logit 可能有微小差异，平局或近似平局时会选到不同 Token，后续自回归放大差异。此外部分接口在 0 时并非严格贪心。"
+   },
+   {
+    "q": "temperature 和 top_p 有何区别？",
+    "a": "温度改变整个分布的形状（缩放 logit）；top_p 不改形状，只截掉累计概率之外的长尾再归一化采样。前者控制「多随机」，后者控制「候选池多大」，通常二选一调整。"
+   },
+   {
+    "q": "代码生成该用什么温度？",
+    "a": "一般偏低以减少语法和逻辑错误；但若用「生成多个候选再用测试筛选」的策略，适度提高温度可增加候选多样性、提高至少一个通过的概率。具体以评测结果为准。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Anthropic Messages API（temperature 参数）",
+    "url": "https://docs.anthropic.com/en/api/messages"
+   },
+   {
+    "title": "Wikipedia: Softmax function（含温度参数）",
+    "url": "https://en.wikipedia.org/wiki/Softmax_function"
+   },
+   {
+    "title": "The Curious Case of Neural Text Degeneration（Top-p 论文）",
+    "url": "https://arxiv.org/abs/1904.09751"
+   }
+  ]
+ },
+ {
+  "slug": "vibe-coding",
+  "def": "氛围编程（Vibe Coding）由 Andrej Karpathy 在 2025 年初提出，指用自然语言描述意图、让 AI 生成并修改代码，开发者主要看运行效果而不逐行审读代码的开发方式。它极大降低了原型门槛，但把代码质量、安全和可维护性风险转移到了验证环节，适合探索期而非直接用于关键生产系统。",
+  "how": [
+   "描述意图：用自然语言说明要做什么功能、界面长什么样、给谁用、做到什么程度算完成。",
+   "AI 生成：编码 Agent 创建文件、安装依赖、写出可运行版本。",
+   "运行观察：开发者运行应用，以界面和行为是否符合预期作为主要判断。",
+   "反馈迭代：把报错、截图或「这里不对」直接反馈给 AI 继续修改。",
+   "收敛固化：效果满意后，补测试、审查关键代码、做安全检查再上线。"
+  ],
+  "terms": [
+   {
+    "t": "AI 辅助编程 (AI-assisted Coding)",
+    "d": "开发者审读并理解 AI 代码，与纯 vibe coding 相对。"
+   },
+   {
+    "t": "规格驱动 (Spec-driven)",
+    "d": "先写清需求文档和验收标准，再让 AI 按规格实现。"
+   },
+   {
+    "t": "检查点 (Checkpoint)",
+    "d": "可回滚的状态快照，如 Git 提交或工具内置的回退点。"
+   },
+   {
+    "t": "技术债 (Technical Debt)",
+    "d": "为求快而留下的设计与质量问题，后期要付出修复成本。"
+   },
+   {
+    "t": "人在回路 (Human-in-the-loop)",
+    "d": "关键步骤由人确认或审查，而非完全自动。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "给氛围编程加安全网",
+   "src": "# 每次让 AI 大改之前：开分支 + 存档，随时可回退\ngit switch -c feature/ai-login        # 新建分支做实验\ngit add -A && git commit -m \"checkpoint: before AI changes\"\n\n# 让 Claude Code 以非交互模式执行一个明确任务（-p 即 print 模式）\nclaude -p \"给登录表单加邮箱格式校验，并补充对应单元测试\"\n\n# 看清 AI 改了什么，而不是只看界面\ngit diff --stat\ngit diff\n\n# 跑测试与类型检查，作为客观验收（按你的项目替换命令）\nnpm test && npx tsc --noEmit\n\n# 不满意就整体撤销\ngit restore . && git clean -fd",
+   "note": "版本控制 + 自动化测试是氛围编程从「玩具」走向「可交付」的最低配置。"
+  },
+  "table": {
+   "title": "氛围编程的适用边界",
+   "head": [
+    "场景",
+    "适合程度",
+    "前提条件"
+   ],
+   "rows": [
+    [
+     "个人原型 / Demo",
+     "高",
+     "能随时推倒重来"
+    ],
+    [
+     "内部小工具",
+     "中高",
+     "数据不敏感，有备份"
+    ],
+    [
+     "对外产品 MVP",
+     "中",
+     "上线前人工审查安全与数据处理"
+    ],
+    [
+     "支付、鉴权、医疗等",
+     "低",
+     "必须有专业审查与完整测试"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "纯氛围编程",
+    "pros": "最快出结果，门槛最低",
+    "cons": "代码不可控，安全漏洞难发现",
+    "when": "一次性原型、学习探索"
+   },
+   {
+    "opt": "规格 + AI 实现 + 审查",
+    "pros": "质量可控，可维护",
+    "cons": "需要写需求和读代码",
+    "when": "要长期维护或对外上线"
+   },
+   {
+    "opt": "测试先行再让 AI 实现",
+    "pros": "有客观验收标准",
+    "cons": "写测试需要一定能力",
+    "when": "逻辑复杂、回归风险高"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "不用 Git，AI 改坏后无法回到能用的版本",
+    "fix": "每次大改前提交一次，改坏直接回退"
+   },
+   {
+    "bad": "把含密钥、无鉴权的原型直接公开上线",
+    "fix": "上线前检查密钥、鉴权、输入校验与数据库权限"
+   },
+   {
+    "bad": "同一会话无限追加需求，代码越来越乱",
+    "fix": "阶段性重开会话，带上清晰的现状说明和下一步目标"
+   },
+   {
+    "bad": "只看界面效果，不看依赖和权限变更",
+    "fix": "审阅 git diff，重点看新增依赖、配置和网络请求"
+   }
+  ],
+  "checklist": [
+   "项目在 Git 下，有可回退的提交",
+   "密钥不在代码里，.env 已被忽略",
+   "关键流程有自动化测试",
+   "新增依赖都核实过真实可信",
+   "上线前做过鉴权与输入校验检查"
+  ],
+  "interview": [
+   {
+    "q": "Vibe coding 和 AI 辅助编程的本质区别？",
+    "a": "在于是否理解并为代码负责。Vibe coding 以运行效果为准，基本不读代码；AI 辅助编程中开发者审查、理解并能解释 AI 写的每一部分。前者适合探索，后者是生产开发的合格标准。"
+   },
+   {
+    "q": "团队引入氛围编程，评审应关注什么？",
+    "a": "关注不可见风险：鉴权与权限、密钥处理、输入校验、数据库访问规则、依赖来源与许可证、错误处理与日志；要求有测试覆盖关键路径，并限制原型代码直接进入主干。"
+   },
+   {
+    "q": "如何让 AI 产出更可维护？",
+    "a": "给出项目规范文件（如 CLAUDE.md）约定结构与风格；先让 AI 出方案再实现；小步提交、每步可验证；要求补测试；定期让 AI 重构并解释设计，避免一次生成巨型文件。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Wikipedia: Vibe coding",
+    "url": "https://en.wikipedia.org/wiki/Vibe_coding"
+   },
+   {
+    "title": "Claude Code: Common workflows",
+    "url": "https://docs.anthropic.com/en/docs/claude-code/common-workflows"
+   },
+   {
+    "title": "Simon Willison: Not all AI-assisted programming is vibe coding",
+    "url": "https://simonwillison.net/2025/Mar/19/vibe-coding/"
+   }
+  ]
+ },
+ {
+  "slug": "ai-coding-assistant",
+  "def": "AI 编程助手（AI Coding Assistant）是集成 LLM 的开发工具，能力从行内补全、对话扩展到读写多文件、执行命令的自主 Agent。代表形态有 IDE 插件（GitHub Copilot）、AI 原生编辑器（Cursor）和终端 Agent（Claude Code），位于开发者与模型之间的工具层。",
+  "how": [
+   "收集上下文：读取当前文件、打开的标签页、项目索引或按需搜索代码库。",
+   "组装提示：把代码片段、项目规则文件、用户指令和工具定义拼成模型请求。",
+   "生成建议：补全模式返回行内代码；Agent 模式返回文件编辑与工具调用。",
+   "执行与权限：Agent 在用户授权下编辑文件、运行终端命令、调用 MCP 工具。",
+   "反馈闭环：读取编译、测试或运行结果，继续修改直到任务完成或需要人确认。"
+  ],
+  "terms": [
+   {
+    "t": "行内补全 (Inline Completion)",
+    "d": "根据光标前后代码实时预测接下来的代码。"
+   },
+   {
+    "t": "代码库索引 (Codebase Indexing)",
+    "d": "对项目建立检索索引，便于按语义找到相关代码。"
+   },
+   {
+    "t": "MCP (Model Context Protocol)",
+    "d": "让 AI 工具以统一协议连接外部数据源和工具的开放协议。"
+   },
+   {
+    "t": "规则文件 (Rules)",
+    "d": "CLAUDE.md、.cursor/rules 等，向助手注入项目约定。"
+   },
+   {
+    "t": "权限模式 (Permission Mode)",
+    "d": "控制 Agent 执行编辑和命令前是否需要用户批准。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "CLAUDE.md 项目说明示例",
+   "src": "# 项目说明（Claude Code 启动时自动读取）\n\n## 常用命令\n- 安装依赖：pnpm install\n- 本地开发：pnpm dev（端口 3000）\n- 测试：pnpm test\n- 类型检查：pnpm typecheck\n\n## 代码规范\n- TypeScript 严格模式，禁止 any\n- 组件放在 src/components，一个文件一个组件\n- 样式只用 Tailwind，不新增 CSS 文件\n\n## 约束\n- 不要修改 src/generated/ 下的文件（自动生成）\n- 新增依赖前先说明理由\n- 每次改完运行 pnpm typecheck 和 pnpm test",
+   "note": "规则文件把隐性约定写成显性上下文，是提升助手输出一致性的最低成本手段。"
+  },
+  "table": {
+   "title": "三种产品形态对比",
+   "head": [
+    "形态",
+    "代表",
+    "强项",
+    "注意"
+   ],
+   "rows": [
+    [
+     "IDE 插件",
+     "GitHub Copilot",
+     "补全快、融入现有编辑器",
+     "复杂任务需切换 Agent 模式"
+    ],
+    [
+     "AI 原生编辑器",
+     "Cursor、Windsurf、Trae",
+     "编辑体验与 Agent 深度集成",
+     "需迁移编辑器"
+    ],
+    [
+     "终端 Agent",
+     "Claude Code、Codex CLI",
+     "可脚本化，擅长多文件任务",
+     "需熟悉命令行与权限设置"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "只用补全",
+    "pros": "低打扰、可控",
+    "cons": "提效有限，难做跨文件改动",
+    "when": "熟练开发者写熟悉代码"
+   },
+   {
+    "opt": "对话式问答",
+    "pros": "解释、方案讨论方便",
+    "cons": "需手动复制粘贴落地",
+    "when": "学习、调研、设计讨论"
+   },
+   {
+    "opt": "自主 Agent",
+    "pros": "能端到端完成任务",
+    "cons": "改动面大，需审查和权限管理",
+    "when": "明确的功能开发、重构、修 bug"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "给 Agent 全部自动批准权限，在主分支上直接跑",
+    "fix": "在独立分支或容器里运行，危险命令保留人工确认"
+   },
+   {
+    "bad": "不写规则文件，每次口头重复项目约定",
+    "fix": "把命令、规范、禁区写进 CLAUDE.md 或规则文件"
+   },
+   {
+    "bad": "接受 Agent 改动不看 diff",
+    "fix": "逐文件审阅变更，重点关注删除、配置和依赖变化"
+   }
+  ],
+  "checklist": [
+   "项目有规则文件说明命令与规范",
+   "Agent 权限按风险分级配置",
+   "在分支或隔离环境中运行 Agent",
+   "改动经测试与类型检查验证",
+   "确认代码是否允许发送到第三方模型"
+  ],
+  "interview": [
+   {
+    "q": "补全和 Agent 在技术上有何不同？",
+    "a": "补全是单次、低延迟预测，通常用较小或专门优化的模型，以光标附近代码为上下文；Agent 是多轮循环，模型通过工具调用读文件、改文件、跑命令，并根据结果继续决策，上下文管理和权限控制更复杂。"
+   },
+   {
+    "q": "企业引入编程助手的主要风险？",
+    "a": "代码与数据外发合规、生成代码的许可证与安全漏洞、Agent 误执行破坏性命令、密钥泄露到上下文、过度依赖导致质量下降。对策：私有化或零数据保留方案、权限策略、代码审查、密钥扫描、使用规范培训。"
+   },
+   {
+    "q": "MCP 解决了编程助手的什么问题？",
+    "a": "此前每个工具要为每个数据源单独做集成。MCP 定义统一的客户端—服务器协议，数据库、文档、工单系统等只需实现一次 MCP 服务器，就能被 Claude Code、Cursor 等支持 MCP 的客户端调用。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Claude Code overview",
+    "url": "https://docs.anthropic.com/en/docs/claude-code/overview"
+   },
+   {
+    "title": "GitHub Copilot 文档",
+    "url": "https://docs.github.com/en/copilot"
+   },
+   {
+    "title": "Model Context Protocol 官网",
+    "url": "https://modelcontextprotocol.io/"
+   }
+  ]
+ },
+ {
+  "slug": "chat-vs-agent",
+  "def": "聊天模式（Chat）是「一问一答」：模型只生成文本，由人决定是否采纳和执行。智能体模式（Agent）是让模型在循环中自主调用工具（读写文件、运行命令、查询 API），根据结果继续决策直到完成目标。两者底层可能是同一个模型，差别在于是否有工具、循环和执行权限。",
+  "how": [
+   "定义工具：开发者向模型声明可用工具的名称、描述和参数 Schema。",
+   "模型决策：模型根据任务判断是直接回答，还是输出一个结构化的工具调用请求。",
+   "执行工具：由应用程序（而非模型本身）解析参数并真正执行该调用，拿到执行结果。",
+   "回传结果：把工具结果作为新消息追加到上下文，带着完整历史再次请求模型。",
+   "循环终止：重复以上步骤，直到模型给出最终答复、达到步数上限或需要人确认。"
+  ],
+  "terms": [
+   {
+    "t": "工具调用 (Tool Use / Function Calling)",
+    "d": "模型输出结构化调用请求，由应用执行并回传结果。"
+   },
+   {
+    "t": "Agent 循环 (Agent Loop)",
+    "d": "「思考—调用工具—观察结果」不断重复的控制流程。"
+   },
+   {
+    "t": "ReAct",
+    "d": "交替生成推理与行动的 Agent 范式，出自 2022 年论文。"
+   },
+   {
+    "t": "人工确认 (Human Approval)",
+    "d": "高风险工具执行前暂停，等待用户批准。"
+   },
+   {
+    "t": "子 Agent (Subagent)",
+    "d": "由主 Agent 派出的独立上下文执行子任务的 Agent。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "最小 Agent 循环",
+   "src": "import anthropic, subprocess\nclient = anthropic.Anthropic()\ntools = [{\"name\": \"run_bash\", \"description\": \"在当前目录执行一条 shell 命令\",\n          \"input_schema\": {\"type\": \"object\",\n                           \"properties\": {\"cmd\": {\"type\": \"string\"}},\n                           \"required\": [\"cmd\"]}}]\nmessages = [{\"role\": \"user\", \"content\": \"统计当前目录下有多少个 .py 文件\"}]\n\nfor _ in range(5):                       # 步数上限，防止死循环\n    resp = client.messages.create(model=\"claude-sonnet-4-5\", max_tokens=1024,\n                                  tools=tools, messages=messages)\n    messages.append({\"role\": \"assistant\", \"content\": resp.content})\n    if resp.stop_reason != \"tool_use\":   # 不再调用工具 = 任务结束\n        print(resp.content[-1].text); break\n    results = []\n    for block in resp.content:\n        if block.type == \"tool_use\":     # 真实执行由程序完成（演示用，生产需沙箱与确认）\n            out = subprocess.run(block.input[\"cmd\"], shell=True,\n                                 capture_output=True, text=True).stdout\n            results.append({\"type\": \"tool_result\",\n                            \"tool_use_id\": block.id, \"content\": out})\n    messages.append({\"role\": \"user\", \"content\": results})",
+   "note": "Agent 的本质就是这个循环：模型提议工具调用，程序执行并回传，直到模型不再调用工具。"
+  },
+  "table": {
+   "title": "聊天与 Agent 工程差异",
+   "head": [
+    "维度",
+    "聊天",
+    "Agent"
+   ],
+   "rows": [
+    [
+     "每次任务调用次数",
+     "通常 1 次",
+     "多次，随步骤增长"
+    ],
+    [
+     "副作用",
+     "无，只产出文本",
+     "会改文件、发请求、执行命令"
+    ],
+    [
+     "失败模式",
+     "答错",
+     "错误累积、死循环、误操作"
+    ],
+    [
+     "必需的工程配套",
+     "提示词与输出校验",
+     "权限、沙箱、步数上限、日志审计"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "聊天模式",
+    "pros": "便宜、可控、无副作用",
+    "cons": "需要人手动落地",
+    "when": "提问、方案讨论、学习"
+   },
+   {
+    "opt": "受控 Agent（逐步确认）",
+    "pros": "能执行又能把关",
+    "cons": "需频繁人工介入",
+    "when": "陌生代码库、敏感操作"
+   },
+   {
+    "opt": "自主 Agent（自动批准）",
+    "pros": "效率最高",
+    "cons": "误操作风险和成本最高",
+    "when": "隔离环境、目标明确、可回滚"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "Agent 循环不设步数或预算上限",
+    "fix": "设置最大轮数、Token 预算和超时，超限即停"
+   },
+   {
+    "bad": "工具直接拿模型参数执行 shell，无沙箱",
+    "fix": "在容器或受限环境执行，危险命令走白名单或人工确认"
+   },
+   {
+    "bad": "工具返回内容未截断，迅速撑爆上下文",
+    "fix": "截断或摘要大输出，只回传关键部分"
+   },
+   {
+    "bad": "简单问答也上 Agent 架构",
+    "fix": "能一次调用解决的不要引入循环"
+   }
+  ],
+  "checklist": [
+   "工具描述清晰、参数有 Schema 校验",
+   "有最大步数、超时与成本上限",
+   "破坏性操作需人工确认",
+   "执行环境隔离且可回滚",
+   "每步工具调用有日志可审计"
+  ],
+  "interview": [
+   {
+    "q": "工具调用时，模型真的执行了代码吗？",
+    "a": "没有。模型只输出一个结构化请求（工具名和参数），由应用程序解析并执行，再把结果作为消息回传。因此安全边界在应用侧：参数校验、权限控制、沙箱都由开发者实现。"
+   },
+   {
+    "q": "Agent 为什么容易越做越偏？",
+    "a": "每步都有出错概率，错误会写入上下文并影响后续决策；长任务中上下文膨胀、早期目标被稀释。对策：清晰的完成标准、拆分子任务、阶段性校验（测试）、步数上限、必要时让人确认计划后再执行。"
+   },
+   {
+    "q": "workflow 与 agent 怎么选？",
+    "a": "路径固定、可枚举的流程用预定义工作流（代码编排多次 LLM 调用），可预测、易调试；步骤无法事先确定、需要根据结果动态决策时才用 Agent。Anthropic 的建议是从最简单方案开始，只在必要时增加自主性。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Anthropic: Building effective agents",
+    "url": "https://www.anthropic.com/engineering/building-effective-agents"
+   },
+   {
+    "title": "Anthropic Tool use 文档",
+    "url": "https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/overview"
+   },
+   {
+    "title": "ReAct: Synergizing Reasoning and Acting（arXiv）",
+    "url": "https://arxiv.org/abs/2210.03629"
+   }
+  ]
+ },
+ {
+  "slug": "multimodal",
+  "def": "多模态（Multimodal）指模型能处理文本以外的输入或输出，如图像、音频、视频、PDF。常见实现是把图像等编码成与文本 Token 同一表示空间的向量，再由语言模型统一推理。对开发者而言，多模态让截图调试、设计稿转代码、文档解析等任务可以直接交给模型。",
+  "how": [
+   "编码：图像经视觉编码器（如 ViT）切成小块并转成向量序列。",
+   "对齐：通过投影层把视觉向量映射到语言模型的嵌入空间，与文本 Token 拼接。",
+   "联合推理：语言模型对图文混合序列做注意力计算，回答与图像相关的问题。",
+   "计费折算：图片按分辨率折算成一定数量的输入 Token，大图会被缩放。",
+   "多模态输出：部分模型还能生成图像或语音，通常由专门的生成模型或解码器完成。"
+  ],
+  "terms": [
+   {
+    "t": "视觉编码器 (Vision Encoder)",
+    "d": "把图像转换为向量表示的网络，如 ViT。"
+   },
+   {
+    "t": "ViT (Vision Transformer)",
+    "d": "把图像切成固定大小块，当作序列输入 Transformer。"
+   },
+   {
+    "t": "图文对齐 (Vision-Language Alignment)",
+    "d": "让图像表示和文字表示处于同一语义空间。"
+   },
+   {
+    "t": "OCR",
+    "d": "光学字符识别，从图像中提取文字；多模态模型可部分替代。"
+   },
+   {
+    "t": "Base64",
+    "d": "把二进制文件编码成文本，API 常用它传图片数据。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "让模型看一张截图",
+   "src": "import anthropic, base64\n\nclient = anthropic.Anthropic()\n\nwith open(\"error.png\", \"rb\") as f:            # 本地截图\n    img_b64 = base64.standard_b64encode(f.read()).decode()\n\nresp = client.messages.create(\n    model=\"claude-sonnet-4-5\",\n    max_tokens=800,\n    messages=[{\n        \"role\": \"user\",\n        \"content\": [\n            {\"type\": \"image\",\n             \"source\": {\"type\": \"base64\", \"media_type\": \"image/png\", \"data\": img_b64}},\n            {\"type\": \"text\", \"text\": \"这是页面报错截图，指出原因并给出修复步骤。\"},\n        ],\n    }],\n)\nprint(resp.content[0].text)",
+   "note": "一条消息的 content 可以是图片块和文本块的数组，图文一起作为输入。"
+  },
+  "table": {
+   "title": "常见多模态输入与要点",
+   "head": [
+    "输入类型",
+    "典型用途",
+    "工程要点"
+   ],
+   "rows": [
+    [
+     "截图/照片",
+     "UI 报错、设计稿转代码",
+     "裁剪到关键区域，保证文字清晰"
+    ],
+    [
+     "PDF",
+     "合同、论文、报表解析",
+     "注意页数限制和按页计费"
+    ],
+    [
+     "图表",
+     "读取趋势和数值",
+     "精确数值仍应以原始数据为准"
+    ],
+    [
+     "音频/视频",
+     "转写、摘要",
+     "常需专用接口或先转文本"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "直接发截图",
+    "pros": "保留布局与视觉信息",
+    "cons": "Token 更多，小字可能识别错",
+    "when": "UI 问题、视觉布局相关"
+   },
+   {
+    "opt": "复制文本发送",
+    "pros": "精确、省 Token",
+    "cons": "丢失视觉上下文",
+    "when": "报错日志、代码、长文本"
+   },
+   {
+    "opt": "截图 + 文本一起",
+    "pros": "互相印证，信息最全",
+    "cons": "成本最高",
+    "when": "复杂前端 bug"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用超大分辨率全屏截图，关键信息很小",
+    "fix": "裁剪到相关区域，必要时放大局部"
+   },
+   {
+    "bad": "让模型从图表里读精确数字用于计算",
+    "fix": "精确值从源数据获取，图像只用于理解趋势"
+   },
+   {
+    "bad": "截图中包含密钥、个人信息直接上传",
+    "fix": "上传前打码敏感区域"
+   }
+  ],
+  "checklist": [
+   "确认模型支持所需的输入类型",
+   "图片尺寸和格式符合接口限制",
+   "敏感信息已打码",
+   "关键文字另附文本版本",
+   "按图片 Token 估算成本"
+  ],
+  "interview": [
+   {
+    "q": "多模态模型如何「看懂」图片？",
+    "a": "视觉编码器把图像分块编码为向量，经投影层映射到语言模型的嵌入空间，与文本 Token 拼成一个序列；语言模型通过注意力在图文之间建立关联，从而回答与图像相关的问题。训练依赖大量图文配对数据。"
+   },
+   {
+    "q": "设计稿转代码的局限在哪？",
+    "a": "模型能还原大致布局和样式，但像素级间距、响应式断点、交互状态和设计系统约束常不准确。实践上配合设计 Token 规范、组件库说明、分区域生成，并用浏览器截图对比迭代。"
+   },
+   {
+    "q": "多模态的成本怎么估算？",
+    "a": "图片按尺寸折算为输入 Token，各家公式不同，大图通常先被缩放到上限；PDF 往往按页同时计算文字和图像。以官方文档公式估算，或用响应中的 usage 字段实测。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Anthropic Vision 文档",
+    "url": "https://docs.anthropic.com/en/docs/build-with-claude/vision"
+   },
+   {
+    "title": "An Image is Worth 16x16 Words（ViT 论文）",
+    "url": "https://arxiv.org/abs/2010.11929"
+   },
+   {
+    "title": "Wikipedia: Multimodal learning",
+    "url": "https://en.wikipedia.org/wiki/Multimodal_learning"
+   }
+  ]
+ },
+ {
+  "slug": "choosing-a-model",
+  "def": "模型选型（Choosing a Model）是在能力、成本、延迟、上下文长度、部署与合规约束之间做权衡，为具体任务挑选合适 LLM 的工程决策。成熟做法不是选一个「最强」模型，而是基于业务评测集比较候选模型，并按任务难度做路由：简单任务用小模型，复杂任务用旗舰模型。",
+  "how": [
+   "定义任务：明确输入类型、输出格式、质量标准和可接受的延迟与单价。",
+   "列出约束：数据能否出境、是否需私有部署、需要多长上下文、是否要工具调用。",
+   "建评测集：从真实业务中抽取几十到几百条样本，带参考答案或评分标准。",
+   "对比测试：多个候选模型跑同一评测集，记录质量、延迟、Token 成本。",
+   "路由上线：按任务复杂度分流到不同模型，并持续监控、随新模型发布复评。"
+  ],
+  "terms": [
+   {
+    "t": "评测集 (Eval Set)",
+    "d": "代表真实任务的固定样本集，用于客观比较模型与提示。"
+   },
+   {
+    "t": "模型路由 (Model Routing)",
+    "d": "按任务类型或难度把请求分发给不同模型。"
+   },
+   {
+    "t": "首 Token 延迟 (TTFT)",
+    "d": "从发出请求到收到第一个输出 Token 的时间。"
+   },
+   {
+    "t": "LLM-as-a-Judge",
+    "d": "用另一个模型按标准给输出打分，需抽样人工校准。"
+   },
+   {
+    "t": "开源权重 (Open Weights)",
+    "d": "公开模型参数，可自行部署与微调。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "按难度路由模型",
+   "src": "# 简单的规则路由：便宜模型兜底，复杂任务升级\n# 模型名以供应商当前文档为准，建议放在配置文件而非写死\nMODELS = {\n    \"fast\":  \"claude-haiku-4-5\",    # 分类、抽取、短回复\n    \"smart\": \"claude-sonnet-4-5\",   # 编码、分析、多步任务\n}\n\ndef pick_model(task_type: str, input_tokens: int) -> str:\n    if task_type in {\"classify\", \"extract\", \"summarize_short\"}:\n        return MODELS[\"fast\"]\n    if task_type in {\"code\", \"agent\", \"analysis\"} or input_tokens > 20_000:\n        return MODELS[\"smart\"]\n    return MODELS[\"fast\"]\n\nprint(pick_model(\"classify\", 300))   # -> fast 模型\nprint(pick_model(\"code\", 5000))      # -> smart 模型",
+   "note": "路由规则应以评测数据为依据，并保留按配置切换模型的能力。"
+  },
+  "table": {
+   "title": "选型评估矩阵",
+   "head": [
+    "维度",
+    "如何度量",
+    "常见取舍"
+   ],
+   "rows": [
+    [
+     "任务质量",
+     "业务评测集得分",
+     "旗舰模型更强但更贵"
+    ],
+    [
+     "成本",
+     "每千次请求的总费用",
+     "输出长的任务对输出单价敏感"
+    ],
+    [
+     "延迟",
+     "TTFT 与总耗时",
+     "思考模式提升质量但更慢"
+    ],
+    [
+     "上下文与模态",
+     "最大窗口、是否支持图像/PDF",
+     "长窗口不等于长文效果好"
+    ],
+    [
+     "合规与部署",
+     "数据驻留、私有化选项",
+     "开源自部署可控但需运维"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "单一旗舰模型",
+    "pros": "简单，效果上限高",
+    "cons": "成本高，简单任务浪费",
+    "when": "早期验证、调用量小"
+   },
+   {
+    "opt": "多模型路由",
+    "pros": "成本与质量兼顾",
+    "cons": "需维护路由逻辑和多套评测",
+    "when": "调用量大、任务类型多样"
+   },
+   {
+    "opt": "开源模型自部署",
+    "pros": "数据可控、可微调",
+    "cons": "硬件与运维投入，能力可能不足",
+    "when": "合规要求高或规模极大"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只看公开排行榜就定模型",
+    "fix": "用自己业务的样本评测，榜单只作初筛"
+   },
+   {
+    "bad": "代码里写死模型名，升级要改多处",
+    "fix": "模型名放配置，统一管理和灰度切换"
+   },
+   {
+    "bad": "评测只看质量，不算成本和延迟",
+    "fix": "评测报告同时给出质量、单次成本、P95 延迟"
+   },
+   {
+    "bad": "选定后不再复评",
+    "fix": "新模型发布或价格调整时重跑评测"
+   }
+  ],
+  "checklist": [
+   "有业务评测集与评分标准",
+   "记录质量、成本、延迟三项指标",
+   "模型名可通过配置切换",
+   "合规与数据驻留要求已确认",
+   "有降级与备选模型方案"
+  ],
+  "interview": [
+   {
+    "q": "如何在没有标准答案时评测模型？",
+    "a": "制定评分细则（rubric），用成对比较让人或 LLM 评审判断哪个更好；LLM 评审要抽样人工校准一致性，并注意位置偏差、长度偏好；对可客观检验的部分（格式、代码测试）用自动化指标。"
+   },
+   {
+    "q": "什么时候该考虑微调而不是换模型？",
+    "a": "提示工程和检索已经做足，仍需稳定的特定格式、风格或领域行为，且有足量高质量标注数据时考虑微调。若问题是缺知识，优先 RAG；若是推理能力不足，换更强模型通常更划算。"
+   },
+   {
+    "q": "编码 Agent 的模型怎么选？",
+    "a": "看长上下文下的代码理解、工具调用稳定性、多步任务成功率和指令遵循，而不只是单题代码分数。可用 SWE-bench 类基准初筛，再用自家仓库的真实任务试跑，比较完成率与成本。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Anthropic: Choosing the right model",
+    "url": "https://docs.anthropic.com/en/docs/about-claude/models/choosing-a-model"
+   },
+   {
+    "title": "OpenAI Evals 指南",
+    "url": "https://platform.openai.com/docs/guides/evals"
+   },
+   {
+    "title": "Judging LLM-as-a-Judge（arXiv）",
+    "url": "https://arxiv.org/abs/2306.05685"
+   }
+  ]
+ },
+ {
+  "slug": "ai-api-key-and-billing",
+  "def": "AI API Key 是调用模型服务的身份凭证，服务端据此鉴权、计量和扣费；按量计费（Pay-as-you-go）通常按输入和输出 Token 分别计价，缓存、批处理等另有价格。Key 一旦泄露，他人可直接消耗你的额度，因此它属于高敏感机密，必须只存在于服务端并配合用量上限与监控。",
+  "how": [
+   "创建：在供应商控制台创建 Key，可按项目或工作区隔离并设置权限。",
+   "携带：请求时通过 HTTP 头传递，如 Anthropic 的 x-api-key、OpenAI 的 Authorization: Bearer。",
+   "鉴权与限流：服务端校验 Key，按账户等级执行速率限制（RPM/TPM 等）。",
+   "计量：每次响应返回 usage，记录输入、输出及缓存相关的 Token 数。",
+   "扣费：按价目表汇总，预付余额或按月账单结算，可设置消费上限与告警。"
+  ],
+  "terms": [
+   {
+    "t": "按量计费 (Pay-as-you-go)",
+    "d": "按实际消耗的 Token 或请求数付费，无固定月费。"
+   },
+   {
+    "t": "速率限制 (Rate Limit)",
+    "d": "单位时间内允许的请求数或 Token 数，超限返回 429。"
+   },
+   {
+    "t": "批处理 API (Batch API)",
+    "d": "异步批量提交请求，以更长等待换取更低单价。"
+   },
+   {
+    "t": "Key 轮换 (Key Rotation)",
+    "d": "定期或泄露后生成新 Key 并作废旧 Key。"
+   },
+   {
+    "t": "后端代理 (Backend Proxy)",
+    "d": "前端请求自家服务器，由服务器持 Key 调用模型。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "安全地调用 API",
+   "src": "# Key 只放环境变量，不写进代码或命令历史\n# 在 ~/.zshrc 或部署平台的 Secret 中设置：\n# export ANTHROPIC_API_KEY=\"sk-ant-...\"\n\ncurl https://api.anthropic.com/v1/messages \\\n  -H \"x-api-key: $ANTHROPIC_API_KEY\" \\\n  -H \"anthropic-version: 2023-06-01\" \\\n  -H \"content-type: application/json\" \\\n  -d '{\n    \"model\": \"claude-haiku-4-5\",\n    \"max_tokens\": 100,\n    \"messages\": [{\"role\": \"user\", \"content\": \"ping\"}]\n  }'\n\n# 响应中的 usage 字段即本次计费依据：\n# \"usage\": {\"input_tokens\": ..., \"output_tokens\": ...}",
+   "note": "Key 通过环境变量注入请求头；从 usage 读取用量，是成本监控的数据来源。"
+  },
+  "table": {
+   "title": "费用构成与优化杠杆",
+   "head": [
+    "计费项",
+    "说明",
+    "优化手段"
+   ],
+   "rows": [
+    [
+     "输入 Token",
+     "提示、历史、资料、工具定义",
+     "精简上下文、检索替代全文"
+    ],
+    [
+     "输出 Token",
+     "模型生成内容，单价通常更高",
+     "限制 max_tokens、要求简洁"
+    ],
+    [
+     "缓存读取",
+     "命中提示缓存的部分按折扣价",
+     "稳定前缀放最前并开启缓存"
+    ],
+    [
+     "批处理",
+     "异步任务通常有折扣",
+     "非实时任务走 Batch API"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "直接用官方 API",
+    "pros": "新模型最快、文档最全",
+    "cons": "需境外支付与网络条件",
+    "when": "个人开发、海外业务"
+   },
+   {
+    "opt": "云平台托管（如 Bedrock、Vertex AI）",
+    "pros": "统一账单、企业合规",
+    "cons": "新功能可能滞后",
+    "when": "已在该云上的企业"
+   },
+   {
+    "opt": "第三方聚合/中转",
+    "pros": "一个 Key 用多家模型",
+    "cons": "数据经过第三方，稳定性与合规需评估",
+    "when": "多模型对比、原型阶段"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把 Key 写进前端代码或移动端安装包",
+    "fix": "前端只调自家后端，Key 只存服务器端"
+   },
+   {
+    "bad": "Key 提交进 Git 仓库后只删了文件",
+    "fix": "立即在控制台作废并轮换，历史提交里依然可见"
+   },
+   {
+    "bad": "不设消费上限，Agent 死循环一夜烧光余额",
+    "fix": "设置月度上限、用量告警和单任务预算"
+   },
+   {
+    "bad": "所有环境共用一个 Key",
+    "fix": "开发、测试、生产分别建 Key，便于隔离与追责"
+   }
+  ],
+  "checklist": [
+   "Key 仅存于服务端环境变量或密钥管理",
+   "仓库已配置密钥扫描",
+   "控制台设置了消费上限与告警",
+   "按环境/项目拆分 Key",
+   "记录每次调用的 usage 用于对账",
+   "429 等错误有退避重试"
+  ],
+  "interview": [
+   {
+    "q": "为什么不能在前端直接调用模型 API？",
+    "a": "前端代码对用户完全可见，Key 会被任何人从网络请求或打包文件中取出并滥用。正确做法是前端请求自家后端，由后端持 Key 调用模型，同时在后端做鉴权、限流和用量控制。"
+   },
+   {
+    "q": "发现 Key 泄露后怎么处置？",
+    "a": "立即在控制台作废该 Key 并生成新 Key；更新所有部署环境；检查账单与用量日志评估损失；清理代码与 Git 历史；启用密钥扫描和推送保护防止再犯；必要时联系供应商说明情况。"
+   },
+   {
+    "q": "如何预估一个 AI 功能的月成本？",
+    "a": "测出单次请求平均输入、输出 Token，乘以各自单价得单次成本；再乘以预估日调用量和天数；考虑缓存命中率、批处理折扣和重试开销，并留出余量。上线后用 usage 实测数据校正。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Anthropic API Overview（鉴权）",
+    "url": "https://docs.anthropic.com/en/api/overview"
+   },
+   {
+    "title": "Anthropic Pricing",
+    "url": "https://www.anthropic.com/pricing"
+   },
+   {
+    "title": "OWASP Secrets Management Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html"
+   }
+  ]
+ },
+ {
+  "slug": "screenshot-debugging",
+  "def": "截图 + 报错喂给 AI（Screenshot Debugging）是把可视化现象（界面截图）与可检索的文本证据（报错信息、堆栈、日志、复现步骤）一起提供给多模态模型或编码 Agent 来定位问题的调试方法。核心不在「发截图」，而在提供完整、可复现、最小化的故障上下文，让模型基于证据而非猜测推理。",
+  "how": [
+   "复现：确认问题能稳定出现，记录触发步骤、环境和预期与实际结果。",
+   "取证：截取关键界面，同时复制控制台、终端或服务端日志中的完整报错文本。",
+   "最小化：定位到相关文件与代码段，去掉无关内容，必要时做最小复现示例。",
+   "组织提示：按「现象—报错原文—相关代码—已尝试方案—环境版本」结构发送。",
+   "验证闭环：应用修复后重新运行复现步骤，确认问题消失且未引入新问题。"
+  ],
+  "terms": [
+   {
+    "t": "最小复现 (Minimal Reproducible Example)",
+    "d": "能触发问题的最短代码与步骤，排除无关因素。"
+   },
+   {
+    "t": "堆栈跟踪 (Stack Trace)",
+    "d": "报错时函数调用链的记录，指明出错文件与行号。"
+   },
+   {
+    "t": "浏览器开发者工具 (DevTools)",
+    "d": "查看 Console 报错、Network 请求和 DOM 的内置工具。"
+   },
+   {
+    "t": "Source Map",
+    "d": "把压缩后的代码位置映射回源码，使前端报错可读。"
+   },
+   {
+    "t": "日志级别 (Log Level)",
+    "d": "DEBUG/INFO/WARN/ERROR 等，用于筛选关键信息。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "高质量报错提示模板",
+   "src": "【现象】点击「提交订单」后页面白屏（截图见附件）\n【预期】跳转到支付页\n\n【报错原文】（浏览器 Console 复制，不要只截图）\nTypeError: Cannot read properties of undefined (reading 'price')\n    at OrderSummary (OrderSummary.tsx:42:31)\n    at renderWithHooks (react-dom.development.js)\n\n【相关代码】src/components/OrderSummary.tsx 第 35–50 行\n（粘贴代码）\n\n【环境】Node 20，React 18，Chrome 最新版\n【已尝试】刷新、清缓存无效；购物车有商品时才出现\n\n【请求】先分析可能原因并按可能性排序，确认后再改代码。",
+   "note": "截图看现象，文本给证据；要求先分析后修改，可避免 AI 盲目大改。"
+  },
+  "table": {
+   "title": "不同报错的取证位置",
+   "head": [
+    "问题类型",
+    "去哪里拿证据",
+    "要附带什么"
+   ],
+   "rows": [
+    [
+     "前端白屏/报错",
+     "DevTools Console",
+     "完整报错与组件堆栈"
+    ],
+    [
+     "接口失败",
+     "DevTools Network",
+     "请求 URL、状态码、响应体"
+    ],
+    [
+     "后端异常",
+     "服务端日志/终端",
+     "堆栈与请求参数（脱敏）"
+    ],
+    [
+     "构建失败",
+     "终端构建输出",
+     "第一条错误而非最后一条"
+    ],
+    [
+     "样式错乱",
+     "截图 + Elements 面板",
+     "相关 CSS 与视口尺寸"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "只发截图",
+    "pros": "最快",
+    "cons": "长堆栈截不全，小字易识别错",
+    "when": "纯视觉布局问题"
+   },
+   {
+    "opt": "截图 + 报错文本",
+    "pros": "现象与证据兼备",
+    "cons": "需多花一分钟整理",
+    "when": "绝大多数 bug"
+   },
+   {
+    "opt": "让 Agent 自己复现",
+    "pros": "Agent 可直接读日志、跑命令",
+    "cons": "需要配置运行环境与权限",
+    "when": "使用 Claude Code 等终端 Agent"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只给最后一行报错，丢掉上方的根因",
+    "fix": "复制完整输出，构建错误重点看第一条"
+   },
+   {
+    "bad": "截图里带着密钥、Token 或用户隐私",
+    "fix": "发送前打码，日志中的敏感字段先脱敏"
+   },
+   {
+    "bad": "AI 改完不复测就说「好了」",
+    "fix": "按原复现步骤重新验证，并跑相关测试"
+   },
+   {
+    "bad": "一次丢十个问题让 AI 同时修",
+    "fix": "一次只处理一个问题，修完验证再下一个"
+   }
+  ],
+  "checklist": [
+   "问题可稳定复现并记录步骤",
+   "附上完整报错文本与堆栈",
+   "标明相关文件和代码位置",
+   "说明环境与版本信息",
+   "敏感信息已打码或脱敏",
+   "修复后按原步骤复测"
+  ],
+  "interview": [
+   {
+    "q": "为什么报错文本比截图更重要？",
+    "a": "文本可精确匹配、可搜索，模型不会误读字符；堆栈常超出一屏，截图易截断；文本还能被 Agent 直接用来定位文件和行号。截图的价值在于呈现视觉现象和上下文，两者互补。"
+   },
+   {
+    "q": "AI 反复修不好同一个 bug 怎么办？",
+    "a": "停止在原会话里堆叠尝试：回滚到干净状态，重新整理最小复现与已排除的假设；让 AI 先列出可能原因并设计验证实验（加日志、断点）；用新会话避免被错误上下文干扰；必要时换思路查官方文档或 issue。"
+   },
+   {
+    "q": "生产环境报错如何安全地交给 AI？",
+    "a": "从监控或日志平台导出相关堆栈与上下文，先脱敏用户数据和密钥；在本地或预发环境复现；只提供必要代码片段；遵守公司对外发代码的合规规定，必要时使用企业版或私有部署模型。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Stack Overflow: How to create a Minimal, Reproducible Example",
+    "url": "https://stackoverflow.com/help/minimal-reproducible-example"
+   },
+   {
+    "title": "Chrome DevTools: Console 概览",
+    "url": "https://developer.chrome.com/docs/devtools/console"
+   },
+   {
+    "title": "Anthropic Vision 文档",
+    "url": "https://docs.anthropic.com/en/docs/build-with-claude/vision"
+   }
+  ]
+ },
+ {
+  "slug": "computer-basics-files-and-paths",
+  "def": "文件系统（File System）以树状目录组织文件，路径（Path）是定位某个文件或目录的字符串。路径分绝对路径（从根目录起）和相对路径（相对当前工作目录）。理解路径分隔符、当前目录、主目录和大小写规则，是写脚本、配置项目、让 Agent 正确读写文件的基础。",
+  "how": [
+   "根目录：类 Unix 系统只有一个根「/」；Windows 每个盘符有自己的根，如 C:\\。",
+   "工作目录：每个进程有当前工作目录（cwd），相对路径都以它为起点解析。",
+   "特殊符号：「.」表示当前目录，「..」表示上级目录，「~」在 shell 中展开为用户主目录。",
+   "解析过程：系统逐级查找路径中的每一段目录，最终定位到文件或报「不存在」。",
+   "权限检查：找到文件后，再按用户与权限位判断能否读、写或执行。"
+  ],
+  "terms": [
+   {
+    "t": "绝对路径 (Absolute Path)",
+    "d": "从根目录开始的完整路径，与当前目录无关。"
+   },
+   {
+    "t": "相对路径 (Relative Path)",
+    "d": "相对于当前工作目录的路径，换目录运行结果会变。"
+   },
+   {
+    "t": "当前工作目录 (CWD)",
+    "d": "进程当前所在目录，可用 pwd 查看。"
+   },
+   {
+    "t": "路径分隔符 (Separator)",
+    "d": "Unix 用「/」，Windows 原生用「\\」，多数 API 也接受「/」。"
+   },
+   {
+    "t": "符号链接 (Symlink)",
+    "d": "指向另一个路径的特殊文件，类似快捷方式。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "跨平台处理路径",
+   "src": "from pathlib import Path\n\nprint(Path.cwd())                 # 当前工作目录\nprint(Path.home())                # 用户主目录\n\n# 以脚本自身位置为基准，避免「换个目录运行就找不到文件」\nBASE = Path(__file__).resolve().parent\nconfig = BASE / \"config\" / \"settings.json\"   # 用 / 拼接，自动适配系统分隔符\n\nprint(config)                     # 绝对路径\nprint(config.exists())            # 是否存在\nprint(config.suffix, config.stem) # .json  settings\n\n# 相对路径 -> 绝对路径\nprint(Path(\"../data\").resolve())\n\n# 遍历目录下所有 .py 文件（递归）\nfor p in BASE.rglob(\"*.py\"):\n    print(p.relative_to(BASE))",
+   "note": "用 pathlib 而不是手拼字符串，可自动处理分隔符并避免依赖当前工作目录。"
+  },
+  "table": {
+   "title": "三大系统路径差异",
+   "head": [
+    "项目",
+    "macOS / Linux",
+    "Windows"
+   ],
+   "rows": [
+    [
+     "根与盘符",
+     "单一根 /",
+     "每盘独立，如 C:\\"
+    ],
+    [
+     "分隔符",
+     "/",
+     "\\（多数程序也接受 /）"
+    ],
+    [
+     "主目录",
+     "/Users/名 或 /home/名",
+     "C:\\Users\\名"
+    ],
+    [
+     "大小写",
+     "Linux 敏感；macOS 默认不敏感",
+     "默认不敏感"
+    ],
+    [
+     "隐藏文件",
+     "以 . 开头",
+     "文件属性标记"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "绝对路径",
+    "pros": "无歧义，与运行位置无关",
+    "cons": "换机器或换用户就失效",
+    "when": "系统级配置、一次性命令"
+   },
+   {
+    "opt": "相对于 CWD 的路径",
+    "pros": "简短",
+    "cons": "从别的目录运行会出错",
+    "when": "交互式命令行操作"
+   },
+   {
+    "opt": "相对于项目根/脚本的路径",
+    "pros": "可移植、稳定",
+    "cons": "需在代码中计算基准目录",
+    "when": "项目代码、脚本、配置"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "代码里写死 C:\\Users\\张三\\project 这类路径",
+    "fix": "用项目相对路径或环境变量，保证他人和服务器可用"
+   },
+   {
+    "bad": "在 macOS 上大小写写错也能跑，部署到 Linux 报找不到",
+    "fix": "引用文件名时严格匹配大小写"
+   },
+   {
+    "bad": "路径含空格或中文时命令行未加引号",
+    "fix": "在 shell 中给路径加引号，或避免使用空格"
+   },
+   {
+    "bad": "以为 ~ 在所有程序里都会展开",
+    "fix": "~ 是 shell 特性，代码中用 Path.home() 或 os.path.expanduser"
+   }
+  ],
+  "checklist": [
+   "代码中无写死的个人绝对路径",
+   "文件名大小写与引用一致",
+   "路径拼接使用标准库函数",
+   "脚本不依赖调用时的当前目录",
+   "含空格路径已正确加引号"
+  ],
+  "interview": [
+   {
+    "q": "为什么脚本在 IDE 能跑，命令行就找不到文件？",
+    "a": "相对路径基于当前工作目录解析。IDE 通常把项目根设为 CWD，而命令行在别的目录启动时 CWD 不同。解决：以脚本文件位置（__file__）或项目根为基准构造路径，或启动前 cd 到正确目录。"
+   },
+   {
+    "q": "什么是路径穿越漏洞？",
+    "a": "服务端直接把用户输入拼进文件路径，攻击者传入 ../../etc/passwd 之类的值读取越界文件。防御：规范化路径后校验是否仍在允许的根目录内，使用白名单文件名，不把用户输入直接作为路径。"
+   },
+   {
+    "q": "Agent 操作文件时路径要注意什么？",
+    "a": "确认 Agent 的工作目录与项目根一致；尽量让它使用项目内相对路径；限制可写目录范围；对删除、移动类操作要求确认。Claude Code 等工具默认以启动目录作为工作区边界。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Python pathlib 官方文档",
+    "url": "https://docs.python.org/3/library/pathlib.html"
+   },
+   {
+    "title": "Wikipedia: Path (computing)",
+    "url": "https://en.wikipedia.org/wiki/Path_(computing)"
+   },
+   {
+    "title": "OWASP: Path Traversal",
+    "url": "https://owasp.org/www-community/attacks/Path_Traversal"
+   }
+  ]
+ },
+ {
+  "slug": "terminal-command-line",
+  "def": "终端（Terminal）是文本输入输出的窗口程序，Shell（如 bash、zsh、PowerShell）是在其中解释命令的程序，二者合称命令行界面（CLI）。命令行可组合、可脚本化、可远程，是安装依赖、运行项目、操作 Git、部署服务器的标准方式，也是 Claude Code 等终端 Agent 的工作环境。",
+  "how": [
+   "读取输入：Shell 显示提示符（如 $ 或 %），读取用户输入的一行命令文本。",
+   "解析展开：拆分命令与参数，展开变量（$HOME）、通配符（*.js）和 ~ 等。",
+   "查找程序：内置命令直接执行，其他命令按 PATH 环境变量中的目录顺序查找可执行文件。",
+   "创建进程：启动子进程运行程序，连接标准输入、标准输出和标准错误三个流。",
+   "返回状态：程序结束返回退出码，0 表示成功，非 0 表示失败，供脚本判断。"
+  ],
+  "terms": [
+   {
+    "t": "Shell",
+    "d": "解释并执行命令的程序，如 bash、zsh、fish、PowerShell。"
+   },
+   {
+    "t": "PATH",
+    "d": "存放可执行文件搜索目录的环境变量，决定输入命令能否被找到。"
+   },
+   {
+    "t": "标准流 (stdin/stdout/stderr)",
+    "d": "程序的标准输入、正常输出和错误输出通道。"
+   },
+   {
+    "t": "管道 (Pipe)",
+    "d": "用「|」把前一命令的输出作为后一命令的输入。"
+   },
+   {
+    "t": "退出码 (Exit Code)",
+    "d": "程序结束状态，0 为成功，可用 echo $? 查看。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "常用组合命令",
+   "src": "pwd                          # 当前所在目录\nls -la                       # 列出文件（含隐藏文件）\ncd ~/projects/my-app         # 进入项目目录\n\nwhich node                   # 查看命令实际来自哪个路径\necho $PATH                   # 查看命令搜索路径\n\n# 管道：统计 src 下 .ts 文件数量\nfind src -name \"*.ts\" | wc -l\n\n# 在代码里搜索关键字（带行号）\ngrep -rn \"TODO\" src/\n\n# 重定向：正常输出写文件，错误输出单独写\nnpm run build > build.log 2> build.err\n\n# && 前一步成功才执行下一步\nnpm install && npm test\necho \"exit code: $?\"         # 上一条命令的退出码",
+   "note": "管道、重定向、退出码和 && 是命令行可组合性的核心，也是脚本和 CI 的基础。"
+  },
+  "table": {
+   "title": "Shell 对比",
+   "head": [
+    "Shell",
+    "常见平台",
+    "特点"
+   ],
+   "rows": [
+    [
+     "bash",
+     "多数 Linux 默认",
+     "脚本最通用，兼容性好"
+    ],
+    [
+     "zsh",
+     "macOS 默认（自 Catalina 起）",
+     "补全与插件生态丰富，兼容大部分 bash 语法"
+    ],
+    [
+     "PowerShell",
+     "Windows",
+     "管道传递对象而非文本，语法与 bash 不同"
+    ],
+    [
+     "WSL 中的 bash",
+     "Windows",
+     "在 Windows 上运行 Linux 环境"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "图形界面操作",
+    "pros": "直观、易上手",
+    "cons": "难以重复、难以自动化",
+    "when": "一次性、探索性操作"
+   },
+   {
+    "opt": "交互式命令行",
+    "pros": "快速、精确、可远程",
+    "cons": "需记忆命令，误操作无确认",
+    "when": "日常开发、服务器运维"
+   },
+   {
+    "opt": "Shell 脚本",
+    "pros": "可复用、可放进 CI",
+    "cons": "错误处理繁琐，跨平台差",
+    "when": "重复流程、部署、构建"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "复制网上的 rm -rf 或 curl | sh 命令直接运行",
+    "fix": "先读懂每个参数，确认来源可信再执行"
+   },
+   {
+    "bad": "装了工具却提示 command not found",
+    "fix": "检查安装目录是否在 PATH 中，重开终端或 source 配置文件"
+   },
+   {
+    "bad": "在 PowerShell 里照抄 bash 语法",
+    "fix": "确认当前 Shell 类型，或在 WSL/Git Bash 中执行"
+   },
+   {
+    "bad": "脚本出错后继续往下执行",
+    "fix": "bash 脚本开头加 set -euo pipefail"
+   }
+  ],
+  "checklist": [
+   "清楚当前使用的 Shell 类型",
+   "关键工具在 PATH 中可找到",
+   "破坏性命令执行前确认路径",
+   "脚本启用失败即停（set -e）",
+   "给 Agent 的命令权限已分级"
+  ],
+  "interview": [
+   {
+    "q": "终端、Shell、控制台有什么区别？",
+    "a": "终端是显示和输入文本的程序（如 iTerm2、Windows Terminal）；Shell 是解释命令的程序（bash、zsh）；控制台原指物理设备，现常与终端混用。一个终端窗口里运行一个 Shell 进程。"
+   },
+   {
+    "q": "为什么 AI 编程 Agent 偏爱命令行？",
+    "a": "命令行是纯文本接口，输入输出都能被模型直接读写；工具可组合、结果有退出码便于判断成败；几乎所有开发工具都提供 CLI。图形界面则需要截图识别与坐标操作，更慢更不可靠。"
+   },
+   {
+    "q": "stdout 和 stderr 为什么要分开？",
+    "a": "让正常结果与错误信息互不干扰：管道默认只传 stdout，错误仍显示在屏幕上；可以分别重定向到不同文件。脚本和 CI 依靠这一点把数据流和诊断信息分开处理。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Wikipedia: Bash (Unix shell)",
+    "url": "https://en.wikipedia.org/wiki/Bash_(Unix_shell)"
+   },
+   {
+    "title": "MDN: Command line crash course",
+    "url": "https://developer.mozilla.org/en-US/docs/Learn_web_development/Getting_started/Environment_setup/Command_line"
+   },
+   {
+    "title": "The Missing Semester（MIT）: The Shell",
+    "url": "https://missing.csail.mit.edu/2020/course-shell/"
+   }
+  ]
+ },
+ {
+  "slug": "frontend",
+  "def": "前端（Frontend）是运行在用户设备（浏览器或 App）上、负责界面呈现与交互的那部分软件。Web 前端由 HTML、CSS、JavaScript 构成，现代工程通常借助 React、Vue 等框架和构建工具，通过 HTTP 调用后端 API 获取数据。前端关注渲染性能、交互体验、可访问性与跨设备兼容。",
+  "how": [
+   "请求资源：浏览器根据 URL 下载 HTML，再加载其中引用的 CSS、JS、图片等。",
+   "构建 DOM/CSSOM：解析 HTML 生成 DOM 树，解析 CSS 生成 CSSOM。",
+   "渲染：合成渲染树后进行布局（Layout）和绘制（Paint），把页面画到屏幕上。",
+   "执行脚本：JavaScript 监听用户事件、调用 API、修改 DOM，使页面动态更新。",
+   "框架层：React/Vue 等用组件和状态管理界面，按状态变化高效更新 DOM。"
+  ],
+  "terms": [
+   {
+    "t": "DOM",
+    "d": "文档对象模型，页面结构的树形对象表示，JS 通过它操作页面。"
+   },
+   {
+    "t": "SPA (单页应用)",
+    "d": "首次加载后由 JS 在浏览器内切换视图，不整页刷新。"
+   },
+   {
+    "t": "SSR (服务端渲染)",
+    "d": "在服务器生成 HTML 再发给浏览器，利于首屏和 SEO。"
+   },
+   {
+    "t": "构建工具 (Bundler)",
+    "d": "如 Vite、webpack，打包、转译和优化前端代码。"
+   },
+   {
+    "t": "Core Web Vitals",
+    "d": "Google 定义的 LCP、INP、CLS 等用户体验性能指标。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "前端调用后端 API",
+   "src": "// 浏览器原生 fetch：获取数据并渲染到页面\nasync function loadTodos() {\n  const list = document.querySelector(\"#todos\");\n  try {\n    const res = await fetch(\"/api/todos\");          // 请求后端接口\n    if (!res.ok) throw new Error(`HTTP ${res.status}`);\n    const todos = await res.json();                 // 解析 JSON\n    list.innerHTML = \"\";\n    for (const t of todos) {\n      const li = document.createElement(\"li\");\n      li.textContent = t.title;                     // 用 textContent 防 XSS\n      list.appendChild(li);\n    }\n  } catch (err) {\n    list.textContent = \"加载失败，请稍后重试\";       // 给用户可理解的反馈\n    console.error(err);\n  }\n}\n\ndocument.addEventListener(\"DOMContentLoaded\", loadTodos);",
+   "note": "前端的典型职责：请求数据、处理错误、安全地更新 DOM。框架只是把这些过程组件化。"
+  },
+  "table": {
+   "title": "渲染模式对比",
+   "head": [
+    "模式",
+    "原理",
+    "优点",
+    "代价"
+   ],
+   "rows": [
+    [
+     "CSR 客户端渲染",
+     "浏览器下载 JS 后生成页面",
+     "交互流畅、部署简单",
+     "首屏慢、SEO 较弱"
+    ],
+    [
+     "SSR 服务端渲染",
+     "每次请求在服务器生成 HTML",
+     "首屏快、SEO 好",
+     "需要服务器算力"
+    ],
+    [
+     "SSG 静态生成",
+     "构建时预生成 HTML",
+     "最快、可放 CDN",
+     "内容更新需重新构建"
+    ],
+    [
+     "混合（如 Next.js）",
+     "按页面选择渲染方式",
+     "灵活",
+     "心智负担与复杂度高"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "原生 HTML/CSS/JS",
+    "pros": "零依赖、加载快",
+    "cons": "复杂交互难维护",
+    "when": "落地页、小工具"
+   },
+   {
+    "opt": "React/Vue 等框架",
+    "pros": "组件化、生态丰富",
+    "cons": "构建复杂、包体积大",
+    "when": "交互复杂的应用"
+   },
+   {
+    "opt": "元框架（Next.js、Nuxt）",
+    "pros": "路由、SSR、部署一体化",
+    "cons": "约定多，学习成本高",
+    "when": "需要 SEO 或全栈的产品"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在前端校验权限或藏 API Key",
+    "fix": "前端代码对用户可见，权限与密钥只能放后端"
+   },
+   {
+    "bad": "用 innerHTML 插入用户输入",
+    "fix": "用 textContent 或框架默认转义，防止 XSS"
+   },
+   {
+    "bad": "只在自己的大屏电脑上测试",
+    "fix": "测试移动端尺寸、慢网和主流浏览器"
+   },
+   {
+    "bad": "忽视加载和错误状态",
+    "fix": "为每个请求设计加载中、空数据、失败三种界面"
+   }
+  ],
+  "checklist": [
+   "无密钥和权限逻辑暴露在前端",
+   "用户输入经过转义，无 XSS",
+   "有加载、空态、错误态",
+   "移动端与主流浏览器已测试",
+   "关键页面性能指标达标",
+   "基础可访问性（alt、对比度、键盘）"
+  ],
+  "interview": [
+   {
+    "q": "浏览器输入 URL 到页面显示经历什么？",
+    "a": "DNS 解析域名 → 建立 TCP 连接与 TLS 握手 → 发送 HTTP 请求 → 服务器返回 HTML → 解析 HTML 构建 DOM、加载 CSS 构建 CSSOM → 执行 JS → 布局与绘制 → 合成显示。其中阻塞渲染的 CSS/JS 是首屏优化重点。"
+   },
+   {
+    "q": "为什么前端校验不能替代后端校验？",
+    "a": "前端运行在用户设备上，用户可修改代码、禁用 JS 或直接用 curl 调接口绕过页面。前端校验只改善体验，安全和数据正确性必须由后端再次校验。"
+   },
+   {
+    "q": "AI 生成前端代码最常见的问题？",
+    "a": "样式能看但不响应式；缺少加载与错误状态；可访问性缺失；直接用 innerHTML；引入过时或多余依赖；组件过大难维护。评审时要在多尺寸下实测，并检查状态处理与安全写法。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "MDN: How browsers work",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/Performance/Guides/How_browsers_work"
+   },
+   {
+    "title": "web.dev: Web Vitals",
+    "url": "https://web.dev/articles/vitals"
+   },
+   {
+    "title": "web.dev: Rendering on the Web",
+    "url": "https://web.dev/articles/rendering-on-the-web"
+   }
+  ]
+ },
+ {
+  "slug": "backend",
+  "def": "后端（Backend）是运行在服务器上、用户不可见的那部分系统，负责业务逻辑、数据存取、身份认证与权限、与第三方服务集成，并通过 API 向前端提供数据。它关注正确性、安全、性能、可扩展性与可观测性，常用语言包括 Node.js、Python、Go、Java 等。",
+  "how": [
+   "接收请求：Web 服务器或框架监听端口，接收 HTTP 请求并按路由分发到处理函数。",
+   "中间件处理：依次执行日志、鉴权、限流、请求体解析、参数校验等通用逻辑。",
+   "业务逻辑：执行核心规则，如下单扣库存、计算价格、调用模型 API。",
+   "数据访问：读写数据库、缓存或对象存储，必要时使用事务保证一致性。",
+   "返回响应：序列化为 JSON 并附状态码返回；记录日志与指标供监控。"
+  ],
+  "terms": [
+   {
+    "t": "路由 (Routing)",
+    "d": "把 URL 和 HTTP 方法映射到具体处理函数的规则。"
+   },
+   {
+    "t": "中间件 (Middleware)",
+    "d": "请求处理链中的可插拔环节，如鉴权、日志。"
+   },
+   {
+    "t": "ORM",
+    "d": "对象关系映射，用代码对象操作数据库表，如 Prisma、SQLAlchemy。"
+   },
+   {
+    "t": "无状态服务 (Stateless)",
+    "d": "不在进程内保存会话状态，便于水平扩展。"
+   },
+   {
+    "t": "可观测性 (Observability)",
+    "d": "通过日志、指标、链路追踪了解系统运行状况。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "最小 FastAPI 后端",
+   "src": "# pip install fastapi uvicorn ；运行：uvicorn main:app --reload\nfrom fastapi import FastAPI, HTTPException\nfrom pydantic import BaseModel, Field\n\napp = FastAPI()\nTODOS: dict[int, str] = {}          # 演示用内存存储，生产应换数据库\n\nclass TodoIn(BaseModel):\n    title: str = Field(min_length=1, max_length=100)   # 自动参数校验\n\n@app.post(\"/api/todos\", status_code=201)\ndef create_todo(todo: TodoIn):\n    new_id = len(TODOS) + 1\n    TODOS[new_id] = todo.title\n    return {\"id\": new_id, \"title\": todo.title}\n\n@app.get(\"/api/todos/{todo_id}\")\ndef get_todo(todo_id: int):\n    if todo_id not in TODOS:\n        raise HTTPException(status_code=404, detail=\"not found\")\n    return {\"id\": todo_id, \"title\": TODOS[todo_id]}",
+   "note": "路由、参数校验、状态码、错误处理是后端接口的四个基本要素，FastAPI 会自动生成 /docs 文档。"
+  },
+  "table": {
+   "title": "后端架构选项",
+   "head": [
+    "架构",
+    "特点",
+    "适合"
+   ],
+   "rows": [
+    [
+     "单体 (Monolith)",
+     "一个应用包含全部功能",
+     "早期产品、小团队"
+    ],
+    [
+     "微服务",
+     "按业务拆分独立部署",
+     "大团队、复杂业务"
+    ],
+    [
+     "Serverless 函数",
+     "按请求运行，免管服务器",
+     "流量波动大、轻量接口"
+    ],
+    [
+     "BaaS（如 Supabase、Firebase）",
+     "托管数据库、鉴权与存储",
+     "快速原型、前端主导项目"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "自建后端服务",
+    "pros": "完全可控，逻辑灵活",
+    "cons": "需运维、安全责任自负",
+    "when": "复杂业务或特殊需求"
+   },
+   {
+    "opt": "BaaS 托管后端",
+    "pros": "上手极快，省去基础设施",
+    "cons": "供应商锁定，复杂逻辑受限",
+    "when": "MVP、个人项目"
+   },
+   {
+    "opt": "Serverless",
+    "pros": "按量付费、自动扩缩",
+    "cons": "冷启动、执行时长受限",
+    "when": "事件驱动、低频接口"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "信任前端传来的价格、用户 ID 等关键字段",
+    "fix": "服务端根据会话身份和数据库重新计算与校验"
+   },
+   {
+    "bad": "把报错堆栈和 SQL 原样返回给客户端",
+    "fix": "对外返回通用错误信息，细节只写入服务端日志"
+   },
+   {
+    "bad": "BaaS 数据库未配置行级权限就上线",
+    "fix": "启用并测试行级安全策略，确保用户只能访问自己的数据"
+   },
+   {
+    "bad": "没有日志和监控，出问题只能猜",
+    "fix": "结构化日志、错误告警、关键接口指标从第一天就配置"
+   }
+  ],
+  "checklist": [
+   "所有接口有鉴权与权限检查",
+   "输入参数在服务端校验",
+   "错误信息不泄露内部细节",
+   "密钥通过环境变量注入",
+   "有日志、监控与告警",
+   "数据库有备份与迁移管理"
+  ],
+  "interview": [
+   {
+    "q": "认证和授权有什么区别？",
+    "a": "认证（Authentication）确认「你是谁」，如密码、MFA、OAuth 登录；授权（Authorization）决定「你能做什么」，如只能访问自己的订单。常见漏洞是只做了认证却没检查资源归属，导致越权访问（IDOR）。"
+   },
+   {
+    "q": "为什么后端要设计成无状态？",
+    "a": "无状态服务不在内存中保存会话，状态放在数据库、缓存或客户端令牌中，任何实例都能处理任何请求，从而可以随意增减实例、负载均衡和故障转移。"
+   },
+   {
+    "q": "AI 生成的后端代码评审重点？",
+    "a": "鉴权与资源归属检查、SQL 注入与参数校验、密钥是否硬编码、错误处理是否泄露信息、并发与事务正确性、依赖是否真实可信、是否有分页和限流，以及数据库权限策略。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "FastAPI 官方文档",
+    "url": "https://fastapi.tiangolo.com/"
+   },
+   {
+    "title": "OWASP Top 10",
+    "url": "https://owasp.org/www-project-top-ten/"
+   },
+   {
+    "title": "MDN: Server-side website programming",
+    "url": "https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Server-side"
+   }
+  ]
+ },
+ {
+  "slug": "full-stack",
+  "def": "全栈（Full Stack）指覆盖一个应用从界面到数据的全部技术层：前端、后端 API、数据库，以及部署和运维。全栈开发者或全栈框架能独立交付端到端功能。在 AI 编程时代，Agent 让个人更容易跨层开发，但跨层的数据契约、安全边界和部署链路仍需要人理解与把关。",
+  "how": [
+   "表现层：前端负责界面渲染、用户交互与客户端状态管理，运行在浏览器或 App 中。",
+   "接口层：通过 REST、GraphQL 或 RPC 定义前后端之间的数据契约与错误约定。",
+   "业务层：后端实现业务规则、身份鉴权、数据库事务以及支付、模型等第三方集成。",
+   "数据层：数据库存储持久数据，缓存与对象存储辅助性能与文件管理。",
+   "交付层：构建、部署、域名、HTTPS、监控把应用送到用户面前并保持运行。"
+  ],
+  "terms": [
+   {
+    "t": "技术栈 (Tech Stack)",
+    "d": "一个项目采用的语言、框架、数据库与基础设施组合。"
+   },
+   {
+    "t": "全栈框架 (Meta-framework)",
+    "d": "如 Next.js，在一个项目内同时写页面和服务端逻辑。"
+   },
+   {
+    "t": "数据契约 (API Contract)",
+    "d": "前后端约定的请求与响应结构，常用 OpenAPI 描述。"
+   },
+   {
+    "t": "端到端类型安全 (E2E Type Safety)",
+    "d": "前后端共享类型定义，接口变化在编译期暴露。"
+   },
+   {
+    "t": "CI/CD",
+    "d": "持续集成与持续部署，自动测试并发布代码。"
+   }
+  ],
+  "code": {
+   "lang": "typescript",
+   "title": "Next.js 同仓前后端",
+   "src": "// app/api/hello/route.ts —— 服务端：Route Handler\nexport async function GET() {\n  // 这里可以访问数据库和环境变量中的密钥，代码不会发到浏览器\n  return Response.json({ message: \"hello from server\" });\n}\n\n// app/page.tsx —— 前端：React 页面（客户端组件）\n\"use client\";\nimport { useEffect, useState } from \"react\";\n\nexport default function Home() {\n  const [msg, setMsg] = useState(\"加载中…\");\n  useEffect(() => {\n    fetch(\"/api/hello\")\n      .then((r) => r.json())\n      .then((d) => setMsg(d.message))\n      .catch(() => setMsg(\"加载失败\"));\n  }, []);\n  return <h1>{msg}</h1>;\n}",
+   "note": "两个文件分属服务端和浏览器，同在一个仓库；分清代码运行在哪一侧是全栈开发的关键。"
+  },
+  "table": {
+   "title": "常见全栈组合",
+   "head": [
+    "组合",
+    "构成",
+    "特点"
+   ],
+   "rows": [
+    [
+     "Next.js + Postgres",
+     "React 元框架 + 关系库",
+     "一体化，部署生态成熟"
+    ],
+    [
+     "前端 + Supabase",
+     "任意前端 + 托管 Postgres/鉴权",
+     "后端工作量最少"
+    ],
+    [
+     "MERN",
+     "MongoDB + Express + React + Node",
+     "全链路 JavaScript"
+    ],
+    [
+     "Django / Rails",
+     "后端全功能框架 + 模板或前端",
+     "约定齐全，开发效率高"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "一体化全栈框架",
+    "pros": "一个仓库、一套语言、部署简单",
+    "cons": "前后端耦合，绑定框架演进",
+    "when": "小团队、MVP、个人项目"
+   },
+   {
+    "opt": "前后端分离",
+    "pros": "职责清晰，可独立扩展",
+    "cons": "需维护接口契约与两套部署",
+    "when": "多端共享 API、团队分工"
+   },
+   {
+    "opt": "前端 + BaaS",
+    "pros": "最快上线",
+    "cons": "复杂业务受平台限制",
+    "when": "原型、轻业务产品"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在同仓库里把服务端密钥误用到客户端代码",
+    "fix": "区分服务端与客户端模块，只有明确公开的变量才能暴露"
+   },
+   {
+    "bad": "前后端各自定义数据结构，改一边忘一边",
+    "fix": "共享类型定义或用 OpenAPI 生成客户端"
+   },
+   {
+    "bad": "本地能跑就算完成，忽视部署环境差异",
+    "fix": "尽早部署到预发环境，验证环境变量、数据库与构建"
+   }
+  ],
+  "checklist": [
+   "明确每段代码运行在客户端还是服务端",
+   "接口契约有文档或共享类型",
+   "环境变量区分公开与私密",
+   "数据库迁移纳入版本管理",
+   "有可重复的构建与部署流程"
+  ],
+  "interview": [
+   {
+    "q": "全栈开发者应该「样样精通」吗？",
+    "a": "通常是「T 型」：对一层有深度，对其他层有足够理解，能打通端到端流程并知道何时求助专家。关键能力是理解层与层之间的契约：数据如何流动、在哪里鉴权、出错如何传递。"
+   },
+   {
+    "q": "Next.js 中客户端组件和服务端组件的区别？",
+    "a": "服务端组件只在服务器渲染，可直接访问数据库和密钥，不把代码发给浏览器；客户端组件用「use client」声明，会下发到浏览器，可使用状态和事件。错误放置会导致密钥泄露或功能失效。"
+   },
+   {
+    "q": "AI 帮你写全栈应用，你最该亲自把关哪里？",
+    "a": "跨层边界：鉴权在哪一层执行、数据库访问权限、哪些变量暴露给客户端、接口输入校验、部署配置与密钥管理。单层代码 AI 写得不错，跨层安全边界最易出错且后果最重。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Next.js 官方文档",
+    "url": "https://nextjs.org/docs"
+   },
+   {
+    "title": "OpenAPI Specification",
+    "url": "https://spec.openapis.org/oas/latest.html"
+   },
+   {
+    "title": "MDN: Web 开发学习区",
+    "url": "https://developer.mozilla.org/en-US/docs/Learn_web_development"
+   }
+  ]
+ },
+ {
+  "slug": "server",
+  "def": "服务器（Server）既指持续运行、通过网络响应请求的程序，也指承载这些程序的计算机（物理机、虚拟机或容器）。它需要稳定的网络、公网可达的地址或入口、持续供电和运维。现代开发中，开发者多通过云主机、容器平台或 Serverless 使用服务器，而不直接管理硬件。",
+  "how": [
+   "监听：服务程序启动后绑定 IP 地址和端口，持续等待客户端发起网络连接。",
+   "接入：请求经 DNS、负载均衡或反向代理到达具体服务器实例。",
+   "处理：服务进程（或线程、协程）处理请求，访问数据库或其他服务。",
+   "响应：把处理结果按协议格式通过网络返回给客户端，连接随后保持复用或关闭。",
+   "守护：进程管理器或编排平台在崩溃时自动重启，并记录日志与指标。"
+  ],
+  "terms": [
+   {
+    "t": "VPS / 云主机",
+    "d": "云厂商提供的虚拟服务器，可自行安装系统与软件。"
+   },
+   {
+    "t": "反向代理 (Reverse Proxy)",
+    "d": "如 Nginx，接收外部请求并转发给内部服务，可做 HTTPS 与负载均衡。"
+   },
+   {
+    "t": "容器 (Container)",
+    "d": "用 Docker 等打包应用与依赖，在任意主机一致运行。"
+   },
+   {
+    "t": "Serverless",
+    "d": "开发者只写函数，平台按请求分配算力并计费。"
+   },
+   {
+    "t": "SSH",
+    "d": "加密的远程登录协议，用于管理服务器。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "在云主机上运行服务",
+   "src": "# 用 SSH 密钥登录（比密码更安全）\nssh -i ~/.ssh/id_ed25519 ubuntu@203.0.113.10\n\n# 安装并启动 Nginx（Ubuntu/Debian）\nsudo apt update && sudo apt install -y nginx\nsudo systemctl enable --now nginx      # 开机自启并立即启动\nsystemctl status nginx --no-pager      # 查看运行状态\n\n# 查看哪些进程在监听哪些端口\nsudo ss -tlnp\n\n# 只放行 SSH 和 HTTP/HTTPS（ufw 防火墙）\nsudo ufw allow OpenSSH\nsudo ufw allow 'Nginx Full'\nsudo ufw enable\n\n# 查看服务日志\njournalctl -u nginx -n 50 --no-pager",
+   "note": "登录、装服务、守护进程、开放端口、看日志，是管理一台 Linux 服务器的基本动作。"
+  },
+  "table": {
+   "title": "服务器托管方式对比",
+   "head": [
+    "方式",
+    "你负责什么",
+    "适合"
+   ],
+   "rows": [
+    [
+     "物理机 / 自建机房",
+     "硬件、网络、系统、应用全部",
+     "特殊合规或超大规模"
+    ],
+    [
+     "云主机 VPS",
+     "系统、安全补丁、应用",
+     "需要完全控制的服务"
+    ],
+    [
+     "容器平台 / PaaS",
+     "镜像或代码与配置",
+     "多数 Web 应用"
+    ],
+    [
+     "Serverless",
+     "只写函数代码",
+     "事件驱动、流量波动大"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "自管云主机",
+    "pros": "灵活、成本透明",
+    "cons": "补丁、安全、备份都要自己做",
+    "when": "有运维能力、需定制环境"
+   },
+   {
+    "opt": "PaaS 平台部署",
+    "pros": "git push 即部署，免运维",
+    "cons": "单价更高，灵活性受限",
+    "when": "Web 应用、小团队"
+   },
+   {
+    "opt": "Serverless",
+    "pros": "零闲置成本、自动扩缩",
+    "cons": "冷启动、时长与状态限制",
+    "when": "API、定时任务、Webhook"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "SSH 允许密码登录且用 root 直接操作",
+    "fix": "改用密钥登录，禁用密码与 root 远程登录"
+   },
+   {
+    "bad": "数据库端口直接暴露在公网",
+    "fix": "防火墙只开放必要端口，数据库仅内网访问"
+   },
+   {
+    "bad": "进程手动启动，崩溃或重启后服务就没了",
+    "fix": "用 systemd、Docker 重启策略或平台托管保证自愈"
+   },
+   {
+    "bad": "服务器长期不打补丁",
+    "fix": "开启自动安全更新，定期检查系统与依赖漏洞"
+   }
+  ],
+  "checklist": [
+   "SSH 仅密钥登录，禁用 root 远程",
+   "防火墙只开放必要端口",
+   "服务由进程管理器守护",
+   "已启用 HTTPS",
+   "有日志、监控和磁盘告警",
+   "数据有定期备份"
+  ],
+  "interview": [
+   {
+    "q": "为什么需要 Nginx 这类反向代理？",
+    "a": "统一入口：终止 HTTPS、按域名或路径转发到不同后端、负载均衡、静态文件服务、限流和缓存，并隐藏内部服务端口。应用本身只需监听本地端口，安全与流量管理交给代理层。"
+   },
+   {
+    "q": "垂直扩展与水平扩展有何区别？",
+    "a": "垂直扩展是给单机加 CPU、内存，简单但有上限且有单点；水平扩展是增加实例并通过负载均衡分流，可近乎线性扩容，但要求服务无状态、会话和数据外置。"
+   },
+   {
+    "q": "让 AI Agent 操作生产服务器有何风险？",
+    "a": "误执行破坏性命令、错误修改配置导致宕机、泄露凭证。应使用最小权限账号、只读优先、命令需人工确认，在预发环境演练，变更走版本化的基础设施即代码而非手动操作。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Wikipedia: Server (computing)",
+    "url": "https://en.wikipedia.org/wiki/Server_(computing)"
+   },
+   {
+    "title": "Nginx 官方文档",
+    "url": "https://nginx.org/en/docs/"
+   },
+   {
+    "title": "DigitalOcean: Initial Server Setup with Ubuntu",
+    "url": "https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu"
+   }
+  ]
+ },
+ {
+  "slug": "local-vs-cloud",
+  "def": "本地（Local）指代码、数据或服务运行在开发者自己的机器上；云端（Cloud）指运行在云服务商的数据中心，通过网络按需使用算力、存储与托管服务。两者是开发流程的不同阶段与部署选择：本地用于快速开发调试，云端用于对外提供服务、弹性扩展与协作。差异集中在可达性、环境一致性、成本与数据控制。",
+  "how": [
+   "本地开发：代码在本机运行，服务监听 localhost，只有本机能访问，改动即时可见。",
+   "环境描述：用依赖锁文件、.env 示例、Dockerfile 把运行环境写成可复现的配置。",
+   "构建产物：通过构建命令生成可部署的产物，如静态文件、容器镜像或函数包。",
+   "云端部署：把产物推送到云平台，平台分配公网入口、注入环境变量并启动实例。",
+   "运行与运维：云端负责扩缩容、日志、监控与备份，开发者通过控制台或 CLI 管理。"
+  ],
+  "terms": [
+   {
+    "t": "IaaS / PaaS / SaaS",
+    "d": "云服务三层：租基础设施、租运行平台、直接用软件。"
+   },
+   {
+    "t": "环境一致性 (Parity)",
+    "d": "开发、预发、生产环境尽量相同，减少「本地能跑」问题。"
+   },
+   {
+    "t": "预发环境 (Staging)",
+    "d": "与生产配置接近、用于上线前验证的环境。"
+   },
+   {
+    "t": "区域 (Region)",
+    "d": "云厂商数据中心所在地理区域，影响延迟与数据合规。"
+   },
+   {
+    "t": "本地模型 (Local LLM)",
+    "d": "用 Ollama、LM Studio 等在本机运行开源模型，数据不出机器。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "Docker Compose 本地环境",
+   "src": "# docker-compose.yml：在本地一键启动与云端一致的依赖\n# 运行：docker compose up -d\nservices:\n  db:\n    image: postgres:16            # 与云端数据库保持同一大版本\n    environment:\n      POSTGRES_PASSWORD: devpass   # 仅本地开发用，生产用密钥管理\n      POSTGRES_DB: app\n    ports:\n      - \"127.0.0.1:5432:5432\"      # 只绑定本机，不暴露给局域网\n    volumes:\n      - pgdata:/var/lib/postgresql/data\n\n  redis:\n    image: redis:7\n    ports:\n      - \"127.0.0.1:6379:6379\"\n\nvolumes:\n  pgdata:",
+   "note": "用容器在本地复刻云端依赖的版本与配置，是缩小本地与云端差异的常用做法。"
+  },
+  "table": {
+   "title": "本地与云端工程差异",
+   "head": [
+    "维度",
+    "本地",
+    "云端"
+   ],
+   "rows": [
+    [
+     "可访问性",
+     "默认仅本机",
+     "公网可达，需安全防护"
+    ],
+    [
+     "配置来源",
+     ".env 文件",
+     "平台环境变量 / 密钥管理"
+    ],
+    [
+     "数据",
+     "测试数据，可随意重置",
+     "真实用户数据，需备份与合规"
+    ],
+    [
+     "成本",
+     "已有硬件，无边际费用",
+     "按资源或用量计费"
+    ],
+    [
+     "故障影响",
+     "只影响自己",
+     "影响所有用户"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "纯本地开发",
+    "pros": "快、免费、离线可用",
+    "cons": "无法给他人访问，环境易漂移",
+    "when": "编码与调试阶段"
+   },
+   {
+    "opt": "云端开发环境（如 Codespaces）",
+    "pros": "环境统一、开箱即用",
+    "cons": "依赖网络，按时长计费",
+    "when": "团队协作、配置复杂的项目"
+   },
+   {
+    "opt": "本地运行开源模型",
+    "pros": "数据不出机器、无调用费",
+    "cons": "受显存限制，能力通常弱于云端旗舰",
+    "when": "隐私敏感、离线、实验"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "本地能跑，上云就报错，环境变量没配",
+    "fix": "维护 .env.example 列出全部变量，部署前逐项核对"
+   },
+   {
+    "bad": "本地用 SQLite，生产用 Postgres，行为不一致",
+    "fix": "本地用容器跑与生产相同的数据库与版本"
+   },
+   {
+    "bad": "为了调试把本地服务绑定 0.0.0.0 暴露在公共 Wi-Fi",
+    "fix": "开发服务默认只绑定 127.0.0.1"
+   }
+  ],
+  "checklist": [
+   "依赖版本锁定，可复现安装",
+   ".env.example 列出全部配置项",
+   "本地依赖服务版本与生产一致",
+   "部署流程可重复、非手工操作",
+   "云端区域符合数据合规要求"
+  ],
+  "interview": [
+   {
+    "q": "「在我电脑上能跑」的根本原因是什么？",
+    "a": "环境差异：操作系统、运行时版本、依赖版本、环境变量、文件路径大小写、数据库类型与数据。解决思路是把环境声明化：锁文件、容器镜像、配置清单，并在 CI 中用同一环境构建测试。"
+   },
+   {
+    "q": "什么时候选择本地部署大模型？",
+    "a": "数据不能外发、需要离线、调用量大到 API 费用不划算、或需要深度定制时。代价是硬件投入（主要是显存）、运维与较弱的模型能力。可先用 Ollama 等工具做验证，再评估是否值得。"
+   },
+   {
+    "q": "IaaS、PaaS、SaaS 如何区分责任？",
+    "a": "IaaS 提供虚拟机与网络，系统和应用归你；PaaS 提供运行平台，你只负责代码和配置；SaaS 直接提供成品软件，你只管使用与数据。越往上运维越少，可控性也越低。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "NIST SP 800-145: The NIST Definition of Cloud Computing",
+    "url": "https://csrc.nist.gov/pubs/sp/800/145/final"
+   },
+   {
+    "title": "The Twelve-Factor App: Dev/prod parity",
+    "url": "https://12factor.net/dev-prod-parity"
+   },
+   {
+    "title": "Docker Compose 文档",
+    "url": "https://docs.docker.com/compose/"
+   }
+  ]
+ },
+ {
+  "slug": "localhost-and-ports",
+  "def": "localhost 是指向本机的保留主机名，通常解析为 IPv4 回环地址 127.0.0.1 或 IPv6 的 ::1，流量不离开本机。端口（Port）是 0–65535 的 16 位编号，用来区分同一台机器上不同的网络服务。「地址 + 端口」唯一确定一个服务入口，本地开发时各种服务就靠不同端口共存。",
+  "how": [
+   "名称解析：系统把 localhost 解析为回环地址，通常由 hosts 文件或系统内置规则完成。",
+   "回环接口：发往 127.0.0.0/8 的数据包由操作系统内部回送，不经过物理网卡。",
+   "端口绑定：服务启动时向系统申请监听某个端口，同一地址同一端口只能被一个进程占用。",
+   "连接建立：客户端连接「地址:端口」，系统把数据交给监听该端口的进程。",
+   "绑定地址决定可达范围：绑定 127.0.0.1 仅本机可访问，绑定 0.0.0.0 则所有网卡都可访问。"
+  ],
+  "terms": [
+   {
+    "t": "回环地址 (Loopback)",
+    "d": "127.0.0.0/8 与 ::1，发往它的数据只在本机内部流转。"
+   },
+   {
+    "t": "0.0.0.0",
+    "d": "监听时表示绑定本机所有 IPv4 网卡，局域网也可访问。"
+   },
+   {
+    "t": "知名端口 (Well-known Ports)",
+    "d": "0–1023，分配给 HTTP(80)、HTTPS(443)、SSH(22) 等标准服务。"
+   },
+   {
+    "t": "端口占用 (EADDRINUSE)",
+    "d": "目标端口已被其他进程监听导致启动失败的错误。"
+   },
+   {
+    "t": "端口转发 (Port Forwarding)",
+    "d": "把一个地址端口的流量转到另一个，如 SSH 隧道、容器端口映射。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "排查端口占用",
+   "src": "# 查看谁占用了 3000 端口（macOS / Linux）\nlsof -i :3000\n\n# Linux 也可以用 ss 列出所有监听端口及进程\nsudo ss -tlnp\n\n# Windows（PowerShell）\n# Get-NetTCPConnection -LocalPort 3000 | Select OwningProcess\n\n# 结束占用进程（确认是自己的开发服务后再执行）\nkill <PID>\n\n# 或者换个端口启动（多数开发服务器支持 PORT 变量或参数）\nPORT=3001 npm run dev\n\n# 测试服务是否在本机可达\ncurl -i http://localhost:3001",
+   "note": "端口冲突是本地开发最常见的启动失败原因，先查占用进程再决定是结束还是换端口。"
+  },
+  "table": {
+   "title": "常见开发端口",
+   "head": [
+    "端口",
+    "常见用途",
+    "说明"
+   ],
+   "rows": [
+    [
+     "3000",
+     "Next.js、Express 等",
+     "社区惯例，非强制"
+    ],
+    [
+     "5173",
+     "Vite 开发服务器",
+     "Vite 默认端口"
+    ],
+    [
+     "8000",
+     "Django、uvicorn",
+     "Python 生态常见默认值"
+    ],
+    [
+     "5432 / 3306",
+     "PostgreSQL / MySQL",
+     "数据库默认端口，勿暴露公网"
+    ],
+    [
+     "6379",
+     "Redis",
+     "默认无认证时尤其不能暴露"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "绑定 127.0.0.1",
+    "pros": "只有本机可访问，最安全",
+    "cons": "手机、同事无法访问",
+    "when": "默认开发场景"
+   },
+   {
+    "opt": "绑定 0.0.0.0",
+    "pros": "局域网设备可访问，便于真机测试",
+    "cons": "同网络的人都能访问",
+    "when": "受信任网络下的移动端调试"
+   },
+   {
+    "opt": "隧道服务暴露公网",
+    "pros": "外网临时访问本地服务",
+    "cons": "暴露面大，需注意鉴权",
+    "when": "Webhook 调试、临时演示"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "容器里服务监听 127.0.0.1，宿主机访问不到",
+    "fix": "容器内应监听 0.0.0.0，再通过端口映射控制对外暴露"
+   },
+   {
+    "bad": "localhost 解析到 ::1，服务只监听 IPv4 导致连不上",
+    "fix": "直接用 127.0.0.1，或让服务同时监听 IPv4 与 IPv6"
+   },
+   {
+    "bad": "把含 localhost 的地址发给别人或写进生产配置",
+    "fix": "localhost 永远指「当前这台机器」，生产用真实域名"
+   },
+   {
+    "bad": "数据库端口映射到 0.0.0.0 暴露在公网",
+    "fix": "映射写成 127.0.0.1:5432:5432，服务器上配防火墙"
+   }
+  ],
+  "checklist": [
+   "开发服务默认只绑定本机",
+   "数据库、缓存端口不对公网开放",
+   "端口通过配置或环境变量设置",
+   "生产配置中没有 localhost 地址",
+   "容器端口映射明确绑定地址"
+  ],
+  "interview": [
+   {
+    "q": "localhost 和 127.0.0.1 完全等价吗？",
+    "a": "通常等价但不完全相同：localhost 是主机名，需要解析，可能解析到 IPv6 的 ::1；127.0.0.1 是确定的 IPv4 地址。若服务只监听 IPv4，访问 localhost 可能失败。浏览器对 localhost 还有特殊处理，如视为安全上下文。"
+   },
+   {
+    "q": "为什么 Linux 上普通用户不能直接监听 80 端口？",
+    "a": "传统上 1024 以下端口为特权端口，绑定需要 root 或相应能力（CAP_NET_BIND_SERVICE）。常见做法是应用监听高位端口，由 Nginx 等反向代理或负载均衡对外监听 80/443。"
+   },
+   {
+    "q": "Docker 中 -p 3000:3000 是什么意思？",
+    "a": "把宿主机的 3000 端口映射到容器的 3000 端口，默认绑定宿主机所有网卡。写成 -p 127.0.0.1:3000:3000 只允许本机访问。容器内服务必须监听 0.0.0.0，否则映射后仍无法访问。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 6761: Special-Use Domain Names（localhost）",
+    "url": "https://www.rfc-editor.org/rfc/rfc6761"
+   },
+   {
+    "title": "IANA Service Name and Port Number Registry",
+    "url": "https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml"
+   },
+   {
+    "title": "Wikipedia: Port (computer networking)",
+    "url": "https://en.wikipedia.org/wiki/Port_(computer_networking)"
+   }
+  ]
+ },
+ {
+  "slug": "url",
+  "def": "URL（统一资源定位符）是标识并定位网络资源的字符串，由协议（scheme）、主机、端口、路径、查询参数和片段等部分组成，语法由 RFC 3986 定义，浏览器实际遵循 WHATWG URL 标准。它是前端路由、API 设计、链接分享、缓存和安全策略（同源判断）的共同基础。",
+  "how": [
+   "协议：scheme 决定如何访问资源，如 https、http、mailto，后接分隔符「://」。",
+   "定位主机：host 部分经 DNS 解析为 IP，port 缺省时使用协议默认端口（443/80）。",
+   "资源路径：path 标识服务器上的资源，在 API 中常对应 REST 资源层级。",
+   "查询参数：「?」后的 key=value 对，以「&」分隔，用于过滤、分页等。",
+   "片段：「#」后的部分只在浏览器端使用，不会发送给服务器，常用于页面锚点和前端路由。"
+  ],
+  "terms": [
+   {
+    "t": "URI / URL",
+    "d": "URI 是资源标识符总称，URL 是带定位方式的 URI。"
+   },
+   {
+    "t": "百分号编码 (Percent-encoding)",
+    "d": "把空格、中文等特殊字符编码成 %XX 形式。"
+   },
+   {
+    "t": "源 (Origin)",
+    "d": "协议 + 主机 + 端口三元组，是浏览器同源策略的判断单位。"
+   },
+   {
+    "t": "查询字符串 (Query String)",
+    "d": "URL 中「?」之后的参数部分。"
+   },
+   {
+    "t": "相对 URL",
+    "d": "省略协议或主机的地址，相对于当前页面解析。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "安全地解析与拼接 URL",
+   "src": "// 浏览器与 Node.js 都内置 URL 和 URLSearchParams\nconst u = new URL(\"https://api.example.com:8443/v1/search?q=hello#top\");\n\nconsole.log(u.protocol); // \"https:\"\nconsole.log(u.hostname); // \"api.example.com\"\nconsole.log(u.port);     // \"8443\"\nconsole.log(u.pathname); // \"/v1/search\"\nconsole.log(u.hash);     // \"#top\"（不会发给服务器）\nconsole.log(u.origin);   // \"https://api.example.com:8443\"\n\n// 拼查询参数：自动做百分号编码，避免手拼字符串出错\nconst api = new URL(\"/v1/search\", \"https://api.example.com\");\napi.searchParams.set(\"q\", \"大语言模型 & RAG\");\napi.searchParams.set(\"page\", \"2\");\nconsole.log(api.toString());\n// https://api.example.com/v1/search?q=%E5%A4%A7...&page=2",
+   "note": "用 URL API 解析和构造地址，比字符串拼接更不易出错，也能正确处理编码。"
+  },
+  "table": {
+   "title": "URL 设计规范要点",
+   "head": [
+    "场景",
+    "推荐做法",
+    "原因"
+   ],
+   "rows": [
+    [
+     "REST 资源",
+     "/users/42/orders",
+     "名词复数、层级表达关系"
+    ],
+    [
+     "过滤与分页",
+     "?status=paid&page=2",
+     "参数可选、可组合、可缓存"
+    ],
+    [
+     "版本",
+     "/v1/... 或请求头",
+     "便于兼容旧客户端"
+    ],
+    [
+     "敏感信息",
+     "不放进 URL",
+     "会进入日志、历史记录与 Referer"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "路径参数 /items/42",
+    "pros": "语义清晰，标识唯一资源",
+    "cons": "层级多时冗长",
+    "when": "定位单个资源"
+   },
+   {
+    "opt": "查询参数 ?id=42",
+    "pros": "可选、灵活组合",
+    "cons": "语义不如路径明确",
+    "when": "过滤、排序、分页、搜索"
+   },
+   {
+    "opt": "请求体传参（POST）",
+    "pros": "可传复杂结构，不进 URL 日志",
+    "cons": "不可直接分享与缓存",
+    "when": "复杂查询、敏感数据"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把 Token、密码放进 URL 查询参数",
+    "fix": "敏感数据放请求头或请求体，URL 会被记录在日志与浏览器历史"
+   },
+   {
+    "bad": "手动拼接参数，中文和 & 符号导致参数错乱",
+    "fix": "使用 URLSearchParams 或 encodeURIComponent 编码"
+   },
+   {
+    "bad": "重定向目标直接取自用户传入的 URL",
+    "fix": "校验跳转地址白名单，防止开放重定向钓鱼"
+   }
+  ],
+  "checklist": [
+   "URL 中不含密钥、令牌等敏感信息",
+   "参数经过正确编码",
+   "API 路径风格统一、有版本策略",
+   "重定向目标做白名单校验",
+   "生产地址统一使用 https"
+  ],
+  "interview": [
+   {
+    "q": "URL 中 # 后面的部分会发送到服务器吗？",
+    "a": "不会。片段（fragment）只在客户端使用，浏览器发请求时会去掉它。因此早期 SPA 用 hash 路由无需服务端配置；但也意味着服务端无法据此渲染内容，对 SEO 不友好。"
+   },
+   {
+    "q": "什么是同源？为什么重要？",
+    "a": "协议、主机、端口三者都相同才是同源。浏览器同源策略限制脚本读取跨源响应，防止恶意网站读取你在其他站点的数据。跨源访问需要服务端通过 CORS 头明确允许。"
+   },
+   {
+    "q": "encodeURI 和 encodeURIComponent 区别？",
+    "a": "encodeURI 用于编码整条 URL，保留 :/?#& 等结构字符；encodeURIComponent 用于编码单个参数值，会把这些字符也编码。拼参数值应使用后者，或直接用 URLSearchParams。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 3986: URI Generic Syntax",
+    "url": "https://www.rfc-editor.org/rfc/rfc3986"
+   },
+   {
+    "title": "WHATWG URL Standard",
+    "url": "https://url.spec.whatwg.org/"
+   },
+   {
+    "title": "MDN: URL API",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/API/URL"
+   }
+  ]
+ },
+ {
+  "slug": "http-vs-https",
+  "def": "HTTP 是 Web 的应用层请求—响应协议，本身以明文传输；HTTPS 是在 TLS 加密通道之上运行的 HTTP，提供机密性（防窃听）、完整性（防篡改）和服务器身份认证（防冒充）。现代浏览器把 HTTP 页面标记为不安全，许多 Web API 只在 HTTPS 下可用，HTTPS 已是上线的默认要求。",
+  "how": [
+   "建立连接：客户端与服务器建立 TCP 连接（HTTP/3 则基于 UDP 上的 QUIC）。",
+   "TLS 握手：协商协议版本与加密套件，服务器出示证书，双方用密钥交换算法协商会话密钥。",
+   "证书验证：客户端检查证书链是否由受信任 CA 签发、域名是否匹配、是否在有效期内。",
+   "加密传输：之后的 HTTP 请求与响应都用对称会话密钥加密并做完整性校验。",
+   "强制升级：服务器可通过 301 重定向和 HSTS 头要求浏览器以后只用 HTTPS 访问。"
+  ],
+  "terms": [
+   {
+    "t": "TLS",
+    "d": "传输层安全协议，SSL 的继任者，当前主流为 TLS 1.2 与 1.3。"
+   },
+   {
+    "t": "证书颁发机构 (CA)",
+    "d": "签发数字证书、为网站身份背书的受信任机构。"
+   },
+   {
+    "t": "HSTS",
+    "d": "响应头告诉浏览器在一段时间内只能用 HTTPS 访问该站点。"
+   },
+   {
+    "t": "混合内容 (Mixed Content)",
+    "d": "HTTPS 页面加载 HTTP 资源，会被浏览器阻止或警告。"
+   },
+   {
+    "t": "中间人攻击 (MITM)",
+    "d": "攻击者在通信双方之间窃听或篡改流量。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "检查 HTTPS 与证书",
+   "src": "# 查看 TLS 握手与响应头（-v 显示详细过程）\ncurl -vI https://example.com 2>&1 | grep -E \"SSL connection|subject:|expire date|HTTP/\"\n\n# 查看证书的签发者、有效期和域名\necho | openssl s_client -connect example.com:443 -servername example.com 2>/dev/null \\\n  | openssl x509 -noout -issuer -subject -dates\n\n# 检查是否从 HTTP 跳转到 HTTPS\ncurl -sI http://example.com | grep -i -E \"^HTTP|^location\"\n\n# 检查是否设置了 HSTS\ncurl -sI https://example.com | grep -i strict-transport-security\n\n# 用 Let's Encrypt 的 certbot 为 Nginx 申请证书（服务器上执行）\n# sudo certbot --nginx -d example.com",
+   "note": "上线前用这几条命令确认：证书有效、HTTP 已跳转、HSTS 已开启。"
+  },
+  "table": {
+   "title": "HTTP 版本演进",
+   "head": [
+    "版本",
+    "传输层",
+    "关键改进"
+   ],
+   "rows": [
+    [
+     "HTTP/1.1",
+     "TCP",
+     "持久连接，但同连接请求排队"
+    ],
+    [
+     "HTTP/2",
+     "TCP（实践中基本配合 TLS）",
+     "二进制分帧、多路复用、头部压缩"
+    ],
+    [
+     "HTTP/3",
+     "QUIC（基于 UDP）",
+     "消除 TCP 队头阻塞，连接建立更快"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "免费自动化证书（如 Let's Encrypt）",
+    "pros": "免费、可自动续期",
+    "cons": "有效期短，依赖自动化运行正常",
+    "when": "绝大多数网站"
+   },
+   {
+    "opt": "平台托管 HTTPS",
+    "pros": "零配置，平台自动签发续期",
+    "cons": "依赖平台",
+    "when": "部署在 PaaS、CDN 上"
+   },
+   {
+    "opt": "商业证书（OV/EV）",
+    "pros": "包含组织验证信息，有商业支持",
+    "cons": "收费，加密强度并无区别",
+    "when": "有合规或采购要求的企业"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "HTTPS 页面里引用 http:// 的脚本或图片",
+    "fix": "所有资源改用 https 或相对协议，消除混合内容"
+   },
+   {
+    "bad": "代码里关闭证书校验（verify=False）图省事",
+    "fix": "修复证书问题本身，关闭校验等于放弃防中间人"
+   },
+   {
+    "bad": "证书过期导致全站不可访问",
+    "fix": "配置自动续期并设置到期监控告警"
+   },
+   {
+    "bad": "以为 HTTPS 能防所有攻击",
+    "fix": "HTTPS 只保护传输，应用层漏洞仍需另行防护"
+   }
+  ],
+  "checklist": [
+   "全站 HTTPS，HTTP 301 跳转",
+   "证书自动续期并有到期告警",
+   "已配置 HSTS 响应头",
+   "无混合内容警告",
+   "禁用过时协议（SSL、TLS 1.0/1.1）"
+  ],
+  "interview": [
+   {
+    "q": "TLS 为什么同时用非对称和对称加密？",
+    "a": "非对称加密（或密钥交换算法）能在不安全信道上安全协商密钥并验证身份，但计算慢；对称加密速度快，适合大量数据。所以握手阶段用前者协商出会话密钥，传输阶段用后者加密数据。"
+   },
+   {
+    "q": "HTTPS 下中间人还能看到什么？",
+    "a": "能看到双方 IP、端口、流量大小与时间；通常还能看到 SNI 中的域名（除非启用 ECH）及 DNS 查询（除非用加密 DNS）。看不到 URL 路径、查询参数、请求头和正文。"
+   },
+   {
+    "q": "本地开发需要 HTTPS 吗？",
+    "a": "浏览器把 localhost 视为安全上下文，多数需要 HTTPS 的 API 在 localhost 下可直接用。但测试 Cookie 的 Secure 属性、第三方回调或局域网真机调试时，可以用 mkcert 等工具生成本地受信证书。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 8446: TLS 1.3",
+    "url": "https://www.rfc-editor.org/rfc/rfc8446"
+   },
+   {
+    "title": "MDN: Strict-Transport-Security",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Strict-Transport-Security"
+   },
+   {
+    "title": "Let's Encrypt: How It Works",
+    "url": "https://letsencrypt.org/how-it-works/"
+   }
+  ]
+ },
+ {
+  "slug": "client-and-server",
+  "def": "客户端—服务器模型（Client–Server Model）是一种分布式架构：客户端主动发起请求，服务器被动监听并返回响应，双方通过网络协议（如 HTTP）通信。浏览器、App、CLI 工具、AI Agent 都可以是客户端。该模型把展示与交互放在客户端、数据与权威逻辑集中在服务器，是 Web 与 API 的基本形态。",
+  "how": [
+   "服务器启动：服务进程在约定的地址和端口上监听，被动等待客户端发起连接。",
+   "客户端发起：解析服务器地址，建立连接，按协议发送请求（方法、路径、头、体）。",
+   "服务器处理：鉴权、执行业务逻辑、访问数据，生成带状态码的响应。",
+   "客户端消费：解析响应，更新界面或交给后续逻辑，处理错误与超时。",
+   "状态维持：HTTP 本身无状态，会话通过 Cookie、Token 等在每次请求中携带。"
+  ],
+  "terms": [
+   {
+    "t": "请求/响应 (Request/Response)",
+    "d": "客户端发出请求，服务器返回响应的一次交互。"
+   },
+   {
+    "t": "状态码 (Status Code)",
+    "d": "如 200 成功、404 未找到、500 服务器错误。"
+   },
+   {
+    "t": "无状态协议 (Stateless)",
+    "d": "每个请求独立，服务器不依赖之前请求的记忆。"
+   },
+   {
+    "t": "长连接 / WebSocket",
+    "d": "建立后可双向持续通信，服务器可主动推送。"
+   },
+   {
+    "t": "P2P (点对点)",
+    "d": "对等节点互为客户端与服务器，与集中式模型相对。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "Node.js 服务端与客户端",
+   "src": "// server.js —— 运行：node server.js\nconst http = require(\"node:http\");\n\nconst server = http.createServer((req, res) => {\n  console.log(req.method, req.url);           // 记录收到的请求\n  if (req.url === \"/api/time\") {\n    res.writeHead(200, { \"Content-Type\": \"application/json\" });\n    res.end(JSON.stringify({ now: new Date().toISOString() }));\n  } else {\n    res.writeHead(404).end(\"Not Found\");\n  }\n});\nserver.listen(3000, \"127.0.0.1\", () => console.log(\"listening on :3000\"));\n\n// client.js —— 另开终端运行：node client.js（Node 18+ 内置 fetch）\n// const res = await fetch(\"http://127.0.0.1:3000/api/time\");\n// console.log(res.status, await res.json());\n\n// 也可以用 curl 当客户端：curl -i http://127.0.0.1:3000/api/time",
+   "note": "服务端监听并按路径响应，客户端可以是浏览器、脚本或 curl，协议一致即可通信。"
+  },
+  "table": {
+   "title": "通信模式对比",
+   "head": [
+    "模式",
+    "谁发起",
+    "典型场景"
+   ],
+   "rows": [
+    [
+     "请求—响应（HTTP）",
+     "客户端",
+     "网页、REST API"
+    ],
+    [
+     "轮询 (Polling)",
+     "客户端定时询问",
+     "简单的状态刷新"
+    ],
+    [
+     "SSE 服务器推送",
+     "服务器单向推送",
+     "LLM 流式输出、通知"
+    ],
+    [
+     "WebSocket",
+     "双向",
+     "聊天、协同编辑、实时游戏"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "胖客户端（逻辑多在前端）",
+    "pros": "交互快、减轻服务器压力",
+    "cons": "逻辑可被篡改，多端重复实现",
+    "when": "富交互应用、离线能力"
+   },
+   {
+    "opt": "瘦客户端（逻辑在服务器）",
+    "pros": "安全、规则统一",
+    "cons": "依赖网络，服务器负载高",
+    "when": "涉及权限、金额、核心规则"
+   },
+   {
+    "opt": "实时双向连接",
+    "pros": "低延迟推送",
+    "cons": "连接管理与扩展更复杂",
+    "when": "协作、聊天、实时数据"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "客户端没有超时和重试，网络抖动就卡死",
+    "fix": "设置请求超时，对幂等请求做指数退避重试"
+   },
+   {
+    "bad": "信任客户端传来的身份或价格字段",
+    "fix": "服务器以会话身份和自身数据为准重新校验"
+   },
+   {
+    "bad": "LLM 长回复用普通请求，用户久等无反馈",
+    "fix": "用流式（SSE）边生成边返回"
+   }
+  ],
+  "checklist": [
+   "客户端有超时、重试与错误提示",
+   "服务器对每个请求独立鉴权",
+   "接口返回正确的状态码",
+   "幂等性设计，重试不产生重复数据",
+   "长耗时任务采用流式或异步方案"
+  ],
+  "interview": [
+   {
+    "q": "HTTP 无状态，登录状态怎么保持？",
+    "a": "服务器登录成功后下发凭证：基于 Session 的方式把会话存服务端、客户端持有 Session ID Cookie；基于 Token 的方式（如 JWT）把签名令牌交给客户端，每次请求在头部携带，服务器验签即可识别用户。"
+   },
+   {
+    "q": "LLM 应用的流式输出用什么技术？",
+    "a": "多数模型 API 用 Server-Sent Events（SSE）：一个 HTTP 响应保持打开，服务器按事件逐段推送 Token。前端用 fetch 读取流或 EventSource 接收，逐步渲染，从而显著降低用户感知等待时间。"
+   },
+   {
+    "q": "什么是幂等？为什么客户端重试需要它？",
+    "a": "幂等指同一请求执行一次和多次效果相同。网络超时时客户端不知道服务器是否已处理，重试非幂等操作（如下单）可能重复扣款。对策：GET/PUT/DELETE 设计为幂等，POST 使用幂等键去重。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Wikipedia: Client–server model",
+    "url": "https://en.wikipedia.org/wiki/Client%E2%80%93server_model"
+   },
+   {
+    "title": "MDN: An overview of HTTP",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview"
+   },
+   {
+    "title": "MDN: Using server-sent events",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events"
+   }
+  ]
+ },
+ {
+  "slug": "database",
+  "def": "数据库（Database）是持久化存储与高效检索结构化数据的系统，由数据库管理系统（DBMS）提供数据模型、查询语言、并发控制、事务与恢复能力。主流类型包括关系型（PostgreSQL、MySQL，使用 SQL）和非关系型（文档、键值、向量等）。它通常是应用中最需要谨慎设计与保护的部分。",
+  "how": [
+   "建模：定义表（或集合）结构、字段类型、主键与表间关系，形成数据模式（Schema）。",
+   "写入：数据先写入日志（如预写日志 WAL）再落盘，保证崩溃后可恢复。",
+   "索引：为常用查询列建立 B-Tree 等索引，把全表扫描变为快速定位。",
+   "查询执行：解析 SQL，查询优化器选择执行计划，读取数据并返回结果。",
+   "事务与并发：通过锁或多版本并发控制（MVCC）让并发读写满足 ACID 性质。"
+  ],
+  "terms": [
+   {
+    "t": "ACID",
+    "d": "原子性、一致性、隔离性、持久性，事务的四个核心保证。"
+   },
+   {
+    "t": "索引 (Index)",
+    "d": "加速查询的数据结构，代价是写入变慢、占用空间。"
+   },
+   {
+    "t": "主键/外键 (Primary/Foreign Key)",
+    "d": "唯一标识行的列，及引用其他表主键的列。"
+   },
+   {
+    "t": "迁移 (Migration)",
+    "d": "版本化记录 Schema 变更的脚本，保证各环境结构一致。"
+   },
+   {
+    "t": "连接池 (Connection Pool)",
+    "d": "复用数据库连接，避免频繁建连耗尽资源。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "建表、索引与事务",
+   "src": "-- PostgreSQL 示例\nCREATE TABLE users (\n  id         BIGSERIAL PRIMARY KEY,\n  email      TEXT NOT NULL UNIQUE,          -- 唯一约束防重复注册\n  created_at TIMESTAMPTZ NOT NULL DEFAULT now()\n);\n\nCREATE TABLE orders (\n  id       BIGSERIAL PRIMARY KEY,\n  user_id  BIGINT NOT NULL REFERENCES users(id),  -- 外键保证引用有效\n  amount   NUMERIC(10,2) NOT NULL CHECK (amount > 0),\n  status   TEXT NOT NULL DEFAULT 'pending'\n);\nCREATE INDEX idx_orders_user ON orders(user_id); -- 按用户查订单更快\n\n-- 事务：两步操作要么都成功，要么都回滚\nBEGIN;\nUPDATE orders SET status = 'paid' WHERE id = 1 AND status = 'pending';\nINSERT INTO users (email) VALUES ('a@example.com');\nCOMMIT;\n\nEXPLAIN SELECT * FROM orders WHERE user_id = 42;  -- 查看是否用到索引",
+   "note": "约束、索引、事务和执行计划，是把数据库用对的四个基本工具。"
+  },
+  "table": {
+   "title": "数据库类型选型",
+   "head": [
+    "类型",
+    "代表",
+    "擅长",
+    "注意"
+   ],
+   "rows": [
+    [
+     "关系型",
+     "PostgreSQL、MySQL",
+     "结构化数据、事务、复杂查询",
+     "Schema 变更需迁移"
+    ],
+    [
+     "文档型",
+     "MongoDB",
+     "灵活结构、嵌套数据",
+     "跨文档关联与事务较弱"
+    ],
+    [
+     "键值/缓存",
+     "Redis",
+     "极快读写、缓存、计数",
+     "通常不作为唯一持久存储"
+    ],
+    [
+     "向量",
+     "pgvector、Milvus",
+     "语义检索、RAG",
+     "需配合原始数据存储"
+    ],
+    [
+     "嵌入式",
+     "SQLite",
+     "单机、移动端、原型",
+     "高并发写入受限"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "托管数据库（RDS、Supabase 等）",
+    "pros": "自动备份、高可用、免运维",
+    "cons": "费用更高，部分配置受限",
+    "when": "生产环境首选"
+   },
+   {
+    "opt": "自建数据库",
+    "pros": "完全可控、成本低",
+    "cons": "备份、升级、高可用全靠自己",
+    "when": "有专业运维能力"
+   },
+   {
+    "opt": "ORM 访问",
+    "pros": "开发快、类型安全、防注入",
+    "cons": "复杂查询可能低效",
+    "when": "常规业务 CRUD"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用字符串拼接 SQL，导致 SQL 注入",
+    "fix": "始终使用参数化查询或 ORM"
+   },
+   {
+    "bad": "直接在生产库手动改表结构",
+    "fix": "通过迁移脚本变更，先在预发环境验证"
+   },
+   {
+    "bad": "没有备份或从未演练恢复",
+    "fix": "开启自动备份并定期做恢复演练"
+   },
+   {
+    "bad": "AI 生成的查询在列表页触发 N+1 查询",
+    "fix": "检查执行计划与查询日志，用 JOIN 或批量加载"
+   }
+  ],
+  "checklist": [
+   "所有查询参数化，无字符串拼接",
+   "Schema 变更走迁移脚本",
+   "关键字段有约束与索引",
+   "自动备份已开启并演练恢复",
+   "数据库不暴露在公网",
+   "应用账号遵循最小权限"
+  ],
+  "interview": [
+   {
+    "q": "索引为什么能加速查询？代价是什么？",
+    "a": "B-Tree 等索引按键有序组织，查找复杂度约为对数级，避免全表扫描。代价是每次写入都要维护索引，写入变慢、占用额外存储；低区分度列或很少查询的列建索引收益很低。"
+   },
+   {
+    "q": "什么时候选 NoSQL 而不是关系型？",
+    "a": "数据结构高度多变、以单文档读写为主、需要特定能力（缓存、图关系、时序、向量）或特殊扩展模式时。多数业务场景关系型数据库更稳妥，PostgreSQL 还支持 JSONB 和向量扩展，能覆盖不少需求。"
+   },
+   {
+    "q": "事务隔离级别解决什么问题？",
+    "a": "控制并发事务间的可见性，权衡一致性与性能。从低到高有读未提交、读已提交、可重复读、可串行化，分别防止脏读、不可重复读、幻读等异常。PostgreSQL 默认读已提交，MySQL InnoDB 默认可重复读。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL 官方文档",
+    "url": "https://www.postgresql.org/docs/current/"
+   },
+   {
+    "title": "OWASP SQL Injection Prevention Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html"
+   },
+   {
+    "title": "Wikipedia: ACID",
+    "url": "https://en.wikipedia.org/wiki/ACID"
+   }
+  ]
+ }
+]

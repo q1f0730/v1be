@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="REST API 专业模式：REST（Representational State Transfer）是 Roy Fielding 在 2000 年博士论文中提出的架构风格，核心约束有无状">
+<title>🎓 REST API · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="rest-api" data-answer="0" data-prev="cursor-based-pagination.pro.html" data-next="webhook.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#net">🌊 中级 · 🌐 网络与 API</a><span>›</span><a href="rest-api.html">REST API</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.133 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="cursor-based-pagination.pro.html" rel="prev"><small>‹ 上一个</small><b>🔖 基于游标的分页</b></a><a class="pn next" href="webhook.pro.html" rel="next"><small>下一个 ›</small><b>🔔 Webhook 回调</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🍽️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>REST API</h1><p class="en">REST API</p>
+    <div class="hbtns"><a class="prosw back" href="rest-api.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">REST（Representational State Transfer）是 Roy Fielding 在 2000 年博士论文中提出的架构风格，核心约束有无状态、可缓存、统一接口等。REST API 通常指基于 HTTP、以资源为中心、用标准方法和状态码操作资源表示的 Web 接口，是前后端与服务间通信最常见的约定。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>把业务对象建模为资源，用名词 URI 标识，如 /users/42/orders。</p></li><li><span class="sn">2</span><p>用 HTTP 方法表达操作：GET 读取、POST 创建、PUT 替换、PATCH 部分修改、DELETE 删除。</p></li><li><span class="sn">3</span><p>请求与响应携带资源表示（多为 JSON），通过 Content-Type 与 Accept 协商格式。</p></li><li><span class="sn">4</span><p>每个请求自带全部上下文（如 Authorization 头），服务端不保存会话状态，便于水平扩展。</p></li><li><span class="sn">5</span><p>用状态码表达结果，用 Cache-Control、ETag 等头支持缓存与条件请求。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>资源 (Resource)</dt><dd>可被 URI 标识的业务实体或集合。</dd></div><div class="term"><dt>无状态 (Stateless)</dt><dd>服务端不依赖前序请求保存的会话上下文。</dd></div><div class="term"><dt>HATEOAS</dt><dd>响应中携带可执行操作的链接，驱动客户端状态转换。</dd></div><div class="term"><dt>条件请求 (Conditional Request)</dt><dd>用 If-None-Match / If-Match 配合 ETag 实现缓存与并发控制。</dd></div><div class="term"><dt>Problem Details</dt><dd>RFC 9457 定义的 JSON 错误响应格式。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>资源创建与条件更新</span><em>http</em><button class="ccopy">复制</button></div><pre><code>POST /v1/orders HTTP/1.1
+Host: api.example.com
+Authorization: Bearer &lt;token&gt;
+Content-Type: application/json
+Idempotency-Key: 7f3c2a10
+
+{&quot;sku&quot;: &quot;A-100&quot;, &quot;qty&quot;: 2}
+
+HTTP/1.1 201 Created
+Location: /v1/orders/981
+ETag: &quot;v1&quot;
+Content-Type: application/json
+
+{&quot;id&quot;: 981, &quot;status&quot;: &quot;pending&quot;, &quot;qty&quot;: 2}
+
+PATCH /v1/orders/981 HTTP/1.1
+If-Match: &quot;v1&quot;
+Content-Type: application/merge-patch+json
+
+{&quot;qty&quot;: 3}
+
+HTTP/1.1 412 Precondition Failed
+Content-Type: application/problem+json
+
+{&quot;type&quot;: &quot;about:blank&quot;, &quot;title&quot;: &quot;Precondition Failed&quot;, &quot;status&quot;: 412}</code></pre></div><p class="cnote">201 + Location 表示创建成功；If-Match 携带 ETag 实现乐观并发，版本不符返回 412。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常用状态码语义</h3><div class="tw"><table><thead><tr><th>状态码</th><th>含义</th><th>典型场景</th></tr></thead><tbody><tr><td data-h="状态码">200 / 201 / 204</td><td data-h="含义">成功 / 已创建 / 无内容</td><td data-h="典型场景">查询、创建、删除</td></tr><tr><td data-h="状态码">400 / 422</td><td data-h="含义">请求格式错 / 语义校验失败</td><td data-h="典型场景">参数缺失、字段非法</td></tr><tr><td data-h="状态码">401 / 403</td><td data-h="含义">未认证 / 无权限</td><td data-h="典型场景">缺 token、越权访问</td></tr><tr><td data-h="状态码">404 / 409</td><td data-h="含义">不存在 / 状态冲突</td><td data-h="典型场景">资源缺失、重复创建</td></tr><tr><td data-h="状态码">429 / 503</td><td data-h="含义">限流 / 暂不可用</td><td data-h="典型场景">请求过多、维护中</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>REST</h4><p><b class="k-p">优点</b>通用、可缓存、工具链成熟</p><p><b class="k-c">代价</b>多资源聚合需多次请求</p><p><b class="k-w">适用</b>公开 API、CRUD 为主的业务</p></div><div class="trd"><h4>GraphQL</h4><p><b class="k-p">优点</b>客户端按需取字段，一次聚合</p><p><b class="k-c">代价</b>缓存与限流更复杂，易出慢查询</p><p><b class="k-w">适用</b>多端、数据关系复杂的前端</p></div><div class="trd"><h4>gRPC</h4><p><b class="k-p">优点</b>强类型、二进制、高性能流式</p><p><b class="k-c">代价</b>浏览器直连需代理，可读性差</p><p><b class="k-w">适用</b>内部微服务间调用</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>所有错误都返回 200，在 body 里放 code</p><p class="fix"><b>✓</b>使用正确的 HTTP 状态码，错误体采用 Problem Details 格式</p></li><li><p class="bad"><b>✗</b>URI 里用动词，如 /getUser、/deleteOrder</p><p class="fix"><b>✓</b>URI 用名词表示资源，动作交给 HTTP 方法</p></li><li><p class="bad"><b>✗</b>列表接口不分页，一次返回全部数据</p><p class="fix"><b>✓</b>强制分页并限制最大页大小</p></li><li><p class="bad"><b>✗</b>混淆 401 与 403</p><p class="fix"><b>✓</b>未认证返回 401，已认证但无权限返回 403</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>资源命名统一用复数名词</span></label></li><li><label><input type="checkbox"><span>方法与状态码语义正确</span></label></li><li><label><input type="checkbox"><span>错误响应格式统一</span></label></li><li><label><input type="checkbox"><span>列表接口支持分页、过滤、排序</span></label></li><li><label><input type="checkbox"><span>写操作支持幂等或幂等键</span></label></li><li><label><input type="checkbox"><span>有 OpenAPI 文档并与实现一致</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>PUT 和 PATCH 的区别？</summary><p>PUT 用完整表示替换目标资源，语义上幂等；PATCH 发送部分修改指令，是否幂等取决于补丁格式。常见补丁格式有 JSON Merge Patch（RFC 7396）和 JSON Patch（RFC 6902）。</p></details><details class="iv"><summary>REST 为什么强调无状态？</summary><p>每个请求自包含，任意实例都能处理，便于负载均衡、水平扩展与故障转移；也让缓存和重试更简单。会话信息改由 token 携带或存在共享存储中。</p></details><details class="iv"><summary>多数「REST API」真的符合 REST 吗？</summary><p>大多只做到资源 URI + HTTP 方法 + JSON，缺少 HATEOAS 等约束，按 Richardson 成熟度模型约在第 2 级。工程上这通常够用，关键是语义一致和文档清晰。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm" target="_blank" rel="noopener"><b>Fielding 论文第 5 章：REST</b><small>ics.uci.edu ↗</small></a></li><li><a href="https://www.rfc-editor.org/rfc/rfc9110" target="_blank" rel="noopener"><b>RFC 9110: HTTP Semantics</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://www.rfc-editor.org/rfc/rfc9457" target="_blank" rel="noopener"><b>RFC 9457: Problem Details for HTTP APIs</b><small>rfc-editor.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="cursor-based-pagination.pro.html" rel="prev"><small>‹ 上一个</small><b>🔖 基于游标的分页</b></a><a class="pn next" href="webhook.pro.html" rel="next"><small>下一个 ›</small><b>🔔 Webhook 回调</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

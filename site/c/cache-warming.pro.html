@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="缓存预热 专业模式：缓存预热（Cache Warming）是在流量到来之前，主动把预计会被访问的热点数据加载进缓存，避免冷启动时大量未命中直接冲击数据库。典型时机包括新缓存集群上线">
+<title>🎓 缓存预热 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="cache-warming" data-answer="0" data-prev="cache-hit-ratio.pro.html" data-next="write-through-vs-write-back.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#cache">🔮 高级 · ⚡ 缓存与队列</a><span>›</span><a href="cache-warming.html">缓存预热</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.274 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="cache-hit-ratio.pro.html" rel="prev"><small>‹ 上一个</small><b>🎯 缓存命中率</b></a><a class="pn next" href="write-through-vs-write-back.pro.html" rel="next"><small>下一个 ›</small><b>📒 直写与异步回写</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🥟</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>⚡ 缓存与队列</span><span>⏱ 约 10 分钟</span></div>
+    <h1>缓存预热</h1><p class="en">Cache Warming</p>
+    <div class="hbtns"><a class="prosw back" href="cache-warming.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">缓存预热（Cache Warming）是在流量到来之前，主动把预计会被访问的热点数据加载进缓存，避免冷启动时大量未命中直接冲击数据库。典型时机包括新缓存集群上线、缓存节点重启、大促或发布会前、CDN 新内容发布。预热本身也要限速，否则会变成另一种压力源。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>确定热点集合：来自访问日志排行、昨日统计、运营配置或线上流量采样。</p></li><li><span class="sn">2</span><p>从数据库或源站批量读取数据，写入缓存并设置带抖动的 TTL。</p></li><li><span class="sn">3</span><p>按批次与速率执行，监控数据库负载，避免预热本身造成过载。</p></li><li><span class="sn">4</span><p>预热完成后再切入流量，或通过灰度逐步提高新节点的流量比例。</p></li><li><span class="sn">5</span><p>也可用持久化（如 Redis RDB/AOF）或从旧集群复制，缩短重启后的冷启动。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>冷启动 (Cold Start)</dt><dd>缓存为空时命中率极低的阶段。</dd></div><div class="term"><dt>热点集合 (Hot Set)</dt><dd>预计会被高频访问、值得预热的数据。</dd></div><div class="term"><dt>流量回放 (Traffic Replay)</dt><dd>用录制的真实请求驱动预热。</dd></div><div class="term"><dt>灰度切流 (Gradual Shift)</dt><dd>逐步把流量从旧节点迁到新节点。</dd></div><div class="term"><dt>CDN 预取 (Prefetch)</dt><dd>主动让 CDN 节点提前拉取并缓存资源。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>分批限速预热热点商品</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import json, random, time, redis
+
+r = redis.Redis()
+BATCH, PAUSE = 200, 0.2         # 每批 200 条，批间暂停 0.2 秒，控制数据库压力
+
+def hot_product_ids(limit: int = 5000) -&gt; list[int]:
+    # 取昨日浏览量最高的商品；db_query 为业务自定义
+    return db_query(
+        &quot;SELECT product_id FROM product_daily_views &quot;
+        &quot;WHERE day = current_date - 1 ORDER BY views DESC LIMIT %s&quot;, (limit,))
+
+def warm():
+    ids = hot_product_ids()
+    for i in range(0, len(ids), BATCH):
+        rows = db_get_products(ids[i:i + BATCH])     # 一次批量查询
+        pipe = r.pipeline(transaction=False)          # 管道减少网络往返
+        for p in rows:
+            ttl = 3600 + random.randint(0, 600)       # TTL 抖动，避免同时过期
+            pipe.set(f&quot;product:{p[&#x27;id&#x27;]}&quot;, json.dumps(p), ex=ttl, nx=True)
+        pipe.execute()
+        time.sleep(PAUSE)
+    print(f&quot;warmed {len(ids)} products&quot;)
+
+if __name__ == &quot;__main__&quot;:
+    warm()</code></pre></div><p class="cnote">批量读、管道写、限速与 TTL 抖动；nx=True 不覆盖线上已写入的更新值。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">预热数据来源</h3><div class="tw"><table><thead><tr><th>来源</th><th>优点</th><th>局限</th></tr></thead><tbody><tr><td data-h="来源">历史访问日志排行</td><td data-h="优点">反映真实热度</td><td data-h="局限">对新内容无效</td></tr><tr><td data-h="来源">运营/活动配置</td><td data-h="优点">可提前覆盖新品与活动</td><td data-h="局限">依赖人工准确性</td></tr><tr><td data-h="来源">流量回放</td><td data-h="优点">最接近真实访问模式</td><td data-h="局限">需要录制与回放设施</td></tr><tr><td data-h="来源">旧集群数据复制</td><td data-h="优点">完整保留工作集</td><td data-h="局限">需版本与格式兼容</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>主动预热</h4><p><b class="k-p">优点</b>切流瞬间即有高命中率</p><p><b class="k-c">代价</b>需维护热点识别与脚本</p><p><b class="k-w">适用</b>大促、新集群上线</p></div><div class="trd"><h4>被动自然填充</h4><p><b class="k-p">优点</b>零额外工作</p><p><b class="k-c">代价</b>冷启动期数据库压力大</p><p><b class="k-w">适用</b>流量小、后端余量大</p></div><div class="trd"><h4>持久化缓存</h4><p><b class="k-p">优点</b>重启后快速恢复</p><p><b class="k-c">代价</b>占用磁盘，恢复期加载慢</p><p><b class="k-w">适用</b>单节点重启频繁</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>预热脚本全速运行，先把数据库打满</p><p class="fix"><b>✓</b>分批限速，并监控数据库负载</p></li><li><p class="bad"><b>✗</b>所有预热数据用同一 TTL，一小时后集体过期</p><p class="fix"><b>✓</b>TTL 加随机抖动或按热度分层</p></li><li><p class="bad"><b>✗</b>预热覆盖了刚被业务更新的新值</p><p class="fix"><b>✓</b>写入使用 NX，或比较版本号后再写</p></li><li><p class="bad"><b>✗</b>缓存刚清空就切入全部流量</p><p class="fix"><b>✓</b>预热完成或灰度逐步放量</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>热点集合来源已确定并可更新</span></label></li><li><label><input type="checkbox"><span>预热有速率限制</span></label></li><li><label><input type="checkbox"><span>预热写入不覆盖新数据</span></label></li><li><label><input type="checkbox"><span>TTL 带抖动</span></label></li><li><label><input type="checkbox"><span>切流前检查命中率达到目标</span></label></li><li><label><input type="checkbox"><span>预热脚本纳入发布与扩容流程</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>什么情况下必须做缓存预热？</summary><p>后端在零命中情况下无法承受正常流量时：新缓存集群替换旧集群、全量清缓存后、大促与热点事件前、多数节点同时重启。若后端余量足够承受冷启动，自然填充也可以接受。</p></details><details class="iv"><summary>如何确定要预热哪些数据？</summary><p>基于访问日志或埋点统计热度排行，覆盖贡献主要流量的头部数据；结合运营提供的新品和活动清单；用历史曲线估算覆盖率与目标命中率的关系，在成本与效果间选择数量。</p></details><details class="iv"><summary>如何避免预热本身造成故障？</summary><p>限速分批并监控数据库；在低峰期执行；使用只读副本作为数据源；写入使用 NX 避免覆盖更新；预热可中断、可重入；失败时有降级方案，例如灰度切流而非一次切换。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/Strategies.html" target="_blank" rel="noopener"><b>Amazon ElastiCache: Caching strategies</b><small>docs.aws.amazon.com ↗</small></a></li><li><a href="https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/" target="_blank" rel="noopener"><b>Redis: Persistence</b><small>redis.io ↗</small></a></li><li><a href="https://aws.amazon.com/caching/best-practices/" target="_blank" rel="noopener"><b>AWS: Caching Best Practices</b><small>aws.amazon.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="cache-hit-ratio.pro.html" rel="prev"><small>‹ 上一个</small><b>🎯 缓存命中率</b></a><a class="pn next" href="write-through-vs-write-back.pro.html" rel="next"><small>下一个 ›</small><b>📒 直写与异步回写</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

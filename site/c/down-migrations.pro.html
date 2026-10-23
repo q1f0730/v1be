@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="数据库回滚迁移 专业模式：回滚迁移（Down Migration）是与升级迁移（Up）配对的逆向脚本，用于把数据库结构撤回到上一版本。它属于数据库变更管理层，主要用于开发环境来回切换和发">
+<title>🎓 数据库回滚迁移 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="down-migrations" data-answer="0" data-prev="connection-pooling.pro.html" data-next="acid.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#db">🔮 高级 · 🗄️ 数据库</a><span>›</span><a href="down-migrations.html">数据库回滚迁移</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.238 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="connection-pooling.pro.html" rel="prev"><small>‹ 上一个</small><b>🏊 数据库连接池</b></a><a class="pn next" href="acid.pro.html" rel="next"><small>下一个 ›</small><b>🏛️ 事务四大基石特性</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">↩️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>数据库回滚迁移</h1><p class="en">Down Migrations</p>
+    <div class="hbtns"><a class="prosw back" href="down-migrations.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">回滚迁移（Down Migration）是与升级迁移（Up）配对的逆向脚本，用于把数据库结构撤回到上一版本。它属于数据库变更管理层，主要用于开发环境来回切换和发布失败时的应急。由于删除列、改类型等操作会丢数据，生产中更常见的策略是“向前修复”加兼容性设计。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>迁移工具为每个版本维护一对脚本：upgrade/up 前进，downgrade/down 撤销。</p></li><li><span class="sn">2</span><p>工具在数据库内的版本表（如 alembic_version）记录当前版本，按顺序执行或回退。</p></li><li><span class="sn">3</span><p>down 必须逆序撤销 up 的每一步，例如先删索引再删列。</p></li><li><span class="sn">4</span><p>破坏性变更（删列、删表、收窄类型）的 down 无法恢复数据，只能恢复结构。</p></li><li><span class="sn">5</span><p>生产常采用扩展-收缩（expand-contract）：先加兼容结构，代码切换稳定后再删旧结构。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>Schema Migration</dt><dd>版本化、可重复执行的数据库结构变更脚本。</dd></div><div class="term"><dt>Roll Forward</dt><dd>出问题时发布一个新迁移修复，而非回退旧迁移。</dd></div><div class="term"><dt>扩展-收缩 (Expand-Contract)</dt><dd>先兼容新增、后清理旧结构的分阶段变更模式。</dd></div><div class="term"><dt>事务性 DDL (Transactional DDL)</dt><dd>DDL 可在事务中回滚；PostgreSQL 支持，MySQL 多数 DDL 会隐式提交。</dd></div><div class="term"><dt>不可逆迁移 (Irreversible Migration)</dt><dd>down 无法还原数据的迁移，应显式标注。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Alembic 成对迁移</span><em>python</em><button class="ccopy">复制</button></div><pre><code>&quot;&quot;&quot;add users.nickname&quot;&quot;&quot;
+from alembic import op
+import sqlalchemy as sa
+
+revision = &quot;a1b2c3d4e5f6&quot;
+down_revision = &quot;9f8e7d6c5b4a&quot;
+
+def upgrade():
+    # 扩展阶段：只新增可空列，旧代码不受影响
+    op.add_column(&quot;users&quot;, sa.Column(&quot;nickname&quot;, sa.String(64), nullable=True))
+    op.create_index(&quot;ix_users_nickname&quot;, &quot;users&quot;, [&quot;nickname&quot;])
+
+def downgrade():
+    # 逆序撤销：先删索引，再删列（该列数据会丢失）
+    op.drop_index(&quot;ix_users_nickname&quot;, table_name=&quot;users&quot;)
+    op.drop_column(&quot;users&quot;, &quot;nickname&quot;)
+
+# 命令行：
+#   alembic upgrade head     升级到最新
+#   alembic downgrade -1     回退一个版本
+#   alembic upgrade head --sql   只生成 SQL 供评审</code></pre></div><p class="cnote">down 与 up 严格逆序；新增可空列属于可安全回退的扩展型变更。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">主流迁移工具的回滚支持</h3><div class="tw"><table><thead><tr><th>工具</th><th>回滚方式</th><th>说明</th></tr></thead><tbody><tr><td data-h="工具">Alembic</td><td data-h="回滚方式">downgrade 函数</td><td data-h="说明">每个版本手写 upgrade/downgrade</td></tr><tr><td data-h="工具">Rails</td><td data-h="回滚方式">change 自动推导或 down</td><td data-h="说明">部分操作可自动逆转</td></tr><tr><td data-h="工具">Flyway</td><td data-h="回滚方式">Undo 迁移（U 前缀）</td><td data-h="说明">Undo 属付费版功能</td></tr><tr><td data-h="工具">Prisma Migrate</td><td data-h="回滚方式">无内置 down</td><td data-h="说明">可用 migrate diff 生成回退 SQL</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>维护 down 脚本</h4><p><b class="k-p">优点</b>开发环境可来回切换，应急有预案</p><p><b class="k-c">代价</b>维护成本高，常年不测易失效</p><p><b class="k-w">适用</b>开发频繁切分支的团队</p></div><div class="trd"><h4>只向前修复</h4><p><b class="k-p">优点</b>流程单一，避免回退丢数据</p><p><b class="k-c">代价</b>出错时需快速写修复迁移</p><p><b class="k-w">适用</b>生产环境的主要策略</p></div><div class="trd"><h4>备份/快照回滚</h4><p><b class="k-p">优点</b>可恢复数据本身</p><p><b class="k-c">代价</b>会丢失快照之后的写入</p><p><b class="k-w">适用</b>灾难性错误的最后手段</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>down 脚本从未执行过，出事时才发现跑不通</p><p class="fix"><b>✓</b>CI 中执行 up→down→up 验证可逆性</p></li><li><p class="bad"><b>✗</b>同一次发布里改代码又删旧列</p><p class="fix"><b>✓</b>按扩展-收缩拆成多次发布</p></li><li><p class="bad"><b>✗</b>以为 down 能恢复被删列的数据</p><p class="fix"><b>✓</b>破坏性变更前备份或保留影子列一段时间</p></li><li><p class="bad"><b>✗</b>在 MySQL 中依赖事务回滚失败的 DDL</p><p class="fix"><b>✓</b>了解 DDL 隐式提交，单个迁移只做一类变更</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个迁移都有 down 或标注不可逆</span></label></li><li><label><input type="checkbox"><span>CI 验证 up→down→up</span></label></li><li><label><input type="checkbox"><span>破坏性变更拆分为多次发布</span></label></li><li><label><input type="checkbox"><span>删除操作前已有可恢复备份</span></label></li><li><label><input type="checkbox"><span>迁移在接近生产数据量上演练过</span></label></li><li><label><input type="checkbox"><span>大表 DDL 评估了锁与耗时</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么生产上更推荐向前修复？</summary><p>回退迁移可能丢失新写入的数据，且应用代码可能已依赖新结构；在压力下执行少测的 down 风险高。向前修复配合扩展-收缩，让每一步都兼容新旧代码，代码可独立回滚而数据库不用退。</p></details><details class="iv"><summary>如何安全地重命名一列？</summary><p>不直接 RENAME。先加新列，代码双写新旧列并回填历史数据；读取切到新列并观察；确认旧代码不再运行后停止写旧列；最后单独发布删除旧列。每一步都可单独回退。</p></details><details class="iv"><summary>AI 生成的迁移需要重点审什么？</summary><p>是否有删列删表等破坏性操作、down 是否真正逆序、大表上是否会长时间锁表（如加非空默认值、建索引未用 CONCURRENTLY），以及是否混入了与需求无关的自动生成变更。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://alembic.sqlalchemy.org/en/latest/tutorial.html" target="_blank" rel="noopener"><b>Alembic Tutorial</b><small>alembic.sqlalchemy.org ↗</small></a></li><li><a href="https://guides.rubyonrails.org/active_record_migrations.html" target="_blank" rel="noopener"><b>Rails Guides: Active Record Migrations</b><small>guides.rubyonrails.org ↗</small></a></li><li><a href="https://www.prisma.io/docs/orm/prisma-migrate/workflows/generating-down-migrations" target="_blank" rel="noopener"><b>Prisma: Generating down migrations</b><small>prisma.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="connection-pooling.pro.html" rel="prev"><small>‹ 上一个</small><b>🏊 数据库连接池</b></a><a class="pn next" href="acid.pro.html" rel="next"><small>下一个 ›</small><b>🏛️ 事务四大基石特性</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

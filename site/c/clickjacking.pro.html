@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="点击劫持 专业模式：点击劫持（Clickjacking / UI Redressing）是攻击者把目标网站嵌入透明或伪装的 iframe，覆盖在诱饵页面上，诱导用户在不知情时点击目">
+<title>🎓 点击劫持 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="clickjacking" data-answer="0" data-prev="mass-assignment.pro.html" data-next="content-security-policy.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sec">🔮 高级 · 🛡️ 安全防线</a><span>›</span><a href="clickjacking.html">点击劫持</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.221 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="mass-assignment.pro.html" rel="prev"><small>‹ 上一个</small><b>📮 批量赋值漏洞</b></a><a class="pn next" href="content-security-policy.pro.html" rel="next"><small>下一个 ›</small><b>📜 内容安全策略 (CSP)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🪤</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>点击劫持</h1><p class="en">Clickjacking</p>
+    <div class="hbtns"><a class="prosw back" href="clickjacking.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">点击劫持（Clickjacking / UI Redressing）是攻击者把目标网站嵌入透明或伪装的 iframe，覆盖在诱饵页面上，诱导用户在不知情时点击目标站的按钮，完成授权、转账、修改设置等操作。由于请求带着用户的真实登录态，服务端难以区分。防御核心是由目标站声明自己不允许被他站嵌入。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>攻击者在自己的页面中用 iframe 加载目标站的敏感操作页，用户此时已登录目标站。</p></li><li><span class="sn">2</span><p>通过 CSS 把 iframe 设为透明并精确定位，使目标按钮正好位于诱饵按钮下方。</p></li><li><span class="sn">3</span><p>用户以为点击的是诱饵内容，实际点击落在 iframe 中的目标站按钮上。</p></li><li><span class="sn">4</span><p>浏览器自动携带目标站 Cookie（取决于 SameSite 设置），操作以用户身份执行。</p></li><li><span class="sn">5</span><p>防御：响应头 CSP frame-ancestors 或 X-Frame-Options 让浏览器拒绝跨站嵌入。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>UI 伪装 (UI Redressing)</dt><dd>通过叠层与透明度伪装界面诱导交互。</dd></div><div class="term"><dt>frame-ancestors</dt><dd>CSP 指令，规定哪些来源可以嵌入本页面。</dd></div><div class="term"><dt>X-Frame-Options</dt><dd>RFC 7034 描述的旧式响应头，取值 DENY 或 SAMEORIGIN。</dd></div><div class="term"><dt>SameSite Cookie</dt><dd>限制跨站请求携带 Cookie，可降低嵌入页的登录态。</dd></div><div class="term"><dt>防框架脚本 (Frame Busting)</dt><dd>用 JS 检测并跳出框架的旧方法，易被绕过。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>禁止被跨站嵌入的响应头</span><em>http</em><button class="ccopy">复制</button></div><pre><code># 方案一：完全禁止任何站点（包括自己）嵌入
+HTTP/1.1 200 OK
+Content-Security-Policy: frame-ancestors &#x27;none&#x27;
+X-Frame-Options: DENY
+
+# 方案二：只允许同源页面嵌入
+HTTP/1.1 200 OK
+Content-Security-Policy: frame-ancestors &#x27;self&#x27;
+X-Frame-Options: SAMEORIGIN
+
+# 方案三：允许指定合作方嵌入（X-Frame-Options 无法表达，只用 CSP）
+HTTP/1.1 200 OK
+Content-Security-Policy: frame-ancestors &#x27;self&#x27; https://partner.example.com
+
+# 同时设置会话 Cookie 的 SameSite，减少被嵌入时携带登录态
+Set-Cookie: session=abc123; Secure; HttpOnly; SameSite=Lax</code></pre></div><p class="cnote">frame-ancestors 是现代标准，X-Frame-Options 兼容旧浏览器；两者并存时以 CSP 为准。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">防御手段对比</h3><div class="tw"><table><thead><tr><th>手段</th><th>粒度</th><th>说明</th></tr></thead><tbody><tr><td data-h="手段">CSP frame-ancestors</td><td data-h="粒度">可列多个来源</td><td data-h="说明">推荐，现代浏览器支持</td></tr><tr><td data-h="手段">X-Frame-Options</td><td data-h="粒度">DENY / SAMEORIGIN</td><td data-h="说明">兼容旧浏览器，不能列多个来源</td></tr><tr><td data-h="手段">SameSite Cookie</td><td data-h="粒度">Cookie 级</td><td data-h="说明">降低风险，不能替代上两者</td></tr><tr><td data-h="手段">敏感操作二次确认</td><td data-h="粒度">业务级</td><td data-h="说明">密码、验证码等打断一键点击</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>frame-ancestors &#x27;none&#x27;</h4><p><b class="k-p">优点</b>最安全，配置简单</p><p><b class="k-c">代价</b>自身也无法嵌入</p><p><b class="k-w">适用</b>不需要被嵌入的应用</p></div><div class="trd"><h4>frame-ancestors &#x27;self&#x27;</h4><p><b class="k-p">优点</b>允许同源内嵌</p><p><b class="k-c">代价</b>同源页面若有漏洞仍可被利用</p><p><b class="k-w">适用</b>站内有 iframe 布局</p></div><div class="trd"><h4>允许指定外部来源</h4><p><b class="k-p">优点</b>支持合作方嵌入</p><p><b class="k-c">代价</b>信任范围扩大</p><p><b class="k-w">适用</b>嵌入式组件、支付插件</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>只在首页加防护头，敏感操作页漏掉</p><p class="fix"><b>✓</b>在网关或中间件全局设置，例外页面单独放开</p></li><li><p class="bad"><b>✗</b>依赖 JS frame busting 脚本</p><p class="fix"><b>✓</b>使用响应头，脚本可被 sandbox 属性等手段禁用</p></li><li><p class="bad"><b>✗</b>用 X-Frame-Options ALLOW-FROM 指定来源</p><p class="fix"><b>✓</b>ALLOW-FROM 已不被现代浏览器支持，改用 frame-ancestors</p></li><li><p class="bad"><b>✗</b>在 meta 标签里写 frame-ancestors</p><p class="fix"><b>✓</b>该指令在 meta 中无效，必须通过 HTTP 响应头下发</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有 HTML 响应带 frame-ancestors</span></label></li><li><label><input type="checkbox"><span>同时设置 X-Frame-Options 兼容</span></label></li><li><label><input type="checkbox"><span>例外嵌入来源已逐个评审</span></label></li><li><label><input type="checkbox"><span>会话 Cookie 设置 SameSite</span></label></li><li><label><input type="checkbox"><span>高风险操作有二次确认</span></label></li><li><label><input type="checkbox"><span>用扫描工具验证响应头生效</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>X-Frame-Options 和 frame-ancestors 怎么选？</summary><p>优先 CSP frame-ancestors，它可列多个来源并支持通配，是标准方案；X-Frame-Options 只有 DENY 与 SAMEORIGIN，作为旧浏览器兼容一起下发。两者同时存在时，支持 CSP 的浏览器以 frame-ancestors 为准。</p></details><details class="iv"><summary>API 接口需要防点击劫持吗？</summary><p>点击劫持针对被渲染并可交互的页面，纯 JSON API 不会被用户直接点击，风险很低；但统一下发防护头成本几乎为零，很多团队在网关全局设置。</p></details><details class="iv"><summary>SameSite 能完全防御点击劫持吗？</summary><p>不能。SameSite=Lax/Strict 使跨站 iframe 中通常不携带 Cookie，能大幅降低风险，但依赖浏览器行为与 Cookie 配置，且对同站子域无效。应与 frame-ancestors 一起使用。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Clickjacking_Defense_Cheat_Sheet.html" target="_blank" rel="noopener"><b>OWASP Clickjacking Defense Cheat Sheet</b><small>cheatsheetseries.owasp.org ↗</small></a></li><li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/frame-ancestors" target="_blank" rel="noopener"><b>MDN：CSP frame-ancestors</b><small>developer.mozilla.org ↗</small></a></li><li><a href="https://www.rfc-editor.org/rfc/rfc7034" target="_blank" rel="noopener"><b>RFC 7034: HTTP Header Field X-Frame-Options</b><small>rfc-editor.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="mass-assignment.pro.html" rel="prev"><small>‹ 上一个</small><b>📮 批量赋值漏洞</b></a><a class="pn next" href="content-security-policy.pro.html" rel="next"><small>下一个 ›</small><b>📜 内容安全策略 (CSP)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="延迟与吞吐量权衡 专业模式：延迟（Latency）是单个请求从发出到完成所需的时间，吞吐量（Throughput）是单位时间内系统完成的请求或数据量。两者相关但不同：批处理、排队、并发可以">
+<title>🎓 延迟与吞吐量权衡 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="latency-vs-throughput" data-answer="0" data-prev="backward-compatibility.pro.html" data-next="egress-fees.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#net">🔮 高级 · 🌐 网络与 API</a><span>›</span><a href="latency-vs-throughput.html">延迟与吞吐量权衡</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.265 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="backward-compatibility.pro.html" rel="prev"><small>‹ 上一个</small><b>🎮 向后兼容性</b></a><a class="pn next" href="egress-fees.pro.html" rel="next"><small>下一个 ›</small><b>💸 云网络出站流量费</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🚗</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>延迟与吞吐量权衡</h1><p class="en">Latency vs Throughput</p>
+    <div class="hbtns"><a class="prosw back" href="latency-vs-throughput.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">延迟（Latency）是单个请求从发出到完成所需的时间，吞吐量（Throughput）是单位时间内系统完成的请求或数据量。两者相关但不同：批处理、排队、并发可以提高吞吐却拉长延迟。性能目标需同时说明两者，并用分位数而非平均值描述延迟。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>延迟由网络往返、排队等待、处理时间、依赖调用等组成，常用 P50、P95、P99 描述。</p></li><li><span class="sn">2</span><p>吞吐受限于最慢的瓶颈资源（CPU、IO、锁、连接池、下游配额）。</p></li><li><span class="sn">3</span><p>Little 定律：系统内平均在途请求数 = 到达率 × 平均停留时间，把三者联系起来。</p></li><li><span class="sn">4</span><p>资源利用率接近饱和时，排队时间急剧上升，延迟呈非线性恶化。</p></li><li><span class="sn">5</span><p>扇出调用中，整体延迟取决于最慢的子调用，尾延迟会被放大。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>分位数 (Percentile)</dt><dd>P99 表示 99% 的请求不超过该延迟。</dd></div><div class="term"><dt>尾延迟 (Tail Latency)</dt><dd>高分位（P99、P99.9）的延迟，影响最差体验。</dd></div><div class="term"><dt>Little 定律 (Little&#x27;s Law)</dt><dd>L = λW，在途数、到达率与停留时间的关系。</dd></div><div class="term"><dt>饱和度 (Saturation)</dt><dd>资源被占满、请求开始排队的程度。</dd></div><div class="term"><dt>TTFT</dt><dd>大模型首个 token 返回所需时间，属延迟指标。</dd></div><div class="term"><dt>批处理 (Batching)</dt><dd>合并多个请求一起处理，提高吞吐、增加等待。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>压测：同时看吞吐与分位数</span><em>python</em><button class="ccopy">复制</button></div><pre><code># pip install httpx
+import asyncio, time, statistics, httpx
+
+URL, N, CONCURRENCY = &quot;http://localhost:8000/health&quot;, 500, 50
+
+async def main():
+    latencies, sem = [], asyncio.Semaphore(CONCURRENCY)
+    async with httpx.AsyncClient() as client:
+        async def one():
+            async with sem:
+                t = time.perf_counter()
+                await client.get(URL)
+                latencies.append(time.perf_counter() - t)
+        start = time.perf_counter()
+        await asyncio.gather(*(one() for _ in range(N)))
+        elapsed = time.perf_counter() - start
+
+    latencies.sort()
+    pct = lambda p: latencies[int(p * (len(latencies) - 1))] * 1000
+    rps = N / elapsed
+    print(f&quot;吞吐 {rps:.0f} req/s | P50 {pct(.50):.1f}ms P95 {pct(.95):.1f}ms P99 {pct(.99):.1f}ms&quot;)
+    # Little 定律验证：在途请求数 ≈ 吞吐 × 平均延迟，应接近设定的并发
+    print(f&quot;估算在途 {rps * statistics.mean(latencies):.1f}（设定并发 {CONCURRENCY}）&quot;)
+
+asyncio.run(main())</code></pre></div><p class="cnote">改变并发数重复测量，可看到吞吐先升后平、延迟在饱和后陡增的拐点。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见优化手段的影响</h3><div class="tw"><table><thead><tr><th>手段</th><th>吞吐</th><th>延迟</th></tr></thead><tbody><tr><td data-h="手段">批处理/合并写</td><td data-h="吞吐">提升</td><td data-h="延迟">单个请求变长</td></tr><tr><td data-h="手段">增加并发/实例</td><td data-h="吞吐">提升（至瓶颈）</td><td data-h="延迟">未饱和时基本不变</td></tr><tr><td data-h="手段">缓存</td><td data-h="吞吐">提升</td><td data-h="延迟">命中时大幅降低</td></tr><tr><td data-h="手段">对冲请求 (Hedged Request)</td><td data-h="吞吐">略降（多发请求）</td><td data-h="延迟">降低尾延迟</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>优先低延迟</h4><p><b class="k-p">优点</b>交互体验好</p><p><b class="k-c">代价</b>资源利用率低，成本高</p><p><b class="k-w">适用</b>在线交互、支付链路</p></div><div class="trd"><h4>优先高吞吐</h4><p><b class="k-p">优点</b>单位成本低</p><p><b class="k-c">代价</b>单个任务等待更久</p><p><b class="k-w">适用</b>离线批处理、数据管道</p></div><div class="trd"><h4>大模型推理批处理</h4><p><b class="k-p">优点</b>GPU 利用率与总 tokens/s 提升</p><p><b class="k-c">代价</b>单请求 TTFT 与速度可能下降</p><p><b class="k-w">适用</b>高并发推理服务</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>只看平均延迟</p><p class="fix"><b>✓</b>报告 P50/P95/P99，并按接口拆分</p></li><li><p class="bad"><b>✗</b>压测只用固定并发，掩盖排队延迟</p><p class="fix"><b>✓</b>按固定到达率施压，观察延迟随负载变化</p></li><li><p class="bad"><b>✗</b>把利用率推到 95% 以上追求成本</p><p class="fix"><b>✓</b>为突发留余量，关注饱和后的延迟拐点</p></li><li><p class="bad"><b>✗</b>评估大模型服务只看 tokens/s</p><p class="fix"><b>✓</b>同时看 TTFT、单请求速度与并发下的分位数</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>SLO 同时定义延迟分位数与吞吐</span></label></li><li><label><input type="checkbox"><span>压测覆盖到饱和拐点</span></label></li><li><label><input type="checkbox"><span>监控按接口统计 P99</span></label></li><li><label><input type="checkbox"><span>已识别当前的瓶颈资源</span></label></li><li><label><input type="checkbox"><span>扇出调用有超时与降级</span></label></li><li><label><input type="checkbox"><span>容量规划留有突发余量</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么不能用平均延迟衡量性能？</summary><p>延迟分布通常长尾，少量极慢请求会被平均值掩盖，而用户恰恰记住慢的那几次。一个页面依赖多个请求时，遇到尾延迟的概率被放大。所以用 P95/P99 并结合分布图来定义目标。</p></details><details class="iv"><summary>用 Little 定律能做什么估算？</summary><p>已知目标吞吐和平均延迟，可估算需要的并发度，例如 1000 req/s × 0.05 s ≈ 50 个在途请求，据此配置连接池、线程数或实例数；反过来也能根据并发上限推算最大吞吐。</p></details><details class="iv"><summary>如何降低扇出系统的尾延迟？</summary><p>减少扇出宽度；对子调用设置超时与部分结果降级；对冲请求（超过 P95 时向另一副本补发）；隔离慢请求的资源；消除 GC 停顿等抖动来源。Dean 与 Barroso 的《The Tail at Scale》系统讨论了这些方法。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://research.google/pubs/the-tail-at-scale/" target="_blank" rel="noopener"><b>The Tail at Scale (Google Research)</b><small>research.google ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Little%27s_law" target="_blank" rel="noopener"><b>Wikipedia: Little&#x27;s law</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://sre.google/sre-book/monitoring-distributed-systems/" target="_blank" rel="noopener"><b>Google SRE Book: Monitoring Distributed Systems</b><small>sre.google ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="backward-compatibility.pro.html" rel="prev"><small>‹ 上一个</small><b>🎮 向后兼容性</b></a><a class="pn next" href="egress-fees.pro.html" rel="next"><small>下一个 ›</small><b>💸 云网络出站流量费</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

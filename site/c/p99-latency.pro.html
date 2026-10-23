@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="99分位长尾延迟 专业模式：p99 延迟（99th Percentile Latency）是把一段时间内的请求耗时排序后第 99 百分位的值，即 99% 的请求不超过它、最慢的 1% 超过">
+<title>🎓 99分位长尾延迟 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="p99-latency" data-answer="0" data-prev="correlation-ids.pro.html" data-next="alert-fatigue.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#devops">🔮 高级 · 🔭 可观测与交付</a><span>›</span><a href="p99-latency.html">99分位长尾延迟</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.319 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="correlation-ids.pro.html" rel="prev"><small>‹ 上一个</small><b>🏷️ 请求关联标识符</b></a><a class="pn next" href="alert-fatigue.pro.html" rel="next"><small>下一个 ›</small><b>🔕 告警疲劳</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🐢</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>99分位长尾延迟</h1><p class="en">p99 Latency</p>
+    <div class="hbtns"><a class="prosw back" href="p99-latency.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">p99 延迟（99th Percentile Latency）是把一段时间内的请求耗时排序后第 99 百分位的值，即 99% 的请求不超过它、最慢的 1% 超过它。它是衡量长尾延迟的核心指标，比平均值更能反映真实用户体验。在扇出调用中，一个用户请求依赖多个后端，任一后端的长尾都会放大为用户侧的高延迟。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>服务记录每个请求的耗时，通常用直方图（Histogram）按桶计数而非保存每个值。</p></li><li><span class="sn">2</span><p>查询时按时间窗口聚合各实例的直方图，估算目标分位数，如 p50、p95、p99。</p></li><li><span class="sn">3</span><p>平均值会被大量快请求稀释，而 p99 揭示最慢一批用户的真实等待。</p></li><li><span class="sn">4</span><p>扇出放大：若一个请求并行调用 100 个后端，每个后端 p99 慢，用户请求变慢的概率就很高。</p></li><li><span class="sn">5</span><p>长尾成因包括 GC 停顿、排队、锁竞争、冷缓存、慢磁盘和网络重传。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>百分位数 (Percentile)</dt><dd>排序后位于某百分比位置的值，p99 表示第 99 百分位。</dd></div><div class="term"><dt>长尾延迟 (Tail Latency)</dt><dd>分布中最慢那部分请求的延迟。</dd></div><div class="term"><dt>直方图 (Histogram)</dt><dd>把观测值落入预设桶计数，可在服务端聚合后估算分位数。</dd></div><div class="term"><dt>对冲请求 (Hedged Request)</dt><dd>请求超过一定时间未返回时向另一副本再发一次，取先到者。</dd></div><div class="term"><dt>分位数不可平均</dt><dd>多个实例的 p99 不能直接求平均，需合并原始分布再计算。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>平均值掩盖长尾</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import numpy as np
+
+rng = np.random.default_rng(0)
+# 98% 请求约 50ms，2% 请求遇到 GC/排队约 2s
+fast = rng.normal(50, 10, 9_800)
+slow = rng.normal(2_000, 200, 200)
+latency_ms = np.concatenate([fast, slow])
+
+print(f&quot;mean = {latency_ms.mean():.0f} ms&quot;)            # 约 90ms，看着还行
+print(f&quot;p50  = {np.percentile(latency_ms, 50):.0f} ms&quot;)
+print(f&quot;p99  = {np.percentile(latency_ms, 99):.0f} ms&quot;)  # 约 2s，真实长尾
+
+# Prometheus 中按直方图计算 p99（先按 le 聚合所有实例再求分位）：
+# histogram_quantile(0.99,
+#   sum by (le) (rate(http_request_duration_seconds_bucket[5m])))</code></pre></div><p class="cnote">平均值只有约 90ms，p99 却接近 2 秒；Prometheus 用直方图在聚合后求分位。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常用延迟统计量</h3><div class="tw"><table><thead><tr><th>统计量</th><th>反映什么</th><th>注意点</th></tr></thead><tbody><tr><td data-h="统计量">平均值</td><td data-h="反映什么">总体水平</td><td data-h="注意点">被大量快请求稀释</td></tr><tr><td data-h="统计量">p50（中位数）</td><td data-h="反映什么">典型用户体验</td><td data-h="注意点">看不到长尾</td></tr><tr><td data-h="统计量">p99</td><td data-h="反映什么">最慢 1% 的体验</td><td data-h="注意点">需要足够样本量</td></tr><tr><td data-h="统计量">p99.9 / 最大值</td><td data-h="反映什么">极端情况</td><td data-h="注意点">噪声大，适合排查不宜做目标</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>直方图</h4><p><b class="k-p">优点</b>可跨实例聚合，开销低</p><p><b class="k-c">代价</b>精度受桶边界限制</p><p><b class="k-w">适用</b>服务端指标的默认选择</p></div><div class="trd"><h4>客户端 Summary 分位</h4><p><b class="k-p">优点</b>单实例分位精确</p><p><b class="k-c">代价</b>不能跨实例聚合</p><p><b class="k-w">适用</b>单实例或仅需本地分位</p></div><div class="trd"><h4>对冲请求</h4><p><b class="k-p">优点</b>显著降低长尾</p><p><b class="k-c">代价</b>增加后端负载</p><p><b class="k-w">适用</b>读请求、幂等调用</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>把各实例的 p99 取平均当作全局 p99。</p><p class="fix"><b>✓</b>合并直方图桶后再计算分位数。</p></li><li><p class="bad"><b>✗</b>直方图桶边界与 SLO 阈值不匹配，估算误差大。</p><p class="fix"><b>✓</b>在 SLO 阈值附近设置桶边界。</p></li><li><p class="bad"><b>✗</b>只在低流量时段看 p99，样本太少波动大。</p><p class="fix"><b>✓</b>确保窗口内样本量足够，或看更长窗口。</p></li><li><p class="bad"><b>✗</b>压测工具存在协调遗漏，p99 被低估。</p><p class="fix"><b>✓</b>使用固定到达率模型或做校正。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>延迟以直方图采集</span></label></li><li><label><input type="checkbox"><span>看板同时展示 p50、p95、p99</span></label></li><li><label><input type="checkbox"><span>分位数先聚合分布再计算</span></label></li><li><label><input type="checkbox"><span>桶边界覆盖 SLO 阈值</span></label></li><li><label><input type="checkbox"><span>延迟 SLO 基于百分位而非平均</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么用 p99 而不是平均延迟？</summary><p>延迟分布通常右偏，少量很慢的请求对平均值影响有限，却严重影响这部分用户。高频用户在一次会话中会发出很多请求，几乎必然碰到长尾。p99 能直接暴露这部分体验，更适合作为 SLO。</p></details><details class="iv"><summary>扇出为什么会放大长尾？</summary><p>若一个用户请求要等 N 个后端全部返回，用户请求的延迟取决于最慢的那个。即使每个后端只有 1% 的请求慢，N 很大时至少一个慢的概率接近 1 减 0.99 的 N 次方，比如 N 为 100 时约 63%。</p></details><details class="iv"><summary>有哪些降低长尾延迟的手段？</summary><p>减少 GC 停顿与锁竞争；限制队列长度避免排队；预热缓存；对冲请求或绑定请求在多个副本间竞速；把慢操作移出关键路径；对扇出调用设置截止时间并允许部分结果。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://research.google/pubs/the-tail-at-scale/" target="_blank" rel="noopener"><b>Google Research：The Tail at Scale</b><small>research.google ↗</small></a></li><li><a href="https://prometheus.io/docs/practices/histograms/" target="_blank" rel="noopener"><b>Prometheus：Histograms and summaries</b><small>prometheus.io ↗</small></a></li><li><a href="https://sre.google/sre-book/monitoring-distributed-systems/" target="_blank" rel="noopener"><b>Google SRE Book：Monitoring Distributed Systems</b><small>sre.google ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="correlation-ids.pro.html" rel="prev"><small>‹ 上一个</small><b>🏷️ 请求关联标识符</b></a><a class="pn next" href="alert-fatigue.pro.html" rel="next"><small>下一个 ›</small><b>🔕 告警疲劳</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

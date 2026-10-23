@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="传输与存储数据压缩 专业模式：数据压缩（Compression）在 HTTP 中主要指内容编码（Content Encoding）：服务端用 gzip、Brotli、Zstandard 等算">
+<title>🎓 传输与存储数据压缩 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="compression" data-answer="0" data-prev="request-size-limits.pro.html" data-next="ttls.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#net">🌊 中级 · 🌐 网络与 API</a><span>›</span><a href="compression.html">传输与存储数据压缩</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.140 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="request-size-limits.pro.html" rel="prev"><small>‹ 上一个</small><b>⚖️ 请求体大小限制</b></a><a class="pn next" href="ttls.pro.html" rel="next"><small>下一个 ›</small><b>⏳ 缓存生存时间 (TTL)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🗜️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>传输与存储数据压缩</h1><p class="en">Compression</p>
+    <div class="hbtns"><a class="prosw back" href="compression.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">数据压缩（Compression）在 HTTP 中主要指内容编码（Content Encoding）：服务端用 gzip、Brotli、Zstandard 等算法压缩响应体，经 Accept-Encoding 与 Content-Encoding 协商。它以 CPU 换带宽与存储，直接影响页面加载速度和流量成本。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>客户端在请求头 Accept-Encoding 中列出自己支持的编码，如 gzip、br、zstd。</p></li><li><span class="sn">2</span><p>服务端或 CDN 选择双方都支持的算法压缩响应，并设置 Content-Encoding 与 Vary: Accept-Encoding。</p></li><li><span class="sn">3</span><p>静态资源适合构建时预压缩（如生成 .br/.gz 文件），用高压缩级别且不占请求时 CPU。</p></li><li><span class="sn">4</span><p>动态响应只能在线压缩，通常选中等压缩级别，以平衡请求延迟与压缩率。</p></li><li><span class="sn">5</span><p>图片、视频、zip 等已压缩格式再压缩收益很小，应跳过；过小的响应也不值得压缩。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>Content-Encoding</dt><dd>说明响应体使用的压缩编码的响应头。</dd></div><div class="term"><dt>Brotli (br)</dt><dd>RFC 7932 定义的压缩算法，文本压缩率通常优于 gzip。</dd></div><div class="term"><dt>Zstandard (zstd)</dt><dd>RFC 8878 定义，压缩与解压速度快，可调级别范围大。</dd></div><div class="term"><dt>Vary: Accept-Encoding</dt><dd>告诉缓存按编码区分存储，避免发错版本。</dd></div><div class="term"><dt>BREACH 攻击</dt><dd>利用压缩后长度变化推测 HTTPS 响应中的秘密。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Nginx 压缩配置</span><em>text</em><button class="ccopy">复制</button></div><pre><code>http {
+    gzip on;
+    gzip_comp_level 5;            # 1-9，在线压缩取中间值
+    gzip_min_length 1024;         # 太小的响应不压缩
+    gzip_vary on;                 # 自动加 Vary: Accept-Encoding
+    gzip_proxied any;
+    gzip_types text/css application/javascript
+               application/json image/svg+xml;  # text/html 默认已包含
+
+    # 构建时生成的 .gz 文件直接发送，不再实时压缩
+    gzip_static on;
+
+    # Brotli 需第三方模块 ngx_brotli，可用时再启用：
+    # brotli on;
+    # brotli_static on;
+}
+
+# 验证：
+# curl -sI -H &#x27;Accept-Encoding: gzip&#x27; https://example.com/app.js | grep -i content-encoding</code></pre></div><p class="cnote">按类型和大小有选择地压缩，静态资源用预压缩文件；Brotli 需额外模块。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见压缩算法对比</h3><div class="tw"><table><thead><tr><th>算法</th><th>压缩率（文本）</th><th>速度特点</th><th>浏览器支持</th></tr></thead><tbody><tr><td data-h="算法">gzip</td><td data-h="压缩率（文本）">基准</td><td data-h="速度特点">快，普及最广</td><td data-h="浏览器支持">全部</td></tr><tr><td data-h="算法">Brotli</td><td data-h="压缩率（文本）">通常优于 gzip</td><td data-h="速度特点">高级别压缩慢，解压快</td><td data-h="浏览器支持">现代浏览器（HTTPS）</td></tr><tr><td data-h="算法">Zstandard</td><td data-h="压缩率（文本）">接近 Brotli</td><td data-h="速度特点">压缩解压都快</td><td data-h="浏览器支持">较新浏览器逐步支持</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>构建时预压缩</h4><p><b class="k-p">优点</b>可用最高级别，零运行时 CPU</p><p><b class="k-c">代价</b>只适用于静态资源</p><p><b class="k-w">适用</b>JS/CSS/字体等静态文件</p></div><div class="trd"><h4>在线动态压缩</h4><p><b class="k-p">优点</b>适用于任意响应</p><p><b class="k-c">代价</b>占 CPU，增加少量延迟</p><p><b class="k-w">适用</b>API JSON、SSR 页面</p></div><div class="trd"><h4>交给 CDN 压缩</h4><p><b class="k-p">优点</b>源站省 CPU，边缘自动协商</p><p><b class="k-c">代价</b>依赖 CDN 能力与配置</p><p><b class="k-w">适用</b>已使用 CDN 的站点</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>对 JPEG、MP4、zip 再做 gzip</p><p class="fix"><b>✓</b>只对文本类 MIME 类型启用压缩</p></li><li><p class="bad"><b>✗</b>缺少 Vary: Accept-Encoding，缓存把压缩版发给不支持的客户端</p><p class="fix"><b>✓</b>开启 gzip_vary 或手动加 Vary 头</p></li><li><p class="bad"><b>✗</b>在线压缩用最高级别，CPU 飙升延迟变长</p><p class="fix"><b>✓</b>动态内容用中等级别，最高级别留给预压缩</p></li><li><p class="bad"><b>✗</b>压缩响应中同时包含用户输入与 CSRF 令牌等秘密</p><p class="fix"><b>✓</b>评估 BREACH 风险：秘密按请求随机掩码，或对敏感响应禁用压缩</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>文本资源已启用压缩</span></label></li><li><label><input type="checkbox"><span>已压缩格式被排除</span></label></li><li><label><input type="checkbox"><span>响应带 Vary: Accept-Encoding</span></label></li><li><label><input type="checkbox"><span>静态资源有预压缩版本</span></label></li><li><label><input type="checkbox"><span>压缩级别经压测确认</span></label></li><li><label><input type="checkbox"><span>敏感页面评估过 BREACH 风险</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么 Brotli 只在 HTTPS 下使用？</summary><p>浏览器只在安全连接上声明支持 br，主要是避免老旧中间代理错误处理不认识的编码。通过 HTTPS 传输可绕过这些中间设备。</p></details><details class="iv"><summary>压缩为什么可能带来安全问题？</summary><p>压缩后的长度取决于内容重复度。攻击者若能注入可控内容并观测响应长度，就能逐字节猜测同一响应中的秘密，即 CRIME/BREACH 类攻击。缓解是分离秘密与用户输入、掩码令牌或禁用压缩。</p></details><details class="iv"><summary>HTTP/2 下还需要关心头部压缩吗？</summary><p>HTTP/2 用 HPACK、HTTP/3 用 QPACK 自动压缩头部，无需应用配置；但它们只处理头部，响应体仍需 Content-Encoding 压缩。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Compression" target="_blank" rel="noopener"><b>MDN：Compression in HTTP</b><small>developer.mozilla.org ↗</small></a></li><li><a href="https://www.rfc-editor.org/rfc/rfc7932" target="_blank" rel="noopener"><b>RFC 7932: Brotli Compressed Data Format</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://nginx.org/en/docs/http/ngx_http_gzip_module.html" target="_blank" rel="noopener"><b>Nginx 文档：ngx_http_gzip_module</b><small>nginx.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="request-size-limits.pro.html" rel="prev"><small>‹ 上一个</small><b>⚖️ 请求体大小限制</b></a><a class="pn next" href="ttls.pro.html" rel="next"><small>下一个 ›</small><b>⏳ 缓存生存时间 (TTL)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

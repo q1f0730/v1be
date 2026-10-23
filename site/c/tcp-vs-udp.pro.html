@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="TCP 与 UDP 专业模式：TCP 与 UDP 是传输层的两种核心协议，都建立在 IP 之上，用端口区分应用。TCP 面向连接，提供可靠、有序、带流量控制和拥塞控制的字节流；UDP 无连接">
+<title>🎓 TCP 与 UDP · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="tcp-vs-udp" data-answer="0" data-prev="batch-inference-api.pro.html" data-next="ssh.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#net">🌊 中级 · 🌐 网络与 API</a><span>›</span><a href="tcp-vs-udp.html">TCP 与 UDP</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.190 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="batch-inference-api.pro.html" rel="prev"><small>‹ 上一个</small><b>📮 批量推理接口 (Batch API)</b></a><a class="pn next" href="ssh.pro.html" rel="next"><small>下一个 ›</small><b>🔐 SSH 远程登录与密钥</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📬</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>TCP 与 UDP</h1><p class="en">TCP vs UDP</p>
+    <div class="hbtns"><a class="prosw back" href="tcp-vs-udp.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">TCP 与 UDP 是传输层的两种核心协议，都建立在 IP 之上，用端口区分应用。TCP 面向连接，提供可靠、有序、带流量控制和拥塞控制的字节流；UDP 无连接，只做最小封装，不保证送达与顺序，但开销小、延迟低。HTTP/1.1 与 HTTP/2 跑在 TCP 上，HTTP/3 则基于 UDP 之上的 QUIC。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>TCP 通过三次握手（SYN、SYN-ACK、ACK）建立连接，双方协商初始序列号。</p></li><li><span class="sn">2</span><p>TCP 发送的每个字节都有序列号，接收方回复确认（ACK）；超时或重复确认触发重传，接收端按序重组。</p></li><li><span class="sn">3</span><p>TCP 用滑动窗口做流量控制，用拥塞控制算法（如 CUBIC、BBR）根据丢包或延迟调整发送速率。</p></li><li><span class="sn">4</span><p>UDP 直接把数据报加上源/目的端口、长度和校验和发出，不建立连接、不确认、不重传。</p></li><li><span class="sn">5</span><p>应用可在 UDP 之上自行实现所需的可靠性，例如 QUIC 实现了加密、多路复用和按流重传。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>三次握手 (Three-way Handshake)</dt><dd>TCP 建立连接的 SYN、SYN-ACK、ACK 交换过程。</dd></div><div class="term"><dt>队头阻塞 (Head-of-Line Blocking)</dt><dd>一个丢失的包阻塞其后所有数据的交付。</dd></div><div class="term"><dt>拥塞控制 (Congestion Control)</dt><dd>根据网络状况调节发送速率，避免压垮网络。</dd></div><div class="term"><dt>数据报 (Datagram)</dt><dd>UDP 的独立消息单元，有边界，可能丢失或乱序。</dd></div><div class="term"><dt>QUIC</dt><dd>基于 UDP 的加密多路复用传输协议，HTTP/3 的底座。</dd></div><div class="term"><dt>MTU</dt><dd>链路单个帧可承载的最大字节数，影响分片与丢包。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>用 socket 对比 TCP 与 UDP</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import socket
+
+# TCP：先建立连接，再收发字节流
+tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+tcp.connect((&quot;example.com&quot;, 80))          # 触发三次握手
+tcp.sendall(b&quot;HEAD / HTTP/1.1\r\nHost: example.com\r\nConnection: close\r\n\r\n&quot;)
+print(tcp.recv(200).decode(errors=&quot;ignore&quot;).splitlines()[0])
+tcp.close()
+
+# UDP：无连接，直接发数据报（这里发一个 DNS 查询示意）
+udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+udp.settimeout(2)                          # 可能丢包，需要自己处理超时
+query = bytes.fromhex(&quot;abcd01000001000000000000&quot;) + \
+        b&quot;\x07example\x03com\x00&quot; + b&quot;\x00\x01\x00\x01&quot;
+udp.sendto(query, (&quot;1.1.1.1&quot;, 53))
+data, _ = udp.recvfrom(512)
+print(&quot;DNS 响应字节数:&quot;, len(data))
+udp.close()</code></pre></div><p class="cnote">TCP 需 connect 握手、sendall 保证全部送出；UDP 直接 sendto，超时与丢包由应用负责。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">TCP 与 UDP 关键差异</h3><div class="tw"><table><thead><tr><th>维度</th><th>TCP</th><th>UDP</th></tr></thead><tbody><tr><td data-h="维度">连接</td><td data-h="TCP">面向连接，需握手</td><td data-h="UDP">无连接</td></tr><tr><td data-h="维度">可靠性</td><td data-h="TCP">确认、重传、有序</td><td data-h="UDP">不保证</td></tr><tr><td data-h="维度">消息边界</td><td data-h="TCP">字节流，无边界</td><td data-h="UDP">保留数据报边界</td></tr><tr><td data-h="维度">头部开销</td><td data-h="TCP">至少 20 字节</td><td data-h="UDP">8 字节</td></tr><tr><td data-h="维度">典型协议</td><td data-h="TCP">HTTP/1.1、HTTP/2、SSH、SMTP</td><td data-h="UDP">DNS、QUIC/HTTP/3、RTP、游戏同步</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>TCP</h4><p><b class="k-p">优点</b>可靠有序，生态成熟，穿透防火墙容易</p><p><b class="k-c">代价</b>握手延迟、队头阻塞</p><p><b class="k-w">适用</b>网页、API、文件传输、数据库</p></div><div class="trd"><h4>UDP 原生</h4><p><b class="k-p">优点</b>延迟最低，开销小</p><p><b class="k-c">代价</b>需自行处理丢包与乱序</p><p><b class="k-w">适用</b>实时音视频、游戏状态同步</p></div><div class="trd"><h4>QUIC（UDP 之上）</h4><p><b class="k-p">优点</b>0-RTT/1-RTT 建连，无 TCP 层队头阻塞</p><p><b class="k-c">代价</b>部分网络限制 UDP，CPU 开销更高</p><p><b class="k-w">适用</b>移动网络、HTTP/3</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>以为一次 recv 就能收到完整消息</p><p class="fix"><b>✓</b>TCP 是字节流，需按长度前缀或分隔符自行分帧</p></li><li><p class="bad"><b>✗</b>用 UDP 传文件却不做校验与重传</p><p class="fix"><b>✓</b>需要可靠传输就用 TCP 或基于 QUIC 的方案</p></li><li><p class="bad"><b>✗</b>防火墙只开 TCP 端口，HTTP/3 或 DNS 失败</p><p class="fix"><b>✓</b>按协议分别放行 TCP 与 UDP 端口</p></li><li><p class="bad"><b>✗</b>高并发短连接耗尽端口，TIME_WAIT 堆积</p><p class="fix"><b>✓</b>使用连接池和 keep-alive 复用连接</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>确认服务使用的协议与端口</span></label></li><li><label><input type="checkbox"><span>防火墙/安全组按 TCP、UDP 分别配置</span></label></li><li><label><input type="checkbox"><span>TCP 应用层有明确的消息分帧</span></label></li><li><label><input type="checkbox"><span>UDP 应用处理超时、丢包与乱序</span></label></li><li><label><input type="checkbox"><span>启用连接复用，避免频繁握手</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>TCP 为什么需要三次握手而不是两次？</summary><p>需要双方都确认对方能收能发，并同步各自的初始序列号。两次握手时服务器无法确认客户端收到了自己的 SYN-ACK；此外三次握手可防止已失效的旧连接请求突然到达，导致服务器误建连接、浪费资源。</p></details><details class="iv"><summary>HTTP/3 为什么改用 UDP？</summary><p>TCP 由内核实现，演进慢，且整条连接共享一个有序字节流，单个丢包会阻塞所有 HTTP/2 流。QUIC 在 UDP 上用户态实现，每个流独立重传，并把 TLS 1.3 握手合并进建连过程，减少往返次数。</p></details><details class="iv"><summary>DNS 为什么主要用 UDP，什么时候用 TCP？</summary><p>典型 DNS 查询是一问一答的小报文，UDP 免握手更快。当响应过大被截断（TC 位）、进行区域传送（AXFR）或使用 DNS over TLS 时，会使用 TCP。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.rfc-editor.org/rfc/rfc9293" target="_blank" rel="noopener"><b>RFC 9293: TCP</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://www.rfc-editor.org/rfc/rfc768" target="_blank" rel="noopener"><b>RFC 768: UDP</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://www.rfc-editor.org/rfc/rfc9000" target="_blank" rel="noopener"><b>RFC 9000: QUIC</b><small>rfc-editor.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="batch-inference-api.pro.html" rel="prev"><small>‹ 上一个</small><b>📮 批量推理接口 (Batch API)</b></a><a class="pn next" href="ssh.pro.html" rel="next"><small>下一个 ›</small><b>🔐 SSH 远程登录与密钥</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

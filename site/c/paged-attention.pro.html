@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="分页注意力 (PagedAttention) 专业模式：PagedAttention 是 vLLM 团队在 SOSP 2023 论文中提出的注意力计算与 KV 缓存管理方法，借鉴操作系统虚拟内存分页：把每个序列的 K">
+<title>🎓 分页注意力 (PagedAttention) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="paged-attention" data-answer="0" data-prev="continuous-batching.pro.html" data-next="constrained-decoding.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#llmops">🔥 进阶 · 🧠 模型工程与推理部署</a><span>›</span><a href="paged-attention.html">分页注意力 (PagedAttention)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.482 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="continuous-batching.pro.html" rel="prev"><small>‹ 上一个</small><b>🚌 连续批处理 (Continuous Batching)</b></a><a class="pn next" href="constrained-decoding.pro.html" rel="next"><small>下一个 ›</small><b>🚧 约束解码 (Grammar / JSON Schema)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📑</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🧠 模型工程与推理部署</span><span>⏱ 约 10 分钟</span></div>
+    <h1>分页注意力 (PagedAttention)</h1><p class="en">PagedAttention</p>
+    <div class="hbtns"><a class="prosw back" href="paged-attention.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">PagedAttention 是 vLLM 团队在 SOSP 2023 论文中提出的注意力计算与 KV 缓存管理方法，借鉴操作系统虚拟内存分页：把每个序列的 KV 缓存切分为固定大小的块，按需分配到不连续的物理显存中，并用块表维护映射。它消除了按最大长度预留带来的碎片与浪费，大幅提升可并发的序列数和推理吞吐。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>传统实现为每个请求按最大可能长度预留一段连续 KV 显存，实际生成较短时大部分空间被浪费，且存在外部碎片。</p></li><li><span class="sn">2</span><p>PagedAttention 把 KV 缓存划分为固定 Token 数的块，每个序列拥有逻辑块序列，块表把逻辑块映射到任意物理块。</p></li><li><span class="sn">3</span><p>生成新 Token 时只在最后一个块写满后才分配新物理块，浪费最多不超过一个块。</p></li><li><span class="sn">4</span><p>注意力内核按块表逐块读取 K 和 V 计算注意力，无需物理连续。</p></li><li><span class="sn">5</span><p>多个序列可共享相同前缀的物理块并用写时复制处理分叉，支撑并行采样、束搜索与前缀缓存。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>KV 块 (KV Block)</dt><dd>存放固定数量 Token 的 Key 与 Value 张量的显存单元。</dd></div><div class="term"><dt>块表 (Block Table)</dt><dd>记录序列逻辑块到物理块映射的数据结构，类似页表。</dd></div><div class="term"><dt>写时复制 (Copy-on-Write)</dt><dd>共享块在某个序列需要修改时才复制，节省并行采样显存。</dd></div><div class="term"><dt>前缀缓存 (Prefix Caching)</dt><dd>复用相同提示前缀已计算好的 KV 块，减少重复预填充。</dd></div><div class="term"><dt>gpu-memory-utilization</dt><dd>vLLM 参数，指定引擎可使用的显存比例，剩余空间用于 KV 缓存。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>估算 KV 缓存与可容纳块数</span><em>python</em><button class="ccopy">复制</button></div><pre><code># 每个 Token 的 KV 字节数 = 2(K和V) × 层数 × KV头数 × 头维度 × 每元素字节
+def kv_bytes_per_token(layers, kv_heads, head_dim, dtype_bytes=2):
+    return 2 * layers * kv_heads * head_dim * dtype_bytes
+
+# 以 Llama-3-8B 公开配置为例：32 层，8 个 KV 头（GQA），头维度 128，FP16
+per_tok = kv_bytes_per_token(32, 8, 128)
+print(per_tok / 1024, &quot;KiB/token&quot;)              # 128.0 KiB/token
+
+block_tokens = 16                                # vLLM 常见默认块大小
+per_block = per_tok * block_tokens
+free_for_kv = 20 * 1024**3                       # 假设留给 KV 缓存 20 GiB
+blocks = free_for_kv // per_block
+print(blocks, &quot;blocks ≈&quot;, blocks * block_tokens, &quot;tokens&quot;)  # 10240 blocks ≈ 163840 tokens
+
+# 预留式分配：每个请求按 8192 上限预留，只能并发 20 个
+print(free_for_kv // (per_tok * 8192), &quot;requests if reserved&quot;)
+# 分页式分配：若平均只用 1500 Token，约可并发 100 个以上
+print(free_for_kv // (per_tok * 1500), &quot;requests if paged&quot;)</code></pre></div><p class="cnote">数字由公开模型配置推算，仅用于说明量级；实际可用显存还取决于权重、激活与引擎开销。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">KV 缓存管理方式</h3><div class="tw"><table><thead><tr><th>方式</th><th>分配粒度</th><th>浪费</th><th>共享前缀</th></tr></thead><tbody><tr><td data-h="方式">连续预留</td><td data-h="分配粒度">按最大长度整段</td><td data-h="浪费">内部与外部碎片严重</td><td data-h="共享前缀">困难</td></tr><tr><td data-h="方式">PagedAttention</td><td data-h="分配粒度">固定大小块</td><td data-h="浪费">每序列最多浪费一个块</td><td data-h="共享前缀">块级共享与写时复制</td></tr><tr><td data-h="方式">前缀缓存（基于分页）</td><td data-h="分配粒度">按块哈希复用</td><td data-h="浪费">低</td><td data-h="共享前缀">跨请求复用系统提示</td></tr><tr><td data-h="方式">KV 量化（可叠加）</td><td data-h="分配粒度">降低每元素字节</td><td data-h="浪费">以精度换容量</td><td data-h="共享前缀">与分页正交</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>提高显存利用比例</h4><p><b class="k-p">优点</b>KV 块更多，并发与吞吐更高</p><p><b class="k-c">代价</b>与其他进程共卡时易 OOM</p><p><b class="k-w">适用</b>GPU 专用于推理服务</p></div><div class="trd"><h4>开启前缀缓存</h4><p><b class="k-p">优点</b>相同系统提示或多轮对话减少重复计算</p><p><b class="k-c">代价</b>缓存命中依赖前缀完全一致</p><p><b class="k-w">适用</b>固定长系统提示、Agent 多轮调用</p></div><div class="trd"><h4>限制最大上下文长度</h4><p><b class="k-p">优点</b>降低单请求最坏情况占用</p><p><b class="k-c">代价</b>无法处理超长输入</p><p><b class="k-w">适用</b>业务输入长度可控</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>max-model-len 设得远大于业务需要</p><p class="fix"><b>✓</b>按实际最长输入加输出设置，避免启动时 KV 容量不足</p></li><li><p class="bad"><b>✗</b>多个推理进程共享一张卡却都用默认显存比例</p><p class="fix"><b>✓</b>为每个进程显式分配显存比例，总和留出余量</p></li><li><p class="bad"><b>✗</b>提示前缀中包含时间戳等可变内容，前缀缓存失效</p><p class="fix"><b>✓</b>把稳定内容放前面，可变内容放后面</p></li><li><p class="bad"><b>✗</b>只看显存占用高就判断有问题</p><p class="fix"><b>✓</b>引擎会预先占用 KV 池，应看 KV 使用率与抢占指标</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>按模型配置估算每 Token KV 占用</span></label></li><li><label><input type="checkbox"><span>max-model-len 与业务长度匹配</span></label></li><li><label><input type="checkbox"><span>显存比例为其他进程留出余量</span></label></li><li><label><input type="checkbox"><span>监控 KV 缓存使用率与抢占次数</span></label></li><li><label><input type="checkbox"><span>提示结构利于前缀缓存命中</span></label></li><li><label><input type="checkbox"><span>评估 KV 缓存量化对质量的影响</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>PagedAttention 借鉴了操作系统的哪些思想？</summary><p>虚拟内存分页：序列看到连续的逻辑块，物理块可以分散，由块表做地址映射；按需分配，用到才分配新块；共享页与写时复制，多个序列共享相同前缀块，修改时才复制。由此消除了外部碎片，内部碎片限制在一个块以内。</p></details><details class="iv"><summary>为什么 KV 缓存是 LLM 服务的显存瓶颈？</summary><p>每个 Token 都要为每一层保存 K 与 V，占用随层数、KV 头数、头维度和序列长度线性增长，并发请求再相乘。长上下文和高并发时 KV 缓存可超过模型权重本身，决定能同时服务多少请求。</p></details><details class="iv"><summary>前缀缓存对 Agent 应用有什么价值？</summary><p>Agent 每轮调用都携带相同的系统提示、工具定义和不断增长的对话历史。前缀缓存让这些已计算过的 KV 块被直接复用，只需预填充新增内容，显著降低首 Token 延迟与算力开销。前提是前缀逐 Token 完全一致。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://arxiv.org/abs/2309.06180" target="_blank" rel="noopener"><b>Kwon et al.: Efficient Memory Management for LLM Serving with PagedAttention</b><small>arxiv.org ↗</small></a></li><li><a href="https://blog.vllm.ai/2023/06/20/vllm.html" target="_blank" rel="noopener"><b>vLLM Blog: Easy, Fast, and Cheap LLM Serving with PagedAttention</b><small>blog.vllm.ai ↗</small></a></li><li><a href="https://docs.vllm.ai/en/latest/" target="_blank" rel="noopener"><b>vLLM Documentation</b><small>docs.vllm.ai ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="continuous-batching.pro.html" rel="prev"><small>‹ 上一个</small><b>🚌 连续批处理 (Continuous Batching)</b></a><a class="pn next" href="constrained-decoding.pro.html" rel="next"><small>下一个 ›</small><b>🚧 约束解码 (Grammar / JSON Schema)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

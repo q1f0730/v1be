@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="向后兼容性 专业模式：向后兼容（Backward Compatibility）指系统的新版本仍能正确服务旧版本的客户端、数据或调用方式。它覆盖 API、数据库结构、消息格式、SDK ">
+<title>🎓 向后兼容性 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="backward-compatibility" data-answer="0" data-prev="protocol-buffers.pro.html" data-next="latency-vs-throughput.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#net">🔮 高级 · 🌐 网络与 API</a><span>›</span><a href="backward-compatibility.html">向后兼容性</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.264 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="protocol-buffers.pro.html" rel="prev"><small>‹ 上一个</small><b>🗜️ Protobuf二进制序列化</b></a><a class="pn next" href="latency-vs-throughput.pro.html" rel="next"><small>下一个 ›</small><b>🚗 延迟与吞吐量权衡</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🎮</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>向后兼容性</h1><p class="en">Backward Compatibility</p>
+    <div class="hbtns"><a class="prosw back" href="backward-compatibility.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">向后兼容（Backward Compatibility）指系统的新版本仍能正确服务旧版本的客户端、数据或调用方式。它覆盖 API、数据库结构、消息格式、SDK 与配置等层面。在无法同时升级所有调用方的现实中（尤其是移动端与第三方集成），它是平滑演进与安全发布的前提。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>明确契约：接口、字段、语义、错误码与默认行为都属于对外承诺。</p></li><li><span class="sn">2</span><p>优先做增量变更：新增可选字段、新增端点，不删除、不改名、不改语义。</p></li><li><span class="sn">3</span><p>调用方遵循宽容读取：忽略不认识的字段，对新增枚举值有默认处理。</p></li><li><span class="sn">4</span><p>必须破坏时走版本化：新版本并行运行，旧版本标记弃用并公告下线时间。</p></li><li><span class="sn">5</span><p>用契约测试与 schema 差异检查在 CI 中自动拦截破坏性变更。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>破坏性变更 (Breaking Change)</dt><dd>会让现有调用方出错或行为改变的修改。</dd></div><div class="term"><dt>向前兼容 (Forward Compatibility)</dt><dd>旧版本能处理新版本产生的数据。</dd></div><div class="term"><dt>宽容读取 (Tolerant Reader)</dt><dd>只读取需要的字段，忽略其余。</dd></div><div class="term"><dt>语义化版本 (SemVer)</dt><dd>主版本.次版本.修订号，主版本递增表示不兼容。</dd></div><div class="term"><dt>Sunset 头</dt><dd>RFC 8594 定义，告知资源预计停止服务的时间。</dd></div><div class="term"><dt>契约测试 (Contract Testing)</dt><dd>验证提供方是否满足消费方期望的测试。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>OpenAPI 中的安全演进</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code># openapi.yaml 片段：v1 接口的兼容性演进
+paths:
+  /v1/users/{id}:
+    get:
+      responses:
+        &quot;200&quot;:
+          content:
+            application/json:
+              schema:
+                $ref: &quot;#/components/schemas/User&quot;
+components:
+  schemas:
+    User:
+      type: object
+      required: [id, name]          # 不新增必填项，避免旧请求失败
+      properties:
+        id:   { type: string }
+        name: { type: string }
+        display_name:               # 新增可选字段：兼容
+          type: string
+        nickname:
+          type: string
+          deprecated: true          # 标记弃用，保留一段时间再移除
+          description: 请改用 display_name
+# 在 CI 中检查破坏性变更（oasdiff 工具）：
+#   oasdiff breaking openapi-main.yaml openapi.yaml</code></pre></div><p class="cnote">只增不删、新字段可选、旧字段先弃用；用 schema 差异工具在合并前拦截。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见变更的兼容性</h3><div class="tw"><table><thead><tr><th>变更</th><th>对旧客户端</th><th>建议做法</th></tr></thead><tbody><tr><td data-h="变更">新增可选响应字段</td><td data-h="对旧客户端">通常安全</td><td data-h="建议做法">客户端需忽略未知字段</td></tr><tr><td data-h="变更">新增必填请求参数</td><td data-h="对旧客户端">破坏</td><td data-h="建议做法">改为可选并给默认值</td></tr><tr><td data-h="变更">删除或重命名字段</td><td data-h="对旧客户端">破坏</td><td data-h="建议做法">先新增、双写、弃用，再删除</td></tr><tr><td data-h="变更">新增枚举值</td><td data-h="对旧客户端">可能破坏</td><td data-h="建议做法">客户端对未知值有兜底分支</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>URL 版本（/v1、/v2）</h4><p><b class="k-p">优点</b>直观，易路由和缓存</p><p><b class="k-c">代价</b>版本粒度粗，维护多套</p><p><b class="k-w">适用</b>公开 API 大版本演进</p></div><div class="trd"><h4>日期/头部版本（如 Stripe）</h4><p><b class="k-p">优点</b>细粒度，按账户固定版本</p><p><b class="k-c">代价</b>实现复杂，需版本转换层</p><p><b class="k-w">适用</b>大型平台型 API</p></div><div class="trd"><h4>只做增量不分版本</h4><p><b class="k-p">优点</b>最简单，无版本碎片</p><p><b class="k-c">代价</b>历史包袱累积</p><p><b class="k-w">适用</b>内部 API 或调用方可控</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>字段没删，但语义或单位悄悄变了</p><p class="fix"><b>✓</b>语义变化视同破坏性变更，用新字段表达</p></li><li><p class="bad"><b>✗</b>后端先上线新必填字段，旧 App 全部报错</p><p class="fix"><b>✓</b>先发兼容后端，旧版本占比降下来后再收紧</p></li><li><p class="bad"><b>✗</b>客户端遇到未知枚举值直接崩溃</p><p class="fix"><b>✓</b>所有枚举处理都有默认分支</p></li><li><p class="bad"><b>✗</b>AI 重构时顺手改了接口字段名</p><p class="fix"><b>✓</b>提示中明确接口契约不可变，CI 做 schema 对比</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>变更已对照破坏性变更清单检查</span></label></li><li><label><input type="checkbox"><span>新字段为可选并有默认值</span></label></li><li><label><input type="checkbox"><span>弃用字段有公告与下线日期</span></label></li><li><label><input type="checkbox"><span>CI 运行 schema 差异或契约测试</span></label></li><li><label><input type="checkbox"><span>客户端忽略未知字段与枚举值</span></label></li><li><label><input type="checkbox"><span>监控旧版本调用量再决定下线</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>向后兼容和向前兼容的区别？</summary><p>向后兼容：新系统能处理旧客户端/旧数据，例如新 API 接受旧请求。向前兼容：旧系统能处理新数据，例如旧客户端收到含新字段的响应不出错。滚动发布期间新旧版本共存，两者通常都需要。</p></details><details class="iv"><summary>如何安全地重命名一个 API 字段？</summary><p>新增新字段并同时返回新旧两个；文档与响应中标记旧字段弃用（可配 Deprecation/Sunset 头）；监控仍读取旧字段的调用方并通知迁移；调用量归零或到期后再删除旧字段。</p></details><details class="iv"><summary>移动端为什么让兼容更难？</summary><p>用户不一定升级，旧版本可能存活很久，服务端无法强制同步更新。需要长期支持多个客户端版本，按版本统计流量，必要时用最低版本强制升级机制，并让客户端对未知字段宽容。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://semver.org/" target="_blank" rel="noopener"><b>Semantic Versioning 2.0.0</b><small>semver.org ↗</small></a></li><li><a href="https://google.aip.dev/180" target="_blank" rel="noopener"><b>Google AIP-180: Backwards compatibility</b><small>google.aip.dev ↗</small></a></li><li><a href="https://www.rfc-editor.org/rfc/rfc8594" target="_blank" rel="noopener"><b>RFC 8594: The Sunset HTTP Header Field</b><small>rfc-editor.org ↗</small></a></li><li><a href="https://docs.stripe.com/api/versioning" target="_blank" rel="noopener"><b>Stripe: API versioning</b><small>docs.stripe.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="protocol-buffers.pro.html" rel="prev"><small>‹ 上一个</small><b>🗜️ Protobuf二进制序列化</b></a><a class="pn next" href="latency-vs-throughput.pro.html" rel="next"><small>下一个 ›</small><b>🚗 延迟与吞吐量权衡</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

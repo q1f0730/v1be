@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="服务等级目标 专业模式：服务等级目标（Service Level Objective, SLO）是团队为某项服务等级指标（SLI）设定的目标值，例如 30 天滚动窗口内 99.9% 的">
+<title>🎓 服务等级目标 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="slos" data-answer="0" data-prev="rto-and-rpo.pro.html" data-next="error-budgets.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sre">🔮 高级 · 🩺 高可用 SRE</a><span>›</span><a href="slos.html">服务等级目标</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.301 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="rto-and-rpo.pro.html" rel="prev"><small>‹ 上一个</small><b>⏱️ 恢复时间与恢复点目标</b></a><a class="pn next" href="error-budgets.pro.html" rel="next"><small>下一个 ›</small><b>🪙 错误预算机制</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🎯</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>服务等级目标</h1><p class="en">SLOs</p>
+    <div class="hbtns"><a class="prosw back" href="slos.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">服务等级目标（Service Level Objective, SLO）是团队为某项服务等级指标（SLI）设定的目标值，例如 30 天滚动窗口内 99.9% 的请求成功。三层体系中，SLI 是度量，SLO 是内部目标，SLA 是对外带赔偿的承诺。SLO 让可靠性成为可量化的决策依据，并派生错误预算。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>从用户视角选择关键旅程，定义 SLI，例如成功请求占比、低于阈值的延迟占比。</p></li><li><span class="sn">2</span><p>确定度量位置：负载均衡日志、服务端指标或合成探测，越接近用户越真实。</p></li><li><span class="sn">3</span><p>设定目标值和时间窗口，如 28 或 30 天滚动窗口内 99.9%。</p></li><li><span class="sn">4</span><p>由 SLO 计算错误预算，即窗口内允许失败的比例，并据此配置燃烧率告警。</p></li><li><span class="sn">5</span><p>定期复盘目标是否真实反映用户感受，过严或过松都需要和产品方一起调整。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>服务等级指标 (SLI)</dt><dd>可量化的服务质量度量，通常是好事件数除以总事件数。</dd></div><div class="term"><dt>服务等级协议 (SLA)</dt><dd>对客户的正式承诺，违约有赔偿，通常比 SLO 宽松。</dd></div><div class="term"><dt>滚动窗口 (Rolling Window)</dt><dd>以当前时间回看固定天数的统计窗口。</dd></div><div class="term"><dt>关键用户旅程 (Critical User Journey)</dt><dd>用户完成核心目标的操作路径，用于选取 SLI。</dd></div><div class="term"><dt>几个 9 (Nines)</dt><dd>可用性百分比的口语说法，99.9% 即三个 9。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Prometheus 可用性 SLI</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code># 记录规则：计算不同窗口下的请求错误率
+groups:
+  - name: slo-api
+    rules:
+      - record: job:slo_errors_per_request:ratio_rate5m
+        expr: |
+          sum(rate(http_requests_total{job=&quot;api&quot;,code=~&quot;5..&quot;}[5m]))
+          /
+          sum(rate(http_requests_total{job=&quot;api&quot;}[5m]))
+      - record: job:slo_errors_per_request:ratio_rate1h
+        expr: |
+          sum(rate(http_requests_total{job=&quot;api&quot;,code=~&quot;5..&quot;}[1h]))
+          /
+          sum(rate(http_requests_total{job=&quot;api&quot;}[1h]))
+# SLO：30 天窗口内错误率 ≤ 0.1%（即 99.9% 成功）</code></pre></div><p class="cnote">把 5xx 占比作为可用性 SLI 的记录规则，指标名需按实际埋点调整。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">可用性目标与允许停机</h3><div class="tw"><table><thead><tr><th>SLO</th><th>30 天允许不可用</th><th>一年允许不可用</th></tr></thead><tbody><tr><td data-h="SLO">99%</td><td data-h="30 天允许不可用">约 7.2 小时</td><td data-h="一年允许不可用">约 3.65 天</td></tr><tr><td data-h="SLO">99.9%</td><td data-h="30 天允许不可用">约 43.2 分钟</td><td data-h="一年允许不可用">约 8.8 小时</td></tr><tr><td data-h="SLO">99.95%</td><td data-h="30 天允许不可用">约 21.6 分钟</td><td data-h="一年允许不可用">约 4.4 小时</td></tr><tr><td data-h="SLO">99.99%</td><td data-h="30 天允许不可用">约 4.3 分钟</td><td data-h="一年允许不可用">约 53 分钟</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>基于请求比例的 SLO</h4><p><b class="k-p">优点</b>贴近用户体验，适合高流量</p><p><b class="k-c">代价</b>低流量时少量失败波动大</p><p><b class="k-w">适用</b>API、Web 服务</p></div><div class="trd"><h4>基于时间窗口的 SLO</h4><p><b class="k-p">优点</b>直观，便于对外沟通</p><p><b class="k-c">代价</b>无法区分部分失败</p><p><b class="k-w">适用</b>低流量或批处理系统</p></div><div class="trd"><h4>更高的目标</h4><p><b class="k-p">优点</b>更可靠</p><p><b class="k-c">代价</b>成本陡增，限制发布速度</p><p><b class="k-w">适用</b>依赖方确实需要</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>把 SLO 设成 100%。</p><p class="fix"><b>✓</b>任何系统都会失败，100% 会冻结所有变更，应留出预算。</p></li><li><p class="bad"><b>✗</b>SLI 取自服务内部 CPU 等指标，与用户感受无关。</p><p class="fix"><b>✓</b>以用户可感知的成功率和延迟为 SLI。</p></li><li><p class="bad"><b>✗</b>SLO 比依赖的下游 SLO 还高。</p><p class="fix"><b>✓</b>考虑依赖链的组合可用性，或通过冗余降低依赖影响。</p></li><li><p class="bad"><b>✗</b>定了 SLO 但没人看，也不影响决策。</p><p class="fix"><b>✓</b>配套错误预算政策和燃烧率告警。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>SLI 覆盖关键用户旅程</span></label></li><li><label><input type="checkbox"><span>SLI 定义写明好事件与总事件</span></label></li><li><label><input type="checkbox"><span>目标值与窗口经产品方认可</span></label></li><li><label><input type="checkbox"><span>有燃烧率告警而非阈值告警</span></label></li><li><label><input type="checkbox"><span>SLO 定期复审</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>SLI、SLO、SLA 三者关系是什么？</summary><p>SLI 是度量，例如成功请求比例；SLO 是对 SLI 的内部目标，例如 30 天 99.9%；SLA 是对外合同承诺，未达成有赔偿。通常 SLA 比 SLO 宽松，留出缓冲，确保内部先发现并处理问题。</p></details><details class="iv"><summary>如何选择一个好的 SLI？</summary><p>从关键用户旅程出发，选用户能感知的结果：可用性、延迟、正确性、新鲜度。用好事件除以总事件表达，度量点尽量靠近用户，如负载均衡日志或客户端探测，排除健康检查等非用户流量。</p></details><details class="iv"><summary>为什么不追求越高越好？</summary><p>每多一个 9，允许的故障时间缩小十倍，成本和复杂度大幅增加，发布速度被压缩；而用户受网络、终端等因素影响，可能感受不到差异。SLO 应设在用户满意且业务可承受的水平。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://sre.google/sre-book/service-level-objectives/" target="_blank" rel="noopener"><b>Google SRE Book：Service Level Objectives</b><small>sre.google ↗</small></a></li><li><a href="https://sre.google/workbook/implementing-slos/" target="_blank" rel="noopener"><b>Google SRE Workbook：Implementing SLOs</b><small>sre.google ↗</small></a></li><li><a href="https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/" target="_blank" rel="noopener"><b>Prometheus 文档：Recording rules</b><small>prometheus.io ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="rto-and-rpo.pro.html" rel="prev"><small>‹ 上一个</small><b>⏱️ 恢复时间与恢复点目标</b></a><a class="pn next" href="error-budgets.pro.html" rel="next"><small>下一个 ›</small><b>🪙 错误预算机制</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

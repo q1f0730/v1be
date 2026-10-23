@@ -1,0 +1,3764 @@
+[
+ {
+  "slug": "api",
+  "def": "API（应用程序编程接口）是软件组件之间约定好的交互契约：规定可以调用哪些操作、传什么参数、返回什么结果、出错如何表示。它可以是库函数接口、操作系统接口，也可以是最常见的 Web API（通过 HTTP 访问）。API 让调用方只依赖契约而不依赖内部实现，是系统解耦和平台集成的基础。",
+  "how": [
+   "定义契约：约定端点、方法、参数、数据格式、状态码和错误结构，常用 OpenAPI 描述。",
+   "认证授权：调用方携带 API Key、OAuth 令牌等凭证，服务端识别身份并检查权限。",
+   "请求处理：服务端校验参数、执行业务逻辑，并对调用频率做限流。",
+   "返回结果：以约定格式（多为 JSON）返回数据与状态码，错误时给出机器可读的错误码。",
+   "演进管理：通过版本号、向后兼容字段和弃用通知，在不破坏现有调用方的前提下迭代。"
+  ],
+  "terms": [
+   {
+    "t": "REST",
+    "d": "以资源为中心、用 HTTP 方法表达操作的 API 设计风格。"
+   },
+   {
+    "t": "端点 (Endpoint)",
+    "d": "API 中一个可访问的具体地址，如 POST /v1/messages。"
+   },
+   {
+    "t": "OpenAPI",
+    "d": "描述 HTTP API 的标准规范，可生成文档、客户端与测试。"
+   },
+   {
+    "t": "幂等 (Idempotent)",
+    "d": "重复调用产生相同效果，GET、PUT、DELETE 应满足。"
+   },
+   {
+    "t": "限流 (Rate Limiting)",
+    "d": "限制调用频率，超限通常返回 429 Too Many Requests。"
+   }
+  ],
+  "code": {
+   "lang": "http",
+   "title": "一次 REST 调用",
+   "src": "POST /v1/orders HTTP/1.1\nHost: api.example.com\nAuthorization: Bearer <access_token>\nContent-Type: application/json\nIdempotency-Key: 3f1c9a2e-order-001\n\n{\"product_id\": \"sku_123\", \"quantity\": 2}\n\n---- 成功响应 ----\nHTTP/1.1 201 Created\nContent-Type: application/json\nLocation: /v1/orders/ord_789\n\n{\"id\": \"ord_789\", \"status\": \"pending\", \"quantity\": 2}\n\n---- 错误响应 ----\nHTTP/1.1 422 Unprocessable Content\nContent-Type: application/json\n\n{\"error\": {\"code\": \"invalid_quantity\", \"message\": \"quantity must be >= 1\"}}",
+   "note": "方法、路径、鉴权头、请求体、状态码和结构化错误，构成一个完整的 API 契约示例。"
+  },
+  "table": {
+   "title": "API 风格对比",
+   "head": [
+    "风格",
+    "特点",
+    "适合"
+   ],
+   "rows": [
+    [
+     "REST",
+     "资源 + HTTP 方法，简单通用",
+     "公开 API、CRUD 业务"
+    ],
+    [
+     "GraphQL",
+     "客户端按需声明字段，单端点",
+     "前端数据需求多变"
+    ],
+    [
+     "gRPC",
+     "Protobuf 二进制，强类型，基于 HTTP/2",
+     "内部微服务高性能通信"
+    ],
+    [
+     "Webhook",
+     "服务方主动回调你的 URL",
+     "支付结果、事件通知"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "直接调用 HTTP API",
+    "pros": "无额外依赖，完全可控",
+    "cons": "需自己处理鉴权、重试、分页",
+    "when": "简单调用或无官方 SDK"
+   },
+   {
+    "opt": "使用官方 SDK",
+    "pros": "类型提示、重试与错误封装",
+    "cons": "多一个依赖，版本需跟进",
+    "when": "主流服务（如模型 API）"
+   },
+   {
+    "opt": "经 MCP 暴露给 Agent",
+    "pros": "Agent 可按需发现并调用",
+    "cons": "需关注权限与安全边界",
+    "when": "让 AI Agent 使用内部系统"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "所有错误都返回 200，错误信息写在正文里",
+    "fix": "用正确状态码，并返回结构化错误码"
+   },
+   {
+    "bad": "修改字段含义或删除字段，老客户端崩溃",
+    "fix": "只做向后兼容的增量变更，破坏性变更走新版本"
+   },
+   {
+    "bad": "列表接口不分页，一次返回全部数据",
+    "fix": "设计分页参数和最大条数上限"
+   },
+   {
+    "bad": "调用第三方 API 不处理 429 和超时",
+    "fix": "设置超时，遇到 429/5xx 用指数退避重试"
+   }
+  ],
+  "checklist": [
+   "有 OpenAPI 或等价接口文档",
+   "统一的错误结构与状态码",
+   "鉴权、权限与限流已实现",
+   "列表接口支持分页",
+   "有版本与弃用策略",
+   "写操作支持幂等键或去重"
+  ],
+  "interview": [
+   {
+    "q": "PUT 和 PATCH 有什么区别？",
+    "a": "PUT 用完整表示替换目标资源，语义上幂等；PATCH 只提交部分修改，是否幂等取决于补丁格式。实践中更新少量字段用 PATCH，整体替换用 PUT，并在文档中明确未传字段的处理方式。"
+   },
+   {
+    "q": "如何设计 API 的错误响应？",
+    "a": "HTTP 状态码表达类别（4xx 调用方问题、5xx 服务方问题），正文提供稳定的机器可读错误码、给人看的消息、出错字段和请求 ID。可参考 RFC 9457 Problem Details 格式，避免泄露堆栈等内部信息。"
+   },
+   {
+    "q": "Function Calling 和 API 是什么关系？",
+    "a": "Function Calling 让模型输出「调用哪个函数、传什么参数」的结构化请求，应用再据此真正调用 API。工具定义本质就是把 API 契约（名称、描述、参数 Schema）告诉模型，所以清晰的 API 设计直接决定 Agent 用得好不好。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "MDN: HTTP request methods",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods"
+   },
+   {
+    "title": "OpenAPI Specification",
+    "url": "https://spec.openapis.org/oas/latest.html"
+   },
+   {
+    "title": "RFC 9457: Problem Details for HTTP APIs",
+    "url": "https://www.rfc-editor.org/rfc/rfc9457"
+   }
+  ]
+ },
+ {
+  "slug": "json",
+  "def": "JSON（JavaScript Object Notation）是一种轻量的文本数据交换格式，由对象、数组、字符串、数字、布尔、null 六类值构成，规范见 RFC 8259 与 ECMA-404。它语言无关、可读，是 Web API 和 LLM 结构化输出的事实标准，配合 JSON Schema 可描述和校验结构。",
+  "how": [
+   "数据建模：用对象表示键值结构、数组表示有序列表，可任意嵌套组合。",
+   "序列化：程序把内存中的数据结构转换成 JSON 文本，如 JSON.stringify、json.dumps。",
+   "传输：通过 HTTP 以 Content-Type: application/json 发送，文本编码规定为 UTF-8。",
+   "反序列化：接收方解析文本还原为本语言的数据结构，语法错误时直接抛出异常。",
+   "校验：用 JSON Schema 检查字段、类型、必填项和取值范围，拒绝不合规数据。"
+  ],
+  "terms": [
+   {
+    "t": "序列化 (Serialization)",
+    "d": "把内存数据转换为可存储或传输的文本或字节。"
+   },
+   {
+    "t": "JSON Schema",
+    "d": "用 JSON 描述 JSON 结构的规范，用于校验与文档。"
+   },
+   {
+    "t": "JSON Lines (JSONL)",
+    "d": "每行一个 JSON 对象的格式，常用于日志和批处理数据。"
+   },
+   {
+    "t": "结构化输出 (Structured Outputs)",
+    "d": "让 LLM 严格按给定 Schema 输出 JSON 的能力。"
+   },
+   {
+    "t": "JSON5 / JSONC",
+    "d": "允许注释、尾逗号的扩展格式，不是标准 JSON。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "解析并校验 LLM 输出",
+   "src": "# pip install jsonschema\nimport json\nfrom jsonschema import validate, ValidationError\n\nschema = {\n    \"type\": \"object\",\n    \"properties\": {\n        \"sentiment\": {\"enum\": [\"positive\", \"negative\", \"neutral\"]},\n        \"score\": {\"type\": \"number\", \"minimum\": 0, \"maximum\": 1},\n    },\n    \"required\": [\"sentiment\", \"score\"],\n    \"additionalProperties\": False,\n}\n\nraw = '{\"sentiment\": \"positive\", \"score\": 0.92}'   # 假设这是模型返回的文本\n\ntry:\n    data = json.loads(raw)            # 1. 语法是否合法\n    validate(instance=data, schema=schema)  # 2. 结构是否符合约定\n    print(\"ok:\", data)\nexcept json.JSONDecodeError as e:\n    print(\"不是合法 JSON：\", e)\nexcept ValidationError as e:\n    print(\"结构不符：\", e.message)    # 可把错误回传给模型让其修正",
+   "note": "先解析语法，再用 Schema 校验结构；两步都通过的数据才能交给后续代码。"
+  },
+  "table": {
+   "title": "JSON 规范易错点",
+   "head": [
+    "写法",
+    "是否合法",
+    "说明"
+   ],
+   "rows": [
+    [
+     "{'a': 1}",
+     "不合法",
+     "字符串和键必须用双引号"
+    ],
+    [
+     "[1, 2, ]",
+     "不合法",
+     "不允许尾逗号"
+    ],
+    [
+     "// 注释",
+     "不合法",
+     "标准 JSON 不支持注释"
+    ],
+    [
+     "NaN / Infinity",
+     "不合法",
+     "数字不能是这些特殊值"
+    ],
+    [
+     "大整数 9007199254740993",
+     "合法但有风险",
+     "JS 中超过 2^53 会丢精度"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "JSON",
+    "pros": "通用、可读、生态最广",
+    "cons": "无注释、体积较大、无日期类型",
+    "when": "Web API、数据交换"
+   },
+   {
+    "opt": "YAML",
+    "pros": "可读性好、支持注释",
+    "cons": "缩进敏感，隐式类型易踩坑",
+    "when": "配置文件、CI 流水线"
+   },
+   {
+    "opt": "Protobuf 等二进制格式",
+    "pros": "体积小、解析快、强类型",
+    "cons": "不可读，需要 Schema 编译",
+    "when": "高性能内部通信"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用正则从模型回复里「抠」JSON",
+    "fix": "用结构化输出或工具调用，再 json.loads 加 Schema 校验"
+   },
+   {
+    "bad": "ID 用数字类型，前端 JS 解析后精度丢失",
+    "fix": "超大整数 ID 用字符串传输"
+   },
+   {
+    "bad": "日期格式各写各的",
+    "fix": "统一使用 ISO 8601 字符串并带时区"
+   },
+   {
+    "bad": "对不可信 JSON 不做大小和深度限制",
+    "fix": "限制请求体大小与嵌套深度，防止资源耗尽"
+   }
+  ],
+  "checklist": [
+   "响应头为 application/json",
+   "接口数据有 Schema 定义并校验",
+   "日期使用 ISO 8601 格式",
+   "大整数 ID 以字符串传输",
+   "请求体大小有上限"
+  ],
+  "interview": [
+   {
+    "q": "如何让 LLM 稳定输出可用的 JSON？",
+    "a": "优先使用供应商的结构化输出或工具调用，按 JSON Schema 约束生成；提示中给出 Schema 和示例；代码端解析并校验，失败时把错误信息回传模型重试；对关键字段再做业务规则校验。"
+   },
+   {
+    "q": "JSON 为什么没有日期类型？带来什么问题？",
+    "a": "JSON 刻意保持极简，只定义六种值类型。日期只能用字符串或时间戳表示，若各方格式和时区不统一，会出现解析错误和时区偏移。通常约定使用 ISO 8601 字符串（如 2026-10-20T08:00:00Z）。"
+   },
+   {
+    "q": "JSON 与 JSONL 分别适合什么？",
+    "a": "JSON 适合一次性传输一个完整文档；JSONL 每行一条记录，可流式逐行读写、追加写入、并行处理，适合日志、批量 API 请求和训练数据。很多 Batch API 和微调数据集采用 JSONL 格式。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 8259: The JSON Data Interchange Format",
+    "url": "https://www.rfc-editor.org/rfc/rfc8259"
+   },
+   {
+    "title": "JSON Schema 官网",
+    "url": "https://json-schema.org/"
+   },
+   {
+    "title": "MDN: JSON",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON"
+   }
+  ]
+ },
+ {
+  "slug": "programming-language",
+  "def": "编程语言（Programming Language）是用形式化语法和语义描述计算过程的语言，代码经编译器或解释器转换为机器可执行的指令。语言在类型系统（静态/动态）、执行方式（编译/解释/JIT）、内存管理（手动/垃圾回收/所有权）和生态上各有取舍，选型主要取决于运行平台、团队能力与生态成熟度。",
+  "how": [
+   "词法与语法分析：源代码被切成词法单元，再按语法规则构建抽象语法树（AST）。",
+   "语义检查：检查变量作用域和类型，静态类型语言在这一阶段就能发现大量错误。",
+   "代码生成：编译型语言生成机器码；Java、C# 等生成字节码交给虚拟机执行。",
+   "执行：解释器逐条执行，或由 JIT 在运行时把热点代码编译为机器码以提速。",
+   "运行时支持：内存分配、垃圾回收、异常处理、标准库等由运行时环境提供。"
+  ],
+  "terms": [
+   {
+    "t": "静态类型 / 动态类型",
+    "d": "类型在编译期检查还是运行时检查。"
+   },
+   {
+    "t": "编译 / 解释 / JIT",
+    "d": "提前编译成机器码、逐条解释执行、运行时即时编译。"
+   },
+   {
+    "t": "垃圾回收 (GC)",
+    "d": "运行时自动回收不再使用的内存。"
+   },
+   {
+    "t": "运行时 (Runtime)",
+    "d": "程序执行所需的环境，如 Node.js、JVM、CPython。"
+   },
+   {
+    "t": "类型推断 (Type Inference)",
+    "d": "编译器自动推导变量类型，无需处处标注。"
+   }
+  ],
+  "code": {
+   "lang": "typescript",
+   "title": "静态类型提前发现错误",
+   "src": "// TypeScript 在编译期检查类型，JavaScript 要到运行时才报错\ninterface User {\n  id: number;\n  name: string;\n  email?: string;          // 可选字段\n}\n\nfunction greet(user: User): string {\n  return `Hello, ${user.name.toUpperCase()}`;\n}\n\ngreet({ id: 1, name: \"Ann\" });          // 正确\n\n// greet({ id: 2 });\n// 编译错误：Property 'name' is missing in type '{ id: number; }'\n\nfunction sendMail(user: User) {\n  // user.email.trim();\n  // 严格模式下报错：'user.email' is possibly 'undefined'\n  if (user.email) console.log(user.email.trim());\n}\n// 运行：npx tsc --noEmit 只做类型检查",
+   "note": "静态类型把一部分运行时错误提前到编写阶段，也为 AI 生成代码提供了自动校验信号。"
+  },
+  "table": {
+   "title": "常见语言定位",
+   "head": [
+    "语言",
+    "类型与执行",
+    "主要领域"
+   ],
+   "rows": [
+    [
+     "Python",
+     "动态类型，解释执行",
+     "AI/数据、脚本、后端"
+    ],
+    [
+     "JavaScript / TypeScript",
+     "动态 / 静态类型检查，JIT",
+     "Web 前端、Node 后端"
+    ],
+    [
+     "Go",
+     "静态类型，编译，带 GC",
+     "云原生、后端服务、CLI"
+    ],
+    [
+     "Rust",
+     "静态类型，编译，所有权管理内存",
+     "系统编程、高性能组件"
+    ],
+    [
+     "Java / Kotlin",
+     "静态类型，字节码 + JVM",
+     "企业后端、Android"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "动态类型语言",
+    "pros": "写得快、灵活、上手容易",
+    "cons": "大型项目重构风险高",
+    "when": "脚本、原型、数据分析"
+   },
+   {
+    "opt": "静态类型语言",
+    "pros": "错误早发现、IDE 与重构支持好",
+    "cons": "前期书写成本更高",
+    "when": "长期维护、多人协作项目"
+   },
+   {
+    "opt": "选 AI 训练语料丰富的语言",
+    "pros": "AI 生成质量通常更高",
+    "cons": "未必是性能最优解",
+    "when": "主要依赖 AI 编写代码"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "因为「性能更好」给简单 Web 项目选冷门语言",
+    "fix": "优先考虑生态、团队熟悉度和招聘，瓶颈通常不在语言"
+   },
+   {
+    "bad": "TypeScript 项目里到处用 any 绕过检查",
+    "fix": "开启 strict 模式，用 unknown 加类型收窄"
+   },
+   {
+    "bad": "混淆语言版本，如用 Python 2 语法写 Python 3",
+    "fix": "在项目中声明语言版本，并在 CI 中固定运行时"
+   }
+  ],
+  "checklist": [
+   "项目声明了语言与运行时版本",
+   "静态检查（类型、Lint）接入 CI",
+   "选型考虑了团队能力与生态",
+   "TypeScript 开启 strict 模式",
+   "关键依赖在该语言生态中成熟"
+  ],
+  "interview": [
+   {
+    "q": "编译型和解释型的界限还清晰吗？",
+    "a": "已经模糊。Java 先编译为字节码再由 JVM 解释与 JIT 编译；JavaScript 引擎用 JIT 把热点代码编译为机器码；Python 也会先编译成字节码。更有意义的区分是类型检查时机和运行时模型。"
+   },
+   {
+    "q": "AI 编程时代，类型系统更重要还是更不重要？",
+    "a": "更重要。类型检查是零成本的自动验证：AI 生成的代码能否通过类型检查立刻可知，Agent 可以据此自我修正；类型签名也为模型提供更清晰的上下文。很多团队在 AI 辅助开发中更倾向 TypeScript 而非纯 JavaScript。"
+   },
+   {
+    "q": "垃圾回收和所有权有何取舍？",
+    "a": "GC 由运行时自动回收内存，开发简单，但有停顿和额外开销；Rust 的所有权在编译期确定内存释放时机，无 GC 停顿且内存安全，但学习曲线陡峭。按延迟敏感度和团队能力选择。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Wikipedia: Programming language",
+    "url": "https://en.wikipedia.org/wiki/Programming_language"
+   },
+   {
+    "title": "TypeScript Handbook",
+    "url": "https://www.typescriptlang.org/docs/handbook/intro.html"
+   },
+   {
+    "title": "Python 官方教程",
+    "url": "https://docs.python.org/3/tutorial/"
+   }
+  ]
+ },
+ {
+  "slug": "framework",
+  "def": "框架（Framework）是提供应用骨架和约定的可复用代码体系，开发者在其规定的扩展点中填写业务代码，由框架负责调用。与库相比，框架掌握控制流，即控制反转（Inversion of Control）。它内置路由、渲染、数据访问、安全等通用能力，以「约定优于配置」换取开发效率和团队一致性。",
+  "how": [
+   "定义结构：框架约定目录、文件命名和配置方式，如路由文件放在特定目录。",
+   "接管控制流：框架负责启动应用、接收请求或事件，并调度到你注册的代码。",
+   "提供扩展点：通过回调、装饰器、中间件、生命周期钩子注入业务逻辑。",
+   "内置通用能力：路由、模板或组件渲染、ORM、鉴权、表单校验等开箱即用。",
+   "生态扩展：插件和社区包围绕框架约定构建，形成可组合的解决方案。"
+  ],
+  "terms": [
+   {
+    "t": "控制反转 (IoC)",
+    "d": "由框架调用你的代码，而非你调用框架。"
+   },
+   {
+    "t": "约定优于配置 (CoC)",
+    "d": "遵循默认约定即可工作，只有例外才需配置。"
+   },
+   {
+    "t": "中间件 (Middleware)",
+    "d": "插入请求处理链中的通用逻辑单元。"
+   },
+   {
+    "t": "生命周期钩子 (Lifecycle Hooks)",
+    "d": "在组件或应用特定阶段被调用的函数。"
+   },
+   {
+    "t": "脚手架 (Scaffolding)",
+    "d": "按框架约定自动生成项目初始结构的工具。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "Express：框架调用你的代码",
+   "src": "// npm install express ；运行：node app.js\nconst express = require(\"express\");\nconst app = express();\n\napp.use(express.json());            // 框架内置中间件：解析 JSON 请求体\n\n// 你只注册处理函数，何时调用由框架决定（控制反转）\napp.get(\"/api/health\", (req, res) => {\n  res.json({ ok: true });\n});\n\napp.post(\"/api/echo\", (req, res) => {\n  if (!req.body?.text) {\n    return res.status(400).json({ error: \"text is required\" });\n  }\n  res.json({ echo: req.body.text });\n});\n\n// 错误处理中间件：四个参数是 Express 的约定\napp.use((err, req, res, next) => {\n  console.error(err);\n  res.status(500).json({ error: \"internal error\" });\n});\n\napp.listen(3000, () => console.log(\"http://localhost:3000\"));",
+   "note": "你写处理函数，框架负责监听、路由分发和调用，这就是框架与库的本质区别。"
+  },
+  "table": {
+   "title": "主流框架定位",
+   "head": [
+    "框架",
+    "领域",
+    "风格"
+   ],
+   "rows": [
+    [
+     "React（常被称为库）",
+     "前端 UI",
+     "组件化，生态自由组合"
+    ],
+    [
+     "Next.js",
+     "全栈 Web",
+     "基于 React，约定式路由与 SSR"
+    ],
+    [
+     "Django",
+     "Python 后端",
+     "全功能，自带 ORM 与后台"
+    ],
+    [
+     "FastAPI",
+     "Python API",
+     "轻量，类型注解驱动校验与文档"
+    ],
+    [
+     "Express",
+     "Node 后端",
+     "极简，靠中间件组合"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "全功能框架（Django、Rails）",
+    "pros": "开箱即用，约定统一",
+    "cons": "灵活性低，学习内容多",
+    "when": "标准业务系统、快速交付"
+   },
+   {
+    "opt": "轻量框架（Express、FastAPI）",
+    "pros": "灵活、轻、易理解",
+    "cons": "需自己选择组合各类组件",
+    "when": "API 服务、需要定制"
+   },
+   {
+    "opt": "不用框架",
+    "pros": "零依赖、完全掌控",
+    "cons": "重复造轮子，安全细节易遗漏",
+    "when": "极小工具或学习原理"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "AI 混用框架不同大版本的写法",
+    "fix": "在规则文件中写明框架版本，并让 AI 参考对应版本文档"
+   },
+   {
+    "bad": "与框架约定对抗，到处写特殊配置",
+    "fix": "优先遵循框架惯例，确有需要再定制"
+   },
+   {
+    "bad": "为一个简单页面引入重型框架",
+    "fix": "按项目规模选型，评估构建复杂度与包体积"
+   }
+  ],
+  "checklist": [
+   "框架与版本已在项目说明中写明",
+   "使用的是框架官方推荐的项目结构",
+   "框架安全特性（CSRF、转义）未被关闭",
+   "框架版本仍在维护周期内",
+   "升级大版本前阅读迁移指南"
+  ],
+  "interview": [
+   {
+    "q": "库和框架的核心区别是什么？",
+    "a": "控制权。使用库时你的代码掌握流程，在需要时调用库；使用框架时框架掌握流程，在约定的时机调用你的代码（控制反转）。因此框架影响整个项目结构，替换成本远高于替换一个库。"
+   },
+   {
+    "q": "React 是库还是框架？",
+    "a": "React 官方自称用于构建界面的库，只负责组件渲染；路由、数据获取等需要另选。但实践中它主导了应用结构，生态也常被称为框架。Next.js 等元框架在 React 之上补齐路由和服务端能力，是更完整的框架。"
+   },
+   {
+    "q": "AI 写代码时如何避免框架版本混乱？",
+    "a": "在 CLAUDE.md 或规则文件中声明框架与主版本；锁定依赖版本；让 Agent 先读取 package.json 等清单再动手；提供或检索对应版本的官方文档；用类型检查与构建作为验证，及时发现过时 API。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Martin Fowler: Inversion of Control",
+    "url": "https://martinfowler.com/bliki/InversionOfControl.html"
+   },
+   {
+    "title": "Express 官方文档",
+    "url": "https://expressjs.com/"
+   },
+   {
+    "title": "Wikipedia: Software framework",
+    "url": "https://en.wikipedia.org/wiki/Software_framework"
+   }
+  ]
+ },
+ {
+  "slug": "library-package",
+  "def": "库（Library）是封装好的可复用代码集合，由你的代码按需调用；包（Package）是库的分发单位，带有名称、版本、依赖声明和元数据，发布在 npm、PyPI 等注册表上。复用成熟库能大幅节省开发时间，但每引入一个包都意味着承担它的安全、许可证和维护风险。",
+  "how": [
+   "打包发布：作者编写代码，在清单文件（package.json、pyproject.toml）中声明元数据后发布。",
+   "注册表托管：npm、PyPI 等注册表存储各版本的包文件和元数据，供全球下载。",
+   "安装：包管理器解析版本和依赖关系，把包下载到项目的依赖目录或虚拟环境。",
+   "导入调用：代码通过 import 或 require 加载包，并只调用其公开文档中承诺的 API。",
+   "更新维护：作者按语义化版本发布新版，使用者阅读变更日志、评估影响后再升级。"
+  ],
+  "terms": [
+   {
+    "t": "注册表 (Registry)",
+    "d": "托管和分发包的服务，如 npm Registry、PyPI。"
+   },
+   {
+    "t": "语义化版本 (SemVer)",
+    "d": "主版本.次版本.修订号，主版本变化表示不兼容。"
+   },
+   {
+    "t": "标准库 (Standard Library)",
+    "d": "语言自带、无需安装的库。"
+   },
+   {
+    "t": "Tree Shaking",
+    "d": "打包时移除未被使用的导出代码，减小体积。"
+   },
+   {
+    "t": "供应链攻击 (Supply Chain Attack)",
+    "d": "通过恶意或被劫持的包入侵使用者系统。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "标准库 vs 第三方库",
+   "src": "# 标准库：无需安装，随 Python 自带\nimport json\nfrom urllib.request import urlopen\n\nwith urlopen(\"https://httpbin.org/json\", timeout=10) as r:\n    data = json.load(r)\nprint(list(data.keys()))\n\n# 第三方库：pip install requests\n# 接口更友好：自动处理编码、会话、重定向等\nimport requests\n\nresp = requests.get(\"https://httpbin.org/json\", timeout=10)\nresp.raise_for_status()          # 非 2xx 直接抛异常\nprint(resp.json().keys())\n\n# 查看已安装版本与来源信息\n# pip show requests",
+   "note": "能用标准库简单解决的不必加依赖；第三方库换来更好用的接口，代价是多一个需要维护的依赖。"
+  },
+  "table": {
+   "title": "评估一个包的指标",
+   "head": [
+    "指标",
+    "看哪里",
+    "警示信号"
+   ],
+   "rows": [
+    [
+     "维护活跃度",
+     "最近发布与提交时间",
+     "长期无更新、Issue 无人回应"
+    ],
+    [
+     "使用规模",
+     "下载量、依赖它的项目数",
+     "名字相似但下载量极低"
+    ],
+    [
+     "安全记录",
+     "安全公告、audit 结果",
+     "已知漏洞未修复"
+    ],
+    [
+     "许可证",
+     "LICENSE 文件",
+     "无许可证或与项目冲突"
+    ],
+    [
+     "依赖数量",
+     "依赖树规模",
+     "简单功能却拉入大量依赖"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "引入成熟第三方库",
+    "pros": "省时间，经过大量使用验证",
+    "cons": "增加体积和供应链风险",
+    "when": "加密、日期、解析等复杂领域"
+   },
+   {
+    "opt": "自己实现",
+    "pros": "无外部依赖，完全可控",
+    "cons": "需维护，易有边界 bug",
+    "when": "逻辑简单、只用到很小功能"
+   },
+   {
+    "opt": "只用标准库",
+    "pros": "最稳定，零安装",
+    "cons": "接口可能不够便利",
+    "when": "脚本、工具、依赖敏感环境"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "安装 AI 推荐但实际不存在或名字拼错的包",
+    "fix": "在注册表核实包名、作者、下载量后再安装"
+   },
+   {
+    "bad": "自己手写加密、鉴权等安全算法",
+    "fix": "安全相关功能使用成熟、经过审计的库"
+   },
+   {
+    "bad": "为一行代码就能实现的功能引入依赖",
+    "fix": "评估收益与风险，小功能可以内联实现"
+   }
+  ],
+  "checklist": [
+   "新包已核实名称与发布者",
+   "许可证与项目兼容",
+   "无已知高危漏洞",
+   "版本已锁定在锁文件中",
+   "维护状态活跃"
+  ],
+  "interview": [
+   {
+    "q": "什么是包名抢注（typosquatting）？",
+    "a": "攻击者注册与流行包名相似的恶意包（如拼写差一个字母），等开发者误装。AI 幻觉出的不存在包名也可能被抢注。防御：安装前核实包名和发布者，使用锁文件，启用依赖扫描，必要时使用私有镜像白名单。"
+   },
+   {
+    "q": "选择依赖时你会怎样做尽职调查？",
+    "a": "看维护活跃度、下载量与使用者、Issue 处理情况、安全公告、许可证、依赖树大小、文档质量和发布者可信度；对关键依赖读一读源码或变更日志，并评估如果停止维护的替代方案。"
+   },
+   {
+    "q": "库的主版本升级要注意什么？",
+    "a": "主版本意味着可能不兼容。先读变更日志和迁移指南；在独立分支升级；运行完整测试；关注弃用警告；分阶段发布。可以让 AI Agent 协助批量修改，但要以测试结果为准。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Semantic Versioning 2.0.0",
+    "url": "https://semver.org/"
+   },
+   {
+    "title": "Python Packaging User Guide",
+    "url": "https://packaging.python.org/"
+   },
+   {
+    "title": "npm Docs: About packages and modules",
+    "url": "https://docs.npmjs.com/about-packages-and-modules"
+   }
+  ]
+ },
+ {
+  "slug": "package-manager",
+  "def": "包管理器（Package Manager）是自动完成依赖的查找、版本解析、下载、安装、更新与移除的工具，如 JavaScript 的 npm、pnpm、Yarn，Python 的 pip、uv、Poetry。它读取项目清单文件中的依赖声明，生成锁文件记录精确版本，使团队、CI 与生产环境能安装出完全一致的依赖树。",
+  "how": [
+   "读取清单：解析 package.json 或 pyproject.toml 中声明的依赖及版本范围。",
+   "版本解析：计算满足所有约束的版本组合，包括依赖的依赖（传递依赖）。",
+   "下载缓存：从注册表下载包，存入本地缓存，重复安装时直接复用。",
+   "安装布局：写入 node_modules 或虚拟环境的 site-packages，必要时执行安装脚本。",
+   "写锁文件：把解析出的精确版本与校验和写入锁文件，供后续可复现安装。"
+  ],
+  "terms": [
+   {
+    "t": "锁文件 (Lockfile)",
+    "d": "记录精确依赖版本与校验和的文件，如 package-lock.json。"
+   },
+   {
+    "t": "版本范围 (^ / ~)",
+    "d": "^1.2.3 允许 <2.0.0 的更新；~1.2.3 允许 <1.3.0。"
+   },
+   {
+    "t": "虚拟环境 (venv)",
+    "d": "Python 中隔离项目依赖的独立环境。"
+   },
+   {
+    "t": "devDependencies",
+    "d": "只在开发和构建时需要的依赖，如测试工具。"
+   },
+   {
+    "t": "npm ci",
+    "d": "严格按锁文件进行干净安装的命令，适合 CI。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "Node 与 Python 常用命令",
+   "src": "# ---- Node.js（npm）----\nnpm install                 # 按 package.json 安装，并更新锁文件\nnpm install zod             # 添加运行时依赖\nnpm install -D vitest       # 添加开发依赖\nnpm ci                      # CI 中使用：严格按锁文件安装\nnpm outdated                # 查看可升级的依赖\nnpm audit                   # 检查已知漏洞\n\n# ---- Python（venv + pip）----\npython3 -m venv .venv       # 创建虚拟环境\nsource .venv/bin/activate   # 激活（Windows: .venv\\Scripts\\activate）\npip install requests\npip freeze > requirements.txt   # 记录当前精确版本\n\n# ---- Python（uv，更快的替代）----\nuv init my-app && cd my-app\nuv add requests             # 写入 pyproject.toml 并生成 uv.lock\nuv run main.py              # 在项目环境中运行",
+   "note": "日常开发用 install，CI 用 ci 或按锁文件安装；Python 项目务必在虚拟环境中装依赖。"
+  },
+  "table": {
+   "title": "包管理器对比",
+   "head": [
+    "工具",
+    "生态",
+    "锁文件",
+    "特点"
+   ],
+   "rows": [
+    [
+     "npm",
+     "JavaScript",
+     "package-lock.json",
+     "Node 自带，最通用"
+    ],
+    [
+     "pnpm",
+     "JavaScript",
+     "pnpm-lock.yaml",
+     "硬链接共享存储，省空间、更严格"
+    ],
+    [
+     "pip",
+     "Python",
+     "无内置（常用 requirements.txt）",
+     "Python 自带，最基础"
+    ],
+    [
+     "uv",
+     "Python",
+     "uv.lock",
+     "Rust 编写，速度快，集成环境管理"
+    ],
+    [
+     "Poetry",
+     "Python",
+     "poetry.lock",
+     "依赖与打包发布一体化"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "宽松版本范围（^）",
+    "pros": "自动获得修复与新功能",
+    "cons": "依赖更新可能引入意外变化",
+    "when": "配合锁文件与测试使用"
+   },
+   {
+    "opt": "精确锁定版本",
+    "pros": "完全可复现",
+    "cons": "需主动升级，否则积累过时依赖",
+    "when": "生产应用、关键系统"
+   },
+   {
+    "opt": "自动化依赖更新机器人",
+    "pros": "持续小步升级，降低积压",
+    "cons": "PR 数量多，需要测试兜底",
+    "when": "有 CI 测试的活跃项目"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "锁文件被加入 .gitignore 不提交",
+    "fix": "应用项目必须提交锁文件，保证各环境一致"
+   },
+   {
+    "bad": "同一项目混用 npm 和 yarn，出现两份锁文件",
+    "fix": "团队统一一个包管理器，可在 package.json 的 packageManager 字段声明"
+   },
+   {
+    "bad": "Python 依赖装进系统全局环境",
+    "fix": "每个项目使用独立虚拟环境"
+   },
+   {
+    "bad": "CI 中用 npm install，悄悄改变依赖版本",
+    "fix": "CI 用 npm ci 严格按锁文件安装"
+   }
+  ],
+  "checklist": [
+   "锁文件已提交到仓库",
+   "团队统一使用一种包管理器",
+   "CI 按锁文件安装依赖",
+   "开发依赖与运行依赖已区分",
+   "定期运行漏洞审计"
+  ],
+  "interview": [
+   {
+    "q": "为什么有了版本范围还需要锁文件？",
+    "a": "版本范围只声明可接受区间，不同时间安装可能解析出不同版本，传递依赖更是如此。锁文件记录整棵依赖树的精确版本和校验和，保证开发、CI、生产安装结果一致，也便于审计和回溯问题。"
+   },
+   {
+    "q": "npm install 和 npm ci 的区别？",
+    "a": "npm install 会根据 package.json 解析并可能更新锁文件；npm ci 要求锁文件存在且与 package.json 一致，删除现有 node_modules 后严格按锁文件安装，不修改锁文件，更快更可复现，适合 CI 和部署。"
+   },
+   {
+    "q": "安装脚本为什么是安全风险？",
+    "a": "npm 等允许包在安装时执行 preinstall/postinstall 脚本，恶意包可借此窃取环境变量和凭证。缓解：审查新依赖、在 CI 中按需禁用脚本（如 --ignore-scripts）、使用锁文件和依赖扫描、最小化构建环境中的密钥。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "npm Docs: package-lock.json",
+    "url": "https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json"
+   },
+   {
+    "title": "npm Docs: npm ci",
+    "url": "https://docs.npmjs.com/cli/v10/commands/npm-ci"
+   },
+   {
+    "title": "uv 官方文档",
+    "url": "https://docs.astral.sh/uv/"
+   },
+   {
+    "title": "Python venv 文档",
+    "url": "https://docs.python.org/3/library/venv.html"
+   }
+  ]
+ },
+ {
+  "slug": "dependencies",
+  "def": "依赖（Dependencies）是项目运行或构建所需的外部代码包，分为直接依赖（你声明的）和传递依赖（依赖的依赖）。一个现代项目的依赖树往往包含成百上千个包，它们共同决定了应用的功能、体积、安全面和许可证义务。依赖管理的目标是可复现、可审计、可持续更新。",
+  "how": [
+   "声明：在 package.json 等清单文件中列出直接依赖及其可接受的版本范围。",
+   "解析：包管理器递归展开传递依赖，求出满足所有版本约束的依赖图。",
+   "锁定：把依赖图中每个包的精确版本、下载地址和校验和写入锁文件。",
+   "审计：扫描依赖中的已知漏洞（CVE）与许可证，生成报告或阻断构建。",
+   "更新：通过自动化工具定期提出升级，经测试验证后合并，避免依赖长期过时。"
+  ],
+  "terms": [
+   {
+    "t": "传递依赖 (Transitive Dependency)",
+    "d": "你未直接声明、由依赖引入的依赖。"
+   },
+   {
+    "t": "依赖地狱 (Dependency Hell)",
+    "d": "版本约束冲突导致无法安装或运行的局面。"
+   },
+   {
+    "t": "CVE",
+    "d": "公开漏洞的统一编号，安全扫描工具据此报告风险。"
+   },
+   {
+    "t": "SBOM",
+    "d": "软件物料清单，列出软件包含的全部组件与版本。"
+   },
+   {
+    "t": "Dependabot",
+    "d": "GitHub 提供的依赖更新与安全告警工具。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "自动化依赖更新",
+   "src": "# .github/dependabot.yml —— 让 GitHub 每周自动提交依赖升级 PR\nversion: 2\nupdates:\n  - package-ecosystem: \"npm\"      # Node 项目\n    directory: \"/\"                # package.json 所在目录\n    schedule:\n      interval: \"weekly\"\n    open-pull-requests-limit: 5\n    groups:\n      dev-tools:                  # 把开发依赖的小版本升级合并成一个 PR\n        dependency-type: \"development\"\n        update-types: [\"minor\", \"patch\"]\n\n  - package-ecosystem: \"pip\"      # Python 项目\n    directory: \"/\"\n    schedule:\n      interval: \"weekly\"\n\n# 本地也可以手动查看依赖树与漏洞：\n#   npm ls --depth=1      npm audit      pip-audit",
+   "note": "配合 CI 测试，自动化工具能把依赖升级变成持续的小步操作，而不是一年一次的大工程。"
+  },
+  "table": {
+   "title": "依赖风险与应对",
+   "head": [
+    "风险",
+    "表现",
+    "应对工具或做法"
+   ],
+   "rows": [
+    [
+     "已知漏洞",
+     "依赖存在 CVE",
+     "npm audit、pip-audit、Dependabot"
+    ],
+    [
+     "恶意包",
+     "安装即执行恶意脚本",
+     "核实来源、锁文件、限制安装脚本"
+    ],
+    [
+     "许可证冲突",
+     "引入与商业用途冲突的许可证",
+     "许可证扫描、准入清单"
+    ],
+    [
+     "停止维护",
+     "长期无更新、漏洞无人修",
+     "定期评估，准备替代方案"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "频繁小步升级",
+    "pros": "每次变更小，问题易定位",
+    "cons": "持续占用评审精力",
+    "when": "有完善测试的活跃项目"
+   },
+   {
+    "opt": "定期集中升级",
+    "pros": "节奏可控",
+    "cons": "积压后升级跨度大、风险高",
+    "when": "维护资源有限的项目"
+   },
+   {
+    "opt": "供应商化（vendoring）",
+    "pros": "完全离线可控",
+    "cons": "仓库膨胀，更新麻烦",
+    "when": "隔离网络或严格审计环境"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只审查直接依赖，忽略传递依赖",
+    "fix": "扫描整个依赖树，关注被间接引入的高危包"
+   },
+   {
+    "bad": "npm audit fix --force 一键升级到不兼容版本",
+    "fix": "逐个评估高危漏洞，在分支中升级并跑测试"
+   },
+   {
+    "bad": "Agent 自动加了依赖没人注意",
+    "fix": "评审 diff 时重点检查清单与锁文件变化"
+   },
+   {
+    "bad": "依赖多年不升级",
+    "fix": "设定升级节奏，至少及时处理安全更新"
+   }
+  ],
+  "checklist": [
+   "锁文件已提交并在 CI 使用",
+   "CI 中运行漏洞扫描",
+   "启用了自动化依赖更新",
+   "新增依赖需在评审中说明理由",
+   "许可证符合项目要求"
+  ],
+  "interview": [
+   {
+    "q": "如何应对一个深层传递依赖的漏洞？",
+    "a": "先确认漏洞代码路径是否真的被调用；查看直接依赖是否已发布修复版本并升级；若尚未修复，可使用包管理器的覆盖机制（npm overrides、pnpm overrides）强制指定安全版本，并跑测试验证兼容性，同时关注上游修复进展。"
+   },
+   {
+    "q": "什么是 SBOM，为什么越来越受重视？",
+    "a": "SBOM 是软件物料清单，完整列出组件、版本、来源和许可证。重大供应链安全事件后，政府与企业采购越来越要求提供 SBOM，以便漏洞披露时快速判断受影响范围。常见格式有 SPDX 与 CycloneDX。"
+   },
+   {
+    "q": "依赖越少越好吗？",
+    "a": "不绝对。依赖少意味着攻击面和维护成本更低，但自行实现复杂功能（加密、解析、日期）往往更危险。原则是：核心复杂能力用成熟库，琐碎小功能避免引入依赖，并持续评估每个依赖的价值与风险。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "GitHub Docs: Dependabot 配置选项",
+    "url": "https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference"
+   },
+   {
+    "title": "npm Docs: npm audit",
+    "url": "https://docs.npmjs.com/cli/v10/commands/npm-audit"
+   },
+   {
+    "title": "OWASP: Vulnerable and Outdated Components",
+    "url": "https://owasp.org/Top10/A06_2021-Vulnerable_and_Outdated_Components/"
+   }
+  ]
+ },
+ {
+  "slug": "environment-variables",
+  "def": "环境变量（Environment Variables）是操作系统为每个进程提供的键值对配置，进程启动时从父进程继承。现代应用遵循「配置与代码分离」原则，把数据库地址、API Key、运行模式等随环境变化的配置放在环境变量中，使同一份代码无需修改就能在开发、测试和生产环境运行。",
+  "how": [
+   "设置：在 Shell、系统设置、部署平台控制台或 .env 文件中定义键值对。",
+   "继承：子进程启动时复制父进程的环境变量，之后双方的修改互不影响。",
+   "加载：开发时常用 dotenv 类工具或 Node 的 --env-file 把 .env 文件内容注入进程环境。",
+   "读取：代码通过 process.env、os.environ 等接口读取，值一律是字符串。",
+   "构建期注入：前端框架会把带特定前缀的变量在构建时直接写入打包产物，浏览器可见。"
+  ],
+  "terms": [
+   {
+    "t": ".env 文件",
+    "d": "本地存放环境变量的文本文件，不应提交到仓库。"
+   },
+   {
+    "t": ".env.example",
+    "d": "只列变量名和示例值的模板，提交到仓库供他人参考。"
+   },
+   {
+    "t": "NEXT_PUBLIC_ / VITE_ 前缀",
+    "d": "Next.js、Vite 中会被打包进前端代码的公开变量前缀。"
+   },
+   {
+    "t": "十二要素应用 (Twelve-Factor App)",
+    "d": "主张把配置存放在环境变量中的应用设计方法论。"
+   },
+   {
+    "t": "PATH",
+    "d": "最常见的系统环境变量，决定命令行到哪里查找可执行程序。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "读取并校验配置",
+   "src": "# pip install python-dotenv\nimport os\nfrom dotenv import load_dotenv\n\nload_dotenv()   # 开发环境读取 .env；生产由平台注入，文件不存在也不报错\n\ndef require(name: str) -> str:\n    value = os.environ.get(name)\n    if not value:\n        raise RuntimeError(f\"缺少必需的环境变量: {name}\")  # 启动即失败，比运行中报错好\n    return value\n\nDATABASE_URL = require(\"DATABASE_URL\")\nANTHROPIC_API_KEY = require(\"ANTHROPIC_API_KEY\")\nDEBUG = os.environ.get(\"DEBUG\", \"false\").lower() == \"true\"  # 值都是字符串，需自行转换\nPORT = int(os.environ.get(\"PORT\", \"8000\"))\n\nprint(f\"debug={DEBUG}, port={PORT}\")   # 不要打印密钥本身\n\n# Node.js 20.6+ 可直接：node --env-file=.env app.js",
+   "note": "启动时集中读取并校验必需变量，缺失立即报错；注意所有值都是字符串。"
+  },
+  "table": {
+   "title": "配置存放位置对比",
+   "head": [
+    "位置",
+    "适合放什么",
+    "注意"
+   ],
+   "rows": [
+    [
+     "代码常量",
+     "不随环境变化的默认值",
+     "绝不放密钥"
+    ],
+    [
+     "环境变量",
+     "随环境变化的配置与密钥",
+     "值为字符串，需校验"
+    ],
+    [
+     "前端公开变量",
+     "公开的站点地址、分析 ID",
+     "打包后任何人可见"
+    ],
+    [
+     "密钥管理服务",
+     "生产密钥、需轮换的凭证",
+     "需额外集成与权限配置"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": ".env 文件",
+    "pros": "本地开发简单直观",
+    "cons": "明文存储，易被误提交",
+    "when": "本地开发"
+   },
+   {
+    "opt": "部署平台环境变量",
+    "pros": "与代码分离，按环境配置",
+    "cons": "多平台时管理分散",
+    "when": "大多数线上应用"
+   },
+   {
+    "opt": "专用密钥管理（Vault 等）",
+    "pros": "加密、审计、轮换",
+    "cons": "引入额外系统",
+    "when": "团队协作、合规要求高"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把密钥放进 NEXT_PUBLIC_ 或 VITE_ 前缀变量",
+    "fix": "带公开前缀的变量会进入前端包，密钥只能在服务端使用"
+   },
+   {
+    "bad": "改了 .env 但没重启服务，以为配置无效",
+    "fix": "环境变量在进程启动时读取，修改后需重启"
+   },
+   {
+    "bad": "把 \"false\" 字符串当布尔值判断，结果恒为真",
+    "fix": "显式比较字符串或使用配置校验库"
+   },
+   {
+    "bad": "在日志或报错中打印全部环境变量",
+    "fix": "日志中屏蔽敏感字段，只输出必要的非敏感配置"
+   }
+  ],
+  "checklist": [
+   ".env 已加入 .gitignore",
+   "提供了 .env.example 模板",
+   "必需变量启动时校验",
+   "密钥未使用前端公开前缀",
+   "各环境变量在部署平台配置齐全"
+  ],
+  "interview": [
+   {
+    "q": "为什么配置要放环境变量而不是配置文件？",
+    "a": "环境变量与代码彻底分离，不会随代码提交；与语言和操作系统无关；部署平台和容器原生支持按环境注入。配置文件容易被误提交、各环境分支化。但复杂结构化配置仍可用文件，敏感部分再用环境变量引用。"
+   },
+   {
+    "q": "前端项目能用环境变量保护 API Key 吗？",
+    "a": "不能。前端构建工具会在打包时把变量值替换进 JS 代码，用户可直接看到。前端环境变量只适合公开配置。需要保密的 Key 必须留在服务端，由后端代理调用第三方服务。"
+   },
+   {
+    "q": "Agent 读取项目时如何防止密钥泄露？",
+    "a": "密钥只放在 .env 并被 Git 忽略；配置编码工具禁止读取 .env 或敏感目录（Claude Code 支持在权限设置中拒绝读取特定文件）；用占位值的 .env.example 让 Agent 了解变量名；避免把真实密钥粘贴进对话。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "The Twelve-Factor App: Config",
+    "url": "https://12factor.net/config"
+   },
+   {
+    "title": "Next.js: Environment Variables",
+    "url": "https://nextjs.org/docs/app/guides/environment-variables"
+   },
+   {
+    "title": "Vite: Env Variables and Modes",
+    "url": "https://vite.dev/guide/env-and-mode"
+   }
+  ]
+ },
+ {
+  "slug": "open-source-and-license",
+  "def": "开源（Open Source）指源代码公开，并以符合开源定义（OSI 审核）的许可证授权他人使用、修改和再分发。许可证（License）是具有法律效力的授权条款，决定你能否商用、修改后是否必须开源、是否需要保留版权声明和是否获得专利授权。没有许可证的公开代码，默认保留全部版权，并不能自由使用。",
+  "how": [
+   "授权：作者在仓库中放置 LICENSE 文件，并在清单中用 SPDX 标识符声明许可证。",
+   "宽松型许可：MIT、BSD、Apache-2.0 允许闭源商用，主要要求保留版权和许可声明。",
+   "著佐权（Copyleft）：GPL 要求分发衍生作品时以相同许可证提供源代码。",
+   "网络条款：AGPL 把「通过网络向用户提供服务」也视为触发开源义务的情形。",
+   "合规执行：使用方通过许可证扫描识别依赖许可证，按条款保留声明或履行开源义务。"
+  ],
+  "terms": [
+   {
+    "t": "OSI",
+    "d": "开源促进会，审核许可证是否符合开源定义。"
+   },
+   {
+    "t": "SPDX 标识符",
+    "d": "许可证的标准简称，如 MIT、Apache-2.0、GPL-3.0-only。"
+   },
+   {
+    "t": "Copyleft（著佐权）",
+    "d": "要求衍生作品沿用相同许可证开放源码的条款。"
+   },
+   {
+    "t": "专利授权 (Patent Grant)",
+    "d": "Apache-2.0 等明确授予使用者相关专利许可。"
+   },
+   {
+    "t": "源码可用 (Source-available)",
+    "d": "代码公开但限制商用等，不属于 OSI 定义的开源。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "扫描依赖许可证",
+   "src": "# Node.js：汇总所有依赖的许可证（license-checker 为社区工具）\nnpx license-checker --summary\n\n# 发现不允许的许可证时让命令失败，可放进 CI\nnpx license-checker --production --failOn \"GPL-3.0;AGPL-3.0\"\n\n# Python：列出已安装包的许可证\npip install pip-licenses\npip-licenses --format=markdown --order=license\n\n# 为自己的项目声明许可证（package.json 中使用 SPDX 标识符）\nnpm pkg set license=\"MIT\"\n\n# 查看仓库许可证（GitHub CLI）\ngh repo view --json licenseInfo",
+   "note": "上线或交付前扫描依赖许可证，可把强著佐权等风险许可证挡在 CI 阶段。"
+  },
+  "table": {
+   "title": "常见许可证义务对比",
+   "head": [
+    "许可证",
+    "闭源商用",
+    "修改后须开源",
+    "特别条款"
+   ],
+   "rows": [
+    [
+     "MIT",
+     "允许",
+     "否",
+     "保留版权与许可声明"
+    ],
+    [
+     "Apache-2.0",
+     "允许",
+     "否",
+     "明确专利授权，需声明修改"
+    ],
+    [
+     "GPL-3.0",
+     "分发时受限",
+     "分发衍生作品须开源",
+     "强著佐权"
+    ],
+    [
+     "AGPL-3.0",
+     "受限",
+     "通过网络提供服务也须开源",
+     "覆盖 SaaS 场景"
+    ],
+    [
+     "无许可证",
+     "不允许",
+     "—",
+     "默认保留全部版权"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "宽松许可（MIT/Apache）",
+    "pros": "利于广泛采用与商用",
+    "cons": "他人可闭源使用而不回馈",
+    "when": "希望最大化使用的库与工具"
+   },
+   {
+    "opt": "强著佐权（GPL/AGPL）",
+    "pros": "保证改进回馈社区",
+    "cons": "企业采用意愿较低",
+    "when": "希望衍生作品保持开源"
+   },
+   {
+    "opt": "源码可用许可",
+    "pros": "公开代码同时保护商业利益",
+    "cons": "不被视为开源，社区接受度低",
+    "when": "商业公司防止云厂商托管"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "GitHub 上公开的代码就当作可以随便用",
+    "fix": "先看 LICENSE，无许可证即不能复制使用"
+   },
+   {
+    "bad": "SaaS 产品引入 AGPL 组件而未评估义务",
+    "fix": "引入前做许可证审查，必要时选替代方案或咨询法务"
+   },
+   {
+    "bad": "打包分发时删掉了第三方版权声明",
+    "fix": "保留依赖的版权与许可声明，可生成第三方声明文件"
+   },
+   {
+    "bad": "开源自己的项目却不放许可证",
+    "fix": "明确选择并添加 LICENSE 文件"
+   }
+  ],
+  "checklist": [
+   "项目有明确的 LICENSE 文件",
+   "依赖许可证已扫描并符合策略",
+   "第三方版权声明已保留",
+   "AGPL/GPL 依赖已评估影响",
+   "模型权重许可证已单独核查"
+  ],
+  "interview": [
+   {
+    "q": "MIT 和 Apache-2.0 怎么选？",
+    "a": "两者都宽松、允许闭源商用。Apache-2.0 额外包含明确的专利授权与专利报复条款，并要求标注修改，对企业更有法律确定性；MIT 更短更简单。重视专利保护的项目多选 Apache-2.0。"
+   },
+   {
+    "q": "开源模型的「开源」和软件开源一样吗？",
+    "a": "不完全一样。很多模型只开放权重，训练数据和代码未公开，许可证可能限制商用规模或用途。使用前要单独阅读模型许可证（如各家社区许可），确认商用、再分发和衍生模型的条件。"
+   },
+   {
+    "q": "AI 生成的代码有许可证风险吗？",
+    "a": "可能有。模型可能复现训练数据中受许可证约束的代码片段。缓解：使用提供代码相似性过滤或知识产权保障的工具设置，对较长的、疑似照搬的代码做检索比对，并保留依赖许可证扫描流程。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Open Source Initiative: Licenses",
+    "url": "https://opensource.org/licenses"
+   },
+   {
+    "title": "Choose a License",
+    "url": "https://choosealicense.com/"
+   },
+   {
+    "title": "SPDX License List",
+    "url": "https://spdx.org/licenses/"
+   }
+  ]
+ },
+ {
+  "slug": "bug-and-debugging",
+  "def": "Bug 是程序行为与预期不符的缺陷；调试（Debugging）是定位并消除缺陷根因的系统化过程。专业调试遵循科学方法：稳定复现、收集证据、提出假设、设计实验验证、修复并加回归测试。它与 AI 编程密切相关：Agent 修 bug 的成败，很大程度取决于能否复现问题并拿到客观的验证信号。",
+  "how": [
+   "复现：找到能稳定触发问题的输入、环境与步骤，最好缩减为最小复现用例。",
+   "观察：收集报错、堆栈、日志、监控数据，确定故障在什么条件下出现、什么条件下不出现。",
+   "定位：用断点、日志、二分（git bisect）等手段缩小问题出现的代码范围。",
+   "假设与验证：针对根因提出假设，设计实验证伪或证实，而不是盲目改代码。",
+   "修复与防回归：修复根因后补充测试用例，确保同类问题不会再次出现。"
+  ],
+  "terms": [
+   {
+    "t": "断点 (Breakpoint)",
+    "d": "让程序在指定位置暂停，以检查变量和调用栈。"
+   },
+   {
+    "t": "git bisect",
+    "d": "用二分查找定位引入 bug 的那次提交。"
+   },
+   {
+    "t": "回归 (Regression)",
+    "d": "原本正常的功能因新改动而出错。"
+   },
+   {
+    "t": "海森堡 Bug (Heisenbug)",
+    "d": "一观察（加日志、调试）就消失的 bug，常与并发或时序有关。"
+   },
+   {
+    "t": "根因分析 (Root Cause Analysis)",
+    "d": "追查问题的根本原因，而非只处理表面症状。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "用 git bisect 定位回归",
+   "src": "# 场景：现在的版本有 bug，两周前的 v1.2.0 是好的\ngit bisect start\ngit bisect bad                 # 当前提交有问题\ngit bisect good v1.2.0         # 这个版本没问题\n\n# Git 会自动切到中间的提交，测试后告诉它结果：\n#   git bisect good   或   git bisect bad\n# 重复几次即可找到第一个出问题的提交\n\n# 更省事：给一个测试命令，退出码 0 表示 good，自动二分\ngit bisect run npm test -- --run tests/checkout.test.ts\n\ngit bisect reset               # 结束，回到原来的分支\n\n# Python 中设置断点：在代码里写 breakpoint() 进入 pdb\n# 常用命令：n 下一行  s 进入函数  p 变量  c 继续  q 退出",
+   "note": "二分查找让定位回归的次数随提交数对数增长，配合自动化测试几乎无需人工。"
+  },
+  "table": {
+   "title": "调试手段选择",
+   "head": [
+    "手段",
+    "适用问题",
+    "成本"
+   ],
+   "rows": [
+    [
+     "打印/日志",
+     "流程与数据流向",
+     "低，但需清理"
+    ],
+    [
+     "断点调试器",
+     "复杂状态、逻辑分支",
+     "中，需要可本地运行"
+    ],
+    [
+     "git bisect",
+     "「以前好的现在坏了」",
+     "低，需有可判定的测试"
+    ],
+    [
+     "最小复现",
+     "复杂系统中的疑难问题",
+     "中高，但最可靠"
+    ],
+    [
+     "线上可观测性",
+     "只在生产出现的问题",
+     "需提前埋点"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "直接让 AI 看报错修复",
+    "pros": "快，常见错误效果好",
+    "cons": "可能只修表面症状",
+    "when": "报错清晰的简单问题"
+   },
+   {
+    "opt": "先写失败测试再修复",
+    "pros": "有客观验证，防回归",
+    "cons": "需要额外时间",
+    "when": "逻辑 bug、重要功能"
+   },
+   {
+    "opt": "系统性根因分析",
+    "pros": "彻底解决问题",
+    "cons": "耗时",
+    "when": "线上事故、反复出现的问题"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "没复现就开始改代码，靠猜",
+    "fix": "先建立稳定复现，修复后用同一方法验证"
+   },
+   {
+    "bad": "一次改多处，不知道哪处起了作用",
+    "fix": "每次只改一个变量，观察结果"
+   },
+   {
+    "bad": "用 try/except 吞掉异常让报错「消失」",
+    "fix": "找到并修复根因，必要时记录日志后再抛出"
+   },
+   {
+    "bad": "修完不加测试，同一 bug 几个月后再现",
+    "fix": "为每个修复的 bug 补一个回归测试"
+   }
+  ],
+  "checklist": [
+   "问题已稳定复现",
+   "根因已确认而非猜测",
+   "修复附带回归测试",
+   "调试用的临时日志已清理",
+   "相关场景已回归验证"
+  ],
+  "interview": [
+   {
+    "q": "讲一个你的调试方法论。",
+    "a": "复现 → 缩小范围 → 假设 → 验证 → 修复 → 防回归。先构造最小复现，用日志、断点或 bisect 定位范围，针对根因提出可证伪的假设并逐一实验，修复后补测试，最后复盘为何测试没提前发现。"
+   },
+   {
+    "q": "如何调试只在生产环境出现的问题？",
+    "a": "依靠可观测性：结构化日志、错误追踪、链路追踪与指标；对比生产与预发的配置、数据与流量差异；在安全前提下增加针对性日志或特性开关；尝试用生产数据快照在隔离环境复现。避免直接在生产上试验性修改。"
+   },
+   {
+    "q": "怎样让 AI Agent 更有效地修 bug？",
+    "a": "提供可执行的复现方式（命令或失败测试）、完整报错与相关代码位置；要求它先说明根因假设再修改；以测试通过作为完成标准；限制改动范围；若多次失败，回滚并换新会话重新描述问题。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Git 官方文档: git-bisect",
+    "url": "https://git-scm.com/docs/git-bisect"
+   },
+   {
+    "title": "Python pdb 文档",
+    "url": "https://docs.python.org/3/library/pdb.html"
+   },
+   {
+    "title": "Chrome DevTools: Debug JavaScript",
+    "url": "https://developer.chrome.com/docs/devtools/javascript"
+   }
+  ]
+ },
+ {
+  "slug": "error-message-and-stack-trace",
+  "def": "报错信息（Error Message）说明出了什么错，通常包含异常类型与描述；堆栈跟踪（Stack Trace）记录异常发生时的函数调用链，每一帧标明文件、行号和函数名。读懂两者能迅速定位故障点并区分是自己的代码还是第三方库的问题，也是交给 AI 修复时最有价值的上下文。",
+  "how": [
+   "调用入栈：程序每调用一个函数，就在调用栈中压入一帧，记录调用位置。",
+   "抛出异常：出错时创建异常对象，携带类型、消息和当前调用栈快照。",
+   "向上传播：异常沿调用栈逐层向上，直到被某层捕获处理，或到达顶层导致程序终止。",
+   "打印输出：未处理的异常由运行时打印类型、消息和每一帧的文件与行号。",
+   "链式原因：处理中再次抛错时，许多语言会附带原始异常（cause），形成异常链。"
+  ],
+  "terms": [
+   {
+    "t": "调用栈 (Call Stack)",
+    "d": "记录当前正在执行的函数及其调用关系的栈结构。"
+   },
+   {
+    "t": "栈帧 (Stack Frame)",
+    "d": "调用栈中的一层，对应一次函数调用。"
+   },
+   {
+    "t": "异常类型 (Exception Type)",
+    "d": "如 TypeError、KeyError，指明错误类别。"
+   },
+   {
+    "t": "异常链 (Exception Chaining)",
+    "d": "新异常保留引发它的原始异常，便于追溯根因。"
+   },
+   {
+    "t": "Source Map",
+    "d": "把压缩后的前端代码位置映射回源码位置。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "读懂 Python 堆栈",
+   "src": "Traceback (most recent call last):          ← Python：越往下越接近出错点\n  File \"app.py\", line 30, in <module>\n    main()\n  File \"app.py\", line 25, in main\n    total = calc_total(cart)\n  File \"app.py\", line 12, in calc_total     ← 最后一帧自己的代码：优先看这里\n    return sum(item[\"price\"] * item[\"qty\"] for item in cart)\n  File \"app.py\", line 12, in <genexpr>\n    return sum(item[\"price\"] * item[\"qty\"] for item in cart)\n                               ~~~~^^^^^^^\nKeyError: 'qty'                              ← 最后一行：异常类型 + 原因\n\n阅读顺序：\n1. 先看最后一行：KeyError，字典里没有 'qty' 键\n2. 往上找最后一个属于自己项目的文件：app.py 第 12 行\n3. 再往上看调用路径：main → calc_total，确认数据从哪里来\n\n注意：JavaScript/Java 相反，第一行是错误信息，紧接着是最内层出错位置",
+   "note": "不同语言堆栈的方向不同；核心方法都是先读异常类型，再找第一个属于自己代码的栈帧。"
+  },
+  "table": {
+   "title": "常见异常速读",
+   "head": [
+    "异常",
+    "语言",
+    "通常意味着"
+   ],
+   "rows": [
+    [
+     "TypeError: Cannot read properties of undefined",
+     "JavaScript",
+     "访问了不存在对象的属性"
+    ],
+    [
+     "ModuleNotFoundError",
+     "Python",
+     "包未安装或不在当前环境"
+    ],
+    [
+     "KeyError / IndexError",
+     "Python",
+     "字典键或列表下标不存在"
+    ],
+    [
+     "ECONNREFUSED",
+     "Node.js",
+     "目标端口没有服务在监听"
+    ],
+    [
+     "NullPointerException",
+     "Java",
+     "对 null 引用调用了方法"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "捕获并处理异常",
+    "pros": "程序可恢复，用户体验好",
+    "cons": "处理不当会掩盖问题",
+    "when": "可预期的错误，如网络超时"
+   },
+   {
+    "opt": "让异常向上抛出",
+    "pros": "问题暴露清晰",
+    "cons": "可能导致请求或进程失败",
+    "when": "不可恢复的编程错误"
+   },
+   {
+    "opt": "包装后重新抛出",
+    "pros": "补充上下文且保留原因",
+    "cons": "需正确保留异常链",
+    "when": "跨层边界传递错误"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只看最后一行，忽略上方的调用路径",
+    "fix": "顺着栈帧找到第一个属于自己项目的位置"
+   },
+   {
+    "bad": "构建日志只看最后一条错误",
+    "fix": "编译类错误往往第一条才是根因，后续是连锁反应"
+   },
+   {
+    "bad": "捕获异常后只打印消息，丢失堆栈",
+    "fix": "记录完整堆栈，如 logging.exception 或保留 error.stack"
+   },
+   {
+    "bad": "把含堆栈的错误详情直接返回给用户",
+    "fix": "对外显示通用提示与请求 ID，详情写入服务端日志"
+   }
+  ],
+  "checklist": [
+   "日志记录完整堆栈而非只有消息",
+   "前端生产环境配置了 Source Map 上报",
+   "对外错误不泄露内部路径与堆栈",
+   "重新抛出时保留原始异常",
+   "错误带请求 ID 便于关联日志"
+  ],
+  "interview": [
+   {
+    "q": "堆栈里全是第三方库的帧，怎么定位？",
+    "a": "向上（Python 往上、JS 往下）找第一个属于自己项目的帧，那通常是你传入错误参数或错误用法的地方；检查调用该库时的参数和版本；搜索异常消息与库的 issue；必要时开启库的调试日志。"
+   },
+   {
+    "q": "生产环境的前端报错为什么看不懂？",
+    "a": "生产代码被压缩混淆，堆栈中的文件名和行号对应压缩后的代码。需要在构建时生成 Source Map，并上传到错误监控平台（不必公开给浏览器），平台就能把堆栈还原为源码位置。"
+   },
+   {
+    "q": "异常与错误码各适合什么场景？",
+    "a": "异常适合意外、不可忽略的错误，能自动沿调用栈传播并携带堆栈；错误码或结果类型适合可预期的业务失败（如余额不足），迫使调用方显式处理。Go、Rust 偏向显式错误值，Python、Java 偏向异常。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Python 教程: Errors and Exceptions",
+    "url": "https://docs.python.org/3/tutorial/errors.html"
+   },
+   {
+    "title": "MDN: Error.prototype.stack",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/stack"
+   },
+   {
+    "title": "Wikipedia: Stack trace",
+    "url": "https://en.wikipedia.org/wiki/Stack_trace"
+   }
+  ]
+ },
+ {
+  "slug": "html-css-javascript",
+  "def": "HTML、CSS、JavaScript 是浏览器原生支持的三种 Web 技术：HTML 描述内容的结构与语义，CSS 控制样式与布局，JavaScript 实现交互逻辑并操作页面。三者分别对应结构层、表现层、行为层。React 等框架最终都编译为这三者，理解它们是判断 AI 生成前端代码质量的基础。",
+  "how": [
+   "HTML 解析：浏览器解析标签生成 DOM 树，语义标签同时服务于可访问性与 SEO。",
+   "CSS 计算：解析样式表生成 CSSOM，按选择器优先级和层叠规则计算每个元素的最终样式。",
+   "布局与绘制：结合 DOM 与样式计算元素位置尺寸（Flexbox、Grid），再绘制到屏幕。",
+   "JS 执行：脚本在事件循环中运行，监听事件、请求数据、修改 DOM 与样式。",
+   "重新渲染：DOM 或样式变化触发重新布局或重绘，频繁触发会影响性能。"
+  ],
+  "terms": [
+   {
+    "t": "语义化 HTML (Semantic HTML)",
+    "d": "用 header、nav、button 等表达含义的标签。"
+   },
+   {
+    "t": "层叠与优先级 (Cascade / Specificity)",
+    "d": "决定多条 CSS 规则冲突时哪条生效。"
+   },
+   {
+    "t": "盒模型 (Box Model)",
+    "d": "内容、内边距、边框、外边距构成元素尺寸。"
+   },
+   {
+    "t": "事件循环 (Event Loop)",
+    "d": "JavaScript 单线程调度同步代码与异步回调的机制。"
+   },
+   {
+    "t": "响应式设计 (Responsive Design)",
+    "d": "用媒体查询等手段让页面适配不同屏幕。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "三件套最小示例",
+   "src": "<!doctype html>\n<html lang=\"zh-CN\">\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n  <style>\n    .card { max-width: 360px; margin: 2rem auto; padding: 1rem;\n            border: 1px solid #ddd; border-radius: 8px; }\n    button { padding: .5rem 1rem; }\n    @media (max-width: 480px) { .card { margin: 1rem; } }  /* 响应式 */\n  </style>\n</head>\n<body>\n  <main class=\"card\">                <!-- 语义化标签 -->\n    <h1>计数器</h1>\n    <p>已点击 <output id=\"count\">0</output> 次</p>\n    <button type=\"button\" id=\"btn\">点我</button>  <!-- 用 button 而非 div -->\n  </main>\n  <script>\n    const btn = document.getElementById(\"btn\");\n    const out = document.getElementById(\"count\");\n    let n = 0;\n    btn.addEventListener(\"click\", () => { out.textContent = ++n; });\n  </script>\n</body>\n</html>",
+   "note": "结构、样式、行为各司其职；viewport 标签和语义化按钮是 AI 生成页面时常被遗漏的细节。"
+  },
+  "table": {
+   "title": "CSS 布局方案选择",
+   "head": [
+    "方案",
+    "维度",
+    "适用"
+   ],
+   "rows": [
+    [
+     "Flexbox",
+     "一维（行或列）",
+     "导航栏、按钮组、居中对齐"
+    ],
+    [
+     "Grid",
+     "二维（行和列）",
+     "页面整体布局、卡片网格"
+    ],
+    [
+     "定位 position",
+     "脱离文档流",
+     "弹窗、悬浮元素、角标"
+    ],
+    [
+     "工具类 CSS（Tailwind）",
+     "原子化类名组合",
+     "快速开发、设计系统一致"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "原生三件套",
+    "pros": "无构建、加载快、易理解",
+    "cons": "复杂状态管理困难",
+    "when": "静态页、小工具、学习"
+   },
+   {
+    "opt": "框架组件化",
+    "pros": "复用性强，适合复杂交互",
+    "cons": "构建链和抽象层更多",
+    "when": "中大型应用"
+   },
+   {
+    "opt": "工具类 CSS",
+    "pros": "开发快，AI 生成效果较稳定",
+    "cons": "HTML 中类名冗长",
+    "when": "配合组件化框架使用"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用 div 加点击事件冒充按钮",
+    "fix": "使用 button 元素，自带键盘与读屏支持"
+   },
+   {
+    "bad": "缺少 viewport meta，手机上页面缩成一小块",
+    "fix": "head 中加入 viewport 元标签"
+   },
+   {
+    "bad": "滥用 !important 解决样式冲突",
+    "fix": "理解优先级，降低选择器复杂度或调整层叠顺序"
+   },
+   {
+    "bad": "图片没有 alt，表单没有 label",
+    "fix": "补充 alt 文本与关联的 label，提升可访问性"
+   }
+  ],
+  "checklist": [
+   "包含 doctype、lang 与 viewport",
+   "交互元素使用语义化标签",
+   "图片有 alt，表单有 label",
+   "在手机与桌面尺寸下检查布局",
+   "颜色对比度满足可读性"
+  ],
+  "interview": [
+   {
+    "q": "CSS 优先级怎么计算？",
+    "a": "按选择器类别比较：内联样式 > ID 选择器 > 类、属性、伪类选择器 > 元素、伪元素选择器；同级比较数量，相同时后定义的生效；!important 会覆盖普通声明。现代 CSS 还有 @layer 级联层来管理顺序。"
+   },
+   {
+    "q": "JS 是单线程的，为什么能做异步？",
+    "a": "JS 主线程单线程执行，但网络请求、定时器等由浏览器或运行时的其他线程处理，完成后把回调放入任务队列；事件循环在调用栈空闲时取出任务执行。Promise 回调属于微任务，会优先于下一个宏任务执行。"
+   },
+   {
+    "q": "AI 生成的页面最该检查什么？",
+    "a": "响应式（多尺寸实测）、语义化与可访问性（按钮、表单标签、alt、对比度）、XSS（是否用 innerHTML 插入数据）、性能（图片尺寸、无用依赖）、状态完整性（加载、空、错误态）。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "MDN: HTML",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTML"
+   },
+   {
+    "title": "MDN: CSS",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/CSS"
+   },
+   {
+    "title": "MDN: JavaScript",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript"
+   }
+  ]
+ },
+ {
+  "slug": "git",
+  "def": "Git 是分布式版本控制系统，以「快照」方式记录项目每次提交时全部文件的状态，每个克隆都包含完整历史。它通过内容寻址的对象存储、轻量分支和合并机制，支持离线工作、并行开发和精确回溯。在 AI 编程中，Git 是审查 Agent 改动、随时回滚的核心安全网。",
+  "how": [
+   "工作区修改：在工作目录中编辑文件，Git 通过对比发现哪些文件发生了变化。",
+   "暂存：git add 把选定的改动放入暂存区（Index），精确控制下一次提交的内容。",
+   "提交：git commit 把暂存内容存为快照对象，记录作者、时间、说明和父提交。",
+   "对象存储：文件内容、目录结构、提交都以哈希命名存储，相同内容只存一份。",
+   "分支与同步：分支是指向提交的可移动指针，通过 fetch、push 与远程仓库交换提交。"
+  ],
+  "terms": [
+   {
+    "t": "工作区 / 暂存区 / 仓库",
+    "d": "Git 的三个区域：正在编辑、准备提交、已提交历史。"
+   },
+   {
+    "t": "提交哈希 (Commit Hash)",
+    "d": "由提交内容计算出的唯一 ID，默认使用 SHA-1。"
+   },
+   {
+    "t": "HEAD",
+    "d": "指向当前所在分支或提交的指针。"
+   },
+   {
+    "t": "reflog",
+    "d": "记录 HEAD 移动历史，可找回误删的提交或分支。"
+   },
+   {
+    "t": ".gitignore",
+    "d": "列出不纳入版本控制的文件与目录。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "日常与救急命令",
+   "src": "git status                    # 当前改动概览\ngit diff                      # 未暂存的改动\ngit add -p                    # 逐块选择要暂存的改动\ngit commit -m \"feat: add login form validation\"\ngit log --oneline --graph -10 # 最近 10 条提交\n\n# 撤销与回退\ngit restore app.js            # 丢弃工作区中该文件的修改\ngit restore --staged app.js   # 取消暂存，保留修改\ngit revert <hash>             # 生成一个反向提交（适合已推送的历史）\n\n# 临时保存手头工作\ngit stash && git stash pop\n\n# 误操作后的救命稻草：找回「丢失」的提交\ngit reflog\ngit switch -c rescue <hash>   # 基于找到的提交建新分支",
+   "note": "restore、revert、stash、reflog 覆盖了大部分「改坏了怎么办」的场景。"
+  },
+  "table": {
+   "title": "撤销操作对比",
+   "head": [
+    "命令",
+    "作用",
+    "改写历史",
+    "适用"
+   ],
+   "rows": [
+    [
+     "git restore",
+     "丢弃工作区修改",
+     "否",
+     "还没提交的改动"
+    ],
+    [
+     "git revert",
+     "新增反向提交",
+     "否",
+     "已推送到共享分支"
+    ],
+    [
+     "git reset --hard",
+     "移动分支指针并丢弃修改",
+     "是",
+     "仅本地未推送的提交"
+    ],
+    [
+     "git commit --amend",
+     "修改最近一次提交",
+     "是",
+     "刚提交、尚未推送"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "merge 合并",
+    "pros": "保留真实历史，不改写提交",
+    "cons": "历史图分叉较多",
+    "when": "合并共享分支"
+   },
+   {
+    "opt": "rebase 变基",
+    "pros": "历史线性、清晰",
+    "cons": "改写提交，不当使用会扰乱协作",
+    "when": "整理本地未推送的提交"
+   },
+   {
+    "opt": "squash 压缩合并",
+    "pros": "一个功能一个提交",
+    "cons": "丢失细粒度历史",
+    "when": "PR 合入主分支"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "对已推送的共享分支 reset 或 force push",
+    "fix": "共享历史用 revert；必须强推时用 --force-with-lease 并通知团队"
+   },
+   {
+    "bad": "git add . 把 .env、构建产物一起提交",
+    "fix": "先配置 .gitignore，提交前看 git status 与 diff"
+   },
+   {
+    "bad": "让 Agent 连续大改几十个文件才提交一次",
+    "fix": "每完成一个可验证的小步骤就提交，便于回滚"
+   },
+   {
+    "bad": "以为 reset --hard 后提交彻底没了而慌张",
+    "fix": "用 git reflog 找回提交哈希并恢复"
+   }
+  ],
+  "checklist": [
+   ".gitignore 覆盖密钥、依赖与构建产物",
+   "提交粒度小、说明清晰",
+   "提交前检查 diff",
+   "共享分支不改写历史",
+   "主分支开启保护规则"
+  ],
+  "interview": [
+   {
+    "q": "Git 为什么说存的是快照而不是差异？",
+    "a": "每次提交记录的是整个项目目录树的状态（tree 对象），未变化的文件直接复用已有对象的引用，因此实际存储高效。差异是在比较两个快照时动态计算的；打包存储时 Git 也会做增量压缩，但这是存储优化而非模型本身。"
+   },
+   {
+    "q": "merge 和 rebase 怎么选？",
+    "a": "merge 保留真实的分叉与合并历史，安全，不改写提交；rebase 把提交重放到新基点上，历史线性但会改写哈希。原则：不对他人已基于的公共分支做 rebase；本地整理提交、同步主干时可以 rebase。"
+   },
+   {
+    "q": "AI Agent 工作流中 Git 起什么作用？",
+    "a": "检查点：每步改动可提交、可回退；审查：用 diff 清楚看到 Agent 改了什么；隔离：用分支或 git worktree 让多个 Agent 并行工作互不干扰；追溯：提交说明记录意图，便于事后排查。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Pro Git（官方免费书）",
+    "url": "https://git-scm.com/book/en/v2"
+   },
+   {
+    "title": "Git 官方参考文档",
+    "url": "https://git-scm.com/docs"
+   },
+   {
+    "title": "GitHub Docs: About Git",
+    "url": "https://docs.github.com/en/get-started/using-git/about-git"
+   }
+  ]
+ },
+ {
+  "slug": "github",
+  "def": "GitHub 是基于 Git 的代码托管与协作平台，提供 PR 评审、Issues 跟踪、Actions 自动化、Pages 托管与安全扫描等能力。Git 是本地工具，GitHub 是网络服务，同类平台还有 GitLab、Gitee。它也是 AI 编程 Agent 提交 PR、读取 Issue 的常见场所。",
+  "how": [
+   "托管远程仓库：作为团队共享的远程仓库，通过 HTTPS 或 SSH 进行 push、pull。",
+   "协作评审：开发者从分支发起 Pull Request，团队在线评论、审查并合并。",
+   "自动化：GitHub Actions 根据推送、PR 等事件触发工作流，运行测试、构建与部署。",
+   "项目管理：Issues、Projects 跟踪任务与缺陷，可与提交和 PR 相互关联。",
+   "安全与治理：分支保护、必需检查、Dependabot、密钥扫描保障代码质量与安全。"
+  ],
+  "terms": [
+   {
+    "t": "Fork",
+    "d": "把他人仓库复制到自己账号下，常用于向开源项目贡献。"
+   },
+   {
+    "t": "GitHub Actions",
+    "d": "GitHub 内置的 CI/CD 与自动化工作流平台。"
+   },
+   {
+    "t": "分支保护 (Branch Protection)",
+    "d": "限制直接推送，要求评审和检查通过才能合并。"
+   },
+   {
+    "t": "gh CLI",
+    "d": "GitHub 官方命令行工具，可在终端操作 PR、Issue 等。"
+   },
+   {
+    "t": "Personal Access Token",
+    "d": "代替密码访问 GitHub API 和 HTTPS Git 操作的令牌。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "每次 PR 自动跑测试",
+   "src": "# .github/workflows/ci.yml\nname: CI\non:\n  pull_request:\n  push:\n    branches: [main]\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4          # 拉取代码\n      - uses: actions/setup-node@v4        # 安装 Node\n        with:\n          node-version: 20\n          cache: npm\n      - run: npm ci                        # 按锁文件安装依赖\n      - run: npm run lint --if-present\n      - run: npm test\n\n# 配合分支保护的「必需状态检查」，测试不通过的 PR 无法合并",
+   "note": "PR 自动测试加分支保护，是把人和 AI 写的代码挡在质量门槛外的基础设施。"
+  },
+  "table": {
+   "title": "GitHub 核心功能",
+   "head": [
+    "功能",
+    "解决什么",
+    "关键配置"
+   ],
+   "rows": [
+    [
+     "Pull Request",
+     "代码评审与讨论",
+     "评审人、模板、必需审批数"
+    ],
+    [
+     "Actions",
+     "自动测试、构建、部署",
+     "工作流文件、Secrets"
+    ],
+    [
+     "分支保护",
+     "防止未经检查的代码进主干",
+     "必需检查、禁止强推"
+    ],
+    [
+     "Dependabot / 密钥扫描",
+     "依赖漏洞与密钥泄露",
+     "启用告警与推送保护"
+    ],
+    [
+     "Pages",
+     "托管静态网站",
+     "构建来源分支或 Actions"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "公开仓库",
+    "pros": "免费协作，利于开源与作品展示",
+    "cons": "代码与历史完全公开",
+    "when": "开源项目、个人作品"
+   },
+   {
+    "opt": "私有仓库",
+    "pros": "代码保密",
+    "cons": "部分高级功能按套餐收费",
+    "when": "商业项目、未公开产品"
+   },
+   {
+    "opt": "自托管平台（如 GitLab 自建）",
+    "pros": "数据完全自控",
+    "cons": "需运维",
+    "when": "强合规、内网环境"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把密钥推送到公开仓库后删除了事",
+    "fix": "立即轮换密钥；历史中仍可见，需清理历史并开启推送保护"
+   },
+   {
+    "bad": "用 GitHub 账号密码进行 HTTPS 推送",
+    "fix": "改用 SSH 密钥、gh auth login 或 Personal Access Token"
+   },
+   {
+    "bad": "主分支没有保护，任何人可直接推送",
+    "fix": "开启分支保护，要求 PR 评审与 CI 通过"
+   },
+   {
+    "bad": "Actions 中直接写明文密钥",
+    "fix": "使用仓库 Secrets，并最小化工作流权限"
+   }
+  ],
+  "checklist": [
+   "主分支启用保护与必需检查",
+   "开启 Dependabot 与密钥扫描",
+   "CI 在每个 PR 上运行",
+   "密钥存于 Actions Secrets",
+   "仓库可见性符合预期"
+  ],
+  "interview": [
+   {
+    "q": "Git 和 GitHub 是什么关系？",
+    "a": "Git 是开源的分布式版本控制工具，在本地运行；GitHub 是托管 Git 仓库的商业平台，在其上提供协作、评审、CI/CD、项目管理等服务。不用 GitHub 也能用 Git，也可以选择 GitLab、Gitee 等其他托管平台。"
+   },
+   {
+    "q": "如何安全地在 Actions 中使用密钥？",
+    "a": "存放在仓库或环境级 Secrets，日志中会自动打码；设置 permissions 最小化 GITHUB_TOKEN 权限；来自 fork 的 PR 默认拿不到 Secrets；部署到云平台优先用 OIDC 换取短期凭证，避免长期密钥；对第三方 Action 固定版本或提交哈希。"
+   },
+   {
+    "q": "AI Agent 如何与 GitHub 协作？",
+    "a": "Agent 可在分支上修改代码，用 gh CLI 或 API 创建 PR、回复评审、读取 Issue；也有在 Actions 中运行的编码 Agent 由 Issue 或评论触发。关键是 Agent 产出仍走 PR 评审和 CI 检查，不直接写主分支。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "GitHub Docs",
+    "url": "https://docs.github.com/en"
+   },
+   {
+    "title": "GitHub Actions 文档",
+    "url": "https://docs.github.com/en/actions"
+   },
+   {
+    "title": "GitHub CLI 手册",
+    "url": "https://cli.github.com/manual/"
+   }
+  ]
+ },
+ {
+  "slug": "repository",
+  "def": "仓库（Repository）是被 Git 管理的项目单元，包含工作文件和隐藏的 .git 目录，后者存储全部提交对象、分支引用和配置。本地与远程仓库（如 origin）结构相同、地位对等，通过推送和拉取同步。仓库的组织方式、根目录约定文件和权限，直接影响协作效率与 AI Agent 理解项目的难度。",
+  "how": [
+   "初始化：git init 创建 .git 目录，或 git clone 复制一个已有仓库及其完整历史。",
+   "对象存储：.git/objects 保存文件内容、目录树和提交，均以内容哈希命名。",
+   "引用管理：.git/refs 记录分支和标签指向的提交，HEAD 标记当前所在位置。",
+   "远程关联：git remote 记录远程仓库地址，常用名称 origin 指向克隆来源。",
+   "根目录约定：README、LICENSE、.gitignore、CLAUDE.md 等文件描述项目与协作规则。"
+  ],
+  "terms": [
+   {
+    "t": ".git 目录",
+    "d": "仓库的数据库，删除它就失去全部版本历史。"
+   },
+   {
+    "t": "远程仓库 (Remote)",
+    "d": "托管在服务器上的仓库副本，如 origin。"
+   },
+   {
+    "t": "裸仓库 (Bare Repository)",
+    "d": "没有工作区、只有版本数据的仓库，常用于服务器。"
+   },
+   {
+    "t": "单仓 (Monorepo)",
+    "d": "多个项目或服务放在同一个仓库中统一管理。"
+   },
+   {
+    "t": "git worktree",
+    "d": "同一仓库同时检出多个分支到不同目录。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "创建并关联仓库",
+   "src": "# 从零创建本地仓库\nmkdir my-app && cd my-app\ngit init -b main                 # 初始化并把默认分支命名为 main\n\n# 根目录的约定文件\necho \"# My App\" > README.md\nprintf \"node_modules/\\n.env\\ndist/\\n\" > .gitignore\ngit add . && git commit -m \"chore: initial commit\"\n\n# 用 GitHub CLI 创建远程仓库并推送（私有）\ngh repo create my-app --private --source=. --push\n\n# 或手动关联已存在的远程仓库\n# git remote add origin git@github.com:<user>/my-app.git\n# git push -u origin main\n\ngit remote -v                    # 查看远程地址\ndu -sh .git                      # 版本数据占用的空间",
+   "note": "仓库从第一天就该有 README 与 .gitignore；gh 可一步完成创建远程并推送。"
+  },
+  "table": {
+   "title": "仓库组织方式对比",
+   "head": [
+    "方式",
+    "优点",
+    "代价"
+   ],
+   "rows": [
+    [
+     "多仓 (Polyrepo)",
+     "边界清晰、权限独立",
+     "跨仓改动需多次 PR、版本协调难"
+    ],
+    [
+     "单仓 (Monorepo)",
+     "原子化跨项目改动、共享代码方便",
+     "需要专门的构建与权限工具"
+    ],
+    [
+     "单仓 + 子目录说明",
+     "Agent 能看到全局上下文",
+     "上下文更大，需要分目录规则文件"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "公开仓库",
+    "pros": "开放协作、展示作品",
+    "cons": "历史中的任何内容都公开",
+    "when": "开源与学习项目"
+   },
+   {
+    "opt": "私有仓库",
+    "pros": "保密，可控访问",
+    "cons": "协作者需逐一授权",
+    "when": "商业与未发布项目"
+   },
+   {
+    "opt": "Git LFS 管理大文件",
+    "pros": "仓库保持轻量",
+    "cons": "额外配置与存储配额",
+    "when": "设计稿、模型、数据集"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把 node_modules、构建产物提交进仓库",
+    "fix": "初始化时就配置 .gitignore，已提交的用 git rm --cached 移除"
+   },
+   {
+    "bad": "在仓库里提交大体积二进制文件导致克隆缓慢",
+    "fix": "大文件使用 Git LFS 或对象存储"
+   },
+   {
+    "bad": "私有仓库改公开前没检查历史",
+    "fix": "先扫描历史中的密钥与敏感数据再公开"
+   },
+   {
+    "bad": "在家目录等大目录误执行 git init",
+    "fix": "确认所在路径，误建时删除对应 .git 目录"
+   }
+  ],
+  "checklist": [
+   "README 说明用途、安装与运行方式",
+   ".gitignore 覆盖依赖、产物与密钥",
+   "LICENSE 明确（若公开）",
+   "默认分支受保护",
+   "有给 AI 工具的项目说明文件"
+  ],
+  "interview": [
+   {
+    "q": "为什么说 Git 是分布式的？",
+    "a": "每个克隆都是完整仓库，拥有全部历史与分支，可以离线提交、查看日志、建分支。远程仓库只是约定的协作中心，而非唯一真相来源；任何一份副本都能恢复整个项目，这与 SVN 等集中式系统不同。"
+   },
+   {
+    "q": "Monorepo 适合什么团队？",
+    "a": "多个项目共享大量代码、需要频繁跨项目原子改动、希望统一工具链和依赖版本的团队。代价是需要增量构建、受影响范围分析、精细权限等工具支持。小团队多个紧密相关的前后端项目也常用单仓。"
+   },
+   {
+    "q": "仓库结构如何影响 AI Agent 的效果？",
+    "a": "清晰的目录约定、README 与 CLAUDE.md 等说明文件、可一键运行的测试命令，能让 Agent 快速建立上下文并自我验证；混乱的结构和缺失的文档会导致 Agent 误改文件、重复实现已有功能。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Pro Git: Getting a Git Repository",
+    "url": "https://git-scm.com/book/en/v2/Git-Basics-Getting-a-Git-Repository"
+   },
+   {
+    "title": "GitHub Docs: About repositories",
+    "url": "https://docs.github.com/en/repositories/creating-and-managing-repositories/about-repositories"
+   },
+   {
+    "title": "Git 文档: gitrepository-layout",
+    "url": "https://git-scm.com/docs/gitrepository-layout"
+   }
+  ]
+ },
+ {
+  "slug": "commit",
+  "def": "提交（Commit）是 Git 中不可变的项目快照对象，包含指向目录树的引用、父提交、作者与提交者信息、时间戳和提交说明，并由内容计算出唯一哈希。提交串联成历史图，是回滚、审查、定位问题和生成变更日志的基本单位。好的提交应原子化（一件事）并配有说明「为什么」的信息。",
+  "how": [
+   "选择改动：用 git add 或 git add -p 把属于同一件事的改动放进暂存区。",
+   "生成树对象：Git 根据暂存区内容生成目录树（tree）对象，未改动的文件复用已有对象。",
+   "创建提交对象：记录 tree、父提交、作者、时间与说明，计算出提交哈希。",
+   "移动分支指针：当前分支改为指向新提交，新提交以上一个提交为父节点，历史向前延伸。",
+   "不可变性：任何内容变化都会产生新哈希，修改旧提交实际是创建新提交替换它。"
+  ],
+  "terms": [
+   {
+    "t": "原子提交 (Atomic Commit)",
+    "d": "每个提交只包含一个逻辑完整的改动。"
+   },
+   {
+    "t": "Conventional Commits",
+    "d": "用 feat:、fix: 等前缀规范提交说明的约定。"
+   },
+   {
+    "t": "amend",
+    "d": "修改最近一次提交的内容或说明，会生成新哈希。"
+   },
+   {
+    "t": "签名提交 (Signed Commit)",
+    "d": "用 GPG 或 SSH 密钥签名，证明提交确实来自作者。"
+   },
+   {
+    "t": "Co-authored-by",
+    "d": "提交说明尾部标注共同作者，AI 工具常用它署名。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "写出好提交",
+   "src": "# 只暂存相关改动：交互式逐块选择\ngit add -p src/auth/\n\n# 提交前确认暂存内容\ngit diff --staged\n\n# Conventional Commits 格式：类型(范围): 摘要，正文说明原因\ngit commit -m \"fix(auth): handle expired refresh token\" \\\n           -m \"Previously the app looped on 401. Now it logs out and redirects to /login.\"\n\n# 刚提交发现漏了文件（未推送时）\ngit add src/auth/session.ts\ngit commit --amend --no-edit\n\n# 查看提交详情\ngit show --stat HEAD\n\n# 常见类型：feat 新功能 / fix 修复 / docs 文档 / refactor 重构\n#           test 测试 / chore 杂项 / perf 性能",
+   "note": "摘要说做了什么，正文说为什么；amend 只用于尚未推送的提交。"
+  },
+  "table": {
+   "title": "提交粒度对比",
+   "head": [
+    "粒度",
+    "示例",
+    "影响"
+   ],
+   "rows": [
+    [
+     "过粗",
+     "「完成登录、支付和 UI 调整」",
+     "难以评审，无法单独回滚"
+    ],
+    [
+     "合适",
+     "「fix(auth): 处理过期令牌」",
+     "易评审、可精准回滚与 bisect"
+    ],
+    [
+     "过细",
+     "「改一个空格」连续十次",
+     "历史噪声大，可在合并时 squash"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "频繁小提交",
+    "pros": "回退点多，bisect 精确",
+    "cons": "历史较碎",
+    "when": "开发过程中、Agent 每步改动"
+   },
+   {
+    "opt": "合并前整理提交",
+    "pros": "历史清晰可读",
+    "cons": "需要 rebase 技巧",
+    "when": "提交 PR 前"
+   },
+   {
+    "opt": "squash 合并",
+    "pros": "主干一个功能一个提交",
+    "cons": "丢失过程细节",
+    "when": "团队偏好简洁主干历史"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "提交说明写「update」「fix bug」",
+    "fix": "写清改了什么和为什么，便于日后检索"
+   },
+   {
+    "bad": "一个提交混入格式化与逻辑修改",
+    "fix": "格式化单独提交，逻辑改动保持可读 diff"
+   },
+   {
+    "bad": "对已推送的提交使用 amend 后强推",
+    "fix": "已共享的提交用新提交修正"
+   },
+   {
+    "bad": "提交了密钥再用新提交删除",
+    "fix": "密钥仍在历史中，需立即轮换并清理历史"
+   }
+  ],
+  "checklist": [
+   "每个提交只做一件事",
+   "说明遵循团队约定格式",
+   "提交前检查暂存 diff",
+   "提交可通过构建与测试",
+   "不含密钥与大体积产物"
+  ],
+  "interview": [
+   {
+    "q": "提交哈希由什么决定？",
+    "a": "由提交对象的全部内容计算：目录树哈希、父提交哈希、作者与提交者信息及时间、提交说明。因此任一内容或任一祖先变化都会导致哈希改变，这让历史具备防篡改特性，也解释了 rebase 后哈希全部变化。"
+   },
+   {
+    "q": "为什么推荐 Conventional Commits？",
+    "a": "结构化前缀让历史可读、可机器解析：能自动生成变更日志、根据 feat/fix/BREAKING CHANGE 推导语义化版本号、在评审时快速判断改动性质。对 AI 生成提交说明也提供了明确格式约束。"
+   },
+   {
+    "q": "Agent 自动提交，你会设什么规范？",
+    "a": "每完成一个可验证的步骤提交一次；说明遵循约定格式并写明原因；提交前必须通过测试或类型检查；标注 AI 参与（如 Co-authored-by）；禁止提交密钥与大文件；不允许改写已推送历史。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Conventional Commits 1.0.0",
+    "url": "https://www.conventionalcommits.org/en/v1.0.0/"
+   },
+   {
+    "title": "Git 文档: git-commit",
+    "url": "https://git-scm.com/docs/git-commit"
+   },
+   {
+    "title": "Pro Git: Git Objects",
+    "url": "https://git-scm.com/book/en/v2/Git-Internals-Git-Objects"
+   }
+  ]
+ },
+ {
+  "slug": "branch",
+  "def": "分支（Branch）在 Git 中只是一个指向某个提交的可移动指针，创建和切换几乎零成本。它让开发者在隔离的历史线上并行开发功能、修复缺陷或做实验，完成后再合并回主分支。分支策略（如 GitHub Flow、主干开发）决定团队如何组织并行工作与发布。",
+  "how": [
+   "创建：git switch -c 新建一个指向当前提交的指针，不复制任何文件，几乎瞬间完成。",
+   "切换：HEAD 指向新分支，Git 把工作区更新为该分支最新提交的状态。",
+   "前进：在分支上提交时，只有当前分支的指针随新提交向前移动，其他分支保持不动。",
+   "分叉：多个分支从同一祖先提交出发各自提交，形成互不影响的并行历史线。",
+   "合并或删除：通过 merge 或 PR 合回主分支，完成后删除分支指针，提交仍保留。"
+  ],
+  "terms": [
+   {
+    "t": "主分支 (main)",
+    "d": "代表可发布状态的默认分支，旧称 master。"
+   },
+   {
+    "t": "功能分支 (Feature Branch)",
+    "d": "为单个功能或修复创建的短期分支。"
+   },
+   {
+    "t": "主干开发 (Trunk-based Development)",
+    "d": "所有人频繁向主干合入小改动，分支存活很短。"
+   },
+   {
+    "t": "跟踪分支 (Tracking Branch)",
+    "d": "与远程分支关联的本地分支，便于 push/pull。"
+   },
+   {
+    "t": "快进合并 (Fast-forward)",
+    "d": "目标分支无新提交时，直接移动指针完成合并。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "分支日常与并行 Agent",
+   "src": "git switch -c feat/search          # 新建并切换到功能分支\ngit branch -vv                     # 查看本地分支及跟踪关系\n\n# 推送并建立跟踪关系\ngit push -u origin feat/search\n\n# 保持与主干同步（在功能分支上）\ngit fetch origin\ngit rebase origin/main             # 或 git merge origin/main\n\n# 用 worktree 同时检出多个分支到不同目录\n# 适合让两个 AI Agent 并行开发而互不干扰\ngit worktree add ../app-fix-login -b fix/login\ngit worktree list\n\n# 合并后清理\ngit switch main && git pull\ngit branch -d feat/search          # 已合并才允许删除\ngit worktree remove ../app-fix-login",
+   "note": "分支只是指针，代价极低；worktree 让多个分支同时拥有独立工作目录。"
+  },
+  "table": {
+   "title": "常见分支策略",
+   "head": [
+    "策略",
+    "做法",
+    "适合"
+   ],
+   "rows": [
+    [
+     "GitHub Flow",
+     "main + 短期功能分支 + PR",
+     "持续部署的 Web 项目"
+    ],
+    [
+     "主干开发",
+     "极短分支或直接小步合入，配合特性开关",
+     "CI 成熟的高频发布团队"
+    ],
+    [
+     "Git Flow",
+     "develop、release、hotfix 等多条长期分支",
+     "有固定版本发布周期的软件"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "短期分支（数小时到几天）",
+    "pros": "冲突少，合并简单",
+    "cons": "需拆小任务",
+    "when": "大多数团队的默认选择"
+   },
+   {
+    "opt": "长期功能分支",
+    "pros": "大功能可完整开发后再合",
+    "cons": "与主干偏离大，合并冲突多",
+    "when": "尽量避免，必要时定期同步主干"
+   },
+   {
+    "opt": "特性开关代替长分支",
+    "pros": "代码早合入，按开关发布",
+    "cons": "需管理开关与清理",
+    "when": "高频发布、灰度上线"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "直接在 main 上开发并推送",
+    "fix": "所有改动走功能分支与 PR，并开启分支保护"
+   },
+   {
+    "bad": "功能分支几周不同步主干",
+    "fix": "定期 rebase 或 merge 主干，及早暴露冲突"
+   },
+   {
+    "bad": "多个 Agent 在同一工作目录切换不同分支",
+    "fix": "每个 Agent 用独立 worktree 或克隆"
+   },
+   {
+    "bad": "分支命名随意，难以识别",
+    "fix": "约定前缀，如 feat/、fix/、chore/"
+   }
+  ],
+  "checklist": [
+   "main 受保护，禁止直接推送",
+   "分支命名遵循约定前缀",
+   "功能分支定期同步主干",
+   "合并后及时删除分支",
+   "并行 Agent 使用独立 worktree"
+  ],
+  "interview": [
+   {
+    "q": "为什么 Git 分支比 SVN 分支轻量？",
+    "a": "Git 分支只是一个记录提交哈希的小文件（引用），创建和切换不复制文件；SVN 分支是服务器上的目录拷贝，概念和操作都更重。正因为轻量，Git 鼓励为每个小任务开分支。"
+   },
+   {
+    "q": "主干开发如何保证主干稳定？",
+    "a": "依靠小批量改动、完整的自动化测试与 CI 必需检查、代码评审、特性开关隐藏未完成功能，以及快速回滚能力。主干随时可发布，问题通过小步修复或回滚解决，而不是靠长时间隔离分支。"
+   },
+   {
+    "q": "如何让多个 AI Agent 并行开发？",
+    "a": "给每个 Agent 分配独立任务与分支，用 git worktree 为每个分支提供独立目录，避免互相覆盖文件；各自运行测试后提交 PR；由人或合并流程统一处理冲突与集成测试。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Pro Git: Branches in a Nutshell",
+    "url": "https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell"
+   },
+   {
+    "title": "GitHub Docs: GitHub flow",
+    "url": "https://docs.github.com/en/get-started/using-github/github-flow"
+   },
+   {
+    "title": "Git 文档: git-worktree",
+    "url": "https://git-scm.com/docs/git-worktree"
+   }
+  ]
+ },
+ {
+  "slug": "clone-push-pull",
+  "def": "克隆（Clone）、推送（Push）、拉取（Pull）是本地仓库与远程仓库同步的三种操作：clone 复制整个远程仓库到本地；push 把本地新提交上传到远程分支；pull 等于 fetch（下载远程新提交）加 merge 或 rebase（整合到当前分支）。分清 fetch 与 pull 是避免意外合并的关键。",
+  "how": [
+   "克隆：下载全部对象与引用，创建远程跟踪分支（如 origin/main），并检出默认分支。",
+   "获取：git fetch 下载远程新提交并更新 origin/* 跟踪分支，不改动你的工作区。",
+   "整合：pull 在 fetch 后把 origin/分支合并或变基到当前分支，可能产生冲突。",
+   "推送：push 把本地提交上传，并要求远程分支能快进到新提交，否则拒绝。",
+   "鉴权：通过 SSH 密钥或 HTTPS 加令牌认证，远程据此检查读写权限。"
+  ],
+  "terms": [
+   {
+    "t": "origin",
+    "d": "克隆时默认给远程仓库起的名字。"
+   },
+   {
+    "t": "远程跟踪分支 (origin/main)",
+    "d": "本地记录的远程分支状态，fetch 时更新。"
+   },
+   {
+    "t": "非快进拒绝 (non-fast-forward)",
+    "d": "远程有你没有的提交时，push 被拒绝。"
+   },
+   {
+    "t": "--force-with-lease",
+    "d": "比 --force 更安全的强推，远程被他人更新时会拒绝。"
+   },
+   {
+    "t": "浅克隆 (Shallow Clone)",
+    "d": "只下载最近若干提交，如 --depth 1，节省时间。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "同步流程与常见报错",
+   "src": "# 克隆（SSH 方式需先把公钥添加到 GitHub）\ngit clone git@github.com:owner/repo.git\ngit clone --depth 1 https://github.com/owner/repo.git   # 只要最新代码\n\n# 安全的同步方式：先看再合\ngit fetch origin\ngit log --oneline HEAD..origin/main   # 远程有哪些我没有的提交\ngit pull --rebase                     # 把我的提交放到远程最新提交之后\n\n# 推送并设置上游\ngit push -u origin feat/search\n\n# 报错 rejected (non-fast-forward)：远程有新提交\ngit pull --rebase && git push\n\n# 个人分支 rebase 后需要强推时，用更安全的方式\ngit push --force-with-lease\n\n# 设置 pull 默认使用 rebase（个人偏好）\ngit config --global pull.rebase true",
+   "note": "fetch 只下载不改动工作区，适合先查看；push 被拒绝通常是因为远程领先，先整合再推送。"
+  },
+  "table": {
+   "title": "pull 的整合方式",
+   "head": [
+    "方式",
+    "命令",
+    "结果",
+    "适合"
+   ],
+   "rows": [
+    [
+     "merge（默认之一）",
+     "git pull --no-rebase",
+     "生成合并提交",
+     "共享分支、保留真实历史"
+    ],
+    [
+     "rebase",
+     "git pull --rebase",
+     "本地提交重放到远程之后",
+     "个人分支，追求线性历史"
+    ],
+    [
+     "仅快进",
+     "git pull --ff-only",
+     "无法快进就失败",
+     "主分支，只想同步不想合并"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "SSH 认证",
+    "pros": "配置一次长期免密，安全",
+    "cons": "需要生成和管理密钥",
+    "when": "个人开发机"
+   },
+   {
+    "opt": "HTTPS + 令牌",
+    "pros": "穿透防火墙，权限粒度细",
+    "cons": "令牌需安全存储与轮换",
+    "when": "CI、受限网络"
+   },
+   {
+    "opt": "gh auth login",
+    "pros": "交互式完成认证与凭证配置",
+    "cons": "依赖 GitHub CLI",
+    "when": "使用 GitHub 的开发者"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "工作区有未提交改动时直接 pull，产生混乱冲突",
+    "fix": "先提交或 git stash，再 pull"
+   },
+   {
+    "bad": "push 被拒就用 --force，覆盖了同事的提交",
+    "fix": "先 pull 整合；必须强推时用 --force-with-lease"
+   },
+   {
+    "bad": "在 main 上 pull 意外产生合并提交",
+    "fix": "主分支用 git pull --ff-only"
+   },
+   {
+    "bad": "HTTPS 推送时输入 GitHub 账号密码失败",
+    "fix": "GitHub 不再接受密码进行 Git 操作，改用令牌或 SSH"
+   }
+  ],
+  "checklist": [
+   "认证方式为 SSH 或令牌",
+   "pull 前工作区干净",
+   "主分支同步使用 --ff-only",
+   "禁止对共享分支 --force",
+   "CI 中使用浅克隆加速"
+  ],
+  "interview": [
+   {
+    "q": "git fetch 和 git pull 的区别？",
+    "a": "fetch 只下载远程新提交并更新远程跟踪分支，不改动本地分支和工作区，可以先审查再决定如何整合；pull 是 fetch 加 merge 或 rebase 的组合，会直接修改当前分支，可能触发冲突。"
+   },
+   {
+    "q": "--force 与 --force-with-lease 的区别？",
+    "a": "--force 无条件用本地覆盖远程分支，会抹掉他人新推的提交；--force-with-lease 先检查远程分支是否仍是你上次获取时的状态，若已被他人更新则拒绝，从而避免误覆盖。"
+   },
+   {
+    "q": "CI 为什么常用浅克隆？",
+    "a": "CI 通常只需要最新代码来构建和测试，浅克隆（--depth 1）只下载最近提交，显著减少时间和带宽。但需要完整历史的操作（如 git describe 计算版本、按变更范围测试）要加深克隆深度。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Pro Git: Working with Remotes",
+    "url": "https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes"
+   },
+   {
+    "title": "Git 文档: git-pull",
+    "url": "https://git-scm.com/docs/git-pull"
+   },
+   {
+    "title": "GitHub Docs: Connecting to GitHub with SSH",
+    "url": "https://docs.github.com/en/authentication/connecting-to-github-with-ssh"
+   }
+  ]
+ },
+ {
+  "slug": "pull-request",
+  "def": "合并请求（Pull Request，PR；GitLab 称 Merge Request）是代码托管平台上的协作流程：开发者请求把一个分支的改动合入目标分支，团队在其中查看 diff、逐行评论、运行自动检查并审批。PR 是代码质量、知识共享和变更审计的关口，也是 AI Agent 产出进入主干前最重要的人工审查环节。",
+  "how": [
+   "推送分支：开发者在功能分支上完成改动、自测通过后，将分支推送到远程仓库。",
+   "发起 PR：选择源分支与目标分支，填写标题、描述、关联的 Issue 与测试说明。",
+   "自动检查：CI 运行测试、Lint、构建和安全扫描，结果显示在 PR 中。",
+   "评审迭代：评审者逐行评论或要求修改，作者追加提交回应，直到获得批准。",
+   "合并：满足保护规则后以 merge、squash 或 rebase 方式合入，并删除源分支。"
+  ],
+  "terms": [
+   {
+    "t": "代码评审 (Code Review)",
+    "d": "他人检查改动的正确性、设计与可维护性。"
+   },
+   {
+    "t": "草稿 PR (Draft PR)",
+    "d": "标记为未完成、暂不可合并的 PR，用于早期反馈。"
+   },
+   {
+    "t": "CODEOWNERS",
+    "d": "按路径指定必需评审人的配置文件。"
+   },
+   {
+    "t": "必需状态检查 (Required Checks)",
+    "d": "CI 检查通过才允许合并的保护规则。"
+   },
+   {
+    "t": "Squash and merge",
+    "d": "把 PR 所有提交压缩成一个提交合入目标分支。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "用 gh 处理 PR",
+   "src": "# 推送分支后创建 PR（--fill 用提交信息填充标题与描述）\ngit push -u origin feat/search\ngh pr create --base main --fill --draft\n\n# 或者明确写标题与描述\ngh pr create --title \"feat(search): add fuzzy search\" \\\n  --body \"Closes #42. Tested: unit tests + manual check on /search.\"\n\ngh pr status                   # 我的 PR 与待我评审的 PR\ngh pr checks                   # 查看 CI 检查结果\ngh pr diff 128                 # 查看某个 PR 的改动\ngh pr checkout 128             # 把别人的 PR 拉到本地测试\ngh pr review 128 --approve     # 批准\ngh pr merge 128 --squash --delete-branch",
+   "note": "gh CLI 让 PR 的创建、检查、评审与合并都能在终端完成，也便于 Agent 调用。"
+  },
+  "table": {
+   "title": "PR 评审关注层次",
+   "head": [
+    "层次",
+    "关注点",
+    "谁来查"
+   ],
+   "rows": [
+    [
+     "自动化",
+     "测试、类型、格式、安全扫描",
+     "CI 必需检查"
+    ],
+    [
+     "正确性",
+     "逻辑、边界条件、错误处理",
+     "评审者"
+    ],
+    [
+     "设计",
+     "职责划分、可维护性、一致性",
+     "资深评审者"
+    ],
+    [
+     "影响面",
+     "数据库迁移、配置、依赖、权限",
+     "相关负责人（CODEOWNERS）"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "小 PR（几百行内）",
+    "pros": "评审快、质量高、易回滚",
+    "cons": "需拆分任务",
+    "when": "默认推荐"
+   },
+   {
+    "opt": "大 PR",
+    "pros": "功能一次完整交付",
+    "cons": "评审质量下降，冲突风险高",
+    "when": "尽量避免，可拆成系列 PR"
+   },
+   {
+    "opt": "AI 辅助评审",
+    "pros": "快速发现常见问题",
+    "cons": "可能误报或遗漏设计问题",
+    "when": "作为人工评审的补充"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "PR 描述为空，评审者不知道改了什么、为什么",
+    "fix": "写明动机、改动要点、测试方式与风险"
+   },
+   {
+    "bad": "Agent 一次生成几千行的 PR",
+    "fix": "要求拆分为多个独立可评审的小 PR"
+   },
+   {
+    "bad": "只看 diff 不拉下来运行",
+    "fix": "对关键改动本地运行或查看预览环境"
+   },
+   {
+    "bad": "CI 失败仍强行合并",
+    "fix": "开启必需检查，修复后再合并"
+   }
+  ],
+  "checklist": [
+   "PR 描述包含动机、改动与测试方式",
+   "CI 全部通过",
+   "至少一位评审者批准",
+   "改动规模适中、单一目的",
+   "涉及迁移或依赖时已重点评审"
+  ],
+  "interview": [
+   {
+    "q": "好的代码评审看什么？",
+    "a": "先看是否解决了正确的问题，再看正确性（边界、错误处理、并发）、安全（鉴权、输入、密钥）、设计与可维护性、测试是否覆盖关键路径。风格问题交给自动化工具，评论区分「必须改」与「建议」。"
+   },
+   {
+    "q": "squash、merge、rebase 三种合并方式怎么选？",
+    "a": "squash 让主干每个 PR 一个提交，历史干净，适合多数团队；merge commit 保留完整分支历史和合并点，便于追溯；rebase merge 线性且保留每个提交，要求提交本身整洁。团队应统一一种。"
+   },
+   {
+    "q": "如何评审 AI 生成的 PR？",
+    "a": "与人类 PR 同等标准，并额外关注：是否引入不必要或不存在的依赖、是否偏离项目约定、测试是否真正验证行为而非迎合实现、是否改动了无关文件、是否存在看似合理但错误的 API 用法。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "GitHub Docs: About pull requests",
+    "url": "https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests"
+   },
+   {
+    "title": "GitHub Docs: About code owners",
+    "url": "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners"
+   },
+   {
+    "title": "Google Engineering Practices: Code Review",
+    "url": "https://google.github.io/eng-practices/review/"
+   }
+  ]
+ },
+ {
+  "slug": "merge-conflict",
+  "def": "合并冲突（Merge Conflict）发生在 Git 无法自动整合两条分支对同一文件同一区域的不同修改时，或一方修改、另一方删除同一文件时。Git 会暂停操作，在文件中插入冲突标记，由人判断保留哪一方或如何组合。冲突本身不是错误，而是需要人类判断语义的信号。",
+  "how": [
+   "找共同祖先：合并时 Git 找到两条分支的共同祖先提交（merge base）。",
+   "三方比较：分别比较祖先与双方版本，只有一方改动的区域自动采纳。",
+   "检测冲突：双方都改了同一区域且内容不同，Git 标记为冲突并暂停合并。",
+   "插入标记：在文件中用 <<<<<<<、=======、>>>>>>> 包围双方版本，等待解决。",
+   "完成合并：手动编辑为正确内容，git add 标记已解决，再提交或继续 rebase。"
+  ],
+  "terms": [
+   {
+    "t": "三方合并 (Three-way Merge)",
+    "d": "基于共同祖先与两方版本进行比较合并。"
+   },
+   {
+    "t": "合并基点 (Merge Base)",
+    "d": "两条分支最近的共同祖先提交。"
+   },
+   {
+    "t": "ours / theirs",
+    "d": "冲突中的当前分支版本与被合入的版本。"
+   },
+   {
+    "t": "diff3 / zdiff3",
+    "d": "冲突标记中额外显示祖先版本的样式，便于理解原意。"
+   },
+   {
+    "t": "rerere",
+    "d": "记录冲突解决方式，再遇相同冲突时自动复用。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "解决冲突流程",
+   "src": "git merge origin/main\n# CONFLICT (content): Merge conflict in src/config.ts\n\ngit status                 # 列出所有冲突文件\n\n# 文件中的冲突标记（启用 diff3 后会多出祖先版本）：\n# <<<<<<< HEAD\n# const TIMEOUT = 5000;\n# ||||||| base\n# const TIMEOUT = 3000;\n# =======\n# const TIMEOUT = 3000; const RETRIES = 3;\n# >>>>>>> origin/main\n\n# 编辑为正确的组合结果，删除所有标记后：\ngit add src/config.ts\nnpm test                   # 解决后务必跑测试\ngit commit                 # rebase 中则用 git rebase --continue\n\n# 放弃本次合并，回到合并前\ngit merge --abort\n\n# 推荐配置：显示祖先版本、记住解决方式\ngit config --global merge.conflictStyle zdiff3\ngit config --global rerere.enabled true",
+   "note": "看懂祖先版本才能判断双方意图；解决后跑测试，因为无文本冲突不代表语义正确。"
+  },
+  "table": {
+   "title": "冲突类型与处理",
+   "head": [
+    "类型",
+    "原因",
+    "处理方式"
+   ],
+   "rows": [
+    [
+     "内容冲突",
+     "双方改了同一行区域",
+     "理解双方意图后手动组合"
+    ],
+    [
+     "修改/删除冲突",
+     "一方修改、一方删除文件",
+     "决定保留修改或确认删除"
+    ],
+    [
+     "锁文件冲突",
+     "双方都改了依赖",
+     "以一方为准后重新安装生成锁文件"
+    ],
+    [
+     "语义冲突",
+     "无文本冲突但逻辑互相破坏",
+     "依靠测试与评审发现"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "手动逐块解决",
+    "pros": "精确，理解每处改动",
+    "cons": "冲突多时耗时",
+    "when": "业务逻辑冲突"
+   },
+   {
+    "opt": "整体采用一方（--ours/--theirs）",
+    "pros": "快",
+    "cons": "可能丢失另一方的重要修改",
+    "when": "生成文件或确定以一方为准"
+   },
+   {
+    "opt": "让 AI 协助解决",
+    "pros": "能快速理解双方并给出组合",
+    "cons": "可能误合并逻辑",
+    "when": "冲突多但有测试兜底"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "冲突标记残留在代码里被提交",
+    "fix": "提交前搜索 <<<<<<< 标记，并让构建和测试兜底"
+   },
+   {
+    "bad": "手动合并 package-lock.json 等锁文件",
+    "fix": "选定一方的清单后重新运行安装生成锁文件"
+   },
+   {
+    "bad": "解决冲突后不跑测试直接提交",
+    "fix": "合并后运行完整测试，防止语义冲突"
+   },
+   {
+    "bad": "长期分支积累大量冲突",
+    "fix": "缩短分支寿命，频繁同步主干"
+   }
+  ],
+  "checklist": [
+   "无残留冲突标记",
+   "锁文件通过重新安装生成",
+   "合并后测试全部通过",
+   "不确定处已与相关作者确认",
+   "启用 zdiff3 显示祖先版本"
+  ],
+  "interview": [
+   {
+    "q": "没有文本冲突就说明合并正确吗？",
+    "a": "不是。语义冲突时两边改动在不同行，Git 能自动合并，但组合后逻辑错误，例如一方重命名函数、另一方新增了对旧函数名的调用。只能靠编译、类型检查和测试发现，所以合并后必须跑完整测试。"
+   },
+   {
+    "q": "rebase 时的 ours/theirs 为什么容易混淆？",
+    "a": "rebase 是把你的提交逐个重放到目标分支上，此时「当前」是目标分支，所以 ours 指上游，theirs 才是你正在重放的提交，与 merge 时正好相反。解决时最好看内容而非依赖这两个名字。"
+   },
+   {
+    "q": "如何从流程上减少冲突？",
+    "a": "小而频繁的 PR、短生命周期分支、经常同步主干、明确模块归属、格式化工具统一风格避免格式噪声冲突、把容易冲突的生成文件排除在手工编辑之外，并行 Agent 尽量分配到不同文件或模块。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Pro Git: Basic Branching and Merging",
+    "url": "https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging"
+   },
+   {
+    "title": "Git 文档: git-merge（冲突说明）",
+    "url": "https://git-scm.com/docs/git-merge"
+   },
+   {
+    "title": "GitHub Docs: Resolving a merge conflict using the command line",
+    "url": "https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/addressing-merge-conflicts/resolving-a-merge-conflict-using-the-command-line"
+   }
+  ]
+ },
+ {
+  "slug": "input-validation",
+  "def": "输入验证（Input Validation）是在数据进入系统时检查其类型、格式、长度、范围和业务规则，拒绝不合规数据的安全与质量控制手段。它必须在服务端执行，前端校验只用于改善体验。验证是防御注入、越权、数据污染的第一道防线，但需要与参数化查询、输出编码等措施配合，不能单独依赖。",
+  "how": [
+   "确定信任边界：凡来自客户端、第三方、文件、LLM 输出的数据都视为不可信输入。",
+   "语法校验：检查类型、格式、长度、字符集，如邮箱格式、整数范围、枚举取值。",
+   "语义校验：检查业务规则，如结束日期晚于开始日期、资源属于当前用户。",
+   "规范化：校验前统一编码、去除首尾空格、规范化路径，避免绕过检查。",
+   "拒绝并反馈：不合规时返回明确的 4xx 错误，不尝试「修正」可疑输入后继续处理。"
+  ],
+  "terms": [
+   {
+    "t": "白名单校验 (Allowlist)",
+    "d": "只接受明确允许的格式与取值，优于黑名单过滤。"
+   },
+   {
+    "t": "信任边界 (Trust Boundary)",
+    "d": "数据从不可信区域进入可信区域的分界点。"
+   },
+   {
+    "t": "Schema 校验",
+    "d": "用 Zod、Pydantic、JSON Schema 声明式描述并校验数据结构。"
+   },
+   {
+    "t": "批量赋值 (Mass Assignment)",
+    "d": "直接把请求体全部字段写入模型，导致越权修改。"
+   },
+   {
+    "t": "输出编码 (Output Encoding)",
+    "d": "按输出上下文转义数据，防 XSS，与输入验证互补。"
+   }
+  ],
+  "code": {
+   "lang": "typescript",
+   "title": "用 Zod 做服务端校验",
+   "src": "// npm install zod\nimport { z } from \"zod\";\n\nconst SignupSchema = z.object({\n  email: z.string().trim().toLowerCase().email().max(254),\n  name: z.string().trim().min(1).max(50),\n  age: z.number().int().min(13).max(120),\n  plan: z.enum([\"free\", \"pro\"]),          // 白名单取值\n}).strict();                              // 拒绝多余字段，防批量赋值\n\nexport function handleSignup(body: unknown) {\n  const result = SignupSchema.safeParse(body);\n  if (!result.success) {\n    // 返回 400 与字段级错误，不回显原始可疑输入\n    return { status: 400, errors: result.error.flatten().fieldErrors };\n  }\n  const data = result.data;               // 类型安全、已规范化的数据\n  // 后续数据库操作仍需参数化查询\n  return { status: 201, data };\n}",
+   "note": "声明式 Schema 同时得到校验与类型；strict 拒绝未声明字段，防止客户端偷塞 role 等字段。"
+  },
+  "table": {
+   "title": "校验在各层的职责",
+   "head": [
+    "层",
+    "做什么",
+    "能否作为安全防线"
+   ],
+   "rows": [
+    [
+     "前端表单",
+     "即时提示格式错误",
+     "不能，可被绕过"
+    ],
+    [
+     "API 入口",
+     "Schema 校验类型、格式、范围",
+     "能，必须有"
+    ],
+    [
+     "业务层",
+     "权限、归属、状态等业务规则",
+     "能，必须有"
+    ],
+    [
+     "数据库",
+     "约束、唯一索引、外键",
+     "最后防线，保证数据完整"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "白名单校验",
+    "pros": "安全性高，规则明确",
+    "cons": "需穷举合法格式",
+    "when": "枚举、ID、格式固定的字段"
+   },
+   {
+    "opt": "黑名单过滤",
+    "pros": "实现简单",
+    "cons": "容易被变形绕过",
+    "when": "仅作补充，不单独依赖"
+   },
+   {
+    "opt": "富文本消毒（Sanitize）",
+    "pros": "允许用户提交受限 HTML",
+    "cons": "需维护成熟库与规则",
+    "when": "评论、编辑器内容"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只在前端校验，后端直接入库",
+    "fix": "服务端对所有入口重新校验"
+   },
+   {
+    "bad": "把请求体整体传给 ORM 更新",
+    "fix": "只挑选允许修改的字段，或用 strict Schema"
+   },
+   {
+    "bad": "把 LLM 输出当可信数据直接执行或入库",
+    "fix": "对模型输出同样做 Schema 与业务校验"
+   },
+   {
+    "bad": "用正则过滤 SQL 关键字防注入",
+    "fix": "使用参数化查询，校验只是辅助"
+   }
+  ],
+  "checklist": [
+   "每个 API 入口都有 Schema 校验",
+   "拒绝未声明的多余字段",
+   "字符串有长度上限，数字有范围",
+   "资源归属在服务端校验",
+   "LLM 输出与第三方数据同样校验"
+  ],
+  "interview": [
+   {
+    "q": "有了输入验证，还需要参数化查询吗？",
+    "a": "需要。输入验证检查数据是否符合预期，但很多合法输入本身就包含引号等特殊字符（如人名 O'Brien）；参数化查询从机制上把数据与代码分开，无论内容如何都不会被当作 SQL 执行。两者是纵深防御的不同层。"
+   },
+   {
+    "q": "如何防止批量赋值漏洞？",
+    "a": "不要把请求体整体传给数据模型。使用显式字段白名单或拒绝多余字段的严格 Schema；把 role、is_admin、owner_id 等敏感字段只在服务端设置；为创建和更新分别定义输入 DTO。"
+   },
+   {
+    "q": "Agent 场景中输入验证有何新挑战？",
+    "a": "模型输出和工具参数也是不可信输入：可能被提示注入操纵、格式漂移或越权。对工具调用参数做 Schema 校验与权限检查，对文件路径、命令、URL 做白名单限制，敏感操作要求人工确认。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP Input Validation Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html"
+   },
+   {
+    "title": "OWASP Mass Assignment Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Mass_Assignment_Cheat_Sheet.html"
+   },
+   {
+    "title": "Zod 官方文档",
+    "url": "https://zod.dev/"
+   }
+  ]
+ },
+ {
+  "slug": "secrets-management",
+  "def": "机密管理（Secrets Management）是对 API Key、数据库密码、令牌、证书私钥等敏感凭证进行集中存储、访问控制、分发、轮换和审计的实践与工具体系。目标是让机密永不出现在代码和日志中，只在运行时按最小权限提供给需要的服务，并在泄露时能快速吊销与替换。",
+  "how": [
+   "集中存储：机密存放在加密的管理系统中，如云密钥服务、Vault 或平台 Secrets。",
+   "访问控制：按服务、环境与角色授权，谁能读取哪个机密都有明确策略。",
+   "运行时注入：部署时通过环境变量、挂载文件或 SDK 拉取，把机密提供给应用。",
+   "轮换与吊销：定期或泄露后生成新凭证、更新使用方，并作废旧凭证。",
+   "审计与检测：记录机密访问日志，并用扫描工具在提交和 CI 中拦截泄露。"
+  ],
+  "terms": [
+   {
+    "t": "密钥轮换 (Rotation)",
+    "d": "定期更换凭证，缩短泄露凭证的有效窗口。"
+   },
+   {
+    "t": "短期凭证 (Short-lived Credentials)",
+    "d": "几分钟到几小时自动过期的令牌，泄露危害小。"
+   },
+   {
+    "t": "OIDC 联合身份",
+    "d": "CI 用身份令牌换取云端临时凭证，无需存长期密钥。"
+   },
+   {
+    "t": "密钥扫描 (Secret Scanning)",
+    "d": "检测代码与历史中疑似密钥的工具，如 gitleaks。"
+   },
+   {
+    "t": "最小权限 (Least Privilege)",
+    "d": "凭证只授予完成任务所需的最少权限。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "提交前自动拦截密钥",
+   "src": "# .pre-commit-config.yaml\n# 安装：pip install pre-commit && pre-commit install\n# 之后每次 git commit 都会先扫描暂存内容，发现疑似密钥即阻止提交\nrepos:\n  - repo: https://github.com/gitleaks/gitleaks\n    rev: v8.18.0          # 固定版本，按需升级到最新发布\n    hooks:\n      - id: gitleaks\n\n# 手动对整个历史做一次扫描（gitleaks 需单独安装）：\n#   gitleaks detect --source . -v\n#\n# GitHub 仓库还可开启：\n#   Settings → Code security → Secret scanning 与 Push protection",
+   "note": "本地提交钩子加平台推送保护，在密钥离开开发机之前就把它拦下。"
+  },
+  "table": {
+   "title": "机密存放方案对比",
+   "head": [
+    "方案",
+    "安全性",
+    "运维成本",
+    "适合"
+   ],
+   "rows": [
+    [
+     "代码中硬编码",
+     "极低",
+     "无",
+     "任何情况都不应使用"
+    ],
+    [
+     ".env 文件（不提交）",
+     "中，明文在本机",
+     "低",
+     "本地开发"
+    ],
+    [
+     "平台 Secrets（Vercel、GitHub）",
+     "较高",
+     "低",
+     "中小型项目部署"
+    ],
+    [
+     "专用管理系统（Vault、云 KMS）",
+     "高，含审计与轮换",
+     "中高",
+     "团队与合规场景"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "长期静态密钥",
+    "pros": "简单，兼容性好",
+    "cons": "泄露后长期有效",
+    "when": "第三方仅支持静态 Key 时"
+   },
+   {
+    "opt": "短期动态凭证",
+    "pros": "自动过期，泄露危害小",
+    "cons": "需要支持的平台与集成",
+    "when": "云资源访问、CI 部署"
+   },
+   {
+    "opt": "密码管理器 CLI 注入",
+    "pros": "团队共享方便，不落盘",
+    "cons": "依赖工具与网络",
+    "when": "小团队本地开发"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在聊天、工单或 AI 对话里粘贴真实密钥",
+    "fix": "通过密钥管理系统共享，误粘贴后立即轮换"
+   },
+   {
+    "bad": "所有服务共用一个高权限 Key",
+    "fix": "按服务与环境拆分，限定最小权限"
+   },
+   {
+    "bad": "日志中打印了请求头或完整配置",
+    "fix": "日志框架中屏蔽 Authorization 等敏感字段"
+   },
+   {
+    "bad": "从不轮换，离职员工仍持有可用凭证",
+    "fix": "建立轮换周期，人员变动时同步轮换"
+   }
+  ],
+  "checklist": [
+   "代码与历史中无明文密钥",
+   "提交钩子与平台推送保护已启用",
+   "密钥按服务与环境拆分",
+   "有轮换周期与泄露应急流程",
+   "日志屏蔽敏感字段",
+   "CI 优先使用 OIDC 短期凭证"
+  ],
+  "interview": [
+   {
+    "q": "密钥泄露的应急流程？",
+    "a": "第一时间吊销或轮换泄露的凭证，而不是先删代码；评估影响范围，检查访问日志与账单；更新所有使用方；清理代码与 Git 历史；复盘泄露路径并补上扫描、权限或流程漏洞；必要时通知受影响方。"
+   },
+   {
+    "q": "为什么推荐 CI 使用 OIDC？",
+    "a": "传统做法要在 CI 中存放长期云密钥，一旦泄露危害大。OIDC 让 CI 在每次运行时用平台签发的身份令牌向云厂商换取短期凭证，可按仓库、分支限定权限，凭证自动过期，无需存储和轮换长期密钥。"
+   },
+   {
+    "q": "使用 AI 编程工具时如何保护机密？",
+    "a": "密钥只放在被忽略的 .env 或密钥管理中；配置工具禁止读取敏感文件；不在提示中粘贴真实值；对 Agent 可执行的命令设权限，防止它打印环境变量；使用企业版的数据保留策略；定期扫描仓库。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "OWASP Secrets Management Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html"
+   },
+   {
+    "title": "GitHub Docs: About secret scanning",
+    "url": "https://docs.github.com/en/code-security/secret-scanning/introduction/about-secret-scanning"
+   },
+   {
+    "title": "gitleaks（GitHub）",
+    "url": "https://github.com/gitleaks/gitleaks"
+   }
+  ]
+ },
+ {
+  "slug": "env-in-gitignore",
+  "def": "把 .env 加入 .gitignore，是让 Git 忽略本地环境变量文件、防止其中的密钥被提交并推送到远程仓库的基础做法。.gitignore 只对尚未被跟踪的文件生效；若 .env 已被提交过，必须从索引中移除，并且历史中的密钥要视为已泄露并轮换。配套做法是提交一份只含变量名的 .env.example。",
+  "how": [
+   "匹配规则：Git 在添加文件时按 .gitignore 中的模式判断是否忽略，支持通配符与否定规则。",
+   "仅对未跟踪文件生效：已被提交过的文件不受 .gitignore 影响，修改仍会被跟踪。",
+   "从索引移除：git rm --cached .env 停止跟踪但保留本地文件，再提交这次删除。",
+   "历史残留：之前的提交中 .env 内容依然存在，任何能访问仓库的人都可查看。",
+   "补救：轮换全部泄露密钥，必要时用 git filter-repo 重写历史并强推。"
+  ],
+  "terms": [
+   {
+    "t": ".gitignore",
+    "d": "列出 Git 应忽略的文件模式的配置文件。"
+   },
+   {
+    "t": "未跟踪文件 (Untracked)",
+    "d": "Git 尚未纳入版本控制的文件。"
+   },
+   {
+    "t": "git rm --cached",
+    "d": "从暂存区和后续版本中移除文件，但保留工作区文件。"
+   },
+   {
+    "t": "git filter-repo",
+    "d": "官方推荐的历史重写工具，可彻底删除历史中的文件。"
+   },
+   {
+    "t": "全局 gitignore",
+    "d": "通过 core.excludesFile 为本机所有仓库设置的忽略规则。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "忽略 .env 与补救",
+   "src": "# 1. 写入忽略规则（同时保留示例文件）\ncat >> .gitignore <<'EOF'\n.env\n.env.*\n!.env.example\nEOF\n\n# 2. 验证是否生效：输出匹配的规则即表示已忽略\ngit check-ignore -v .env\n\n# 3. 如果 .env 之前已经被提交过：停止跟踪（本地文件保留）\ngit rm --cached .env\ngit commit -m \"chore: stop tracking .env\"\n\n# 4. 检查历史中是否出现过 .env\ngit log --all --oneline -- .env\n\n# 5. 若曾推送：先轮换所有密钥！再按需重写历史（需安装 git-filter-repo）\n# git filter-repo --path .env --invert-paths\n# 之后需强推并通知协作者重新克隆",
+   "note": "顺序很重要：先忽略并停止跟踪，发现历史泄露时第一步是轮换密钥，重写历史只是补充。"
+  },
+  "table": {
+   "title": "常见文件该不该提交",
+   "head": [
+    "文件",
+    "是否提交",
+    "原因"
+   ],
+   "rows": [
+    [
+     ".env / .env.local",
+     "否",
+     "包含真实密钥与个人配置"
+    ],
+    [
+     ".env.example",
+     "是",
+     "只列变量名，供他人参考"
+    ],
+    [
+     "package-lock.json 等锁文件",
+     "是",
+     "保证依赖可复现"
+    ],
+    [
+     "node_modules / .venv",
+     "否",
+     "可重新安装，体积大"
+    ],
+    [
+     "dist / build",
+     "通常否",
+     "可由源码构建生成"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "项目级 .gitignore",
+    "pros": "团队共享，规则随仓库走",
+    "cons": "需每个项目维护",
+    "when": "所有项目都应有"
+   },
+   {
+    "opt": "全局 gitignore",
+    "pros": "本机所有仓库自动生效",
+    "cons": "不影响队友的机器",
+    "when": "个人额外保险，如编辑器文件"
+   },
+   {
+    "opt": "重写 Git 历史",
+    "pros": "从历史中彻底移除文件",
+    "cons": "破坏协作者历史，fork 与缓存中仍可能残留",
+    "when": "泄露后在轮换之外的补充措施"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "先提交了 .env 才加 .gitignore，以为就安全了",
+    "fix": "执行 git rm --cached 停止跟踪，并轮换已提交的密钥"
+   },
+   {
+    "bad": "只删除最新版本中的 .env 文件",
+    "fix": "历史仍可见，必须轮换，必要时重写历史"
+   },
+   {
+    "bad": "忽略规则写成 .env 但实际文件名是 .env.production",
+    "fix": "使用 .env.* 并用 git check-ignore 验证"
+   },
+   {
+    "bad": "把 .env.example 也忽略了",
+    "fix": "加 !.env.example 否定规则，并确保其中只有占位值"
+   }
+  ],
+  "checklist": [
+   ".gitignore 包含 .env 与 .env.*",
+   ".env.example 已提交且无真实值",
+   "git check-ignore 验证通过",
+   "历史中从未出现 .env",
+   "启用密钥扫描作为兜底"
+  ],
+  "interview": [
+   {
+    "q": "为什么加了 .gitignore，.env 还是被提交了？",
+    "a": ".gitignore 只影响未跟踪文件。若 .env 在添加规则之前已经被 git add 或提交过，Git 会继续跟踪它。需要 git rm --cached .env 停止跟踪并提交，同时把已进入历史的密钥视为泄露进行轮换。"
+   },
+   {
+    "q": "重写历史后就安全了吗？",
+    "a": "不完全。在重写之前，内容可能已被克隆、fork、CI 缓存或被自动化扫描器抓取；托管平台的缓存视图也可能短期残留。所以轮换密钥是必须的第一步，重写历史只是减少后续暴露的补充措施。"
+   },
+   {
+    "q": "如何从流程上杜绝这类问题？",
+    "a": "项目模板自带完善的 .gitignore；提交前钩子运行密钥扫描；托管平台开启推送保护；代码评审时检查新增文件；给 AI Agent 的规则中明确禁止创建或修改真实 .env 内容并提交。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Git 文档: gitignore",
+    "url": "https://git-scm.com/docs/gitignore"
+   },
+   {
+    "title": "GitHub Docs: Removing sensitive data from a repository",
+    "url": "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/removing-sensitive-data-from-a-repository"
+   },
+   {
+    "title": "github/gitignore 模板集合",
+    "url": "https://github.com/github/gitignore"
+   }
+  ]
+ },
+ {
+  "slug": "mfa",
+  "def": "多因素认证（Multi-Factor Authentication, MFA）要求用户提供两类及以上不同性质的凭证才能登录：你知道的（密码）、你拥有的（手机、安全密钥）、你本身的（指纹、面部）。即使密码泄露，攻击者仍缺少其他因素。抗钓鱼的 FIDO2/WebAuthn（含通行密钥）是目前安全性最高的主流方案。",
+  "how": [
+   "第一因素：用户输入账号密码，服务端验证通过后并不直接放行，而是进入第二步。",
+   "第二因素挑战：服务端要求出示另一类凭证，如动态验证码或安全密钥签名。",
+   "TOTP 验证：认证 App 用共享密钥和当前时间计算 6 位码，服务端用同样算法比对。",
+   "WebAuthn 验证：设备用绑定该网站域名的私钥签名挑战，服务端用公钥验证，钓鱼站无法复用。",
+   "恢复机制：提供一次性恢复码或备用因素，防止设备丢失后无法登录。"
+  ],
+  "terms": [
+   {
+    "t": "TOTP",
+    "d": "基于时间的一次性密码，RFC 6238，常见于认证器 App。"
+   },
+   {
+    "t": "WebAuthn / FIDO2",
+    "d": "基于公钥加密的 Web 认证标准，绑定域名，抗钓鱼。"
+   },
+   {
+    "t": "通行密钥 (Passkey)",
+    "d": "可跨设备同步的 FIDO 凭证，可替代密码登录。"
+   },
+   {
+    "t": "SIM 卡劫持 (SIM Swap)",
+    "d": "攻击者冒领手机号以截获短信验证码。"
+   },
+   {
+    "t": "MFA 疲劳攻击 (MFA Fatigue)",
+    "d": "反复推送登录确认，诱使用户误点批准。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "TOTP 原理演示",
+   "src": "# pip install pyotp\nimport pyotp\n\n# 1. 用户开启 MFA 时，服务端为其生成共享密钥并安全保存\nsecret = pyotp.random_base32()\n\n# 2. 生成二维码内容，用户用认证 App 扫描绑定\nuri = pyotp.TOTP(secret).provisioning_uri(\n    name=\"alice@example.com\", issuer_name=\"MyApp\")\nprint(uri)   # otpauth://totp/MyApp:alice%40example.com?secret=...&issuer=MyApp\n\n# 3. 登录时：App 与服务端用同一密钥 + 当前时间各自算出 6 位码\ntotp = pyotp.TOTP(secret)          # 默认 30 秒一个时间窗口\ncode_from_user = totp.now()        # 演示：假装这是用户输入的码\n\n# 4. 服务端验证；valid_window=1 容忍前后一个窗口的时钟偏差\nprint(totp.verify(code_from_user, valid_window=1))   # True\n\n# 生产中还需：限制尝试次数、防止同一验证码重复使用",
+   "note": "TOTP 不需要网络通信，安全性依赖共享密钥保密；它能防密码泄露，但不能防实时钓鱼。"
+  },
+  "table": {
+   "title": "第二因素安全性对比",
+   "head": [
+    "方式",
+    "抗钓鱼",
+    "主要风险",
+    "建议"
+   ],
+   "rows": [
+    [
+     "短信验证码",
+     "否",
+     "SIM 劫持、短信拦截",
+     "仅作最低保障"
+    ],
+    [
+     "TOTP 认证器 App",
+     "否",
+     "实时钓鱼页面转发验证码",
+     "常规账户推荐"
+    ],
+    [
+     "推送确认",
+     "部分",
+     "MFA 疲劳攻击",
+     "启用号码匹配"
+    ],
+    [
+     "FIDO2 安全密钥 / 通行密钥",
+     "是",
+     "设备丢失需备用方案",
+     "高价值账户首选"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "短信验证码",
+    "pros": "无需安装 App，普及度高",
+    "cons": "易受 SIM 劫持",
+    "when": "面向大众且无更好选项时"
+   },
+   {
+    "opt": "认证器 App",
+    "pros": "离线可用、成本低",
+    "cons": "可被钓鱼页实时转发",
+    "when": "开发者账号、常规业务系统"
+   },
+   {
+    "opt": "通行密钥 / 硬件密钥",
+    "pros": "抗钓鱼、体验好",
+    "cons": "跨平台恢复与兼容需规划",
+    "when": "管理员、云平台、代码托管账号"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只给普通账号开 MFA，管理员和云控制台没开",
+    "fix": "优先覆盖高权限账号：云平台、域名注册商、GitHub、邮箱"
+   },
+   {
+    "bad": "恢复码截图存在相册或桌面",
+    "fix": "恢复码存进密码管理器或离线安全位置"
+   },
+   {
+    "bad": "自研 MFA 不限制验证码尝试次数",
+    "fix": "加入速率限制与锁定，防止暴力枚举 6 位码"
+   },
+   {
+    "bad": "用户对陌生推送随手点「批准」",
+    "fix": "启用号码匹配和上下文提示，并培训用户"
+   }
+  ],
+  "checklist": [
+   "邮箱、域名、云平台、GitHub 已开 MFA",
+   "管理员账号使用抗钓鱼因素",
+   "恢复码安全存储",
+   "验证接口有速率限制",
+   "MFA 重置流程有身份核验"
+  ],
+  "interview": [
+   {
+    "q": "为什么 WebAuthn 能抗钓鱼而 TOTP 不能？",
+    "a": "TOTP 验证码与网站无关，用户在钓鱼页输入后可被攻击者实时转发到真站。WebAuthn 的签名绑定了浏览器所见的真实域名（origin），钓鱼域名拿到的签名在真站无效，私钥也从不离开设备。"
+   },
+   {
+    "q": "MFA 开启后账户就绝对安全吗？",
+    "a": "不是。仍存在会话令牌窃取（登录后 Cookie 被盗）、实时钓鱼代理、MFA 疲劳、社会工程重置 MFA、恢复流程薄弱等风险。需要配合抗钓鱼因素、会话保护、异常登录检测和严格的重置流程。"
+   },
+   {
+    "q": "开发者最应该优先保护哪些账号？",
+    "a": "邮箱（可重置其他账号）、域名注册商与 DNS（可劫持流量）、云平台与模型 API 控制台（直接产生费用和数据访问）、代码托管平台（可篡改代码与 CI）、包注册表发布账号（供应链风险）。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "NIST SP 800-63B: Authentication Guidelines",
+    "url": "https://pages.nist.gov/800-63-3/sp800-63b.html"
+   },
+   {
+    "title": "RFC 6238: TOTP",
+    "url": "https://www.rfc-editor.org/rfc/rfc6238"
+   },
+   {
+    "title": "OWASP Multifactor Authentication Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Multifactor_Authentication_Cheat_Sheet.html"
+   },
+   {
+    "title": "FIDO Alliance: Passkeys",
+    "url": "https://fidoalliance.org/passkeys/"
+   }
+  ]
+ },
+ {
+  "slug": "backups",
+  "def": "数据备份体系（Backups）是按策略定期复制数据并独立保存，以便在误删、硬件故障、勒索软件、错误迁移等事故后恢复的机制。它由备份频率、保留周期、存储位置、加密和恢复演练共同构成，以 RPO（可容忍丢失多少数据）和 RTO（可容忍停机多久）衡量。未经恢复验证的备份不能算可靠备份。",
+  "how": [
+   "定目标：按业务影响确定 RPO 和 RTO，决定备份频率与恢复方式。",
+   "选方式：全量、增量、差异备份组合，数据库可加连续日志归档实现时间点恢复。",
+   "隔离存储：备份放在与生产不同的账号、区域或介质，防止同一事故一起损毁。",
+   "保护备份：加密、设置不可变（WORM）或版本保留，防止被勒索软件删除或篡改。",
+   "定期演练：按计划把备份恢复到隔离环境，校验数据完整性并记录实际恢复耗时。"
+  ],
+  "terms": [
+   {
+    "t": "RPO",
+    "d": "恢复点目标：事故后最多可丢失多长时间的数据。"
+   },
+   {
+    "t": "RTO",
+    "d": "恢复时间目标：从事故到服务恢复的最长可接受时间。"
+   },
+   {
+    "t": "3-2-1 原则",
+    "d": "至少 3 份数据，2 种介质，1 份异地。"
+   },
+   {
+    "t": "时间点恢复 (PITR)",
+    "d": "借助日志把数据库恢复到任意指定时刻。"
+   },
+   {
+    "t": "不可变备份 (Immutable Backup)",
+    "d": "在保留期内无法被修改或删除的备份。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "PostgreSQL 备份与恢复验证",
+   "src": "#!/usr/bin/env bash\nset -euo pipefail\nTS=$(date +%Y%m%d-%H%M)\n\n# 1. 逻辑备份（自定义格式，压缩且支持选择性恢复）\npg_dump \"$DATABASE_URL\" -Fc -f \"backup-$TS.dump\"\n\n# 2. 生成校验和，防止传输或存储损坏\nsha256sum \"backup-$TS.dump\" > \"backup-$TS.dump.sha256\"\n\n# 3. 上传到独立账号的对象存储（示例：AWS CLI，桶应开启版本控制）\n# aws s3 cp \"backup-$TS.dump\" s3://my-backups/db/\n\n# 4. 恢复演练：还原到临时数据库并做基本校验\ncreatedb restore_test\npg_restore -d restore_test --no-owner \"backup-$TS.dump\"\npsql -d restore_test -c \"SELECT count(*) FROM users;\"\ndropdb restore_test",
+   "note": "备份脚本要包含恢复验证这一步；只备份不还原，等于不知道备份是否可用。"
+  },
+  "table": {
+   "title": "备份方式对比",
+   "head": [
+    "方式",
+    "恢复粒度",
+    "存储开销",
+    "说明"
+   ],
+   "rows": [
+    [
+     "全量备份",
+     "备份时刻",
+     "大",
+     "恢复最简单"
+    ],
+    [
+     "增量备份",
+     "备份时刻",
+     "小",
+     "恢复需按顺序叠加多个增量"
+    ],
+    [
+     "快照（磁盘/云盘）",
+     "快照时刻",
+     "中",
+     "快，但需确保应用数据一致"
+    ],
+    [
+     "日志归档 + PITR",
+     "任意时刻",
+     "中",
+     "满足较小 RPO，托管数据库常内置"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "托管数据库自动备份",
+    "pros": "开箱即用，支持时间点恢复",
+    "cons": "与生产同账号，误删账号可能连带",
+    "when": "默认开启，作为第一层"
+   },
+   {
+    "opt": "额外异地/跨账号备份",
+    "pros": "抵御账号级与区域级灾难",
+    "cons": "额外成本与流程",
+    "when": "核心业务数据"
+   },
+   {
+    "opt": "高频备份",
+    "pros": "RPO 小，丢数据少",
+    "cons": "存储与性能开销大",
+    "when": "交易类、写入频繁的系统"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "备份从未做过恢复演练",
+    "fix": "定期恢复到隔离环境，记录耗时与问题"
+   },
+   {
+    "bad": "备份和生产在同一台机器或同一账号",
+    "fix": "备份隔离到不同账号、区域，并开启不可变保护"
+   },
+   {
+    "bad": "只备份数据库，忘了上传文件与配置",
+    "fix": "盘点所有数据：对象存储、配置、密钥恢复方式"
+   },
+   {
+    "bad": "让 Agent 执行迁移前没有备份",
+    "fix": "破坏性操作前先做备份或确认时间点恢复可用"
+   }
+  ],
+  "checklist": [
+   "已定义 RPO 与 RTO",
+   "满足 3-2-1 原则",
+   "备份加密并启用不可变或版本保留",
+   "定期恢复演练并记录",
+   "备份失败有告警",
+   "高风险变更前有额外备份"
+  ],
+  "interview": [
+   {
+    "q": "RPO 和 RTO 如何影响架构？",
+    "a": "RPO 决定备份频率：RPO 一天可每日备份，RPO 分钟级则需要日志归档或同步复制。RTO 决定恢复手段：小时级可从备份重建，分钟级需要热备与自动故障切换。目标越严格成本越高，应按业务价值取舍。"
+   },
+   {
+    "q": "主从复制能代替备份吗？",
+    "a": "不能。复制会把误删、错误更新和勒索加密同步到从库，它解决的是可用性而非数据恢复。备份是时间维度上的独立副本，能回到事故之前的状态。两者需要同时具备。"
+   },
+   {
+    "q": "如何防御勒索软件破坏备份？",
+    "a": "备份存放在独立账号或离线介质；启用对象锁定等不可变保留；备份系统使用独立凭证与 MFA；监控异常删除；保留多个时间点版本；定期演练从隔离备份恢复整个系统。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL 文档: Backup and Restore",
+    "url": "https://www.postgresql.org/docs/current/backup.html"
+   },
+   {
+    "title": "CISA: Back Up Sensitive Business Information",
+    "url": "https://www.cisa.gov/audiences/small-and-medium-businesses/secure-your-business/back-up-business-data"
+   },
+   {
+    "title": "AWS: Disaster Recovery of Workloads on AWS（白皮书）",
+    "url": "https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/disaster-recovery-workloads-on-aws.html"
+   }
+  ]
+ },
+ {
+  "slug": "dns",
+  "def": "DNS（域名系统）是互联网的分布式命名数据库，把人类可读的域名解析为 IP 地址等记录。它由根服务器、顶级域服务器和权威服务器组成层级结构，配合递归解析器和多级缓存运作。部署网站、配置邮件、验证域名所有权、接入 CDN 都要修改 DNS 记录，TTL 决定修改生效的速度。",
+  "how": [
+   "本地查询：程序先查系统缓存与 hosts 文件，未命中则询问配置的递归解析器。",
+   "递归解析：解析器从根服务器查到顶级域（如 .com）服务器，再找到该域名的权威服务器。",
+   "权威应答：权威服务器返回记录（如 A 记录对应的 IP）及其 TTL。",
+   "缓存：解析器和客户端按 TTL 缓存结果，期间不再重复查询。",
+   "变更传播：修改记录后，旧值要等各级缓存的 TTL 过期才会全部更新。"
+  ],
+  "terms": [
+   {
+    "t": "A / AAAA 记录",
+    "d": "把域名指向 IPv4 / IPv6 地址。"
+   },
+   {
+    "t": "CNAME 记录",
+    "d": "把域名指向另一个域名，不能与同名其他记录共存。"
+   },
+   {
+    "t": "MX / TXT 记录",
+    "d": "邮件服务器地址 / 任意文本，常用于 SPF 与域名验证。"
+   },
+   {
+    "t": "TTL",
+    "d": "记录可被缓存的秒数，决定变更生效速度。"
+   },
+   {
+    "t": "NS 记录",
+    "d": "指定该域名由哪些权威服务器负责解析。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "用 dig 排查解析",
+   "src": "# 查询 A 记录（简洁输出）\ndig +short example.com A\n\n# 查看完整应答，包括 TTL\ndig example.com A +noall +answer\n\n# 查询其他类型记录\ndig +short example.com AAAA\ndig +short www.example.com CNAME\ndig +short example.com MX\ndig +short example.com TXT        # SPF、域名验证等\n\n# 查看域名由哪些权威服务器负责\ndig +short example.com NS\n\n# 绕过本地缓存，直接问指定解析器（对比是否已生效）\ndig @1.1.1.1 +short example.com\ndig @8.8.8.8 +short example.com\n\n# 跟踪完整的递归解析路径：根 → 顶级域 → 权威\ndig +trace example.com",
+   "note": "改了 DNS 不生效时，用 dig 对比权威服务器与公共解析器的结果，并看 TTL 剩余时间。"
+  },
+  "table": {
+   "title": "部署常用记录配置",
+   "head": [
+    "需求",
+    "记录类型",
+    "示例"
+   ],
+   "rows": [
+    [
+     "根域名指向服务器 IP",
+     "A / AAAA",
+     "example.com → 203.0.113.10"
+    ],
+    [
+     "子域名指向托管平台",
+     "CNAME",
+     "www → 平台提供的目标域名"
+    ],
+    [
+     "根域名指向托管平台",
+     "ALIAS / CNAME 拉平（服务商扩展）",
+     "根域不能用标准 CNAME"
+    ],
+    [
+     "企业邮箱",
+     "MX + TXT(SPF)",
+     "MX 指向邮件服务商"
+    ],
+    [
+     "证明域名所有权",
+     "TXT",
+     "平台给出的验证字符串"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "长 TTL（数小时到一天）",
+    "pros": "查询少、解析快、抗权威故障",
+    "cons": "变更生效慢",
+    "when": "长期稳定的记录"
+   },
+   {
+    "opt": "短 TTL（数分钟）",
+    "pros": "变更与切换快",
+    "cons": "查询量增加",
+    "when": "迁移前、故障切换场景"
+   },
+   {
+    "opt": "托管 DNS 服务",
+    "pros": "高可用、全球节点、API 管理",
+    "cons": "依赖服务商",
+    "when": "绝大多数网站"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "迁移服务器时直接改记录，旧 TTL 很长导致长时间不一致",
+    "fix": "迁移前提前把 TTL 调低，切换完成再调回"
+   },
+   {
+    "bad": "在根域名上配置标准 CNAME",
+    "fix": "根域用 A 记录或服务商的 ALIAS/CNAME 拉平功能"
+   },
+   {
+    "bad": "停用云资源后没删 CNAME，导致子域名被接管",
+    "fix": "下线资源时同步清理指向它的 DNS 记录"
+   },
+   {
+    "bad": "域名注册商账号未开 MFA",
+    "fix": "域名与 DNS 账号开启 MFA 和注册商锁定"
+   }
+  ],
+  "checklist": [
+   "域名注册商与 DNS 账号已开 MFA",
+   "变更前评估并调整 TTL",
+   "无指向已下线资源的悬空记录",
+   "邮件配置 SPF、DKIM、DMARC",
+   "用 dig 验证权威与公共解析结果"
+  ],
+  "interview": [
+   {
+    "q": "为什么改了 DNS 别人还访问旧地址？",
+    "a": "各级缓存（递归解析器、操作系统、浏览器）会在 TTL 过期前继续使用旧记录。改动只是更新了权威服务器，传播取决于旧 TTL。所以迁移前要提前降低 TTL；可用 dig 分别查询权威服务器和公共解析器确认进度。"
+   },
+   {
+    "q": "什么是子域名接管？",
+    "a": "子域名的 CNAME 指向某云服务资源（如存储桶、托管站点），资源被删除后记录仍在。攻击者在该服务上注册同名资源，就能控制这个子域名，用于钓鱼或窃取 Cookie。防御是下线资源时同步删除 DNS 记录并定期审计。"
+   },
+   {
+    "q": "DNS 默认是加密的吗？",
+    "a": "传统 DNS 查询基于 UDP/TCP 明文传输，路径上的人可以看到甚至篡改。DoH（DNS over HTTPS）和 DoT（DNS over TLS）加密客户端到解析器的通信；DNSSEC 则通过签名保证记录真实性，但不加密。三者解决的问题不同。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 1034: Domain Names – Concepts and Facilities",
+    "url": "https://www.rfc-editor.org/rfc/rfc1034"
+   },
+   {
+    "title": "Wikipedia: Domain Name System",
+    "url": "https://en.wikipedia.org/wiki/Domain_Name_System"
+   },
+   {
+    "title": "MDN: What is a domain name?",
+    "url": "https://developer.mozilla.org/en-US/docs/Learn_web_development/Howto/Web_mechanics/What_is_a_domain_name"
+   }
+  ]
+ }
+]

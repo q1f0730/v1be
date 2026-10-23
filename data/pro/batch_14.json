@@ -1,0 +1,3483 @@
+[
+ {
+  "slug": "grounding-and-citations",
+  "def": "有据生成（Grounding）指让模型的回答建立在显式提供的外部证据上（检索到的文档、搜索结果、数据库记录），引用溯源（Citations）则把回答中的具体论断与证据片段一一对应。它属于 LLM 应用的可信度层，是 RAG 与联网搜索产品的核心要求，用于降低幻觉并让用户能够核查。",
+  "how": [
+   "检索或接收证据：通过 RAG、搜索 API 或用户上传获得文档，并切分为可引用的片段，保留来源元数据。",
+   "构造提示：把证据连同编号或标题放入上下文，并指示模型只依据证据作答、证据不足时明确说明。",
+   "生成带引用的回答：模型在论断后标注来源编号；部分 API 原生返回引用的字符或页码范围。",
+   "后处理校验：检查引用是否存在、被引片段是否真正支持该论断，必要时删除或重写不受支持的句子。",
+   "前端呈现：引用可点击跳转到原文高亮处，让用户低成本核查。"
+  ],
+  "terms": [
+   {
+    "t": "有据性 (Groundedness / Faithfulness)",
+    "d": "回答内容能被所给证据支持的程度。"
+   },
+   {
+    "t": "引用准确率 (Citation Precision)",
+    "d": "所给引用中真正支持对应论断的比例。"
+   },
+   {
+    "t": "引用召回率 (Citation Recall)",
+    "d": "需要引用的论断中确实给出了支持引用的比例。"
+   },
+   {
+    "t": "归因 (Attribution)",
+    "d": "把生成内容追溯到具体来源片段的过程。"
+   },
+   {
+    "t": "拒答 (Abstention)",
+    "d": "证据不足时明确表示无法回答，而不是猜测。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Anthropic Citations 接口",
+   "src": "# pip install anthropic\nimport anthropic\n\nclient = anthropic.Anthropic()\ncontract = open(\"contract.txt\", encoding=\"utf-8\").read()\n\nmsg = client.messages.create(\n    model=\"claude-sonnet-4-5\",  # 换成你在用的模型\n    max_tokens=1024,\n    messages=[{\"role\": \"user\", \"content\": [\n        {\"type\": \"document\",\n         \"source\": {\"type\": \"text\", \"media_type\": \"text/plain\", \"data\": contract},\n         \"title\": \"服务合同\",\n         \"citations\": {\"enabled\": True}},   # 开启原生引用\n        {\"type\": \"text\", \"text\": \"违约金条款是怎么约定的？资料中没有就直说。\"},\n    ]}],\n)\n\nfor block in msg.content:\n    if block.type == \"text\":\n        print(block.text)\n        for c in block.citations or []:      # 每段文字对应的原文出处\n            print(\"  ↳ 引用:\", c.cited_text[:60])",
+   "note": "原生引用返回被引原文与位置，比让模型自己写编号更可靠，但仍需抽检是否真正支持论断。"
+  },
+  "table": {
+   "title": "引用实现方式对比",
+   "head": [
+    "方式",
+    "可靠性",
+    "实现成本",
+    "说明"
+   ],
+   "rows": [
+    [
+     "提示中要求标编号",
+     "中",
+     "低",
+     "模型可能编造或错标编号"
+    ],
+    [
+     "API 原生引用",
+     "较高",
+     "低",
+     "返回被引片段与位置"
+    ],
+    [
+     "生成后 NLI/LLM 校验",
+     "高",
+     "中",
+     "逐句验证是否被支持"
+    ],
+    [
+     "抽取式回答",
+     "最高",
+     "中",
+     "直接摘原文，表达受限"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "严格只用证据",
+    "pros": "幻觉少、可审计",
+    "cons": "证据缺失时回答受限",
+    "when": "法律、医疗、客服知识库"
+   },
+   {
+    "opt": "证据 + 模型常识",
+    "pros": "回答更完整流畅",
+    "cons": "混入无出处内容，难核查",
+    "when": "通用助手，需标明哪些无出处"
+   },
+   {
+    "opt": "生成后逐句校验",
+    "pros": "显著提升引用准确率",
+    "cons": "额外延迟与费用",
+    "when": "高风险输出"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "有引用标记就默认内容正确",
+    "fix": "评测引用准确率，抽检被引片段是否真正支持论断"
+   },
+   {
+    "bad": "检索质量差，模型只能基于无关片段作答",
+    "fix": "先优化检索与重排，并在证据不足时触发拒答"
+   },
+   {
+    "bad": "切片丢失来源元数据，无法回链原文",
+    "fix": "每个片段保存文档 ID、页码或段落位置"
+   },
+   {
+    "bad": "提示允许模型「补充」，导致无出处内容混入",
+    "fix": "明确区分有据部分与推断部分，或禁止补充"
+   }
+  ],
+  "checklist": [
+   "每个片段携带可回链的来源信息",
+   "提示要求证据不足时拒答",
+   "有引用准确率与有据性评测",
+   "前端引用可跳转到原文",
+   "高风险场景做生成后校验",
+   "记录检索结果便于复盘"
+  ],
+  "interview": [
+   {
+    "q": "如何评估 RAG 回答的有据性？",
+    "a": "构建带标准证据的评测集；逐句判断论断是否被检索片段蕴含（可用 NLI 模型或 LLM 评审并人工抽检）；同时统计引用准确率与召回率、拒答是否恰当，并把检索质量与生成质量分开度量。"
+   },
+   {
+    "q": "原生引用 API 相比提示里要求标号有什么优势？",
+    "a": "原生引用由系统把输出片段与输入文档的具体位置绑定，返回被引原文，减少编造编号或错位；前端可直接高亮原文。但它不保证论断语义上被完整支持，仍需评测。"
+   },
+   {
+    "q": "证据之间互相矛盾怎么办？",
+    "a": "提示中要求模型显式指出冲突并分别引用；按来源权威性、时间新旧设置优先级；必要时把冲突呈现给用户而非擅自裁决；检索阶段可按版本或日期过滤过期文档。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Anthropic 文档：Citations",
+    "url": "https://docs.anthropic.com/en/docs/build-with-claude/citations"
+   },
+   {
+    "title": "Gao et al. 2023：Enabling LLMs to Generate Text with Citations",
+    "url": "https://arxiv.org/abs/2305.14627"
+   },
+   {
+    "title": "Lewis et al. 2020：Retrieval-Augmented Generation",
+    "url": "https://arxiv.org/abs/2005.11401"
+   }
+  ]
+ },
+ {
+  "slug": "reasoning-effort",
+  "def": "思考预算（Reasoning Effort / Thinking Budget）是推理模型的 API 参数，控制模型给出答案前生成多少内部推理 Token。OpenAI 用档位（如 low/medium/high），Anthropic 用 budget_tokens，Gemini 也有 thinking budget。它是在质量、延迟与成本之间调节的推理层旋钮。",
+  "how": [
+   "推理模型在输出答案前先生成思考内容（可能隐藏、摘要或部分可见），用于分解问题、尝试与自检。",
+   "档位或预算限制思考 Token 的数量上限或倾向；预算越高，复杂任务上通常越准，但延迟与费用上升。",
+   "思考 Token 计入输出 Token 计费，并占用 max_tokens 等输出额度。",
+   "模型不一定用满预算：简单问题即使设高档也可能很快结束。",
+   "应用层可按任务难度路由档位，或先低档尝试、失败后升档重试。"
+  ],
+  "terms": [
+   {
+    "t": "推理 Token (Reasoning Tokens)",
+    "d": "模型内部思考产生的 Token，按输出计费。"
+   },
+   {
+    "t": "reasoning effort",
+    "d": "OpenAI 推理模型的档位参数，控制推理投入程度。"
+   },
+   {
+    "t": "budget_tokens",
+    "d": "Anthropic 扩展思考的预算参数，须小于 max_tokens。"
+   },
+   {
+    "t": "测试时计算 (Test-time Compute)",
+    "d": "推理阶段投入更多计算以换取更好结果的思路。"
+   },
+   {
+    "t": "交错思考 (Interleaved Thinking)",
+    "d": "在工具调用之间穿插思考，部分模型支持。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "两家 API 设置思考预算",
+   "src": "# pip install openai anthropic\nfrom openai import OpenAI\nimport anthropic\n\n# OpenAI Responses API：用档位控制\noa = OpenAI()\nr = oa.responses.create(\n    model=\"o4-mini\",                 # 换成你在用的推理模型\n    reasoning={\"effort\": \"low\"},     # 简单任务用低档\n    input=\"把 'hello world' 转成驼峰命名\",\n)\nprint(r.output_text)\nprint(\"推理 tokens:\", r.usage.output_tokens_details.reasoning_tokens)\n\n# Anthropic：用 budget_tokens 控制扩展思考\nan = anthropic.Anthropic()\nm = an.messages.create(\n    model=\"claude-sonnet-4-5\",\n    max_tokens=16000,                               # 必须大于思考预算\n    thinking={\"type\": \"enabled\", \"budget_tokens\": 8000},\n    messages=[{\"role\": \"user\", \"content\": \"分析这段并发代码可能的死锁原因…\"}],\n)\nfor b in m.content:\n    print(b.type)   # 先出现 thinking 块，再出现 text 块",
+   "note": "参数名与取值因厂商和模型而异，以所用模型文档为准；思考 Token 同样计费。"
+  },
+  "table": {
+   "title": "各家参数对照",
+   "head": [
+    "厂商",
+    "参数",
+    "形式"
+   ],
+   "rows": [
+    [
+     "OpenAI",
+     "reasoning.effort / reasoning_effort",
+     "档位"
+    ],
+    [
+     "Anthropic",
+     "thinking.budget_tokens",
+     "Token 数（有最小值）"
+    ],
+    [
+     "Google Gemini",
+     "thinking budget 配置",
+     "Token 数，部分模型可关闭"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "低档/小预算",
+    "pros": "快、便宜",
+    "cons": "复杂任务准确率下降",
+    "when": "格式转换、简单问答、高并发"
+   },
+   {
+    "opt": "高档/大预算",
+    "pros": "复杂推理更可靠",
+    "cons": "延迟高、费用高",
+    "when": "疑难调试、数学、架构设计"
+   },
+   {
+    "opt": "按难度动态路由",
+    "pros": "整体性价比最好",
+    "cons": "需要分类器或升档逻辑",
+    "when": "任务难度分布广的产品"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "所有请求一律最高档",
+    "fix": "按任务评测各档位的准确率与成本，选拐点"
+   },
+   {
+    "bad": "max_tokens 不足，思考耗尽额度导致无回答",
+    "fix": "为思考与最终回答都预留输出空间"
+   },
+   {
+    "bad": "把思考内容当作可靠解释直接展示给用户",
+    "fix": "思考内容不保证忠实于真实计算过程，只展示最终答案或摘要"
+   },
+   {
+    "bad": "对交互式场景开高档，用户等待过久",
+    "fix": "交互用低档并流式输出，后台任务再用高档"
+   }
+  ],
+  "checklist": [
+   "按任务类型设置默认档位",
+   "输出上限已为思考预留空间",
+   "监控推理 Token 用量与费用",
+   "有低档失败后升档的策略",
+   "交互场景评估了首字延迟",
+   "确认目标模型支持该参数"
+  ],
+  "interview": [
+   {
+    "q": "思考预算和 max_tokens 的关系？",
+    "a": "思考 Token 属于输出，占用输出额度并计费。Anthropic 要求 budget_tokens 小于 max_tokens；OpenAI 推理模型应通过 max_completion_tokens/max_output_tokens 为推理与回答共同留足空间，否则可能推理用尽额度而无可见回答。"
+   },
+   {
+    "q": "如何为产品选择默认档位？",
+    "a": "用代表性任务集在各档位上测准确率、延迟与成本，找收益拐点；交互式路径偏低档，离线或高价值任务偏高档；再用路由或失败升档机制处理难例，并持续监控。"
+   },
+   {
+    "q": "为什么更多思考不一定更好？",
+    "a": "简单任务上收益饱和，只增加延迟与费用；过度思考可能偏离或产生过度复杂的方案；有研究报告在某些任务上更长推理反而降低准确率。应以评测数据为准。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Anthropic：Extended thinking",
+    "url": "https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking"
+   },
+   {
+    "title": "OpenAI：Reasoning models guide",
+    "url": "https://platform.openai.com/docs/guides/reasoning"
+   },
+   {
+    "title": "Gemini API：Thinking",
+    "url": "https://ai.google.dev/gemini-api/docs/thinking"
+   }
+  ]
+ },
+ {
+  "slug": "diffusion-models",
+  "def": "扩散模型（Diffusion Model）是一类生成模型：训练时学习逆转「逐步向数据加噪」的过程，生成时从纯噪声出发，迭代去噪得到图像、视频或音频。Stable Diffusion 等潜空间扩散在压缩后的潜变量上去噪以降低成本，并通过文本编码器与无分类器引导实现文生图。它是当前主流图像与视频生成的基础方法之一。",
+  "how": [
+   "前向过程：按预设噪声调度，逐步向训练图像添加高斯噪声，直到接近纯噪声。",
+   "训练：网络（U-Net 或 Transformer）学习在给定时间步和条件下预测所加噪声（或等价目标）。",
+   "条件注入：文本经编码器（如 CLIP、T5）转为向量，通过交叉注意力等方式引导去噪方向。",
+   "采样：从随机噪声开始，由调度器按若干步迭代去噪；步数越少越快，但质量可能下降。",
+   "潜空间扩散先用 VAE 把图像压缩到潜空间，在潜空间去噪后再解码回像素，显著降低显存与计算。"
+  ],
+  "terms": [
+   {
+    "t": "去噪网络 (Denoiser)",
+    "d": "预测并去除噪声的神经网络，常用 U-Net 或 DiT。"
+   },
+   {
+    "t": "调度器 (Scheduler / Sampler)",
+    "d": "决定每步噪声水平与更新规则的算法。"
+   },
+   {
+    "t": "无分类器引导 (CFG)",
+    "d": "混合有条件与无条件预测，guidance_scale 越大越贴合提示。"
+   },
+   {
+    "t": "潜空间 (Latent Space)",
+    "d": "VAE 压缩后的低维表示，在其中去噪更省算力。"
+   },
+   {
+    "t": "种子 (Seed)",
+    "d": "初始噪声的随机种子，固定后可复现相同结果。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "用 diffusers 文生图",
+   "src": "# pip install diffusers transformers accelerate torch\nimport torch\nfrom diffusers import StableDiffusionPipeline\n\npipe = StableDiffusionPipeline.from_pretrained(\n    \"stable-diffusion-v1-5/stable-diffusion-v1-5\",\n    torch_dtype=torch.float16,\n).to(\"cuda\")\n\ngenerator = torch.Generator(\"cuda\").manual_seed(42)   # 固定种子可复现\nimage = pipe(\n    prompt=\"a cozy bubble tea shop at night, watercolor, warm light\",\n    negative_prompt=\"blurry, extra fingers, watermark\",\n    num_inference_steps=30,     # 去噪步数\n    guidance_scale=7.5,         # CFG 强度\n    generator=generator,\n).images[0]\nimage.save(\"shop.png\")",
+   "note": "需 NVIDIA GPU；使用前请阅读模型许可证。步数、CFG 与种子是最常调的三个参数。"
+  },
+  "table": {
+   "title": "关键采样参数",
+   "head": [
+    "参数",
+    "作用",
+    "过大/过小的影响"
+   ],
+   "rows": [
+    [
+     "num_inference_steps",
+     "去噪迭代次数",
+     "过少粗糙，过多变慢且收益递减"
+    ],
+    [
+     "guidance_scale",
+     "贴合提示的强度",
+     "过大过饱和失真，过小偏离提示"
+    ],
+    [
+     "seed",
+     "初始噪声",
+     "固定可复现，改变得到不同构图"
+    ],
+    [
+     "分辨率",
+     "输出尺寸",
+     "偏离训练分辨率易出现重复与畸变"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "本地开放权重模型",
+    "pros": "可控、可微调（LoRA）、无按张费用",
+    "cons": "需 GPU 与调参经验",
+    "when": "批量生成、风格定制"
+   },
+   {
+    "opt": "托管图像 API",
+    "pros": "质量高、免部署",
+    "cons": "按次计费，内容政策受限",
+    "when": "产品集成、低运维"
+   },
+   {
+    "opt": "少步蒸馏模型",
+    "pros": "一到数步出图，速度快",
+    "cons": "细节与多样性可能下降",
+    "when": "实时预览、交互式生成"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "CFG 调得很高以求「更听话」",
+    "fix": "在常用范围内调整，并改进提示词本身"
+   },
+   {
+    "bad": "在远离训练分辨率的尺寸直接生成",
+    "fix": "按模型原生分辨率生成，再放大或用分块方法"
+   },
+   {
+    "bad": "忽视模型许可证与生成内容的版权、肖像风险",
+    "fix": "核对许可证与平台政策，建立内容审核"
+   },
+   {
+    "bad": "不记录种子与参数，好结果无法复现",
+    "fix": "保存提示、参数、种子与模型版本"
+   }
+  ],
+  "checklist": [
+   "模型许可证允许当前用途",
+   "记录提示、种子、参数与模型版本",
+   "生成内容有安全审核",
+   "按原生分辨率生成",
+   "评估了显存与单张耗时",
+   "输出标注 AI 生成（如需合规）"
+  ],
+  "interview": [
+   {
+    "q": "扩散模型和 GAN 相比有什么优势与代价？",
+    "a": "扩散模型训练更稳定、模式覆盖更好、多样性高，且易于加入文本等条件；代价是采样需多步迭代、推理较慢，因此出现了更快的调度器、蒸馏与一致性模型等加速方法。"
+   },
+   {
+    "q": "无分类器引导是怎么工作的？",
+    "a": "训练时随机丢弃条件，使同一网络学会有条件和无条件预测；采样时把两者按 guidance_scale 外推组合，放大条件方向的影响，换取更贴合提示但多样性下降。"
+   },
+   {
+    "q": "为什么要在潜空间做扩散？",
+    "a": "像素空间维度高，迭代去噪计算与显存开销大；先用 VAE 压缩到低维潜空间，在其中去噪再解码，能大幅降低成本，同时保留感知质量，这是 Latent Diffusion 的核心思想。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Ho et al. 2020：DDPM",
+    "url": "https://arxiv.org/abs/2006.11239"
+   },
+   {
+    "title": "Rombach et al. 2021：Latent Diffusion Models",
+    "url": "https://arxiv.org/abs/2112.10752"
+   },
+   {
+    "title": "Ho & Salimans 2022：Classifier-Free Guidance",
+    "url": "https://arxiv.org/abs/2207.12598"
+   },
+   {
+    "title": "Hugging Face Diffusers 文档",
+    "url": "https://huggingface.co/docs/diffusers/index"
+   }
+  ]
+ },
+ {
+  "slug": "layered-architecture",
+  "def": "分层架构（Layered Architecture）按职责把系统划分为若干水平层，典型为表现层、业务（领域）层、数据访问层，每层只依赖其下方的层并通过明确接口交互。它是最常见的应用架构风格，通过关注点分离降低修改影响面、方便测试与替换实现；六边形、整洁架构等可视为其依赖方向更严格的演进。",
+  "how": [
+   "表现层处理 HTTP/UI 交互：解析请求、校验格式、调用业务层并把结果转成响应。",
+   "业务层承载规则与用例编排，不关心数据来自哪个数据库，也不关心结果如何展示。",
+   "数据访问层（Repository/DAO）封装 SQL、ORM 或外部 API 调用，向上提供领域对象。",
+   "依赖自上而下单向流动；严格分层禁止跨层调用，宽松分层允许跳过中间层。",
+   "层间传递 DTO 或领域对象，避免把数据库实体或框架对象泄漏到上层。"
+  ],
+  "terms": [
+   {
+    "t": "关注点分离 (Separation of Concerns)",
+    "d": "不同职责放在不同模块，降低相互影响。"
+   },
+   {
+    "t": "仓储模式 (Repository)",
+    "d": "以集合式接口封装数据持久化细节。"
+   },
+   {
+    "t": "服务层 (Service Layer)",
+    "d": "定义应用用例边界、编排业务逻辑的层。"
+   },
+   {
+    "t": "DTO (Data Transfer Object)",
+    "d": "层间或跨进程传递数据的简单对象。"
+   },
+   {
+    "t": "污水池反模式 (Sinkhole)",
+    "d": "请求穿过各层却几乎不做处理，分层只增加样板代码。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "三层结构的最小示例",
+   "src": "import sqlite3\n\n# 数据访问层：只管怎么存取\nclass UserRepo:\n    def __init__(self, conn: sqlite3.Connection):\n        self.conn = conn\n    def find_by_email(self, email: str):\n        return self.conn.execute(\n            \"SELECT id, email FROM users WHERE email = ?\", (email,)).fetchone()\n    def insert(self, email: str) -> int:\n        cur = self.conn.execute(\"INSERT INTO users(email) VALUES (?)\", (email,))\n        return cur.lastrowid\n\n# 业务层：只管规则，不写 SQL、不碰 HTTP\nclass UserService:\n    def __init__(self, repo: UserRepo):\n        self.repo = repo\n    def register(self, email: str) -> int:\n        email = email.strip().lower()\n        if self.repo.find_by_email(email):\n            raise ValueError(\"邮箱已注册\")\n        return self.repo.insert(email)\n\n# 表现层：只管输入输出格式\ndef register_handler(body: dict, service: UserService) -> dict:\n    try:\n        return {\"status\": 201, \"id\": service.register(body[\"email\"])}\n    except ValueError as e:\n        return {\"status\": 409, \"error\": str(e)}",
+   "note": "换数据库只改 UserRepo；业务规则可脱离 HTTP 和真实数据库进行单元测试。"
+  },
+  "table": {
+   "title": "各层职责边界",
+   "head": [
+    "层",
+    "负责",
+    "不应包含"
+   ],
+   "rows": [
+    [
+     "表现层",
+     "路由、参数校验、序列化",
+     "业务规则、SQL"
+    ],
+    [
+     "业务层",
+     "规则、用例、事务边界",
+     "HTTP 细节、SQL 字符串"
+    ],
+    [
+     "数据访问层",
+     "查询、持久化、映射",
+     "业务决策"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "经典分层",
+    "pros": "易理解、团队上手快",
+    "cons": "业务层常依赖数据层实现细节",
+    "when": "中小型 CRUD 应用"
+   },
+   {
+    "opt": "六边形/整洁架构",
+    "pros": "业务核心不依赖基础设施，易测易换",
+    "cons": "接口与样板代码更多",
+    "when": "业务复杂、生命周期长"
+   },
+   {
+    "opt": "不分层脚本式",
+    "pros": "最快写出原型",
+    "cons": "规模变大后难维护",
+    "when": "一次性工具、原型验证"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在控制器或页面组件里直接写 SQL",
+    "fix": "数据访问集中到仓储层，上层只调接口"
+   },
+   {
+    "bad": "ORM 实体一路传到前端响应",
+    "fix": "在边界转换为 DTO，避免泄漏字段与懒加载问题"
+   },
+   {
+    "bad": "业务逻辑散落在仓储层的查询里",
+    "fix": "仓储只做数据存取，规则判断放业务层"
+   },
+   {
+    "bad": "为简单功能强行堆五六层空壳",
+    "fix": "层数匹配复杂度，无逻辑的层可合并"
+   }
+  ],
+  "checklist": [
+   "表现层无 SQL 与业务规则",
+   "依赖方向自上而下单向",
+   "业务层可脱离数据库单测",
+   "层间传 DTO 而非框架对象",
+   "目录结构反映分层",
+   "规则文件告知 AI 分层约定"
+  ],
+  "interview": [
+   {
+    "q": "分层架构和六边形架构的核心区别？",
+    "a": "经典分层中业务层依赖数据访问层，依赖方向指向基础设施；六边形架构让业务核心定义端口接口，数据库、HTTP 等适配器实现这些接口，依赖指向核心，因此替换基础设施和单测更容易。"
+   },
+   {
+    "q": "如何防止分层在演进中被破坏？",
+    "a": "用目录与包可见性约束；引入依赖规则检查工具在 CI 中拦截违规导入；Code Review 关注跨层调用；在规则文件中向 AI Agent 写明分层约定和禁止事项。"
+   },
+   {
+    "q": "事务边界应放在哪一层？",
+    "a": "通常放在业务（服务）层的用例方法上：一个用例对应一个事务，保证多次仓储操作的原子性。放在数据访问层粒度太细，放在控制器层又把业务语义泄露到表现层。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Martin Fowler：Presentation Domain Data Layering",
+    "url": "https://martinfowler.com/bliki/PresentationDomainDataLayering.html"
+   },
+   {
+    "title": "Microsoft：Common web application architectures",
+    "url": "https://learn.microsoft.com/en-us/dotnet/architecture/modern-web-apps-azure/common-web-application-architectures"
+   },
+   {
+    "title": "Martin Fowler：Service Layer",
+    "url": "https://martinfowler.com/eaaCatalog/serviceLayer.html"
+   }
+  ]
+ },
+ {
+  "slug": "coupling-and-cohesion",
+  "def": "耦合（Coupling）衡量模块之间相互依赖的程度，内聚（Cohesion）衡量一个模块内部元素服务于同一目的的程度。这对概念源自 20 世纪 70 年代的结构化设计，是评价模块划分质量的核心标准：追求低耦合、高内聚，使变更局部化、模块可独立理解、测试与替换。",
+  "how": [
+   "耦合有强弱之分：从共享全局状态、依赖内部实现，到仅通过稳定接口与数据传递，依赖越隐式越强。",
+   "内聚也有高低：按功能单一目的组织最高，按时间、偶然拼凑组织最低。",
+   "变更影响面是直观度量：改一个需求需要触及的模块越多，说明耦合越高或内聚越低。",
+   "可用传入/传出依赖数量等指标量化包的耦合与稳定性，辅助发现「被所有人依赖又频繁变化」的热点。",
+   "降低耦合的常用手段：依赖接口而非实现、依赖注入、事件解耦、明确的模块边界与公开 API。"
+  ],
+  "terms": [
+   {
+    "t": "传入耦合 (Afferent Coupling, Ca)",
+    "d": "依赖该模块的外部模块数量。"
+   },
+   {
+    "t": "传出耦合 (Efferent Coupling, Ce)",
+    "d": "该模块依赖的外部模块数量。"
+   },
+   {
+    "t": "不稳定度 (Instability)",
+    "d": "I = Ce/(Ca+Ce)，越接近 1 越容易受外部变化影响。"
+   },
+   {
+    "t": "共生性 (Connascence)",
+    "d": "描述两段代码需一起修改的耦合类型与强度的框架。"
+   },
+   {
+    "t": "单一职责原则 (SRP)",
+    "d": "一个模块只应有一个引起它变化的原因，与高内聚相通。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "从紧耦合到依赖接口",
+   "src": "from typing import Protocol\n\n# 紧耦合：订单服务直接 new 具体的邮件实现，还读全局配置\nclass SmtpMailer:\n    def send(self, to: str, body: str) -> None: ...\n\nclass OrderServiceBad:\n    def place(self, user_email: str) -> None:\n        SmtpMailer().send(user_email, \"下单成功\")  # 换短信/测试都得改这里\n\n# 低耦合：依赖抽象接口，由外部注入实现\nclass Notifier(Protocol):\n    def send(self, to: str, body: str) -> None: ...\n\nclass OrderService:\n    def __init__(self, notifier: Notifier):\n        self.notifier = notifier\n    def place(self, user_email: str) -> None:\n        # 高内聚：只做下单相关的事\n        self.notifier.send(user_email, \"下单成功\")\n\nclass FakeNotifier:            # 测试替身\n    def __init__(self): self.sent = []\n    def send(self, to, body): self.sent.append((to, body))\n\nsvc = OrderService(FakeNotifier())\nsvc.place(\"a@example.com\")",
+   "note": "依赖接口 + 注入实现后，换通知渠道或写单元测试都无需改动 OrderService。"
+  },
+  "table": {
+   "title": "耦合类型由强到弱",
+   "head": [
+    "类型",
+    "表现",
+    "改进方向"
+   ],
+   "rows": [
+    [
+     "内容耦合",
+     "直接改另一模块的内部数据",
+     "通过公开方法访问"
+    ],
+    [
+     "公共耦合",
+     "共享全局变量",
+     "显式传参或封装状态"
+    ],
+    [
+     "控制耦合",
+     "传标志位控制对方逻辑分支",
+     "拆分为多个专门方法"
+    ],
+    [
+     "数据耦合",
+     "只传递必要的数据",
+     "理想状态之一"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "抽象接口解耦",
+    "pros": "可替换、易测试",
+    "cons": "间接层增多，阅读跳转多",
+    "when": "实现可能变化或需测试替身"
+   },
+   {
+    "opt": "直接调用具体实现",
+    "pros": "简单直白",
+    "cons": "变更与测试成本高",
+    "when": "稳定且只有一种实现"
+   },
+   {
+    "opt": "事件/消息解耦",
+    "pros": "发布方不知道订阅方，扩展容易",
+    "cons": "调用链不直观，调试与一致性更难",
+    "when": "跨模块副作用多"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "为解耦给每个类都加接口",
+    "fix": "只在有多种实现、需测试替身或边界处抽象"
+   },
+   {
+    "bad": "utils/common 模块无限膨胀",
+    "fix": "按领域拆分，杜绝「什么都放」的低内聚模块"
+   },
+   {
+    "bad": "表面拆成多个微服务，却共享同一数据库表",
+    "fix": "按数据所有权划分边界，通过 API 或事件交互"
+   },
+   {
+    "bad": "让 AI 跨十几个文件做小改动而不审视结构",
+    "fix": "把改动面过大视为耦合信号，先重构边界"
+   }
+  ],
+  "checklist": [
+   "模块职责能用一句话说明",
+   "无共享可变全局状态",
+   "跨模块通过公开接口访问",
+   "无循环依赖",
+   "典型需求的改动面较小",
+   "核心业务可用测试替身单测"
+  ],
+  "interview": [
+   {
+    "q": "如何在代码评审中识别高耦合？",
+    "a": "看一个需求是否改动大量文件；是否有循环依赖、共享全局状态；是否访问其他模块的内部字段；是否频繁传布尔标志控制对方行为；测试是否必须启动大量真实依赖。"
+   },
+   {
+    "q": "微服务一定比单体耦合低吗？",
+    "a": "不一定。服务若同步链式调用、共享数据库或必须同时发布，就是「分布式单体」，耦合不降反增还多了网络故障。耦合取决于边界划分，而非部署单元数量；模块化单体同样能做到低耦合。"
+   },
+   {
+    "q": "高内聚和单一职责原则是什么关系？",
+    "a": "二者相通：单一职责强调一个模块只有一个变化原因，高内聚强调模块内元素服务于同一目的。职责混杂的模块会因多个原因频繁变化，也意味着内聚低。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Wikipedia：Coupling (computer programming)",
+    "url": "https://en.wikipedia.org/wiki/Coupling_(computer_programming)"
+   },
+   {
+    "title": "Wikipedia：Cohesion (computer science)",
+    "url": "https://en.wikipedia.org/wiki/Cohesion_(computer_science)"
+   },
+   {
+    "title": "Connascence.io",
+    "url": "https://connascence.io/"
+   }
+  ]
+ },
+ {
+  "slug": "async-await-and-promises",
+  "def": "Promise 是表示异步操作最终结果（成功值或失败原因）的对象，async/await 是基于 Promise 的语法糖，让异步代码以接近同步的顺序书写。它属于语言运行时的并发模型层：JavaScript 单线程通过事件循环调度回调，Python asyncio 也采用类似的协程模型。网络请求、文件读写、LLM API 调用都依赖它。",
+  "how": [
+   "Promise 有三种状态：pending、fulfilled、rejected，状态一旦确定不可再变。",
+   "then/catch 注册的回调在 Promise 敲定后作为微任务进入队列，由事件循环在当前同步代码执行完后调度。",
+   "async 函数总是返回 Promise；await 暂停当前函数，等待 Promise 敲定后再恢复，期间线程可处理其他任务。",
+   "await 遇到 rejected 会抛出异常，可用 try/catch 捕获；未处理的 rejection 会触发运行时警告或进程退出。",
+   "Promise.all、allSettled、race、any 组合多个 Promise，实现并行、容错与超时竞速。"
+  ],
+  "terms": [
+   {
+    "t": "微任务 (Microtask)",
+    "d": "Promise 回调所在的队列，优先于定时器等宏任务执行。"
+   },
+   {
+    "t": "Promise.all",
+    "d": "全部成功才成功，任一失败立即失败。"
+   },
+   {
+    "t": "Promise.allSettled",
+    "d": "等待全部结束，返回每个的成功或失败结果。"
+   },
+   {
+    "t": "AbortController",
+    "d": "用于取消 fetch 等异步操作的标准接口。"
+   },
+   {
+    "t": "未处理的拒绝 (Unhandled Rejection)",
+    "d": "没有被 catch 的失败 Promise，Node.js 默认会终止进程。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "并行、容错与超时",
+   "src": "// 1) 串行 vs 并行：互不依赖的请求应并行\nasync function loadDashboard(userId) {\n  const [user, orders] = await Promise.all([\n    fetchJson(`/api/users/${userId}`),\n    fetchJson(`/api/orders?user=${userId}`),\n  ]);\n  return { user, orders };\n}\n\n// 2) 带超时与错误处理的请求\nasync function fetchJson(url) {\n  const res = await fetch(url, { signal: AbortSignal.timeout(5000) }); // 5 秒超时\n  if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);\n  return res.json();\n}\n\n// 3) 部分失败也要继续：allSettled\nconst results = await Promise.allSettled(urls.map(fetchJson));\nconst ok = results.filter((r) => r.status === \"fulfilled\").map((r) => r.value);\n\n// 4) 常见坑：forEach 不会等待 async 回调\n// items.forEach(async (it) => await save(it));   // 错：不等待、错误也丢失\nfor (const it of items) await save(it);          // 需要顺序时用 for...of",
+   "note": "fetch 只在网络失败时 reject，HTTP 4xx/5xx 需手动检查 res.ok；顶层 await 需 ES 模块。"
+  },
+  "table": {
+   "title": "Promise 组合器对比",
+   "head": [
+    "方法",
+    "何时完成",
+    "失败行为",
+    "适用"
+   ],
+   "rows": [
+    [
+     "Promise.all",
+     "全部成功",
+     "任一失败即失败",
+     "都必须成功"
+    ],
+    [
+     "Promise.allSettled",
+     "全部结束",
+     "不失败，逐个报告",
+     "批量容错"
+    ],
+    [
+     "Promise.race",
+     "第一个结束",
+     "第一个失败即失败",
+     "超时竞速"
+    ],
+    [
+     "Promise.any",
+     "第一个成功",
+     "全部失败才失败",
+     "多源冗余请求"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "顺序 await",
+    "pros": "逻辑清晰，便于依赖前一步结果",
+    "cons": "总耗时是各步之和",
+    "when": "后一步依赖前一步"
+   },
+   {
+    "opt": "Promise.all 并行",
+    "pros": "总耗时约等于最慢一个",
+    "cons": "并发过高可能触发限流",
+    "when": "相互独立的少量请求"
+   },
+   {
+    "opt": "限并发池",
+    "pros": "兼顾速度与下游压力",
+    "cons": "需额外实现或依赖库",
+    "when": "批量调用 LLM 或第三方 API"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "漏写 await，拿到 Promise 对象或错误未被捕获",
+    "fix": "开启 no-floating-promises 等 Lint 规则与 TypeScript 检查"
+   },
+   {
+    "bad": "在 forEach/map 中用 async 回调期望顺序执行",
+    "fix": "顺序用 for...of + await，并行用 Promise.all(map)"
+   },
+   {
+    "bad": "无超时的外部请求导致请求堆积",
+    "fix": "为 fetch 设置 AbortSignal.timeout 或使用带超时的客户端"
+   },
+   {
+    "bad": "批量 Promise.all 上千个 LLM 请求触发 429",
+    "fix": "限制并发数并对 429 做退避重试"
+   }
+  ],
+  "checklist": [
+   "无悬空 Promise（Lint 已开启）",
+   "所有外部调用有超时",
+   "异步错误被捕获并记录",
+   "独立请求已并行化",
+   "批量请求有并发上限",
+   "HTTP 错误状态被显式处理"
+  ],
+  "interview": [
+   {
+    "q": "await 会阻塞线程吗？",
+    "a": "不会。await 只暂停当前 async 函数的执行，把后续逻辑作为回调交还事件循环，线程可继续处理其他任务；但 await 之前或之后的同步重计算仍会阻塞事件循环。"
+   },
+   {
+    "q": "以下输出顺序是什么：setTimeout、Promise.then、同步 log？",
+    "a": "先输出同步 log；当前任务结束后清空微任务队列，执行 Promise.then；最后才执行 setTimeout 的宏任务回调。原因是微任务在每个宏任务之后、下一个宏任务之前全部执行。"
+   },
+   {
+    "q": "如何控制大量异步任务的并发？",
+    "a": "实现或使用并发池：维持固定数量的进行中 Promise，完成一个再启动下一个；配合超时、重试与退避；Python 中可用 asyncio.Semaphore，JavaScript 可用 p-limit 等库。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "MDN：Using promises",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises"
+   },
+   {
+    "title": "MDN：async function",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function"
+   },
+   {
+    "title": "Python 文档：asyncio",
+    "url": "https://docs.python.org/3/library/asyncio.html"
+   }
+  ]
+ },
+ {
+  "slug": "timezones-and-timestamps",
+  "def": "时间戳表示时间线上的一个绝对瞬间（如 Unix 时间：自 1970-01-01T00:00:00Z 起的秒数），时区则是把瞬间映射为当地钟面时间的规则，包含 UTC 偏移与夏令时变化，由 IANA 时区数据库维护。正确区分「瞬间」与「本地时间」，是避免跨时区显示错误、定时任务漂移和数据错位的基础。",
+  "how": [
+   "系统内部用 UTC 瞬间存储与计算（Unix 时间戳或带时区的类型），与服务器所在地无关。",
+   "传输使用 ISO 8601/RFC 3339 格式并带偏移，如 2026-10-20T08:00:00Z 或 +08:00。",
+   "展示时按用户的 IANA 时区（如 Asia/Shanghai）转换；偏移会随夏令时变化，不能写死。",
+   "对「每天早上 9 点」这类本地规则，需保存时区名称，在每次计算时按当日规则换算成 UTC。",
+   "PostgreSQL 的 timestamptz 存储 UTC 瞬间，输出时按会话 TimeZone 转换；timestamp 不带时区信息。"
+  ],
+  "terms": [
+   {
+    "t": "UTC",
+    "d": "协调世界时，全球时间基准，没有夏令时。"
+   },
+   {
+    "t": "Unix 时间戳 (Epoch Time)",
+    "d": "自 1970-01-01 UTC 起经过的秒数（或毫秒数）。"
+   },
+   {
+    "t": "IANA 时区数据库 (tz database)",
+    "d": "记录各地区历史与当前时区规则，以 Area/City 命名。"
+   },
+   {
+    "t": "朴素时间 (Naive Datetime)",
+    "d": "不含时区信息的日期时间，无法确定对应哪个瞬间。"
+   },
+   {
+    "t": "RFC 3339",
+    "d": "ISO 8601 的互联网时间格式子集，要求带时区偏移。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Python 中正确处理时区",
+   "src": "from datetime import datetime, timedelta, timezone\nfrom zoneinfo import ZoneInfo   # Python 3.9+\n\n# 1) 取当前时间：用带时区的 UTC（utcnow() 返回朴素时间，3.12 起已弃用）\nnow = datetime.now(timezone.utc)\nprint(now.isoformat())                      # 如 2026-10-20T08:00:00+00:00\n\n# 2) 展示时转换为用户时区\nprint(now.astimezone(ZoneInfo(\"Asia/Shanghai\")))\n\n# 3) 解析带偏移的字符串\nt = datetime.fromisoformat(\"2026-10-20T16:00:00+08:00\")\nprint(t.astimezone(timezone.utc))           # 2026-10-20 08:00:00+00:00\n\n# 4) 夏令时陷阱：本地时间加 1 天，不一定等于加 24 小时\nny = ZoneInfo(\"America/New_York\")\nbefore = datetime(2026, 3, 7, 12, 0, tzinfo=ny)   # 美东 2026-03-08 开始夏令时\nafter = before + timedelta(days=1)                # 墙上时间仍是 12:00\nprint((after - before), after.utcoffset())       # 1 day，偏移已从 -05:00 变为 -04:00\nprint(after.astimezone(timezone.utc) - before.astimezone(timezone.utc))  # 23:00:00",
+   "note": "同一时区内相减按墙上时间计；换算成 UTC 后才是真实间隔。周期规则要保存时区名。"
+  },
+  "table": {
+   "title": "时间数据该存什么",
+   "head": [
+    "场景",
+    "存储方式",
+    "原因"
+   ],
+   "rows": [
+    [
+     "事件发生时刻",
+     "UTC 瞬间（timestamptz）",
+     "全球唯一、可比较"
+    ],
+    [
+     "未来的本地预约",
+     "本地时间 + IANA 时区名",
+     "时区规则可能变化"
+    ],
+    [
+     "生日等纯日期",
+     "date 类型",
+     "与时区无关"
+    ],
+    [
+     "接口传输",
+     "RFC 3339 字符串带偏移",
+     "无歧义、可读"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "存 Unix 整数时间戳",
+    "pros": "紧凑、比较快、跨语言",
+    "cons": "不可读，秒/毫秒易混",
+    "when": "日志、高性能计算"
+   },
+   {
+    "opt": "存 timestamptz",
+    "pros": "数据库原生时区转换与函数",
+    "cons": "依赖会话时区设置展示",
+    "when": "关系数据库业务表"
+   },
+   {
+    "opt": "存本地时间 + 时区名",
+    "pros": "正确表达未来本地规则",
+    "cons": "计算时需转换，查询复杂",
+    "when": "日程、闹钟、周期任务"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "存储朴素本地时间，不知道是哪个时区",
+    "fix": "存 UTC 瞬间或明确带时区的类型"
+   },
+   {
+    "bad": "把偏移量（+08:00）当时区存储",
+    "fix": "存 IANA 名称，偏移会随夏令时与政策变化"
+   },
+   {
+    "bad": "前端 new Date('2026-10-20') 与 new Date('2026-10-20T00:00') 解析时区不同",
+    "fix": "前者按 UTC、后者按本地解析；统一传完整 RFC 3339 字符串"
+   },
+   {
+    "bad": "秒级与毫秒级时间戳混用",
+    "fix": "约定单位并在字段名中注明，如 created_at_ms"
+   }
+  ],
+  "checklist": [
+   "数据库存储 UTC 或 timestamptz",
+   "接口时间均为带偏移的 RFC 3339",
+   "用户时区以 IANA 名称保存",
+   "定时任务明确调度时区",
+   "测试覆盖夏令时切换日期",
+   "服务器与容器时区配置一致"
+  ],
+  "interview": [
+   {
+    "q": "为什么不能把 +08:00 当作用户时区存储？",
+    "a": "偏移只描述某一时刻与 UTC 的差。很多地区有夏令时，偏移随季节变化，政府也可能调整时区规则。保存 IANA 名称（如 America/New_York），由时区数据库在具体日期计算正确偏移。"
+   },
+   {
+    "q": "PostgreSQL 中 timestamp 与 timestamptz 的区别？",
+    "a": "timestamptz 输入时按会话时区或显式偏移换算为 UTC 存储，输出时再转为会话时区，代表绝对瞬间；timestamp 只存钟面值、不含时区，无法确定对应哪个瞬间。业务时刻通常应使用 timestamptz。"
+   },
+   {
+    "q": "「每天北京时间 9 点提醒」应该怎么存和算？",
+    "a": "存本地时间 09:00 与时区 Asia/Shanghai，每次调度时用时区库算出下一次对应的 UTC 瞬间。若直接存一个 UTC 时刻，在有夏令时的地区会出现整小时漂移。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 3339：Date and Time on the Internet",
+    "url": "https://www.rfc-editor.org/rfc/rfc3339"
+   },
+   {
+    "title": "IANA Time Zone Database",
+    "url": "https://www.iana.org/time-zones"
+   },
+   {
+    "title": "Python 文档：zoneinfo",
+    "url": "https://docs.python.org/3/library/zoneinfo.html"
+   },
+   {
+    "title": "PostgreSQL 文档：Date/Time Types",
+    "url": "https://www.postgresql.org/docs/current/datatype-datetime.html"
+   }
+  ]
+ },
+ {
+  "slug": "technical-debt",
+  "def": "技术债（Technical Debt）由 Ward Cunningham 提出，比喻为了短期交付而采取的次优设计或实现：它像借款一样换来当下速度，但之后每次修改都要支付「利息」（额外成本），直到通过重构「还本」。它属于工程管理层概念，AI 生成代码速度快、一致性差，更容易在不知不觉中累积技术债。",
+  "how": [
+   "产生：赶工期的捷径、缺少测试、复制粘贴、过时依赖、设计随需求漂移而不再匹配。",
+   "计息：后续改动需理解和绕开这些问题，表现为开发变慢、缺陷增多、新人上手难。",
+   "识别：变更频繁且复杂度高的热点文件、反复出问题的模块、静态分析告警与过期依赖。",
+   "管理：把债务显式登记为待办，评估「利息」与修复成本，排入迭代持续偿还。",
+   "预防：代码评审、测试、规则文件与自动化检查，减少无意识的新债。"
+  ],
+  "terms": [
+   {
+    "t": "技术债象限 (Debt Quadrant)",
+    "d": "Fowler 按鲁莽/审慎 × 有意/无意把技术债分为四类。"
+   },
+   {
+    "t": "重构 (Refactoring)",
+    "d": "不改变外部行为地改善代码内部结构。"
+   },
+   {
+    "t": "代码异味 (Code Smell)",
+    "d": "暗示深层设计问题的表面特征，如超长函数、重复代码。"
+   },
+   {
+    "t": "热点分析 (Hotspot Analysis)",
+    "d": "结合修改频率与复杂度定位最值得偿还的代码。"
+   },
+   {
+    "t": "童子军规则 (Boy Scout Rule)",
+    "d": "每次离开时让代码比来时更整洁一点。"
+   }
+  ],
+  "code": {
+   "lang": "bash",
+   "title": "定位技术债热点",
+   "src": "# 1) 近半年改动最频繁的文件（改得多 = 利息高的候选）\ngit log --since=\"6 months ago\" --format= --name-only \\\n  | grep -v '^$' | sort | uniq -c | sort -rn | head -15\n\n# 2) 代码里自己标记的债务\ngrep -rnE \"TODO|FIXME|HACK\" src/ | wc -l\n\n# 3) 复杂度检查（Python：ruff 的 McCabe 规则 C901）\nruff check src/ --select C901\n\n# 4) 过期依赖\nnpm outdated          # Node 项目\npip list --outdated   # Python 项目\n\n# 5) 把结果交给 Agent 做优先级排序\n# claude -p \"根据以上热点与告警，列出前 5 项技术债及修复方案\"",
+   "note": "高修改频率 × 高复杂度的交集，通常是投入产出比最高的偿还对象。"
+  },
+  "table": {
+   "title": "技术债类型与利息",
+   "head": [
+    "类型",
+    "典型表现",
+    "利息体现"
+   ],
+   "rows": [
+    [
+     "代码债",
+     "重复代码、超长函数",
+     "改一处漏一处"
+    ],
+    [
+     "测试债",
+     "关键路径无测试",
+     "不敢改、回归靠人肉"
+    ],
+    [
+     "架构债",
+     "边界混乱、循环依赖",
+     "小需求牵动大范围"
+    ],
+    [
+     "依赖债",
+     "长期不升级的库",
+     "安全漏洞、升级跨度大"
+    ],
+    [
+     "文档债",
+     "无 README、无决策记录",
+     "新人与 Agent 上手慢"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "有意举债快速上线",
+    "pros": "抢时间窗口、验证需求",
+    "cons": "需计划偿还，否则利息累积",
+    "when": "MVP、市场窗口期（审慎有意型）"
+   },
+   {
+    "opt": "持续小步偿还",
+    "pros": "风险低，不打断交付",
+    "cons": "需团队纪律与时间预留",
+    "when": "长期维护的产品"
+   },
+   {
+    "opt": "大规模重写",
+    "pros": "可彻底更换架构",
+    "cons": "风险高、周期长、易重蹈覆辙",
+    "when": "原系统已无法演进"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "债务只存在口头，从不登记",
+    "fix": "建技术债清单，记录影响、利息与修复估算"
+   },
+   {
+    "bad": "把所有不喜欢的代码都叫技术债",
+    "fix": "以对交付速度与缺陷的实际影响来衡量"
+   },
+   {
+    "bad": "让 AI 生成大量代码而不评审、不补测试",
+    "fix": "要求 Agent 同步写测试，评审重复与偏离约定处"
+   },
+   {
+    "bad": "一次性大重写替代渐进重构",
+    "fix": "采用绞杀者模式逐步替换，保持系统可用"
+   }
+  ],
+  "checklist": [
+   "有登记与排序的技术债清单",
+   "每个迭代预留偿还时间",
+   "热点文件有测试保护",
+   "依赖定期升级",
+   "AI 生成代码经过评审",
+   "重大捷径有决策记录"
+  ],
+  "interview": [
+   {
+    "q": "如何向非技术管理者解释偿还技术债的价值？",
+    "a": "用业务指标说话：功能交付周期变长、线上缺陷与故障增多、新人上手时间延长。把具体债务与这些指标关联，给出修复成本与预期收益，以投资回报而非代码洁癖来论证。"
+   },
+   {
+    "q": "怎样决定先还哪笔债？",
+    "a": "看利息与成本：优先处理修改频繁、缺陷集中、阻碍近期路线图的区域；结合修改频率与复杂度的热点分析；先为其补测试，再小步重构，避免碰很少修改的稳定旧代码。"
+   },
+   {
+    "q": "AI 编码为什么容易加速技术债？",
+    "a": "生成速度快、评审跟不上；模型倾向复制已有模式甚至错误模式；对项目约定不熟导致风格和抽象不一致；容易加功能而少删代码。需规则文件、测试与严格评审来约束。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Martin Fowler：Technical Debt",
+    "url": "https://martinfowler.com/bliki/TechnicalDebt.html"
+   },
+   {
+    "title": "Martin Fowler：Technical Debt Quadrant",
+    "url": "https://martinfowler.com/bliki/TechnicalDebtQuadrant.html"
+   },
+   {
+    "title": "Wikipedia：Technical debt",
+    "url": "https://en.wikipedia.org/wiki/Technical_debt"
+   }
+  ]
+ },
+ {
+  "slug": "redis",
+  "def": "Redis 是基于内存的键值数据存储，提供字符串、哈希、列表、集合、有序集合、流等数据结构，以单线程执行命令保证单条命令原子性。它常用作缓存、会话存储、限流计数器、轻量队列、排行榜与分布式锁，属于缓存与中间件层。2024 年起 Redis 许可证有变化，社区分支 Valkey 也广泛使用。",
+  "how": [
+   "数据驻留内存，命令由单个主线程顺序执行，因此单命令天然原子；网络 I/O 可由多线程处理。",
+   "可为键设置 TTL，到期自动删除；内存达上限时按淘汰策略（如 allkeys-lru）驱逐键。",
+   "持久化可选 RDB 快照与 AOF 追加日志，用于重启恢复，但不应当作唯一数据源。",
+   "高可用通过主从复制 + Sentinel 自动故障转移；Redis Cluster 把键空间分为 16384 个槽分片。",
+   "MULTI/EXEC 事务、Lua 脚本或函数可把多个操作组合为原子执行。"
+  ],
+  "terms": [
+   {
+    "t": "TTL",
+    "d": "键的剩余生存时间，到期后自动删除。"
+   },
+   {
+    "t": "淘汰策略 (Eviction Policy)",
+    "d": "内存满时决定删除哪些键，如 LRU、LFU。"
+   },
+   {
+    "t": "RDB / AOF",
+    "d": "两种持久化方式：定期快照与写命令追加日志。"
+   },
+   {
+    "t": "有序集合 (Sorted Set)",
+    "d": "按分数排序的集合，常用于排行榜和延时队列。"
+   },
+   {
+    "t": "Valkey",
+    "d": "Redis 许可证变更后由 Linux 基金会托管的开源分支。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "缓存、限流与锁",
+   "src": "# pip install redis\nimport json, time, uuid, redis\n\nr = redis.Redis(host=\"localhost\", port=6379, decode_responses=True)\n\n# 1) 旁路缓存：先读缓存，未命中再查库并回填，带 TTL\ndef get_product(pid, load_from_db):\n    key = f\"product:{pid}\"\n    if (cached := r.get(key)) is not None:\n        return json.loads(cached)\n    data = load_from_db(pid)\n    r.set(key, json.dumps(data), ex=300)   # 5 分钟过期\n    return data\n# 2) 固定窗口限流：每用户每分钟最多 60 次\ndef allow(user_id, limit=60):\n    key = f\"rl:{user_id}:{int(time.time() // 60)}\"\n    pipe = r.pipeline()\n    pipe.incr(key)\n    pipe.expire(key, 60)\n    count, _ = pipe.execute()\n    return count <= limit\n\n# 3) 简单互斥锁：NX 保证只有一个持有者，EX 防止死锁\ntoken = str(uuid.uuid4())\nif r.set(\"lock:daily-report\", token, nx=True, ex=30):\n    try:\n        pass  # 执行任务\n    finally:\n        if r.get(\"lock:daily-report\") == token:  # 生产中应用 Lua 脚本原子比较并删除\n            r.delete(\"lock:daily-report\")",
+   "note": "缓存必须带 TTL；锁释放要校验持有者，生产中用 Lua 脚本保证比较与删除的原子性。"
+  },
+  "table": {
+   "title": "数据结构与典型用途",
+   "head": [
+    "结构",
+    "典型命令",
+    "用途"
+   ],
+   "rows": [
+    [
+     "String",
+     "SET/GET/INCR",
+     "缓存、计数器、限流"
+    ],
+    [
+     "Hash",
+     "HSET/HGETALL",
+     "对象字段、会话"
+    ],
+    [
+     "List",
+     "LPUSH/BRPOP",
+     "简单队列"
+    ],
+    [
+     "Sorted Set",
+     "ZADD/ZRANGE",
+     "排行榜、延时任务"
+    ],
+    [
+     "Stream",
+     "XADD/XREADGROUP",
+     "带消费组的消息流"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Redis 作缓存",
+    "pros": "亚毫秒级读写，大幅减轻数据库压力",
+    "cons": "需处理一致性与缓存失效",
+    "when": "读多写少的热点数据"
+   },
+   {
+    "opt": "Redis 作队列",
+    "pros": "部署简单、延迟低",
+    "cons": "持久化与投递保证弱于专业 MQ",
+    "when": "轻量后台任务"
+   },
+   {
+    "opt": "Redis 作主存储",
+    "pros": "极快",
+    "cons": "内存成本高，持久化有丢数据窗口",
+    "when": "可丢失或可重建的数据"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "Redis 无密码监听公网",
+    "fix": "只监听内网，启用 ACL/密码与 TLS，配合安全组"
+   },
+   {
+    "bad": "缓存不设 TTL，内存持续增长",
+    "fix": "所有缓存键设过期时间，并配置 maxmemory 与淘汰策略"
+   },
+   {
+    "bad": "生产环境执行 KEYS * 阻塞主线程",
+    "fix": "用 SCAN 渐进遍历，禁用或重命名危险命令"
+   },
+   {
+    "bad": "存超大值（大 key）导致延迟尖刺",
+    "fix": "拆分大对象，监控大 key，并用 UNLINK 异步删除"
+   }
+  ],
+  "checklist": [
+   "仅内网访问，开启认证",
+   "设置 maxmemory 与淘汰策略",
+   "缓存键均有 TTL 与命名规范",
+   "无 KEYS 等阻塞命令",
+   "确认持久化与高可用方案",
+   "监控内存、命中率与慢日志"
+  ],
+  "interview": [
+   {
+    "q": "Redis 单线程为什么还这么快？",
+    "a": "数据在内存，单条命令多为微秒级；单线程避免锁竞争与上下文切换；使用 I/O 多路复用处理大量连接；数据结构针对内存高度优化。较新版本还可把网络读写交给 I/O 线程。"
+   },
+   {
+    "q": "用 SET NX EX 实现分布式锁有哪些问题？",
+    "a": "释放时必须校验持有者令牌并原子删除；任务超时会导致锁过期后被他人获取，需要续期或使用防护令牌；主从异步复制下故障转移可能丢锁。对正确性要求极高时考虑基于共识的协调服务。"
+   },
+   {
+    "q": "缓存与数据库如何保持一致？",
+    "a": "常用旁路缓存：读时未命中回填，写时先更新数据库再删除缓存；配合 TTL 兜底；高并发下可用延迟双删或基于 CDC 的异步失效。强一致需求则不应依赖缓存读。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Redis 官方文档",
+    "url": "https://redis.io/docs/latest/"
+   },
+   {
+    "title": "Redis 文档：Data types",
+    "url": "https://redis.io/docs/latest/develop/data-types/"
+   },
+   {
+    "title": "Valkey 官网",
+    "url": "https://valkey.io/"
+   }
+  ]
+ },
+ {
+  "slug": "product-analytics",
+  "def": "产品分析（Product Analytics）通过埋点采集用户在产品中的行为事件，结合用户属性做漏斗、留存、路径与分群分析，回答「用户怎么用、在哪流失、哪个改动有效」。它属于数据层与增长体系，核心工件是追踪计划（Tracking Plan）；PostHog、Mixpanel、Amplitude、GA4 是常见工具。",
+  "how": [
+   "定义问题与指标（如激活率、付费转化），据此编写追踪计划：事件名、属性、触发时机、负责人。",
+   "在客户端或服务端调用 SDK 上报事件，携带匿名 ID；用户登录后通过 identify 关联到真实用户 ID。",
+   "事件进入分析平台或数据仓库，按时间、用户与属性建模。",
+   "分析：漏斗看逐步转化，留存看同期群回访，路径看行为序列，分群对比不同用户。",
+   "结论驱动产品决策，并通过 A/B 测试验证因果，而非只看相关性。"
+  ],
+  "terms": [
+   {
+    "t": "追踪计划 (Tracking Plan)",
+    "d": "列明所有事件、属性与含义的规范文档，是埋点的单一事实来源。"
+   },
+   {
+    "t": "漏斗 (Funnel)",
+    "d": "按顺序统计用户在各步骤的转化与流失。"
+   },
+   {
+    "t": "同期群留存 (Cohort Retention)",
+    "d": "按首次使用时间分组，观察各组后续回访比例。"
+   },
+   {
+    "t": "身份关联 (Identify)",
+    "d": "把匿名访客 ID 与登录用户 ID 合并为同一用户。"
+   },
+   {
+    "t": "北极星指标 (North Star Metric)",
+    "d": "最能反映产品为用户创造价值的核心指标。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "用 PostHog 上报关键事件",
+   "src": "// npm install posthog-js\nimport posthog from \"posthog-js\";\n\nposthog.init(\"<项目 API Key>\", {\n  api_host: \"https://us.i.posthog.com\", // 按你所在区域填写\n});\n\n// 登录后关联身份：匿名期间的事件会归到该用户\nfunction onLogin(user) {\n  posthog.identify(user.id, { plan: user.plan }); // 不传邮箱、手机号等敏感信息\n}\n\n// 事件命名统一为「对象_动作」，属性只放分析需要的字段\nfunction onCheckoutStart(cart) {\n  posthog.capture(\"checkout_started\", {\n    item_count: cart.items.length,\n    cart_value: cart.total,\n    source_page: location.pathname,\n  });\n}\n\n// 付费成功等关键事件最好在服务端再上报一次，避免广告拦截导致丢失",
+   "note": "事件名与属性需与追踪计划一致；关键转化事件建议服务端上报，客户端可能被拦截。"
+  },
+  "table": {
+   "title": "客户端与服务端埋点",
+   "head": [
+    "方式",
+    "优点",
+    "缺点",
+    "适合事件"
+   ],
+   "rows": [
+    [
+     "客户端 SDK",
+     "能采集交互细节",
+     "可被拦截、可伪造",
+     "页面浏览、点击"
+    ],
+    [
+     "服务端上报",
+     "可靠、可信",
+     "看不到前端交互",
+     "注册、支付、订阅"
+    ],
+    [
+     "自动采集",
+     "零配置覆盖广",
+     "噪声大、语义弱",
+     "探索性分析"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "SaaS 分析平台",
+    "pros": "开箱即用的漏斗与留存",
+    "cons": "费用随事件量增长，数据在第三方",
+    "when": "早中期团队"
+   },
+   {
+    "opt": "自托管或数仓建模",
+    "pros": "数据自有、可深度定制",
+    "cons": "需数据工程投入",
+    "when": "合规要求高或规模大"
+   },
+   {
+    "opt": "少而精的埋点",
+    "pros": "数据干净，易维护",
+    "cons": "临时问题可能缺数据",
+    "when": "以明确问题驱动"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "没有追踪计划，事件命名五花八门",
+    "fix": "统一命名规范，变更走评审并同步文档"
+   },
+   {
+    "bad": "在事件属性里上报邮箱、手机号等 PII",
+    "fix": "只传内部 ID，按隐私法规获取同意"
+   },
+   {
+    "bad": "登录前后用户被算成两个人",
+    "fix": "登录时调用 identify，退出时 reset"
+   },
+   {
+    "bad": "把相关性当因果做决策",
+    "fix": "关键改动用 A/B 测试验证"
+   }
+  ],
+  "checklist": [
+   "有版本化的追踪计划",
+   "事件命名与属性规范统一",
+   "关键转化在服务端上报",
+   "无 PII 进入分析平台",
+   "已按法规处理用户同意",
+   "上线后校验事件数据质量"
+  ],
+  "interview": [
+   {
+    "q": "如何设计一个新功能的埋点？",
+    "a": "先明确要回答的问题和成功指标；梳理用户路径，选出关键步骤事件；为每个事件定义必要属性与触发条件；写入追踪计划并评审；上线后用实时调试工具与数据校验确认上报正确。"
+   },
+   {
+    "q": "漏斗转化突然下降，你怎么排查？",
+    "a": "先排除数据问题：埋点是否被改、SDK 版本、广告拦截、身份合并；再按渠道、设备、版本、地区分群定位；对照发布记录与实验；最后结合会话回放或用户反馈找到体验原因。"
+   },
+   {
+    "q": "产品分析如何兼顾隐私合规？",
+    "a": "数据最小化，只采集必要字段；不上报 PII 或做脱敏；按地区法规获取同意并支持撤回与删除；设置数据保留期限；选择支持数据驻留或自托管的方案。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostHog 文档",
+    "url": "https://posthog.com/docs"
+   },
+   {
+    "title": "Google Analytics 4：Events",
+    "url": "https://developers.google.com/analytics/devguides/collection/ga4/events"
+   },
+   {
+    "title": "Mixpanel 文档",
+    "url": "https://docs.mixpanel.com/"
+   }
+  ]
+ },
+ {
+  "slug": "dataframes",
+  "def": "数据框（DataFrame）是带列名、按列存储类型化数据的二维表结构，是 pandas、Polars、R 等数据分析工具的核心抽象，支持向量化的筛选、变换、分组聚合与连接。它属于数据处理层：适合在单机内存中处理从几千到数千万行的表格数据，常作为 ETL、分析与机器学习特征工程的工作台。",
+  "how": [
+   "每列是同一类型的数组（整数、浮点、字符串、日期等），按列存储便于向量化计算与压缩。",
+   "读取 CSV、Parquet、数据库等数据源时推断或指定列类型，类型错误是后续计算出错的首要原因。",
+   "运算以整列为单位执行（向量化），底层由 C/Rust 实现，远快于 Python 逐行循环。",
+   "groupby/group_by 按键分组后聚合，merge/join 按键连接多表，语义与 SQL 对应。",
+   "Polars 提供惰性 API：先构建查询计划，collect 时统一优化（谓词下推、投影裁剪）再执行。"
+  ],
+  "terms": [
+   {
+    "t": "向量化 (Vectorization)",
+    "d": "对整列一次性运算，避免 Python 层逐行循环。"
+   },
+   {
+    "t": "dtype",
+    "d": "列的数据类型，决定可用运算与内存占用。"
+   },
+   {
+    "t": "惰性求值 (Lazy Evaluation)",
+    "d": "延迟执行，先优化整个查询计划再计算。"
+   },
+   {
+    "t": "Apache Arrow",
+    "d": "跨语言的列式内存格式，Polars 基于它，pandas 也可选用。"
+   },
+   {
+    "t": "Parquet",
+    "d": "列式存储文件格式，带类型与压缩，比 CSV 更适合分析。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "清洗与聚合：pandas 与 Polars",
+   "src": "# pip install pandas polars\nimport pandas as pd\n\ndf = pd.read_csv(\"sales.csv\", parse_dates=[\"date\"])\ndf.info()                                   # 先看每列类型与空值\n\n# 金额列混有「元」和千分位逗号：清洗后转数值，无法转换的置为 NaN\ndf[\"amount\"] = pd.to_numeric(\n    df[\"amount\"].astype(str).str.replace(\"元\", \"\").str.replace(\",\", \"\"),\n    errors=\"coerce\",\n)\nprint(\"无法解析的金额:\", df[\"amount\"].isna().sum())\n\nmonthly = df.groupby(df[\"date\"].dt.to_period(\"M\"))[\"amount\"].sum()\nprint(monthly)\n\n# Polars 惰性查询：只读取需要的列，过滤下推到扫描阶段\nimport polars as pl\nout = (\n    pl.scan_csv(\"clean_sales.csv\")\n      .filter(pl.col(\"amount\") > 0)\n      .group_by(\"region\")\n      .agg(pl.col(\"amount\").sum().alias(\"total\"))\n      .sort(\"total\", descending=True)\n      .collect()\n)\nprint(out)",
+   "note": "先检查类型与空值再计算；大文件用 Polars 惰性 API 或 Parquet 格式。"
+  },
+  "table": {
+   "title": "pandas 与 Polars 对比",
+   "head": [
+    "维度",
+    "pandas",
+    "Polars"
+   ],
+   "rows": [
+    [
+     "实现",
+     "Python + C 扩展，基于 NumPy",
+     "Rust，基于 Arrow"
+    ],
+    [
+     "执行模式",
+     "立即执行",
+     "立即与惰性两种"
+    ],
+    [
+     "并行",
+     "多数操作单线程",
+     "默认多线程"
+    ],
+    [
+     "生态",
+     "最成熟，库兼容广",
+     "增长快，互转方便"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "pandas",
+    "pros": "生态最全、资料多、AI 生成代码最熟练",
+    "cons": "大数据量时内存与速度受限",
+    "when": "中小数据、需兼容现有库"
+   },
+   {
+    "opt": "Polars",
+    "pros": "多线程、惰性优化、内存效率高",
+    "cons": "API 与 pandas 不同，部分库需转换",
+    "when": "大文件、性能敏感管道"
+   },
+   {
+    "opt": "SQL/数据仓库",
+    "pros": "数据量无单机上限、可共享",
+    "cons": "需基础设施，交互探索稍慢",
+    "when": "超出单机内存或团队共享"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用 for 循环或 apply 逐行处理大表",
+    "fix": "改用向量化表达式或内置方法"
+   },
+   {
+    "bad": "不检查 dtype，数字列被读成字符串",
+    "fix": "读取后先 info/schema，必要时显式指定类型"
+   },
+   {
+    "bad": "对筛选结果切片赋值引发链式赋值问题",
+    "fix": "使用 .loc 一次完成筛选与赋值，或显式 .copy()"
+   },
+   {
+    "bad": "CSV 反复读写丢失类型且很慢",
+    "fix": "中间结果存 Parquet"
+   }
+  ],
+  "checklist": [
+   "读取后检查类型、空值与行数",
+   "清洗规则可复现（脚本而非手工）",
+   "无逐行循环处理大表",
+   "中间结果使用 Parquet",
+   "关键聚合结果做过抽样核对",
+   "依赖版本已锁定"
+  ],
+  "interview": [
+   {
+    "q": "为什么向量化比 Python 循环快？",
+    "a": "循环中每次迭代都有解释器开销与对象装箱；向量化把整列交给 C/Rust 实现的内核一次处理，数据连续存放、可利用 SIMD 与缓存，开销降低数十到数百倍（视操作而定）。"
+   },
+   {
+    "q": "Polars 惰性模式带来哪些优化？",
+    "a": "先构建完整查询计划再执行：谓词下推在读取时就过滤、投影裁剪只读所需列、合并相邻操作、并行执行，还能流式处理超出内存的数据。最终 collect 才真正计算。"
+   },
+   {
+    "q": "数据量超过内存怎么办？",
+    "a": "按列只读需要的字段、用更紧凑的类型；分块处理；使用 Polars 流式或 DuckDB 等可溢出到磁盘的引擎；数据转为 Parquet；仍不够则迁移到数据仓库或分布式计算。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "pandas 文档",
+    "url": "https://pandas.pydata.org/docs/"
+   },
+   {
+    "title": "Polars 用户指南",
+    "url": "https://docs.pola.rs/"
+   },
+   {
+    "title": "Apache Arrow 官网",
+    "url": "https://arrow.apache.org/"
+   }
+  ]
+ },
+ {
+  "slug": "nosql-document-databases",
+  "def": "文档型数据库以 JSON 类文档（MongoDB 使用二进制的 BSON）为存储单元，文档可嵌套数组与子文档、同一集合中字段结构可以不同。它属于 NoSQL 家族，强调按访问模式建模、读取一个聚合只需一次查询；代价是跨文档关联与约束弱于关系数据库。MongoDB、Firestore、Couchbase 是代表。",
+  "how": [
+   "数据按集合（Collection）组织，每个文档有唯一 _id，可直接嵌入相关子数据。",
+   "建模围绕查询模式：经常一起读取的数据嵌入同一文档，独立增长或多处共享的数据用引用。",
+   "二级索引、复合索引与聚合管道支持过滤、排序、分组与有限的关联（$lookup）。",
+   "单文档写入是原子的；MongoDB 自 4.0 起支持副本集上的多文档事务，但开销更高。",
+   "模式灵活不代表无模式：可用 $jsonSchema 校验器在数据库层约束字段与类型。"
+  ],
+  "terms": [
+   {
+    "t": "BSON",
+    "d": "MongoDB 使用的二进制 JSON 格式，支持日期、Decimal128 等类型。"
+   },
+   {
+    "t": "嵌入 vs 引用 (Embedding vs Referencing)",
+    "d": "把关联数据放进同一文档，或只存另一文档的 ID。"
+   },
+   {
+    "t": "聚合管道 (Aggregation Pipeline)",
+    "d": "由 $match、$group 等阶段组成的数据处理流水线。"
+   },
+   {
+    "t": "模式校验 (Schema Validation)",
+    "d": "用 $jsonSchema 等规则在写入时校验文档结构。"
+   },
+   {
+    "t": "JSONB",
+    "d": "PostgreSQL 的二进制 JSON 类型，可在关系库中存文档。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "mongosh：校验、嵌入与索引",
+   "src": "// 集合级模式校验：灵活但不失控\ndb.createCollection(\"orders\", {\n  validator: { $jsonSchema: {\n    bsonType: \"object\",\n    required: [\"userId\", \"items\", \"total\", \"createdAt\"],\n    properties: {\n      userId: { bsonType: \"int\" },\n      total: { bsonType: \"decimal\" },   // 金额用 Decimal128，避免浮点误差\n      items: { bsonType: \"array\", minItems: 1 },\n    },\n  }},\n});\n\n// 订单明细随订单一起读写：嵌入\ndb.orders.insertOne({\n  userId: 42, createdAt: new Date(), total: NumberDecimal(\"59.80\"),\n  items: [{ sku: \"TEA-01\", qty: 2, price: NumberDecimal(\"29.90\") }],\n});\n\n// 按查询模式建复合索引\ndb.orders.createIndex({ userId: 1, createdAt: -1 });\ndb.orders.find({ userId: 42 }).sort({ createdAt: -1 }).limit(10);\n\n// 聚合：每个用户的消费总额\ndb.orders.aggregate([{ $group: { _id: \"$userId\", spent: { $sum: \"$total\" } } }]);",
+   "note": "明细嵌入订单、用户信息引用；校验器与索引都按真实查询与约束设计。"
+  },
+  "table": {
+   "title": "文档库与关系库对比",
+   "head": [
+    "维度",
+    "文档数据库",
+    "关系数据库"
+   ],
+   "rows": [
+    [
+     "数据模型",
+     "嵌套文档，模式灵活",
+     "表与行，模式严格"
+    ],
+    [
+     "关联查询",
+     "嵌入或 $lookup，能力有限",
+     "JOIN 成熟高效"
+    ],
+    [
+     "事务",
+     "单文档原子，多文档事务开销较大",
+     "多行事务是核心能力"
+    ],
+    [
+     "水平扩展",
+     "原生分片较常见",
+     "需分片方案或分布式 SQL"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "文档数据库",
+    "pros": "贴合对象结构、迭代快、读聚合一次到位",
+    "cons": "复杂关联与跨文档约束弱",
+    "when": "内容、目录、事件、用户配置"
+   },
+   {
+    "opt": "关系数据库",
+    "pros": "强约束、JOIN 与事务成熟",
+    "cons": "模式变更需迁移",
+    "when": "订单、账务等强一致关系数据"
+   },
+   {
+    "opt": "关系库 + JSONB 列",
+    "pros": "兼顾约束与灵活字段",
+    "cons": "JSON 内字段约束与索引需额外设计",
+    "when": "大部分结构固定、少量扩展字段"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把关系模型照搬成多个集合再频繁 $lookup",
+    "fix": "按访问模式重新建模，经常一起读的数据嵌入"
+   },
+   {
+    "bad": "无限增长的数组嵌入文档（如全部评论）",
+    "fix": "无界数据拆到独立集合，文档有大小上限"
+   },
+   {
+    "bad": "没有模式校验，同一字段类型混乱",
+    "fix": "启用 $jsonSchema 校验，应用层也做校验"
+   },
+   {
+    "bad": "金额用 double 存储",
+    "fix": "使用 Decimal128 或以分为单位的整数"
+   }
+  ],
+  "checklist": [
+   "按主要查询模式完成建模",
+   "启用集合级模式校验",
+   "核心查询有匹配的索引",
+   "无无界增长的嵌入数组",
+   "金额与时间类型正确",
+   "认证开启且不暴露公网"
+  ],
+  "interview": [
+   {
+    "q": "什么时候嵌入，什么时候引用？",
+    "a": "一对少、总是一起读取、生命周期一致的数据适合嵌入；一对多且无界增长、被多个父文档共享、需独立查询或频繁单独更新的数据适合引用。核心原则是按读写访问模式设计，并注意单文档大小上限。"
+   },
+   {
+    "q": "MongoDB 支持事务吗？为何仍建议少用？",
+    "a": "支持：4.0 起副本集多文档事务，4.2 起扩展到分片集群。但多文档事务有额外开销与时间限制，良好的文档建模通常能让大多数写入落在单文档内，利用单文档原子性即可。"
+   },
+   {
+    "q": "博客系统选 MongoDB 还是 PostgreSQL？",
+    "a": "关系清晰（用户、文章、评论、标签）且需要一致性与灵活查询时，PostgreSQL 更稳，必要字段可用 JSONB 扩展；若内容结构多变、读多写少且按文章聚合读取为主，文档库也合适。团队熟悉度也是关键因素。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "MongoDB 文档：Data Modeling",
+    "url": "https://www.mongodb.com/docs/manual/data-modeling/"
+   },
+   {
+    "title": "MongoDB 文档：Schema Validation",
+    "url": "https://www.mongodb.com/docs/manual/core/schema-validation/"
+   },
+   {
+    "title": "PostgreSQL 文档：JSON Types",
+    "url": "https://www.postgresql.org/docs/current/datatype-json.html"
+   }
+  ]
+ },
+ {
+  "slug": "sql-joins",
+  "def": "JOIN 是 SQL 中按连接条件组合多张表行的操作，包括 INNER、LEFT/RIGHT/FULL OUTER、CROSS 以及自连接，配合 EXISTS 可表达半连接与反连接。它是关系模型「规范化存储、查询时组合」的核心机制。正确性陷阱（行数扇出、NULL、条件位置）与性能（连接算法、索引）是评审重点。",
+  "how": [
+   "逻辑上，JOIN 先形成两表行的组合，再按 ON 条件筛选；OUTER JOIN 会为未匹配的一侧补 NULL 行。",
+   "ON 条件在连接时生效，WHERE 在连接后过滤；对 LEFT JOIN 右表列写 WHERE 条件会过滤掉补出的 NULL 行。",
+   "一对多连接会使左表行重复（扇出），在其上直接 SUM/COUNT 会重复计数。",
+   "优化器为每对连接选择算法：嵌套循环（小表驱动 + 索引）、哈希连接（大表等值）、归并连接（已排序输入）。",
+   "连接列上的索引和统计信息决定了连接顺序与算法选择，可用 EXPLAIN 查看。"
+  ],
+  "terms": [
+   {
+    "t": "外连接 (Outer Join)",
+    "d": "保留一侧或两侧未匹配的行，缺失列以 NULL 填充。"
+   },
+   {
+    "t": "半连接 (Semi Join)",
+    "d": "只判断是否存在匹配，常用 EXISTS 表达，不产生重复行。"
+   },
+   {
+    "t": "反连接 (Anti Join)",
+    "d": "找出没有匹配的行，推荐 NOT EXISTS。"
+   },
+   {
+    "t": "扇出 (Fan-out)",
+    "d": "一对多连接导致左侧行被复制多份的现象。"
+   },
+   {
+    "t": "哈希连接 (Hash Join)",
+    "d": "对较小输入建哈希表，再扫描另一侧探测匹配。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "LEFT JOIN 与常见陷阱",
+   "src": "-- 每个用户的已支付订单数，没订单的显示 0\nSELECT u.id, u.name, COUNT(o.id) AS paid_orders   -- COUNT(列) 不计 NULL\nFROM users u\nLEFT JOIN orders o\n  ON o.user_id = u.id\n AND o.status = 'paid'          -- 右表条件放 ON：保留无订单用户\nGROUP BY u.id, u.name;\n\n-- 错误写法：放到 WHERE 会过滤掉补出的 NULL 行，变成 INNER JOIN\n-- ... LEFT JOIN orders o ON o.user_id = u.id WHERE o.status = 'paid'\n\n-- 反连接：从未下单的用户（NOT IN 遇到 NULL 会得到空结果）\nSELECT u.id FROM users u\nWHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id);\n\n-- 扇出陷阱：同时连两张一对多表再求和会重复计数，应先分别聚合\nSELECT u.id, o.total_amount, p.total_paid\nFROM users u\nLEFT JOIN (SELECT user_id, SUM(amount) AS total_amount FROM orders GROUP BY user_id) o ON o.user_id = u.id\nLEFT JOIN (SELECT user_id, SUM(paid) AS total_paid FROM payments GROUP BY user_id) p ON p.user_id = u.id;",
+   "note": "外连接右表条件放 ON；反连接用 NOT EXISTS；多个一对多关系先聚合再连接。"
+  },
+  "table": {
+   "title": "连接算法对比",
+   "head": [
+    "算法",
+    "适合",
+    "依赖"
+   ],
+   "rows": [
+    [
+     "嵌套循环",
+     "外表小、内表连接列有索引",
+     "内表索引"
+    ],
+    [
+     "哈希连接",
+     "大表等值连接",
+     "足够的工作内存"
+    ],
+    [
+     "归并连接",
+     "两侧已按连接键排序",
+     "排序或有序索引"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "数据库内 JOIN",
+    "pros": "一次往返，优化器选算法",
+    "cons": "复杂多表连接难读、难调优",
+    "when": "关系型数据的常规查询"
+   },
+   {
+    "opt": "应用层分次查询再组装",
+    "pros": "可分别缓存，适合跨服务数据",
+    "cons": "易出现 N+1，往返多",
+    "when": "数据分布在不同服务或库"
+   },
+   {
+    "opt": "反规范化冗余字段",
+    "pros": "读取无需连接，快",
+    "cons": "写入需同步，存在不一致风险",
+    "when": "读远多于写的热点查询"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "LEFT JOIN 后在 WHERE 中过滤右表列",
+    "fix": "把右表条件移到 ON，或明确改用 INNER JOIN"
+   },
+   {
+    "bad": "连接多个一对多表后直接 SUM，金额翻倍",
+    "fix": "先在子查询中分别聚合，再连接"
+   },
+   {
+    "bad": "用 NOT IN 做反连接，子查询含 NULL 时结果为空",
+    "fix": "使用 NOT EXISTS"
+   },
+   {
+    "bad": "连接列缺少索引或类型不一致",
+    "fix": "外键列建索引，保持两侧类型与排序规则一致"
+   }
+  ],
+  "checklist": [
+   "连接类型与业务语义一致",
+   "外连接条件位置正确",
+   "无一对多扇出导致的重复计数",
+   "反连接使用 NOT EXISTS",
+   "连接列有索引且类型一致",
+   "关键查询已 EXPLAIN 并核对行数"
+  ],
+  "interview": [
+   {
+    "q": "COUNT(*) 和 COUNT(o.id) 在 LEFT JOIN 中有何区别？",
+    "a": "COUNT(*) 统计行数，未匹配的左表行因被补了一行 NULL 也会计为 1；COUNT(o.id) 只统计非 NULL 值，未匹配时为 0。统计「每个用户订单数」应使用 COUNT(右表主键)。"
+   },
+   {
+    "q": "为什么 NOT IN 遇到 NULL 会返回空结果？",
+    "a": "x NOT IN (a, NULL) 等价于 x<>a AND x<>NULL，后者结果为 UNKNOWN，整个条件不可能为 TRUE，因此不返回任何行。NOT EXISTS 只判断是否存在匹配行，不受 NULL 影响。"
+   },
+   {
+    "q": "优化器如何选择连接顺序？",
+    "a": "基于统计信息估算各表过滤后的行数与连接选择性，枚举连接顺序与算法组合，选总代价最低的计划；表很多时使用启发式或遗传算法限制搜索空间。统计信息过期会导致严重误判。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "PostgreSQL 文档：Joins Between Tables",
+    "url": "https://www.postgresql.org/docs/current/tutorial-join.html"
+   },
+   {
+    "title": "PostgreSQL 文档：Table Expressions",
+    "url": "https://www.postgresql.org/docs/current/queries-table-expressions.html"
+   },
+   {
+    "title": "Use The Index, Luke：The Join Operation",
+    "url": "https://use-the-index-luke.com/sql/join"
+   }
+  ]
+ },
+ {
+  "slug": "docker-compose",
+  "def": "Docker Compose 是用一个 YAML 文件（推荐命名 compose.yaml）声明多容器应用的服务、网络、数据卷与配置，并用 docker compose 命令统一创建、启动、停止的工具，遵循开放的 Compose Specification。它定位于本地开发、测试与单机部署，是「一条命令拉起整套环境」的标准做法。",
+  "how": [
+   "compose.yaml 的 services 下定义每个服务的镜像或构建上下文、端口、环境变量、挂载与依赖。",
+   "Compose 为项目创建默认网络，服务之间可直接用服务名作为主机名互相访问。",
+   "命名数据卷在容器重建后保留数据；绑定挂载把本地目录映射进容器，便于开发热更新。",
+   "depends_on 结合 healthcheck 与 condition: service_healthy，可让依赖服务就绪后再启动应用。",
+   "支持 .env 变量替换、多文件覆盖（compose.override.yaml）与 profiles 按需启用服务。"
+  ],
+  "terms": [
+   {
+    "t": "Compose Specification",
+    "d": "定义多容器应用的开放规范，docker compose 实现它。"
+   },
+   {
+    "t": "服务 (Service)",
+    "d": "一类容器的定义，可扩展为多个副本。"
+   },
+   {
+    "t": "命名卷 (Named Volume)",
+    "d": "由 Docker 管理的持久化存储，独立于容器生命周期。"
+   },
+   {
+    "t": "健康检查 (Healthcheck)",
+    "d": "定期执行的探测命令，决定容器是否健康。"
+   },
+   {
+    "t": "Profiles",
+    "d": "为服务打标签，只在指定 profile 启用时启动。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "Web + PostgreSQL + Redis",
+   "src": "# compose.yaml（顶层 version 字段已过时，不需要写）\nservices:\n  web:\n    build: .\n    ports:\n      - \"3000:3000\"\n    environment:\n      DATABASE_URL: postgres://app:${DB_PASSWORD}@db:5432/app   # 用服务名 db 访问\n      REDIS_URL: redis://cache:6379\n    depends_on:\n      db:\n        condition: service_healthy   # 等数据库就绪再启动\n  db:\n    image: postgres:16\n    environment:\n      POSTGRES_USER: app\n      POSTGRES_PASSWORD: ${DB_PASSWORD}   # 从同目录 .env 读取\n      POSTGRES_DB: app\n    volumes:\n      - pgdata:/var/lib/postgresql/data\n    healthcheck:\n      test: [\"CMD-SHELL\", \"pg_isready -U app\"]\n      interval: 5s\n      retries: 10\n  cache:\n    image: redis:7\nvolumes:\n  pgdata:",
+   "note": "数据库不映射宿主端口即可只供内部访问；docker compose down -v 会删除 pgdata 卷。"
+  },
+  "table": {
+   "title": "常用命令",
+   "head": [
+    "命令",
+    "作用",
+    "注意"
+   ],
+   "rows": [
+    [
+     "docker compose up -d",
+     "构建并后台启动",
+     "配置变化会重建容器"
+    ],
+    [
+     "docker compose logs -f web",
+     "跟踪某服务日志",
+     "排错首选"
+    ],
+    [
+     "docker compose exec db psql -U app",
+     "进入容器执行命令",
+     "服务需在运行"
+    ],
+    [
+     "docker compose down",
+     "停止并删除容器与网络",
+     "加 -v 会删除数据卷"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Compose",
+    "pros": "简单、声明式、上手快",
+    "cons": "单机为主，无自动扩缩容与自愈调度",
+    "when": "本地开发、测试、小型单机部署"
+   },
+   {
+    "opt": "Kubernetes",
+    "pros": "多节点调度、自愈、滚动更新",
+    "cons": "复杂度与运维成本高",
+    "when": "生产多服务、需要高可用"
+   },
+   {
+    "opt": "直接 docker run",
+    "pros": "无额外文件",
+    "cons": "多服务时命令难维护",
+    "when": "临时跑单个容器"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "以为 depends_on 会等数据库可用",
+    "fix": "配合 healthcheck 与 condition: service_healthy，应用也应重试连接"
+   },
+   {
+    "bad": "数据库端口映射到 0.0.0.0 暴露公网",
+    "fix": "不映射端口，或绑定 127.0.0.1:5432:5432"
+   },
+   {
+    "bad": "密码明文写在 compose.yaml 并提交",
+    "fix": "用 .env（不入库）或 secrets 注入"
+   },
+   {
+    "bad": "习惯性 down -v 清掉了数据",
+    "fix": "清楚 -v 会删命名卷，重要数据先备份"
+   }
+  ],
+  "checklist": [
+   "使用 docker compose（v2）与 compose.yaml",
+   "依赖服务配置了健康检查",
+   "数据库数据使用命名卷",
+   "敏感值来自 .env 或 secrets",
+   "内部服务不暴露宿主端口",
+   "镜像版本固定，不用 latest"
+  ],
+  "interview": [
+   {
+    "q": "Compose 中服务间如何通信？",
+    "a": "Compose 为项目创建默认 bridge 网络，并提供内置 DNS，服务名即主机名，容器间直接用 db:5432 访问容器端口，无需映射到宿主机。ports 只用于宿主机或外部访问。"
+   },
+   {
+    "q": "depends_on 能保证启动顺序和可用性吗？",
+    "a": "短语法只保证容器启动顺序，不保证进程就绪。长语法配合 condition: service_healthy 可等待健康检查通过。但运行中依赖也可能重启，应用仍需具备连接重试能力。"
+   },
+   {
+    "q": "Compose 能用于生产吗？",
+    "a": "单机、小规模、可接受停机维护的场景可以，配合 restart 策略、日志轮转与备份即可。需要多节点、高可用、滚动更新与自动扩缩时，应迁移到 Kubernetes 或托管容器平台。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Docker 文档：Docker Compose",
+    "url": "https://docs.docker.com/compose/"
+   },
+   {
+    "title": "Compose file reference",
+    "url": "https://docs.docker.com/reference/compose-file/"
+   },
+   {
+    "title": "Compose Specification（GitHub）",
+    "url": "https://github.com/compose-spec/compose-spec"
+   }
+  ]
+ },
+ {
+  "slug": "github-actions",
+  "def": "GitHub Actions 是 GitHub 内置的 CI/CD 与自动化平台：在仓库 .github/workflows/ 下用 YAML 定义工作流，由推送、PR、定时、手动等事件触发，在 GitHub 托管或自托管的 Runner 上执行作业。它通过可复用的 Action 生态组合构建、测试、发布与部署，是开源与中小团队最常用的流水线方案。",
+  "how": [
+   "事件（push、pull_request、schedule、workflow_dispatch 等）触发工作流文件中声明的 on 条件。",
+   "工作流包含若干 job，默认并行，可用 needs 声明依赖；每个 job 在全新的 Runner 环境中运行。",
+   "job 由 steps 组成：uses 调用 Action（如 actions/checkout），run 执行 shell 命令。",
+   "密钥存于仓库或环境的 Secrets，通过表达式注入，并在日志中自动打码；GITHUB_TOKEN 由平台按 permissions 自动签发。",
+   "matrix 并行测试多版本，缓存加速依赖安装，concurrency 取消过时运行，环境保护规则控制部署审批。"
+  ],
+  "terms": [
+   {
+    "t": "Workflow / Job / Step",
+    "d": "工作流包含作业，作业包含按顺序执行的步骤。"
+   },
+   {
+    "t": "Runner",
+    "d": "执行作业的机器，分 GitHub 托管与自托管。"
+   },
+   {
+    "t": "GITHUB_TOKEN",
+    "d": "每次运行自动生成的仓库令牌，权限由 permissions 控制。"
+   },
+   {
+    "t": "Matrix 策略",
+    "d": "按参数组合生成多个并行作业，如多个 Node 版本。"
+   },
+   {
+    "t": "OIDC 联合身份",
+    "d": "工作流用短期令牌换取云厂商临时凭证，免存长期密钥。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "最小可用的 CI 工作流",
+   "src": "# .github/workflows/ci.yml\nname: CI\non:\n  push:\n    branches: [main]\n  pull_request:\npermissions:\n  contents: read            # 最小权限\nconcurrency:\n  group: ci-${{ github.ref }}\n  cancel-in-progress: true  # 同分支新推送取消旧运行\njobs:\n  test:\n    runs-on: ubuntu-latest\n    strategy:\n      matrix:\n        node: [20, 22]\n    steps:\n      - uses: actions/checkout@v4      # 安全要求高时固定到提交 SHA\n      - uses: actions/setup-node@v4\n        with:\n          node-version: ${{ matrix.node }}\n          cache: npm\n      - run: npm ci\n      - run: npm test\n        env:\n          API_KEY: ${{ secrets.API_KEY }}   # 来自仓库 Secrets",
+   "note": "显式声明 permissions，按需注入 Secrets；第三方 Action 建议固定到提交 SHA。"
+  },
+  "table": {
+   "title": "常用触发事件",
+   "head": [
+    "事件",
+    "触发时机",
+    "典型用途"
+   ],
+   "rows": [
+    [
+     "push",
+     "推送到分支或标签",
+     "CI、标签触发发布"
+    ],
+    [
+     "pull_request",
+     "PR 打开或更新",
+     "合并前检查"
+    ],
+    [
+     "schedule",
+     "Cron 定时（UTC）",
+     "定期任务、依赖检查"
+    ],
+    [
+     "workflow_dispatch",
+     "手动点击触发",
+     "手动部署、运维脚本"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "GitHub 托管 Runner",
+    "pros": "免维护、干净环境",
+    "cons": "私有仓库按分钟计费，硬件规格有限",
+    "when": "大多数 CI 任务"
+   },
+   {
+    "opt": "自托管 Runner",
+    "pros": "可用内网与 GPU，成本可控",
+    "cons": "需维护与安全隔离，公共仓库风险高",
+    "when": "特殊硬件或内网部署"
+   },
+   {
+    "opt": "OIDC 访问云",
+    "pros": "无长期密钥，权限可按分支限定",
+    "cons": "需在云侧配置信任关系",
+    "when": "部署到云平台"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在 run 中直接拼接 PR 标题等不可信输入导致脚本注入",
+    "fix": "先赋给环境变量再引用，不在脚本中内联 ${{ }} 不可信值"
+   },
+   {
+    "bad": "pull_request_target 中检出并运行 PR 代码",
+    "fix": "避免该组合；需要密钥的流程与不可信代码分离"
+   },
+   {
+    "bad": "不声明 permissions，令牌权限过大",
+    "fix": "顶层设为只读，按 job 授予必要写权限"
+   },
+   {
+    "bad": "第三方 Action 用可变标签引用",
+    "fix": "固定到完整提交 SHA，并用依赖更新工具跟进"
+   }
+  ],
+  "checklist": [
+   "顶层 permissions 最小化",
+   "密钥只在 Secrets，日志不打印",
+   "不可信输入不内联进脚本",
+   "第三方 Action 固定版本或 SHA",
+   "主分支设置必需状态检查",
+   "部署使用环境保护或 OIDC"
+  ],
+  "interview": [
+   {
+    "q": "pull_request 与 pull_request_target 的区别？",
+    "a": "pull_request 在 PR 合并后的代码上下文中运行，来自 Fork 时不提供密钥、令牌只读；pull_request_target 在基础分支上下文运行，可访问密钥与写权限，用于给 PR 打标签等。若在其中检出并执行 PR 代码，等于把密钥交给不可信代码。"
+   },
+   {
+    "q": "如何在 Actions 中安全地部署到云？",
+    "a": "使用 OIDC：工作流向云厂商出示 GitHub 签发的身份令牌，换取短期凭证，信任策略限定仓库、分支或环境；配合环境保护规则与审批，避免在 Secrets 中保存长期访问密钥。"
+   },
+   {
+    "q": "CI 很慢，从哪些方面优化？",
+    "a": "缓存依赖与构建产物；按改动路径过滤触发；拆分并行 job 与测试分片；concurrency 取消过时运行；只在必要时跑端到端测试；使用更大规格 Runner 或自托管。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "GitHub Actions 文档",
+    "url": "https://docs.github.com/en/actions"
+   },
+   {
+    "title": "Workflow syntax for GitHub Actions",
+    "url": "https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions"
+   },
+   {
+    "title": "Security hardening for GitHub Actions",
+    "url": "https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions"
+   }
+  ]
+ },
+ {
+  "slug": "dev-containers",
+  "def": "开发容器（Dev Container）用 devcontainer.json 描述完整的容器化开发环境：镜像、工具链、编辑器扩展、端口与初始化命令，遵循开放的 Development Container Specification，VS Code、Codespaces 等均支持。它解决环境不一致与上手慢，也是隔离运行 AI Agent 的常用沙箱。",
+  "how": [
+   "项目根目录的 .devcontainer/devcontainer.json 指定镜像、Dockerfile 或 Compose 文件作为环境来源。",
+   "Features 以可复用模块的形式叠加工具（如 Node、Python、GitHub CLI），无需手写安装脚本。",
+   "编辑器连接容器后，扩展与终端都在容器内运行，源码通常以挂载方式共享。",
+   "生命周期钩子（如 postCreateCommand）在创建后自动安装依赖、初始化数据库。",
+   "同一配置可在本地 Docker、Codespaces 云端或 devcontainer CLI（用于 CI）中复用。"
+  ],
+  "terms": [
+   {
+    "t": "devcontainer.json",
+    "d": "开发容器的配置文件，描述镜像、特性、扩展与命令。"
+   },
+   {
+    "t": "Dev Container Features",
+    "d": "可组合的工具安装单元，以 OCI 镜像形式发布。"
+   },
+   {
+    "t": "生命周期脚本 (Lifecycle Scripts)",
+    "d": "onCreate、postCreate、postStart 等阶段执行的命令。"
+   },
+   {
+    "t": "GitHub Codespaces",
+    "d": "基于开发容器配置的云端开发环境服务。"
+   },
+   {
+    "t": "remoteUser",
+    "d": "容器内运行编辑器进程与终端的用户，建议非 root。"
+   }
+  ],
+  "code": {
+   "lang": "json",
+   "title": "Node + Python 开发容器",
+   "src": "// .devcontainer/devcontainer.json（JSONC，允许注释）\n{\n  \"name\": \"my-app\",\n  \"image\": \"mcr.microsoft.com/devcontainers/base:ubuntu\",\n  \"features\": {\n    \"ghcr.io/devcontainers/features/node:1\": { \"version\": \"22\" },\n    \"ghcr.io/devcontainers/features/python:1\": { \"version\": \"3.12\" },\n    \"ghcr.io/devcontainers/features/github-cli:1\": {}\n  },\n  \"forwardPorts\": [3000],\n  \"postCreateCommand\": \"npm ci\",\n  \"customizations\": {\n    \"vscode\": {\n      \"extensions\": [\"dbaeumer.vscode-eslint\", \"esbenp.prettier-vscode\"]\n    }\n  },\n  \"remoteUser\": \"vscode\"\n}",
+   "note": "工具版本写进配置即成为团队约定；Agent 在容器内运行，误操作不会波及宿主机。"
+  },
+  "table": {
+   "title": "环境一致性方案对比",
+   "head": [
+    "方案",
+    "隔离范围",
+    "上手成本",
+    "适合"
+   ],
+   "rows": [
+    [
+     "版本管理器（nvm/uv）",
+     "语言运行时",
+     "低",
+     "单语言项目"
+    ],
+    [
+     "Dev Container",
+     "整个工具链与系统库",
+     "中",
+     "团队协作、AI Agent 沙箱"
+    ],
+    [
+     "Codespaces 云环境",
+     "整台云端机器",
+     "低（需付费）",
+     "临时协作、低配电脑"
+    ],
+    [
+     "Nix 等声明式环境",
+     "精确到依赖哈希",
+     "高",
+     "极致可复现"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "本地 Dev Container",
+    "pros": "环境一致，离线可用",
+    "cons": "需 Docker，macOS/Windows 文件 I/O 较慢",
+    "when": "团队日常开发"
+   },
+   {
+    "opt": "云端 Codespaces",
+    "pros": "秒开环境，不占本机资源",
+    "cons": "按时长计费，依赖网络",
+    "when": "评审 PR、临时开发"
+   },
+   {
+    "opt": "直接在宿主机开发",
+    "pros": "最快、无额外层",
+    "cons": "环境漂移，Agent 误操作风险",
+    "when": "个人小项目"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在容器中以 root 运行并挂载整个主目录",
+    "fix": "使用非 root 的 remoteUser，只挂载项目目录"
+   },
+   {
+    "bad": "每次重建都从头安装依赖，非常慢",
+    "fix": "把稳定依赖写进 Dockerfile 层或用缓存卷"
+   },
+   {
+    "bad": "以为容器能完全阻止 Agent 的所有风险",
+    "fix": "仍需限制网络与凭证，敏感密钥不放进容器"
+   },
+   {
+    "bad": "开发容器与 CI 环境不同",
+    "fix": "CI 中用 devcontainer CLI 复用同一配置"
+   }
+  ],
+  "checklist": [
+   ".devcontainer 配置已入库",
+   "语言与工具版本固定",
+   "使用非 root 用户",
+   "依赖安装可缓存",
+   "敏感凭证不预置在镜像中",
+   "README 写明如何打开"
+  ],
+  "interview": [
+   {
+    "q": "Dev Container 与普通 Dockerfile 部署镜像有何不同？",
+    "a": "部署镜像追求小而精，只含运行所需；开发容器包含编译器、调试器、Lint 工具与编辑器扩展，并处理源码挂载、端口转发与用户权限，目标是开发体验与一致性，而不是生产运行。"
+   },
+   {
+    "q": "为什么常用 Dev Container 运行 AI 编程 Agent？",
+    "a": "Agent 会执行任意终端命令。在容器中运行可把文件系统影响限制在项目目录内，还可配合防火墙限制出网，使开启较宽松的自动执行权限更安全；但仍要避免把高权限凭证放进容器。"
+   },
+   {
+    "q": "在 macOS 上 Dev Container 很慢怎么办？",
+    "a": "文件挂载跨虚拟机边界开销大：把依赖目录（如 node_modules）放进容器内卷、源码克隆到容器卷中、减少文件监听范围，或改用云端环境。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Development Containers 官网",
+    "url": "https://containers.dev/"
+   },
+   {
+    "title": "devcontainer.json 参考",
+    "url": "https://containers.dev/implementors/json_reference/"
+   },
+   {
+    "title": "VS Code：Developing inside a Container",
+    "url": "https://code.visualstudio.com/docs/devcontainers/containers"
+   }
+  ]
+ },
+ {
+  "slug": "state-management",
+  "def": "状态管理是前端应用中组织、共享与更新随时间变化的数据（状态）的方法与工具，涵盖组件局部状态、跨组件共享的客户端状态、来自服务器的数据缓存、URL 状态与表单状态。它属于前端架构层，核心原则是单一数据源、派生而非复制、按作用域就近放置；选错层级是界面不同步类 Bug 的主要来源。",
+  "how": [
+   "组件局部状态（如 useState）保存只与该组件相关的 UI 细节，如弹窗开关、输入框内容。",
+   "多个组件共享的状态上提到共同父级，或放入 Context、Zustand、Redux 等全局 store。",
+   "服务器数据属于服务端状态：用 TanStack Query、SWR 等缓存库管理请求、缓存、失效与重新获取。",
+   "筛选条件、分页等可分享的状态放在 URL 查询参数中，刷新和分享链接都能还原。",
+   "状态更新遵循不可变原则：生成新对象触发重新渲染，派生值在渲染或选择器中计算而不另存。"
+  ],
+  "terms": [
+   {
+    "t": "单一数据源 (Single Source of Truth)",
+    "d": "同一份数据只在一个地方存储，其余处读取或派生。"
+   },
+   {
+    "t": "派生状态 (Derived State)",
+    "d": "可由已有状态计算得出的值，不应另外存储。"
+   },
+   {
+    "t": "服务端状态 (Server State)",
+    "d": "来源于服务器、可能过期的数据，需缓存与同步策略。"
+   },
+   {
+    "t": "选择器 (Selector)",
+    "d": "从 store 中选取或计算所需片段，减少无关重渲染。"
+   },
+   {
+    "t": "不可变更新 (Immutable Update)",
+    "d": "不直接修改原对象，而是返回新对象表示新状态。"
+   }
+  ],
+  "code": {
+   "lang": "typescript",
+   "title": "Zustand 购物车 store",
+   "src": "import { create } from \"zustand\";\n\ntype Item = { id: string; qty: number };\ntype CartState = {\n  items: Item[];\n  add: (id: string) => void;\n  remove: (id: string) => void;\n};\n\nexport const useCart = create<CartState>()((set) => ({\n  items: [],\n  add: (id) =>\n    set((s) => ({\n      items: s.items.some((i) => i.id === id)\n        ? s.items.map((i) => (i.id === id ? { ...i, qty: i.qty + 1 } : i))\n        : [...s.items, { id, qty: 1 }],   // 不可变更新：返回新数组\n    })),\n  remove: (id) => set((s) => ({ items: s.items.filter((i) => i.id !== id) })),\n}));\n\n// 派生值用选择器计算，不另存 count，避免两份数据不同步\nexport const useCartCount = () =>\n  useCart((s) => s.items.reduce((n, i) => n + i.qty, 0));\n\nexport function CartBadge() {\n  const count = useCartCount();   // 只在数量变化时重渲染\n  return <span>{count}</span>;\n}",
+   "note": "购物车只存 items，角标数量由选择器派生；商品详情等服务器数据交给请求缓存库。"
+  },
+  "table": {
+   "title": "状态分类与归属",
+   "head": [
+    "状态类型",
+    "例子",
+    "推荐方案"
+   ],
+   "rows": [
+    [
+     "局部 UI 状态",
+     "弹窗开关、Tab 选中",
+     "组件内 useState"
+    ],
+    [
+     "共享客户端状态",
+     "登录用户、主题、购物车",
+     "Context / Zustand / Redux"
+    ],
+    [
+     "服务端状态",
+     "列表、详情数据",
+     "TanStack Query / SWR"
+    ],
+    [
+     "URL 状态",
+     "搜索词、分页、筛选",
+     "路由查询参数"
+    ],
+    [
+     "表单状态",
+     "字段值、校验错误",
+     "表单库或受控组件"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "React 内置（state + Context）",
+    "pros": "无依赖，概念少",
+    "cons": "Context 值变化会使所有消费者重渲染",
+    "when": "中小应用、低频变化的数据"
+   },
+   {
+    "opt": "轻量 store（Zustand 等）",
+    "pros": "API 简单，选择器订阅精细",
+    "cons": "缺少强约束，规模大时需自定规范",
+    "when": "多数中型应用"
+   },
+   {
+    "opt": "Redux Toolkit",
+    "pros": "规范严格、调试工具强",
+    "cons": "样板与概念较多",
+    "when": "大型团队、复杂状态流"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把服务器数据复制进全局 store 手动同步",
+    "fix": "用请求缓存库管理服务端状态与失效"
+   },
+   {
+    "bad": "同一数据在多个组件各存一份",
+    "fix": "上提到共同来源，其余处读取或派生"
+   },
+   {
+    "bad": "直接修改状态对象（push、赋值属性）",
+    "fix": "使用不可变更新，或借助 Immer"
+   },
+   {
+    "bad": "所有状态都放全局，任何变化都引发大范围重渲染",
+    "fix": "就近放置状态，全局 store 用选择器订阅"
+   }
+  ],
+  "checklist": [
+   "每份数据只有一个来源",
+   "派生值不单独存储",
+   "服务端数据用缓存库管理",
+   "可分享的筛选状态在 URL 中",
+   "状态更新均为不可变",
+   "全局状态有命名与目录约定"
+  ],
+  "interview": [
+   {
+    "q": "为什么要区分客户端状态和服务端状态？",
+    "a": "服务端状态由服务器拥有，可能被他人修改而过期，需要缓存、去重、后台刷新、失效与重试；客户端状态由前端独占、同步可控。把二者混在同一 store 会导致大量手写同步逻辑与陈旧数据 Bug。"
+   },
+   {
+    "q": "Context 为什么可能造成性能问题？",
+    "a": "Provider 的 value 变化时，所有使用该 Context 的组件都会重新渲染，即使只用到其中一个字段。可拆分多个 Context、memo 化 value，或改用支持选择器订阅的 store。"
+   },
+   {
+    "q": "如何决定一个状态放在哪里？",
+    "a": "先问能否由已有数据派生；再看谁在用：单组件用局部状态，几个相邻组件上提到父级，跨远距离共享放全局 store；来自服务器的交给缓存库；需要刷新后保留或可分享的放 URL。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "React 文档：Managing State",
+    "url": "https://react.dev/learn/managing-state"
+   },
+   {
+    "title": "Zustand 文档",
+    "url": "https://zustand.docs.pmnd.rs/"
+   },
+   {
+    "title": "TanStack Query 文档",
+    "url": "https://tanstack.com/query/latest/docs/framework/react/overview"
+   }
+  ]
+ },
+ {
+  "slug": "single-page-application",
+  "def": "单页应用（SPA，Single-Page Application）只在首次访问时加载一个 HTML 外壳和 JavaScript 包，之后由前端路由拦截导航、通过 API 获取数据并局部更新 DOM，无需整页刷新。它属于前端应用架构，带来接近原生应用的流畅交互，代价是首屏加载、SEO、服务器路由回退与长生命周期内存管理等问题。",
+  "how": [
+   "服务器对所有页面路径返回同一个 index.html，浏览器下载并执行 JS 包，在客户端渲染界面。",
+   "前端路由使用 History API（pushState/popstate）修改地址栏而不发起页面请求，并渲染对应组件。",
+   "页面数据通过 fetch 调用后端 API 获取，界面根据状态局部更新。",
+   "用户直接访问或刷新子路径时，服务器必须把未知路径回退到 index.html，否则返回 404。",
+   "代码分割按路由懒加载 JS，缓解首包过大；SSR/SSG 可补齐首屏与 SEO。"
+  ],
+  "terms": [
+   {
+    "t": "前端路由 (Client-side Routing)",
+    "d": "由 JS 根据 URL 选择渲染的视图，不向服务器请求新页面。"
+   },
+   {
+    "t": "History API",
+    "d": "浏览器提供的 pushState、replaceState 与 popstate 事件接口。"
+   },
+   {
+    "t": "回退路由 (Fallback / Rewrite)",
+    "d": "服务器把未匹配的路径都返回 index.html 的配置。"
+   },
+   {
+    "t": "代码分割 (Code Splitting)",
+    "d": "把 JS 拆成多个按需加载的块，减小首包体积。"
+   },
+   {
+    "t": "MPA",
+    "d": "多页应用，每次导航由服务器返回新的 HTML 页面。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "SPA 刷新 404 的服务器配置",
+   "src": "# Nginx：先找真实文件，找不到就返回 index.html\nserver {\n  listen 80;\n  root /var/www/app/dist;\n  location / {\n    try_files $uri $uri/ /index.html;\n  }\n  # 带哈希的静态资源长期缓存\n  location /assets/ {\n    add_header Cache-Control \"public, max-age=31536000, immutable\";\n  }\n}\n\n# Vercel（vercel.json）：把所有路径重写到 index.html\n{ \"rewrites\": [{ \"source\": \"/(.*)\", \"destination\": \"/index.html\" }] }\n\n# Netlify（public/_redirects 文件）\n/*    /index.html   200",
+   "note": "回退规则让服务器把子路径交给前端路由处理；真实不存在的页面需由前端路由显示 404。"
+  },
+  "table": {
+   "title": "SPA 与 MPA 对比",
+   "head": [
+    "维度",
+    "SPA",
+    "MPA"
+   ],
+   "rows": [
+    [
+     "页面切换",
+     "局部更新，无白屏闪烁",
+     "整页加载"
+    ],
+    [
+     "首屏",
+     "需下载并执行 JS 后才有内容",
+     "服务器直接返回 HTML"
+    ],
+    [
+     "SEO",
+     "依赖爬虫执行 JS，需额外处理",
+     "天然友好"
+    ],
+    [
+     "部署",
+     "静态托管 + 回退配置",
+     "需要服务端渲染页面"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "纯 SPA（CSR）",
+    "pros": "交互流畅，可纯静态托管",
+    "cons": "首屏慢、SEO 弱",
+    "when": "登录后的后台、工具类应用"
+   },
+   {
+    "opt": "SSR/SSG 框架",
+    "pros": "首屏快、SEO 好，仍保留客户端导航",
+    "cons": "需服务端或构建流程，复杂度更高",
+    "when": "内容站、营销页、电商"
+   },
+   {
+    "opt": "传统 MPA + 局部增强",
+    "pros": "简单、稳健、SEO 好",
+    "cons": "复杂交互实现成本高",
+    "when": "内容为主、交互较少"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "部署后刷新子页面 404",
+    "fix": "配置服务器或平台的回退重写到 index.html"
+   },
+   {
+    "bad": "首包过大导致长时间白屏",
+    "fix": "按路由代码分割、压缩与缓存，并测量首屏指标"
+   },
+   {
+    "bad": "路由切换后焦点与读屏不更新",
+    "fix": "导航后移动焦点到主标题并更新 document.title"
+   },
+   {
+    "bad": "长时间运行积累定时器和监听器导致内存泄漏",
+    "fix": "组件卸载时清理订阅、定时器与事件监听"
+   }
+  ],
+  "checklist": [
+   "服务器回退规则已配置",
+   "按路由代码分割",
+   "静态资源带哈希并长期缓存",
+   "路由切换更新标题与焦点",
+   "需要 SEO 的页面采用 SSR/SSG",
+   "前端路由有 404 页面"
+  ],
+  "interview": [
+   {
+    "q": "为什么 SPA 刷新子页面会 404？",
+    "a": "客户端导航只调用 pushState 修改地址，不请求服务器；刷新或直接访问时浏览器向服务器请求该路径，静态服务器上没有对应文件就返回 404。需配置未匹配路径回退到 index.html，由前端路由接管。"
+   },
+   {
+    "q": "SPA 的 SEO 问题如何解决？",
+    "a": "对需收录的页面使用 SSR 或 SSG 输出完整 HTML；为每个路由设置 title、meta 与规范链接；提供站点地图。依赖爬虫执行 JS 存在延迟与不确定性，不应作为唯一方案。"
+   },
+   {
+    "q": "SPA 中如何避免内存泄漏？",
+    "a": "SPA 页面长时间不刷新，未清理的定时器、全局事件监听、WebSocket 订阅与闭包引用会累积。组件卸载时在清理函数中取消订阅、清除定时器、中止进行中的请求，并用浏览器内存快照排查。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "MDN Glossary：SPA",
+    "url": "https://developer.mozilla.org/en-US/docs/Glossary/SPA"
+   },
+   {
+    "title": "MDN：History API",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/API/History_API"
+   },
+   {
+    "title": "Vite：Deploying a Static Site",
+    "url": "https://vite.dev/guide/static-deploy"
+   }
+  ]
+ },
+ {
+  "slug": "client-side-rendering",
+  "def": "客户端渲染（CSR，Client-Side Rendering）指服务器只返回近乎空的 HTML 外壳和 JavaScript 包，由浏览器下载、解析、执行 JS 并请求数据后生成页面内容。它是纯 SPA 的默认渲染方式，交互流畅、可静态托管，但首屏内容依赖 JS 执行，易出现白屏，对 SEO 与低端设备不友好。",
+  "how": [
+   "浏览器请求页面，收到仅含根节点（如 div#root）和 script 标签的 HTML。",
+   "下载并解析 JS 包；包越大、设备越弱，解析执行耗时越长。",
+   "应用启动后发起 API 请求获取数据，形成「下载 JS → 执行 → 请求数据」的串行瀑布。",
+   "数据返回后框架渲染组件并写入 DOM，此时用户才看到主要内容（影响 LCP）。",
+   "后续导航由前端路由完成，只请求数据与按需加载的代码块，切换迅速。"
+  ],
+  "terms": [
+   {
+    "t": "FCP (First Contentful Paint)",
+    "d": "首次绘制出任何内容的时间。"
+   },
+   {
+    "t": "LCP (Largest Contentful Paint)",
+    "d": "视口内最大内容元素渲染完成的时间，核心网页指标之一。"
+   },
+   {
+    "t": "请求瀑布 (Request Waterfall)",
+    "d": "资源依次依赖加载，总耗时为各段之和。"
+   },
+   {
+    "t": "骨架屏 (Skeleton Screen)",
+    "d": "数据加载前显示的占位布局，改善感知速度。"
+   },
+   {
+    "t": "预渲染 (Prerendering)",
+    "d": "构建时为路由生成静态 HTML，缓解 CSR 首屏与 SEO 问题。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "按路由懒加载 + 加载占位",
+   "src": "// main.jsx：CSR 入口，按路由拆分代码，避免首包过大\nimport { lazy, Suspense } from \"react\";\nimport { createRoot } from \"react-dom/client\";\nimport { BrowserRouter, Routes, Route } from \"react-router-dom\";\n\nconst Home = lazy(() => import(\"./pages/Home\"));\nconst Dashboard = lazy(() => import(\"./pages/Dashboard\")); // 访问时才下载\n\nfunction Skeleton() {\n  return <div className=\"skeleton\" aria-busy=\"true\">加载中…</div>;\n}\n\nfunction App() {\n  return (\n    <BrowserRouter>\n      <Suspense fallback={<Skeleton />}>\n        <Routes>\n          <Route path=\"/\" element={<Home />} />\n          <Route path=\"/dashboard\" element={<Dashboard />} />\n        </Routes>\n      </Suspense>\n    </BrowserRouter>\n  );\n}\n\ncreateRoot(document.getElementById(\"root\")).render(<App />);",
+   "note": "懒加载缩小首包；Suspense 提供占位。数据请求也应尽早并行发起，避免瀑布。"
+  },
+  "table": {
+   "title": "CSR 首屏优化手段",
+   "head": [
+    "手段",
+    "作用",
+    "代价"
+   ],
+   "rows": [
+    [
+     "代码分割",
+     "减小首包体积",
+     "路由切换时有额外请求"
+    ],
+    [
+     "预加载关键资源",
+     "提前下载 JS/数据",
+     "可能浪费带宽"
+    ],
+    [
+     "骨架屏",
+     "改善感知速度",
+     "不缩短实际耗时"
+    ],
+    [
+     "构建期预渲染",
+     "首屏有 HTML、利于 SEO",
+     "只适合内容较静态的路由"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "纯 CSR",
+    "pros": "部署简单（静态托管）、交互流畅",
+    "cons": "首屏慢、SEO 弱",
+    "when": "登录后应用、内部工具"
+   },
+   {
+    "opt": "CSR + 预渲染",
+    "pros": "保留静态托管，首屏改善",
+    "cons": "动态内容仍需客户端获取",
+    "when": "营销页较少变化的 SPA"
+   },
+   {
+    "opt": "SSR/SSG",
+    "pros": "首屏与 SEO 最好",
+    "cons": "需服务端或构建管线",
+    "when": "内容站、电商、需收录页面"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "所有页面打进一个巨大的 JS 包",
+    "fix": "按路由懒加载，分析包体积移除大依赖"
+   },
+   {
+    "bad": "组件挂载后才逐层请求数据，形成多级瀑布",
+    "fix": "在路由层并行预取数据，或使用支持预取的数据库"
+   },
+   {
+    "bad": "对需要搜索收录的页面使用纯 CSR",
+    "fix": "改用 SSR/SSG 或预渲染"
+   },
+   {
+    "bad": "只在高端开发机上测性能",
+    "fix": "用 Lighthouse 模拟中低端设备与慢网络"
+   }
+  ],
+  "checklist": [
+   "首包体积在预算内",
+   "路由级代码分割",
+   "关键数据并行预取",
+   "有加载与错误状态",
+   "LCP 在移动端可接受",
+   "需收录页面不依赖纯 CSR"
+  ],
+  "interview": [
+   {
+    "q": "CSR 首屏慢的根本原因？",
+    "a": "内容生成被推迟到 JS 下载、解析、执行之后，并且通常还要再等一次数据请求，形成串行链路；低端设备上 JS 执行本身就很慢。因此 CSR 的首屏时间 ≈ HTML + JS 下载 + 执行 + 数据请求 + 渲染。"
+   },
+   {
+    "q": "什么场景下 CSR 反而是好选择？",
+    "a": "登录后的仪表盘、编辑器、内部工具等：不需要 SEO，用户会长时间停留，后续交互频繁，首屏成本被摊薄；同时可纯静态托管、部署简单、服务器压力小。"
+   },
+   {
+    "q": "搜索引擎能抓取 CSR 页面吗？",
+    "a": "Google 会渲染 JavaScript，但渲染可能延后，且依赖资源可访问、无报错；其他搜索引擎和社交平台预览抓取能力不一。需要稳定收录的页面应输出服务端 HTML。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "web.dev：Rendering on the Web",
+    "url": "https://web.dev/articles/rendering-on-the-web"
+   },
+   {
+    "title": "React 文档：lazy",
+    "url": "https://react.dev/reference/react/lazy"
+   },
+   {
+    "title": "web.dev：Largest Contentful Paint",
+    "url": "https://web.dev/articles/lcp"
+   }
+  ]
+ },
+ {
+  "slug": "server-side-rendering",
+  "def": "服务端渲染（SSR，Server-Side Rendering）指在每次请求时由服务器运行组件代码、获取数据并生成完整 HTML 返回，浏览器先显示内容，再加载 JS 进行水合（Hydration）使页面可交互。Next.js、Nuxt、Remix 等框架提供 SSR，可与静态生成、流式渲染、服务端组件组合，兼顾首屏、SEO 与交互。",
+  "how": [
+   "请求到达服务器，框架匹配路由并在服务端执行数据获取与组件渲染。",
+   "生成的 HTML 返回浏览器（可流式分块发送），用户在 JS 加载前就能看到内容。",
+   "浏览器下载 JS 后执行水合：复用已有 DOM，绑定事件处理器并恢复组件状态。",
+   "服务端与客户端首轮渲染结果必须一致，否则出现水合不匹配警告或界面跳变。",
+   "可在 CDN 或框架层缓存渲染结果，按时间或事件重新验证，降低服务器压力。"
+  ],
+  "terms": [
+   {
+    "t": "水合 (Hydration)",
+    "d": "客户端 JS 接管服务端生成的 HTML，使其可交互。"
+   },
+   {
+    "t": "TTFB (Time to First Byte)",
+    "d": "从请求到收到首字节的时间，SSR 中受服务端渲染耗时影响。"
+   },
+   {
+    "t": "流式 SSR (Streaming SSR)",
+    "d": "分块发送 HTML，先出外壳，慢数据部分后到。"
+   },
+   {
+    "t": "增量静态再生 (ISR)",
+    "d": "静态页面按时间间隔或按需在后台重新生成。"
+   },
+   {
+    "t": "水合不匹配 (Hydration Mismatch)",
+    "d": "服务端与客户端渲染结果不一致导致的错误。"
+   }
+  ],
+  "code": {
+   "lang": "typescript",
+   "title": "Next.js 服务端渲染详情页",
+   "src": "// app/products/[id]/page.tsx（Next.js App Router，默认是服务端组件）\nimport type { Metadata } from \"next\";\n\ntype Props = { params: Promise<{ id: string }> }; // Next.js 15 起 params 为 Promise\n\nasync function getProduct(id: string) {\n  const res = await fetch(`https://api.example.com/products/${id}`, {\n    next: { revalidate: 60 }, // 缓存 60 秒后重新验证；要每次请求都渲染可用 cache: \"no-store\"\n  });\n  if (!res.ok) throw new Error(\"商品获取失败\");\n  return res.json();\n}\n\n// 服务端生成 title/description，利于 SEO\nexport async function generateMetadata({ params }: Props): Promise<Metadata> {\n  const { id } = await params;\n  const p = await getProduct(id);\n  return { title: p.name, description: p.summary };\n}\n\nexport default async function ProductPage({ params }: Props) {\n  const { id } = await params;\n  const p = await getProduct(id);\n  return (\n    <main>\n      <h1>{p.name}</h1>\n      <p>{p.summary}</p>\n    </main>\n  );\n}",
+   "note": "组件在服务器执行，可直接 await 数据；不要在这里访问 window 等浏览器 API。"
+  },
+  "table": {
+   "title": "渲染策略对比",
+   "head": [
+    "策略",
+    "HTML 生成时机",
+    "首屏",
+    "适合"
+   ],
+   "rows": [
+    [
+     "CSR",
+     "浏览器运行时",
+     "慢",
+     "登录后应用"
+    ],
+    [
+     "SSR",
+     "每次请求",
+     "快，TTFB 受服务端影响",
+     "个性化、实时数据页"
+    ],
+    [
+     "SSG",
+     "构建时",
+     "最快（CDN）",
+     "文档、博客"
+    ],
+    [
+     "ISR",
+     "构建时 + 后台再生",
+     "快",
+     "商品页等准静态内容"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "SSR",
+    "pros": "首屏快、SEO 好、数据实时",
+    "cons": "服务器成本与 TTFB 增加，需处理水合",
+    "when": "个性化或频繁变化且需收录"
+   },
+   {
+    "opt": "SSG/ISR",
+    "pros": "CDN 分发、成本低、极快",
+    "cons": "数据有延迟，构建或再生需管理",
+    "when": "内容更新不频繁的页面"
+   },
+   {
+    "opt": "CSR",
+    "pros": "服务器压力最小",
+    "cons": "首屏与 SEO 弱",
+    "when": "无需收录的交互应用"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "渲染期间访问 window、localStorage 导致服务端报错",
+    "fix": "浏览器专属逻辑放到 useEffect 或客户端组件中"
+   },
+   {
+    "bad": "渲染中使用 Date.now()、随机数造成水合不匹配",
+    "fix": "由服务端生成值传给客户端，或只在客户端挂载后渲染"
+   },
+   {
+    "bad": "每个请求都串行调用多个慢接口，TTFB 很高",
+    "fix": "并行获取、加缓存，配合流式渲染先出外壳"
+   },
+   {
+    "bad": "把含用户私有数据的 SSR 页面放进共享缓存",
+    "fix": "个性化响应设置 private 或 no-store，避免串号"
+   }
+  ],
+  "checklist": [
+   "渲染代码不依赖浏览器 API",
+   "无水合不匹配警告",
+   "数据获取并行且有缓存策略",
+   "个性化页面不进共享缓存",
+   "每页输出正确的 meta 信息",
+   "监控 TTFB 与服务端错误"
+  ],
+  "interview": [
+   {
+    "q": "SSR 为什么还需要水合？",
+    "a": "服务端只输出静态 HTML，没有事件处理器与组件状态。浏览器需下载组件 JS，在已有 DOM 上重新执行渲染逻辑并绑定事件，页面才可交互。水合期间页面可见但可能暂不可交互。"
+   },
+   {
+    "q": "如何降低 SSR 的 TTFB？",
+    "a": "并行化数据获取、对上游加缓存；使用流式 SSR 先发送外壳；对可共享页面使用 CDN 缓存或 ISR；把非关键内容延后到客户端或 Suspense 边界；把渲染部署到更靠近用户或数据的区域。"
+   },
+   {
+    "q": "什么是水合不匹配，怎么排查？",
+    "a": "服务端与客户端首次渲染输出不同，如使用当前时间、随机 ID、浏览器专属 API 或依赖用户时区格式化。框架会警告并可能重新渲染。排查方法：定位警告节点，消除非确定性输入，或改为挂载后渲染。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "web.dev：Rendering on the Web",
+    "url": "https://web.dev/articles/rendering-on-the-web"
+   },
+   {
+    "title": "Next.js 文档",
+    "url": "https://nextjs.org/docs"
+   },
+   {
+    "title": "React 文档：hydrateRoot",
+    "url": "https://react.dev/reference/react-dom/client/hydrateRoot"
+   }
+  ]
+ },
+ {
+  "slug": "bundler",
+  "def": "打包工具（Bundler）从入口文件出发解析模块依赖图，对 TypeScript、JSX、CSS 等进行转换，再经摇树、代码分割、压缩与文件名哈希，输出浏览器可高效加载的静态资源。Vite、webpack、esbuild、Rollup、Rspack 是代表。它属于前端构建层，同时提供带热更新的开发服务器。",
+  "how": [
+   "从入口开始解析 import，按解析规则定位模块（node_modules、路径别名），构建依赖图。",
+   "对每个模块应用转换：TS/JSX 编译、CSS 处理、资源导入、环境变量替换。",
+   "生产构建做摇树移除未使用导出、按动态 import 分割代码块、压缩并生成带内容哈希的文件名。",
+   "开发模式下，Vite 利用浏览器原生 ES 模块按需编译，并用 esbuild 预构建依赖；webpack 打包后提供服务。",
+   "热模块替换（HMR）在文件变化时只替换受影响模块，保留页面状态。"
+  ],
+  "terms": [
+   {
+    "t": "依赖图 (Module Graph)",
+    "d": "模块间导入关系构成的图，是打包与分割的基础。"
+   },
+   {
+    "t": "摇树 (Tree Shaking)",
+    "d": "基于 ES 模块静态分析移除未被使用的代码。"
+   },
+   {
+    "t": "代码分割 (Code Splitting)",
+    "d": "把代码拆成多个块，按需或并行加载。"
+   },
+   {
+    "t": "HMR (Hot Module Replacement)",
+    "d": "开发时不刷新整页即替换已修改的模块。"
+   },
+   {
+    "t": "Source Map",
+    "d": "把压缩后代码映射回源码，便于调试与错误定位。"
+   }
+  ],
+  "code": {
+   "lang": "typescript",
+   "title": "Vite 配置与体积分析",
+   "src": "// vite.config.ts\n// npm i -D vite @vitejs/plugin-react rollup-plugin-visualizer\nimport { defineConfig } from \"vite\";\nimport react from \"@vitejs/plugin-react\";\nimport { visualizer } from \"rollup-plugin-visualizer\";\n\nexport default defineConfig({\n  plugins: [\n    react(),\n    visualizer({ filename: \"stats.html\" }), // build 后生成体积分析图\n  ],\n  resolve: {\n    alias: { \"@\": \"/src\" },               // 路径别名，需与 tsconfig 一致\n  },\n  build: {\n    sourcemap: true,                        // 便于线上错误定位（注意是否公开）\n    rollupOptions: {\n      output: {\n        manualChunks: { react: [\"react\", \"react-dom\"] }, // 第三方库单独成块\n      },\n    },\n  },\n});\n// 注意：只有 VITE_ 前缀的环境变量会暴露给前端代码（import.meta.env）",
+   "note": "先用可视化找出最大依赖再优化；前端可见的环境变量都会进入产物，不能放密钥。"
+  },
+  "table": {
+   "title": "主流打包工具对比",
+   "head": [
+    "工具",
+    "特点",
+    "适合"
+   ],
+   "rows": [
+    [
+     "Vite",
+     "开发基于原生 ESM，启动快",
+     "新项目首选之一"
+    ],
+    [
+     "webpack",
+     "生态与配置能力最全",
+     "存量大型项目"
+    ],
+    [
+     "esbuild",
+     "Go 实现，极快，功能精简",
+     "库构建、工具链底层"
+    ],
+    [
+     "Rspack",
+     "Rust 实现，兼容 webpack 生态",
+     "想提速的 webpack 项目"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "框架内置构建（Next.js 等）",
+    "pros": "零配置、与框架深度集成",
+    "cons": "定制受限",
+    "when": "使用全栈框架时"
+   },
+   {
+    "opt": "Vite",
+    "pros": "开发体验好、配置简洁",
+    "cons": "极复杂的定制可能需插件开发",
+    "when": "SPA、组件库、大多数新项目"
+   },
+   {
+    "opt": "webpack",
+    "pros": "高度可配置、插件生态大",
+    "cons": "配置复杂、较慢",
+    "when": "历史项目或特殊构建需求"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把 API 密钥放在 VITE_ 变量中",
+    "fix": "前端变量全部公开可见，密钥只留在服务端"
+   },
+   {
+    "bad": "开发环境正常、build 失败（大小写、循环依赖）",
+    "fix": "CI 中执行 build，保持导入路径大小写一致"
+   },
+   {
+    "bad": "整库导入导致体积膨胀",
+    "fix": "按需导入或换用支持摇树的 ES 模块版本"
+   },
+   {
+    "bad": "生产公开完整 source map 暴露源码",
+    "fix": "上传到错误监控平台后不随站点公开，或用 hidden source map"
+   }
+  ],
+  "checklist": [
+   "CI 中执行生产构建",
+   "已分析并控制包体积",
+   "前端环境变量不含密钥",
+   "静态资源带内容哈希",
+   "source map 处理策略明确",
+   "路径别名与 tsconfig 一致"
+  ],
+  "interview": [
+   {
+    "q": "Vite 开发服务器为什么启动快？",
+    "a": "它不在启动时打包整个应用，而是利用浏览器原生 ES 模块，按需在请求时编译源码；对依赖用 esbuild 预构建并缓存。因此启动时间与项目规模基本无关，HMR 也只需处理变更模块。"
+   },
+   {
+    "q": "摇树为什么需要 ES 模块？",
+    "a": "ES 模块的 import/export 是静态的，打包工具可在构建时确定哪些导出被使用；CommonJS 的 require 是运行时动态求值，难以静态分析。另外有副作用的模块需在 package.json 的 sideEffects 中声明，否则不能安全删除。"
+   },
+   {
+    "q": "如何系统地减小前端包体积？",
+    "a": "可视化分析找出大依赖；路由级与组件级代码分割；替换臃肿库、按需导入；开启压缩与现代语法输出；图片字体单独优化；设置体积预算并在 CI 中检查。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Vite 官方指南",
+    "url": "https://vite.dev/guide/"
+   },
+   {
+    "title": "webpack 文档：Concepts",
+    "url": "https://webpack.js.org/concepts/"
+   },
+   {
+    "title": "esbuild 官网",
+    "url": "https://esbuild.github.io/"
+   }
+  ]
+ },
+ {
+  "slug": "accessibility",
+  "def": "无障碍（Accessibility，常缩写为 a11y）指让残障人士及在各种设备、环境下的用户都能感知、理解、操作网页内容。W3C 的 WCAG 是主流标准，按可感知、可操作、可理解、健壮四原则组织，分 A/AA/AAA 三级，现行最新版本为 2.2。多地法规以 WCAG AA 为基准，它也直接提升 SEO 与整体可用性。",
+  "how": [
+   "浏览器把 DOM 转换为无障碍树，读屏软件等辅助技术读取元素的角色、名称、状态与值。",
+   "语义化 HTML（button、label、nav、h1–h6）自动提供正确的角色与键盘行为，是最主要的手段。",
+   "原生元素无法表达时，用 WAI-ARIA 属性补充角色与状态；ARIA 只改语义，不添加行为。",
+   "键盘用户依赖 Tab 顺序与可见焦点，所有交互都必须可用键盘完成且不陷入焦点陷阱。",
+   "视觉方面需满足对比度、可缩放、不只靠颜色传达信息，动效需尊重减少动态偏好。"
+  ],
+  "terms": [
+   {
+    "t": "WCAG",
+    "d": "Web 内容无障碍指南，W3C 标准，AA 级是常见合规目标。"
+   },
+   {
+    "t": "无障碍树 (Accessibility Tree)",
+    "d": "浏览器提供给辅助技术的语义结构。"
+   },
+   {
+    "t": "可访问名称 (Accessible Name)",
+    "d": "辅助技术读出的元素名称，来自文本、label、aria-label 等。"
+   },
+   {
+    "t": "WAI-ARIA",
+    "d": "补充角色、状态与属性的规范；能用原生元素时不用 ARIA。"
+   },
+   {
+    "t": "对比度 (Contrast Ratio)",
+    "d": "WCAG AA 要求正文至少 4.5:1，大字号至少 3:1。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "用 axe 在 E2E 中自动检测",
+   "src": "// npm i -D @playwright/test @axe-core/playwright\nimport { test, expect } from \"@playwright/test\";\nimport AxeBuilder from \"@axe-core/playwright\";\n\ntest(\"首页没有可自动检测的 WCAG A/AA 违规\", async ({ page }) => {\n  await page.goto(\"http://localhost:3000/\");\n  const results = await new AxeBuilder({ page })\n    .withTags([\"wcag2a\", \"wcag2aa\"])\n    .analyze();\n  expect(results.violations).toEqual([]);\n});\n\ntest(\"注册按钮可用键盘操作\", async ({ page }) => {\n  await page.goto(\"http://localhost:3000/signup\");\n  // 用角色和可访问名称定位：定位不到说明语义有问题\n  const btn = page.getByRole(\"button\", { name: \"注册\" });\n  await btn.focus();\n  await page.keyboard.press(\"Enter\");\n  await expect(page.getByRole(\"alert\")).toBeVisible();\n});\n\n// 对应的正确标记：<label for=\"email\">邮箱</label><input id=\"email\" type=\"email\">\n//                 <button type=\"submit\">注册</button>（不要用 div 假装按钮）",
+   "note": "自动化工具只能发现部分问题，仍需键盘走查与读屏实测；按角色定位的测试同时约束了语义。"
+  },
+  "table": {
+   "title": "WCAG 四原则与常见要求",
+   "head": [
+    "原则",
+    "要求示例",
+    "常见违规"
+   ],
+   "rows": [
+    [
+     "可感知",
+     "图片替代文本、对比度、字幕",
+     "缺 alt、浅灰文字"
+    ],
+    [
+     "可操作",
+     "全键盘可用、可见焦点",
+     "div 按钮、去掉焦点框"
+    ],
+    [
+     "可理解",
+     "表单标签、清晰错误提示",
+     "只用占位符当标签"
+    ],
+    [
+     "健壮",
+     "语义正确、兼容辅助技术",
+     "错误或冗余的 ARIA"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "语义化 HTML 优先",
+    "pros": "免费获得键盘与读屏支持",
+    "cons": "需克制「全用 div」的习惯",
+    "when": "所有项目的默认做法"
+   },
+   {
+    "opt": "使用无障碍组件库",
+    "pros": "复杂控件交互已实现",
+    "cons": "仍需正确传入标签等属性",
+    "when": "弹窗、下拉、标签页等控件"
+   },
+   {
+    "opt": "手写 ARIA 自定义控件",
+    "pros": "完全可控",
+    "cons": "极易出错，测试成本高",
+    "when": "确无现成方案时"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用 div/span 加 onClick 做按钮",
+    "fix": "使用 button 或 a 元素，自带焦点与回车/空格行为"
+   },
+   {
+    "bad": "CSS 去掉 outline 又不提供替代焦点样式",
+    "fix": "使用 :focus-visible 提供清晰的焦点样式"
+   },
+   {
+    "bad": "到处加 aria-label 甚至覆盖可见文本",
+    "fix": "优先可见文本与 label，ARIA 只用于补缺"
+   },
+   {
+    "bad": "只跑自动化扫描就宣称合规",
+    "fix": "补充键盘走查、读屏测试与人工审查"
+   }
+  ],
+  "checklist": [
+   "所有交互可用键盘完成",
+   "焦点可见且顺序合理",
+   "图片有恰当 alt，装饰图为空 alt",
+   "表单控件有关联标签与错误提示",
+   "颜色对比达到 AA",
+   "CI 中运行自动化无障碍检测"
+  ],
+  "interview": [
+   {
+    "q": "ARIA 的第一条使用规则是什么？",
+    "a": "能用具有所需语义和行为的原生 HTML 元素时，就不要用 ARIA 去改造其他元素。ARIA 只改变辅助技术看到的语义，不提供键盘交互等行为，错误使用会比不用更糟。"
+   },
+   {
+    "q": "自动化工具能发现多少无障碍问题？",
+    "a": "只能覆盖可机器判定的一部分，如缺少 alt、对比度不足、标签缺失。替代文本是否有意义、焦点顺序是否合理、读屏体验是否通顺等需要人工测试，因此要组合自动化、键盘走查与辅助技术实测。"
+   },
+   {
+    "q": "做 SPA 时有哪些特有的无障碍问题？",
+    "a": "路由切换不刷新页面，读屏不会自动播报新页面：需更新 document.title、把焦点移到主标题或用实时区域通知；动态加载内容要用 aria-live 告知；弹窗需焦点锁定与关闭后焦点归还。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "W3C：WCAG 2.2",
+    "url": "https://www.w3.org/TR/WCAG22/"
+   },
+   {
+    "title": "W3C WAI：Introduction to Web Accessibility",
+    "url": "https://www.w3.org/WAI/fundamentals/accessibility-intro/"
+   },
+   {
+    "title": "MDN：Accessibility",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/Accessibility"
+   },
+   {
+    "title": "axe-core（GitHub）",
+    "url": "https://github.com/dequelabs/axe-core"
+   }
+  ]
+ },
+ {
+  "slug": "utility-first-css",
+  "def": "原子化 CSS（Utility-First CSS）用大量单一用途的工具类（如 p-4、flex、text-red-500）直接在标记中组合样式，而不是为每个组件编写语义类名与独立样式表。Tailwind CSS 是代表，按扫描到的类名只生成用到的 CSS。它与组件化开发配合紧密，也是 AI 生成界面时最常见的样式写法。",
+  "how": [
+   "工具类与设计令牌一一对应：间距、颜色、字号等取自主题刻度，保证视觉一致。",
+   "构建时扫描源码中出现的类名字符串，只生成被使用的 CSS，产物体积与类名使用量相关。",
+   "变体前缀表达状态与条件：hover:、focus-visible:、md:（响应式）、dark:（深色模式）。",
+   "Tailwind v4 起推荐在 CSS 中用 @import \"tailwindcss\" 引入，并用 @theme 定义设计令牌。",
+   "重复的类组合通过抽取组件复用，而不是复制粘贴长串类名。"
+  ],
+  "terms": [
+   {
+    "t": "工具类 (Utility Class)",
+    "d": "只做一件事的类，如 mt-2 设置上外边距。"
+   },
+   {
+    "t": "设计令牌 (Design Tokens)",
+    "d": "主题中定义的颜色、间距等变量，生成对应工具类。"
+   },
+   {
+    "t": "变体 (Variant)",
+    "d": "hover:、md: 等前缀，在特定状态或断点下应用样式。"
+   },
+   {
+    "t": "任意值 (Arbitrary Value)",
+    "d": "如 w-[37px]，用方括号写主题外的值，应少用。"
+   },
+   {
+    "t": "tailwind-merge",
+    "d": "合并类名并解决冲突（如 p-2 与 p-4）的工具库。"
+   }
+  ],
+  "code": {
+   "lang": "typescript",
+   "title": "Tailwind v4 主题 + 组件封装",
+   "src": "/* app.css（Tailwind v4）\n   @import \"tailwindcss\";\n   @theme {\n     --color-brand: #4f46e5;   生成 bg-brand、text-brand 等类\n   }\n*/\nimport { clsx, type ClassValue } from \"clsx\";\nimport { twMerge } from \"tailwind-merge\";\n\n// 合并类名并解决冲突：后传入的 p-6 会覆盖默认 p-4\nexport const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));\n\nconst sizes = { sm: \"px-3 py-1.5 text-sm\", md: \"px-4 py-2\" } as const;\n\ntype Props = React.ButtonHTMLAttributes<HTMLButtonElement> & { size?: keyof typeof sizes };\n\nexport function Button({ size = \"md\", className, ...props }: Props) {\n  return (\n    <button\n      className={cn(\n        \"rounded-lg bg-brand text-white hover:bg-brand/90\",\n        \"focus-visible:outline-2 focus-visible:outline-offset-2\",\n        sizes[size], className)}\n      {...props}\n    />\n  );\n}\n// 错误：`bg-${color}-500` 这类动态拼接不会被扫描到，样式不会生成",
+   "note": "品牌色进 @theme，重复组合进组件；类名必须以完整字符串出现在源码中。"
+  },
+  "table": {
+   "title": "样式方案对比",
+   "head": [
+    "方案",
+    "样式位置",
+    "优点",
+    "代价"
+   ],
+   "rows": [
+    [
+     "原子化 CSS",
+     "标记中的工具类",
+     "快、一致、无命名负担",
+     "类名长、需学习词汇"
+    ],
+    [
+     "CSS Modules",
+     "组件旁的 .module.css",
+     "作用域隔离、写法标准",
+     "需在文件间切换"
+    ],
+    [
+     "CSS-in-JS",
+     "JS 中",
+     "动态样式方便",
+     "运行时开销（部分方案）"
+    ],
+    [
+     "传统 BEM",
+     "全局样式表",
+     "无构建依赖",
+     "命名与冲突管理成本高"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Tailwind 原子化",
+    "pros": "开发快、AI 生成质量稳定、产物小",
+    "cons": "标记冗长，需组件化约束",
+    "when": "组件化前端项目"
+   },
+   {
+    "opt": "CSS Modules",
+    "pros": "关注点分离、标准 CSS",
+    "cons": "设计令牌需自行组织",
+    "when": "偏好传统 CSS 的团队"
+   },
+   {
+    "opt": "组件库自带样式",
+    "pros": "开箱即用",
+    "cons": "品牌化定制受限",
+    "when": "后台与内部工具"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "动态拼接类名，样式在生产中丢失",
+    "fix": "使用完整类名的映射对象，或加入安全列表"
+   },
+   {
+    "bad": "到处写任意值（w-[37px]）破坏设计一致性",
+    "fix": "把常用值加入主题令牌"
+   },
+   {
+    "bad": "同一长串类名复制到几十处",
+    "fix": "抽取组件或变体配置"
+   },
+   {
+    "bad": "类名冲突（p-2 p-4 同时存在）结果不可预期",
+    "fix": "用 tailwind-merge 合并外部传入的 className"
+   }
+  ],
+  "checklist": [
+   "设计令牌集中在主题配置",
+   "无动态拼接的类名",
+   "重复样式已抽成组件",
+   "外部 className 经合并处理",
+   "交互元素有 focus-visible 样式",
+   "规则文件写明 Tailwind 版本与约定"
+  ],
+  "interview": [
+   {
+    "q": "原子化 CSS 会不会让 CSS 体积变大？",
+    "a": "通常相反：构建只生成用到的工具类，且同一个工具类在全站复用，CSS 体积随项目增长趋于平缓；而传统写法每个新组件都会追加样式。HTML 中类名变多，但经 gzip/brotli 压缩重复度高。"
+   },
+   {
+    "q": "为什么 AI 生成界面时常用 Tailwind？",
+    "a": "样式与结构在同一处，模型一次生成即可，无需维护单独样式文件与类名映射；工具类词汇固定、训练语料丰富，输出可预测；配合组件库（如 shadcn/ui）风格容易统一。"
+   },
+   {
+    "q": "如何避免 Tailwind 项目变得难维护？",
+    "a": "设计令牌集中管理，限制任意值；重复组合抽成组件或用变体工具管理；统一类名排序（官方 Prettier 插件）；用 tailwind-merge 处理覆盖；在规则文件中说明约定，供 Agent 遵循。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Tailwind CSS 文档",
+    "url": "https://tailwindcss.com/docs"
+   },
+   {
+    "title": "Tailwind CSS：Theme variables",
+    "url": "https://tailwindcss.com/docs/theme"
+   },
+   {
+    "title": "Tailwind CSS：Detecting classes in source files",
+    "url": "https://tailwindcss.com/docs/detecting-classes-in-source-files"
+   },
+   {
+    "title": "tailwind-merge（GitHub）",
+    "url": "https://github.com/dcastil/tailwind-merge"
+   }
+  ]
+ },
+ {
+  "slug": "seo",
+  "def": "搜索引擎优化（SEO）是让页面能被搜索引擎顺利抓取、渲染、索引，并在相关查询中获得更好展示的一组技术与内容实践。技术 SEO 关注可抓取性、渲染方式、规范链接、站点地图、结构化数据与页面体验；内容 SEO 关注满足搜索意图。对 AI 生成的前端项目，渲染方式与元信息是最常见的短板。",
+  "how": [
+   "抓取：爬虫发现 URL（链接、sitemap），遵守 robots.txt 规则请求页面。",
+   "渲染：Google 可执行 JavaScript，但渲染可能延后；服务端输出的 HTML 最可靠。",
+   "索引：解析标题、正文、链接、结构化数据与 canonical，判断重复页与首选 URL；noindex 页面不入索引。",
+   "排序：依据相关性、内容质量、链接信号与页面体验等众多因素决定展示位置。",
+   "监测：通过 Search Console 等站长工具查看覆盖率、抓取错误、查询词与点击。"
+  ],
+  "terms": [
+   {
+    "t": "robots.txt",
+    "d": "告诉爬虫哪些路径可抓取；禁止抓取不等于禁止索引。"
+   },
+   {
+    "t": "noindex",
+    "d": "通过 meta 标签或响应头告知搜索引擎不要索引该页。"
+   },
+   {
+    "t": "规范链接 (Canonical)",
+    "d": "在重复或相似页面中声明首选 URL。"
+   },
+   {
+    "t": "结构化数据 (Structured Data)",
+    "d": "用 schema.org 词汇（常为 JSON-LD）描述页面实体。"
+   },
+   {
+    "t": "XML Sitemap",
+    "d": "列出希望被抓取的 URL 及更新时间的文件。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "页面元信息与爬虫配置",
+   "src": "<!-- 每个页面独立的 head 信息 -->\n<head>\n  <title>手冲咖啡入门指南 | 咖啡小站</title>\n  <meta name=\"description\" content=\"从器具到萃取比例，10 分钟学会第一杯手冲。\">\n  <link rel=\"canonical\" href=\"https://example.com/guides/pour-over\">\n  <script type=\"application/ld+json\">\n  {\"@context\": \"https://schema.org\", \"@type\": \"Article\",\n   \"headline\": \"手冲咖啡入门指南\", \"datePublished\": \"2026-10-20\"}\n  </script>\n</head>\n\n# robots.txt（放在站点根目录）\nUser-agent: *\nDisallow: /admin/\nSitemap: https://example.com/sitemap.xml\n\n<!-- 不希望被索引的页面用 noindex，而不是只在 robots.txt 禁止抓取 -->\n<meta name=\"robots\" content=\"noindex\">",
+   "note": "robots.txt 只管抓取；要让页面不出现在结果中，需允许抓取并返回 noindex。"
+  },
+  "table": {
+   "title": "技术 SEO 检查项",
+   "head": [
+    "项目",
+    "目的",
+    "常见错误"
+   ],
+   "rows": [
+    [
+     "title / description",
+     "描述页面主题",
+     "全站重复"
+    ],
+    [
+     "canonical",
+     "合并重复 URL",
+     "指向错误或缺失"
+    ],
+    [
+     "渲染方式",
+     "让爬虫拿到内容",
+     "关键内容只靠 CSR"
+    ],
+    [
+     "sitemap",
+     "帮助发现 URL",
+     "含 404 或 noindex 页"
+    ],
+    [
+     "页面体验",
+     "加载与交互质量",
+     "LCP 慢、布局抖动"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "SSR/SSG 输出 HTML",
+    "pros": "抓取最可靠、首屏快",
+    "cons": "需框架与服务端/构建支持",
+    "when": "需要自然搜索流量的页面"
+   },
+   {
+    "opt": "CSR + 依赖搜索引擎渲染",
+    "pros": "架构简单",
+    "cons": "收录延迟与不确定性",
+    "when": "SEO 不重要的应用"
+   },
+   {
+    "opt": "程序化批量生成页面",
+    "pros": "覆盖大量长尾词",
+    "cons": "易被判为低质量重复内容",
+    "when": "有真实独特数据支撑时"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用 robots.txt 屏蔽页面，期望它从结果中消失",
+    "fix": "允许抓取并使用 noindex，确认移除后再视需要屏蔽"
+   },
+   {
+    "bad": "staging 环境被索引或生产误带 noindex",
+    "fix": "预发环境加认证或 noindex，上线检查清单核对 robots 设置"
+   },
+   {
+    "bad": "SPA 所有路由共用同一 title 与描述",
+    "fix": "按路由生成元信息，优先 SSR/SSG 输出"
+   },
+   {
+    "bad": "同一内容多个 URL（参数、大小写、尾斜杠）",
+    "fix": "统一 URL 规范，301 重定向并设置 canonical"
+   }
+  ],
+  "checklist": [
+   "每页标题与描述唯一",
+   "关键内容在服务端 HTML 中",
+   "canonical 正确",
+   "sitemap 与 robots.txt 已配置",
+   "已接入 Search Console 监测",
+   "核心网页指标达标"
+  ],
+  "interview": [
+   {
+    "q": "robots.txt 的 Disallow 和 noindex 有什么区别？",
+    "a": "Disallow 阻止爬虫抓取内容，但若有外部链接，URL 仍可能以无摘要形式被索引；noindex 要求不索引页面，但爬虫必须能抓到页面才能看到该指令。二者同时使用会使 noindex 失效。"
+   },
+   {
+    "q": "JavaScript 渲染的网站如何做 SEO？",
+    "a": "优先 SSR/SSG 或预渲染输出完整 HTML；确保链接是真实的 a 标签；资源可被抓取不被 robots 屏蔽；每个路由有独立元信息与可访问 URL；用 Search Console 的网址检查工具验证渲染结果。"
+   },
+   {
+    "q": "结构化数据能直接提升排名吗？",
+    "a": "官方说法是结构化数据帮助理解内容，并可能使页面获得富媒体结果展示，从而影响点击率；它本身不是直接的排名保证。标记必须与页面可见内容一致，否则可能被视为违规。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Google 搜索中心：SEO 入门指南",
+    "url": "https://developers.google.com/search/docs/fundamentals/seo-starter-guide"
+   },
+   {
+    "title": "Google：JavaScript SEO basics",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics"
+   },
+   {
+    "title": "Google：Introduction to robots.txt",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/robots/intro"
+   },
+   {
+    "title": "schema.org",
+    "url": "https://schema.org/"
+   }
+  ]
+ }
+]

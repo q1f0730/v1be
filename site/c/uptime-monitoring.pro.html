@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="可用性监控 (拨测) 专业模式：可用性监控（Uptime Monitoring），又称拨测或合成监控（Synthetic Monitoring），是从外部站点按固定频率主动请求服务，检查其是否">
+<title>🎓 可用性监控 (拨测) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="uptime-monitoring" data-answer="0" data-prev="observability.pro.html" data-next="multi-agent-systems.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#sre">🌊 中级 · 🩺 高可用 SRE</a><span>›</span><a href="uptime-monitoring.html">可用性监控 (拨测)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.202 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="observability.pro.html" rel="prev"><small>‹ 上一个</small><b>🔭 可观测性三支柱 (指标 / 日志 / 链路)</b></a><a class="pn next" href="multi-agent-systems.pro.html" rel="next"><small>下一个 ›</small><b>👥 多智能体协作</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🚨</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🩺 高可用 SRE</span><span>⏱ 约 10 分钟</span></div>
+    <h1>可用性监控 (拨测)</h1><p class="en">Uptime Monitoring</p>
+    <div class="hbtns"><a class="prosw back" href="uptime-monitoring.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">可用性监控（Uptime Monitoring），又称拨测或合成监控（Synthetic Monitoring），是从外部站点按固定频率主动请求服务，检查其是否可达、响应正确且足够快，并在失败时告警。它从用户视角补充内部指标，能发现 DNS、证书、CDN、网络等内部监控看不到的故障，也用于统计可用率、验证 SLA。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>在多个地理位置部署探针，按设定间隔（常见 30 秒到 5 分钟）向目标 URL、端口或接口发请求。</p></li><li><span class="sn">2</span><p>对响应做断言：状态码、关键字、响应时间阈值、JSON 字段，以及 TLS 证书剩余有效期。</p></li><li><span class="sn">3</span><p>为避免误报，通常要求连续多次失败或多个地点同时失败才判定宕机。</p></li><li><span class="sn">4</span><p>判定宕机后通过邮件、短信、IM 或值班系统通知，并在恢复时发送恢复通知、记录故障时长。</p></li><li><span class="sn">5</span><p>心跳监控反向工作：定时任务完成后主动 ping 监控地址，超时未收到即告警，用于发现静默失败的 cron。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>合成监控 (Synthetic Monitoring)</dt><dd>用脚本模拟用户请求主动探测服务。</dd></div><div class="term"><dt>心跳监控 (Heartbeat / Dead Man&#x27;s Switch)</dt><dd>任务定期上报，超时未上报即告警。</dd></div><div class="term"><dt>多地点确认 (Multi-location Confirmation)</dt><dd>多个探针同时失败才判定故障，降低误报。</dd></div><div class="term"><dt>可用率 (Availability)</dt><dd>正常时间占总时间的比例，如 99.9%。</dd></div><div class="term"><dt>状态页 (Status Page)</dt><dd>向用户公开展示服务状态与故障历史的页面。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>简易拨测与心跳脚本</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import time, ssl, socket, datetime
+import requests
+
+def check_http(url: str, keyword: str, max_ms: int = 2000) -&gt; str | None:
+    t = time.perf_counter()
+    try:
+        r = requests.get(url, timeout=10)
+    except requests.RequestException as e:
+        return f&quot;请求失败: {e}&quot;
+    ms = (time.perf_counter() - t) * 1000
+    if r.status_code != 200: return f&quot;状态码 {r.status_code}&quot;
+    if keyword not in r.text: return &quot;关键字缺失&quot;
+    if ms &gt; max_ms: return f&quot;过慢 {ms:.0f}ms&quot;
+    return None
+
+def cert_days_left(host: str) -&gt; int:
+    ctx = ssl.create_default_context()
+    with socket.create_connection((host, 443), timeout=10) as s:
+        with ctx.wrap_socket(s, server_hostname=host) as ss:
+            exp = ssl.cert_time_to_seconds(ss.getpeercert()[&quot;notAfter&quot;])
+    return int((exp - time.time()) // 86400)
+
+print(check_http(&quot;https://example.com&quot;, &quot;Example Domain&quot;))
+print(&quot;证书剩余天数:&quot;, cert_days_left(&quot;example.com&quot;))
+# cron 任务结束时上报心跳：requests.get(HEARTBEAT_URL, timeout=10)</code></pre></div><p class="cnote">演示状态码、关键字、延迟、证书四类断言；生产中应使用多地点的托管或自建监控服务。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">可用率与停机预算</h3><div class="tw"><table><thead><tr><th>可用率</th><th>每月约允许停机</th><th>每年约允许停机</th></tr></thead><tbody><tr><td data-h="可用率">99%</td><td data-h="每月约允许停机">约 7.3 小时</td><td data-h="每年约允许停机">约 3.65 天</td></tr><tr><td data-h="可用率">99.9%</td><td data-h="每月约允许停机">约 43.8 分钟</td><td data-h="每年约允许停机">约 8.77 小时</td></tr><tr><td data-h="可用率">99.95%</td><td data-h="每月约允许停机">约 21.9 分钟</td><td data-h="每年约允许停机">约 4.38 小时</td></tr><tr><td data-h="可用率">99.99%</td><td data-h="每月约允许停机">约 4.4 分钟</td><td data-h="每年约允许停机">约 52.6 分钟</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>托管拨测服务</h4><p><b class="k-p">优点</b>多地点、开箱即用、带状态页</p><p><b class="k-c">代价</b>按监控数与频率收费</p><p><b class="k-w">适用</b>大多数线上产品</p></div><div class="trd"><h4>自建（如 Uptime Kuma）</h4><p><b class="k-p">优点</b>免费、可控</p><p><b class="k-c">代价</b>单点部署，监控自身也会挂</p><p><b class="k-w">适用</b>个人项目、内网服务</p></div><div class="trd"><h4>只用内部指标</h4><p><b class="k-p">优点</b>无额外成本</p><p><b class="k-c">代价</b>看不到 DNS、证书、网络问题</p><p><b class="k-w">适用</b>不推荐单独使用</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>只检查首页返回 200，接口挂了没发现</p><p class="fix"><b>✓</b>同时监控健康检查接口和关键 API，并做内容断言</p></li><li><p class="bad"><b>✗</b>单地点探测，网络抖动频繁误报</p><p class="fix"><b>✓</b>多地点确认、连续失败 N 次再告警</p></li><li><p class="bad"><b>✗</b>监控服务与被监控服务部署在同一台机器</p><p class="fix"><b>✓</b>监控部署在独立的基础设施或使用外部服务</p></li><li><p class="bad"><b>✗</b>后台定时任务静默失败无人知晓</p><p class="fix"><b>✓</b>为 cron 任务配置心跳监控</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>监控首页、健康检查与关键 API</span></label></li><li><label><input type="checkbox"><span>断言状态码与关键内容</span></label></li><li><label><input type="checkbox"><span>证书到期提前告警</span></label></li><li><label><input type="checkbox"><span>多地点确认后再告警</span></label></li><li><label><input type="checkbox"><span>告警接入值班渠道并测试送达</span></label></li><li><label><input type="checkbox"><span>定时任务配置心跳监控</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>拨测和内部监控如何互补？</summary><p>内部指标能看到服务内部的延迟、错误和资源，但服务完全宕机时可能连指标都发不出来，也看不到 DNS、证书、CDN 和跨地域网络问题。拨测从外部模拟用户，能发现这些盲区，两者结合才能完整覆盖。</p></details><details class="iv"><summary>如何减少拨测误报？</summary><p>使用多个地理位置的探针，要求多数地点同时失败；设置连续失败次数阈值；合理的超时；把维护窗口设为静默期。同时区分告警级别，非关键检查只发通知不呼叫值班。</p></details><details class="iv"><summary>99.9% 可用率意味着什么？</summary><p>以 30 天计约允许 43 分钟停机，一年约 8.8 小时。这决定了故障响应和发布策略：要达到更高可用率，需要自动故障转移、多可用区部署和更快的告警响应，成本会显著上升。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://sre.google/sre-book/monitoring-distributed-systems/" target="_blank" rel="noopener"><b>Google SRE Book: Monitoring Distributed Systems</b><small>sre.google ↗</small></a></li><li><a href="https://github.com/louislam/uptime-kuma" target="_blank" rel="noopener"><b>Uptime Kuma (GitHub)</b><small>github.com ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Synthetic_monitoring" target="_blank" rel="noopener"><b>Wikipedia: Synthetic monitoring</b><small>en.wikipedia.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="observability.pro.html" rel="prev"><small>‹ 上一个</small><b>🔭 可观测性三支柱 (指标 / 日志 / 链路)</b></a><a class="pn next" href="multi-agent-systems.pro.html" rel="next"><small>下一个 ›</small><b>👥 多智能体协作</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

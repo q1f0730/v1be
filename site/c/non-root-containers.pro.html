@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="非Root权限运行容器 专业模式：非 root 容器（Non-Root Containers）指容器主进程以非特权用户（UID 非 0）而非默认的 root 运行。容器与宿主机共享内核，以 ro">
+<title>🎓 非Root权限运行容器 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="non-root-containers" data-answer="0" data-prev="multi-stage-builds.pro.html" data-next="image-scanning.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#devops">🔮 高级 · 🔭 可观测与交付</a><span>›</span><a href="non-root-containers.html">非Root权限运行容器</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.330 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="multi-stage-builds.pro.html" rel="prev"><small>‹ 上一个</small><b>🎂 Docker多阶段构建</b></a><a class="pn next" href="image-scanning.pro.html" rel="next"><small>下一个 ›</small><b>🔍 容器镜像漏洞扫描</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🪪</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>非Root权限运行容器</h1><p class="en">Non-Root Containers</p>
+    <div class="hbtns"><a class="prosw back" href="non-root-containers.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">非 root 容器（Non-Root Containers）指容器主进程以非特权用户（UID 非 0）而非默认的 root 运行。容器与宿主机共享内核，以 root 运行时一旦有逃逸漏洞或错误挂载，攻击者可能拿到宿主机高权限。它是最小权限基线，Pod 安全标准 restricted 级别即要求非 root。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>在 Dockerfile 中创建专用用户，并用 USER 指令切换，或选用自带非 root 用户的基础镜像。</p></li><li><span class="sn">2</span><p>确保应用需要写入的目录归属于该用户，其余文件和目录保持只读，避免权限报错。</p></li><li><span class="sn">3</span><p>Kubernetes 中用 securityContext 设置 runAsNonRoot 与 runAsUser，kubelet 会拒绝以 root 启动。</p></li><li><span class="sn">4</span><p>进一步禁止提权、丢弃全部 Linux 能力、启用只读根文件系统和 seccomp 默认配置。</p></li><li><span class="sn">5</span><p>应用监听 8080 等高位端口，避免为了绑定低位端口而需要额外特权。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>UID 0</dt><dd>Linux 中 root 用户的 ID，容器内默认即为它。</dd></div><div class="term"><dt>Linux 能力 (Capabilities)</dt><dd>把 root 权限拆分成的细粒度特权，如 NET_BIND_SERVICE。</dd></div><div class="term"><dt>runAsNonRoot</dt><dd>Kubernetes 安全上下文字段，镜像以 root 运行时拒绝启动。</dd></div><div class="term"><dt>allowPrivilegeEscalation</dt><dd>控制进程能否获得比父进程更多权限，如通过 setuid。</dd></div><div class="term"><dt>Rootless 模式</dt><dd>连容器运行时本身也以非 root 运行，比非 root 容器更进一步。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Pod 安全上下文</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code># Dockerfile 中对应：
+#   RUN useradd --uid 10001 --no-create-home app
+#   USER 10001
+apiVersion: v1
+kind: Pod
+metadata: { name: api }
+spec:
+  securityContext:
+    runAsNonRoot: true           # 镜像若以 root 运行则拒绝启动
+    runAsUser: 10001
+    fsGroup: 10001               # 挂载卷归属该组，便于写入
+    seccompProfile: { type: RuntimeDefault }
+  containers:
+    - name: api
+      image: example/api:1.0
+      ports: [{ containerPort: 8080 }]   # 高位端口，无需特权
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities: { drop: [&quot;ALL&quot;] }
+      volumeMounts: [{ name: tmp, mountPath: /tmp }]
+  volumes: [{ name: tmp, emptyDir: {} }]</code></pre></div><p class="cnote">满足 Pod 安全标准 restricted 的主要要求；只读根文件系统下用 emptyDir 提供可写目录。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">容器权限加固层次</h3><div class="tw"><table><thead><tr><th>措施</th><th>防护目标</th><th>配置位置</th></tr></thead><tbody><tr><td data-h="措施">非 root 用户</td><td data-h="防护目标">降低进程默认权限</td><td data-h="配置位置">Dockerfile USER / runAsUser</td></tr><tr><td data-h="措施">丢弃能力</td><td data-h="防护目标">移除不需要的内核特权</td><td data-h="配置位置">capabilities.drop</td></tr><tr><td data-h="措施">禁止提权</td><td data-h="防护目标">阻止 setuid 等提升权限</td><td data-h="配置位置">allowPrivilegeEscalation</td></tr><tr><td data-h="措施">只读根文件系统</td><td data-h="防护目标">防止篡改二进制和植入文件</td><td data-h="配置位置">readOnlyRootFilesystem</td></tr><tr><td data-h="措施">Rootless 运行时</td><td data-h="防护目标">运行时自身无 root</td><td data-h="配置位置">Docker/Podman rootless</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>非 root 加完整加固</h4><p><b class="k-p">优点</b>攻击面最小，符合合规</p><p><b class="k-c">代价</b>需要调整文件权限与可写目录</p><p><b class="k-w">适用</b>所有生产工作负载</p></div><div class="trd"><h4>仅设置非 root</h4><p><b class="k-p">优点</b>改造简单</p><p><b class="k-c">代价</b>仍保留默认能力等风险</p><p><b class="k-w">适用</b>加固的第一步</p></div><div class="trd"><h4>以 root 运行</h4><p><b class="k-p">优点</b>无需改造</p><p><b class="k-c">代价</b>逃逸或误挂载时风险高</p><p><b class="k-w">适用</b>仅限确需特权的系统组件，并单独隔离</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>USER 用用户名而非数字 UID，runAsNonRoot 无法校验。</p><p class="fix"><b>✓</b>Dockerfile 中使用数字 UID，或在 Pod 中显式设置 runAsUser。</p></li><li><p class="bad"><b>✗</b>切换用户后应用无法写缓存目录，启动报权限错误。</p><p class="fix"><b>✓</b>为可写目录设置属主，或挂载 emptyDir。</p></li><li><p class="bad"><b>✗</b>为绑定 80 端口给容器加特权。</p><p class="fix"><b>✓</b>应用监听高位端口，由 Service 映射到 80。</p></li><li><p class="bad"><b>✗</b>挂载 Docker socket 到非 root 容器，以为很安全。</p><p class="fix"><b>✓</b>访问 Docker socket 等同宿主机 root，应避免。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>镜像以数字 UID 的非 root 用户运行</span></label></li><li><label><input type="checkbox"><span>Pod 设置 runAsNonRoot</span></label></li><li><label><input type="checkbox"><span>禁止提权并丢弃全部能力</span></label></li><li><label><input type="checkbox"><span>根文件系统只读，可写目录单独挂载</span></label></li><li><label><input type="checkbox"><span>命名空间启用 Pod 安全标准</span></label></li><li><label><input type="checkbox"><span>未挂载宿主机敏感路径或 socket</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>容器已经隔离了，为什么还要非 root？</summary><p>容器与宿主机共享内核，隔离依赖命名空间和 cgroup。一旦出现内核或运行时漏洞、错误的卷挂载或特权配置，容器内的 root 可能直接获得宿主机 root。非 root 让攻击者即使逃逸也只拿到普通用户权限。</p></details><details class="iv"><summary>为什么 runAsNonRoot 要配合数字 UID？</summary><p>kubelet 只能根据镜像元数据中的数字 UID 判断是否为 root；若镜像 USER 写的是用户名，kubelet 无法确认，会拒绝启动。因此 Dockerfile 用数字 UID，或在 Pod 中显式指定 runAsUser。</p></details><details class="iv"><summary>非 root 容器和 rootless 模式有什么区别？</summary><p>非 root 容器指容器内进程不是 root，但运行时守护进程可能仍以 root 运行；rootless 模式让 Docker 或 Podman 运行时本身也在非特权用户下运行，进一步降低运行时被攻破的影响。两者可以叠加。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://kubernetes.io/docs/tasks/configure-pod-container/security-context/" target="_blank" rel="noopener"><b>Kubernetes：为 Pod 或容器配置安全上下文</b><small>kubernetes.io ↗</small></a></li><li><a href="https://kubernetes.io/docs/concepts/security/pod-security-standards/" target="_blank" rel="noopener"><b>Kubernetes：Pod Security Standards</b><small>kubernetes.io ↗</small></a></li><li><a href="https://docs.docker.com/engine/security/rootless/" target="_blank" rel="noopener"><b>Docker 文档：Rootless mode</b><small>docs.docker.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="multi-stage-builds.pro.html" rel="prev"><small>‹ 上一个</small><b>🎂 Docker多阶段构建</b></a><a class="pn next" href="image-scanning.pro.html" rel="next"><small>下一个 ›</small><b>🔍 容器镜像漏洞扫描</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

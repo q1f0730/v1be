@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="分布式链路追踪 专业模式：分布式链路追踪（Distributed Tracing）记录一个请求穿越多个服务、队列和数据库的路径与耗时。请求有唯一 Trace ID，每段操作是一个 Spa">
+<title>🎓 分布式链路追踪 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="distributed-tracing" data-answer="0" data-prev="log-rotation.pro.html" data-next="correlation-ids.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#devops">🔮 高级 · 🔭 可观测与交付</a><span>›</span><a href="distributed-tracing.html">分布式链路追踪</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.317 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="log-rotation.pro.html" rel="prev"><small>‹ 上一个</small><b>🎞️ 日志轮转与清理</b></a><a class="pn next" href="correlation-ids.pro.html" rel="next"><small>下一个 ›</small><b>🏷️ 请求关联标识符</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🛰️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🔭 可观测与交付</span><span>⏱ 约 10 分钟</span></div>
+    <h1>分布式链路追踪</h1><p class="en">Distributed Tracing</p>
+    <div class="hbtns"><a class="prosw back" href="distributed-tracing.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">分布式链路追踪（Distributed Tracing）记录一个请求穿越多个服务、队列和数据库的路径与耗时。请求有唯一 Trace ID，每段操作是一个 Span，跨进程靠请求头传播上下文。它是可观测性三支柱之一，用于定位延迟瓶颈与错误源，主流标准为 OpenTelemetry 与 W3C Trace Context。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>入口服务收到请求时创建根 Span，生成 Trace ID；若请求已带 traceparent 头则沿用。</p></li><li><span class="sn">2</span><p>服务内部的关键操作创建子 Span，记录开始结束时间、属性和错误状态。</p></li><li><span class="sn">3</span><p>调用下游时把追踪上下文注入请求头，下游提取后创建子 Span，形成父子关系。</p></li><li><span class="sn">4</span><p>SDK 把 Span 批量导出到 Collector，再发送到后端存储，如 Jaeger、Tempo 或商业平台。</p></li><li><span class="sn">5</span><p>后端按 Trace ID 拼接出瀑布图，配合采样策略控制数据量与成本。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>Span</dt><dd>一次操作的记录，含名称、起止时间、属性、状态和父 Span。</dd></div><div class="term"><dt>Trace ID</dt><dd>贯穿一次请求所有 Span 的唯一标识，W3C 中为 32 个十六进制字符。</dd></div><div class="term"><dt>traceparent 头</dt><dd>W3C 定义的传播头，含版本、Trace ID、父 Span ID 和标志位。</dd></div><div class="term"><dt>采样 (Sampling)</dt><dd>只保留部分链路，分头部采样和尾部采样。</dd></div><div class="term"><dt>OpenTelemetry Collector</dt><dd>接收、处理并转发遥测数据的独立组件。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>OpenTelemetry 手动埋点</span><em>python</em><button class="ccopy">复制</button></div><pre><code>from opentelemetry import trace
+from opentelemetry.propagate import inject
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+import requests
+
+provider = TracerProvider()
+provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
+trace.set_tracer_provider(provider)
+tracer = trace.get_tracer(&quot;checkout&quot;)
+
+with tracer.start_as_current_span(&quot;checkout&quot;) as span:
+    span.set_attribute(&quot;order.items&quot;, 3)
+    with tracer.start_as_current_span(&quot;call-inventory&quot;):
+        headers = {}
+        inject(headers)            # 写入 traceparent 头，传给下游
+        requests.get(&quot;http://inventory:8080/stock&quot;, headers=headers, timeout=2)
+# 生产中把 ConsoleSpanExporter 换成 OTLP 导出器发往 Collector</code></pre></div><p class="cnote">创建父子 Span 并把上下文注入请求头；也可用自动埋点库免改代码。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">可观测性三支柱</h3><div class="tw"><table><thead><tr><th>信号</th><th>擅长回答</th><th>局限</th></tr></thead><tbody><tr><td data-h="信号">指标 (Metrics)</td><td data-h="擅长回答">系统整体是否异常、趋势如何</td><td data-h="局限">缺少单个请求细节</td></tr><tr><td data-h="信号">日志 (Logs)</td><td data-h="擅长回答">某个事件的具体上下文</td><td data-h="局限">跨服务难以串联</td></tr><tr><td data-h="信号">链路 (Traces)</td><td data-h="擅长回答">请求慢在哪一段、错在哪个服务</td><td data-h="局限">数据量大，需要采样</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>头部采样</h4><p><b class="k-p">优点</b>实现简单、开销低</p><p><b class="k-c">代价</b>可能漏掉罕见错误和慢请求</p><p><b class="k-w">适用</b>流量大、成本敏感</p></div><div class="trd"><h4>尾部采样</h4><p><b class="k-p">优点</b>可保留所有错误和慢链路</p><p><b class="k-c">代价</b>Collector 需缓存完整链路，资源消耗大</p><p><b class="k-w">适用</b>重视异常排查</p></div><div class="trd"><h4>自动埋点</h4><p><b class="k-p">优点</b>接入快，覆盖常见框架</p><p><b class="k-c">代价</b>业务语义少，Span 可能过多</p><p><b class="k-w">适用</b>起步阶段</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>某个中间服务没传播上下文，链路在它那里断成两截。</p><p class="fix"><b>✓</b>所有服务和网关统一使用 W3C Trace Context 传播。</p></li><li><p class="bad"><b>✗</b>异步消息没携带追踪上下文。</p><p class="fix"><b>✓</b>把上下文写入消息头，消费端提取后建立关联。</p></li><li><p class="bad"><b>✗</b>把用户 ID 等高基数字段写进 Span 名称。</p><p class="fix"><b>✓</b>Span 名称保持低基数，变量放在属性中。</p></li><li><p class="bad"><b>✗</b>日志里没有 Trace ID，无法从链路跳到日志。</p><p class="fix"><b>✓</b>在日志中输出 Trace ID 和 Span ID。</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有服务统一传播 traceparent</span></label></li><li><label><input type="checkbox"><span>消息队列链路也携带上下文</span></label></li><li><label><input type="checkbox"><span>日志中包含 Trace ID</span></label></li><li><label><input type="checkbox"><span>采样策略明确并保留错误链路</span></label></li><li><label><input type="checkbox"><span>Span 名称低基数、属性规范</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>链路追踪的上下文是怎么跨服务传递的？</summary><p>调用方 SDK 把当前 Trace ID、Span ID 和采样标志按 W3C Trace Context 格式注入 traceparent 请求头；被调方提取后，以该 Span 为父创建新 Span。消息队列则写入消息头。任何一环不传播，链路就会断开。</p></details><details class="iv"><summary>头部采样和尾部采样怎么选？</summary><p>头部采样在入口就决定是否记录，开销小，但无法预知请求会不会出错；尾部采样在链路完成后根据结果决定保留，能保留所有错误和慢请求，代价是 Collector 需缓存完整链路。常组合使用。</p></details><details class="iv"><summary>有了日志为什么还需要链路追踪？</summary><p>日志分散在各服务，难以还原一次请求的完整路径和各段耗时；链路追踪直接给出调用树和瀑布图，快速定位慢段。两者通过 Trace ID 关联，从链路跳到对应日志看细节。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://opentelemetry.io/docs/concepts/signals/traces/" target="_blank" rel="noopener"><b>OpenTelemetry：Traces</b><small>opentelemetry.io ↗</small></a></li><li><a href="https://www.w3.org/TR/trace-context/" target="_blank" rel="noopener"><b>W3C Trace Context</b><small>w3.org ↗</small></a></li><li><a href="https://research.google/pubs/dapper-a-large-scale-distributed-systems-tracing-infrastructure/" target="_blank" rel="noopener"><b>Google Research：Dapper 论文</b><small>research.google ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="log-rotation.pro.html" rel="prev"><small>‹ 上一个</small><b>🎞️ 日志轮转与清理</b></a><a class="pn next" href="correlation-ids.pro.html" rel="next"><small>下一个 ›</small><b>🏷️ 请求关联标识符</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

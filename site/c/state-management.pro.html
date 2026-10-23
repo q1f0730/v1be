@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="状态管理 专业模式：状态管理是前端应用中组织、共享与更新随时间变化的数据（状态）的方法与工具，涵盖组件局部状态、跨组件共享的客户端状态、来自服务器的数据缓存、URL 状态与表单状态">
+<title>🎓 状态管理 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="state-management" data-answer="0" data-prev="dev-containers.pro.html" data-next="single-page-application.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#fe">🌊 中级 · 🎨 前端工程</a><span>›</span><a href="state-management.html">状态管理</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.173 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="dev-containers.pro.html" rel="prev"><small>‹ 上一个</small><b>📦 开发容器 (Dev Container)</b></a><a class="pn next" href="single-page-application.pro.html" rel="next"><small>下一个 ›</small><b>📄 单页应用 (SPA)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🎛️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🎨 前端工程</span><span>⏱ 约 10 分钟</span></div>
+    <h1>状态管理</h1><p class="en">State Management</p>
+    <div class="hbtns"><a class="prosw back" href="state-management.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">状态管理是前端应用中组织、共享与更新随时间变化的数据（状态）的方法与工具，涵盖组件局部状态、跨组件共享的客户端状态、来自服务器的数据缓存、URL 状态与表单状态。它属于前端架构层，核心原则是单一数据源、派生而非复制、按作用域就近放置；选错层级是界面不同步类 Bug 的主要来源。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>组件局部状态（如 useState）保存只与该组件相关的 UI 细节，如弹窗开关、输入框内容。</p></li><li><span class="sn">2</span><p>多个组件共享的状态上提到共同父级，或放入 Context、Zustand、Redux 等全局 store。</p></li><li><span class="sn">3</span><p>服务器数据属于服务端状态：用 TanStack Query、SWR 等缓存库管理请求、缓存、失效与重新获取。</p></li><li><span class="sn">4</span><p>筛选条件、分页等可分享的状态放在 URL 查询参数中，刷新和分享链接都能还原。</p></li><li><span class="sn">5</span><p>状态更新遵循不可变原则：生成新对象触发重新渲染，派生值在渲染或选择器中计算而不另存。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>单一数据源 (Single Source of Truth)</dt><dd>同一份数据只在一个地方存储，其余处读取或派生。</dd></div><div class="term"><dt>派生状态 (Derived State)</dt><dd>可由已有状态计算得出的值，不应另外存储。</dd></div><div class="term"><dt>服务端状态 (Server State)</dt><dd>来源于服务器、可能过期的数据，需缓存与同步策略。</dd></div><div class="term"><dt>选择器 (Selector)</dt><dd>从 store 中选取或计算所需片段，减少无关重渲染。</dd></div><div class="term"><dt>不可变更新 (Immutable Update)</dt><dd>不直接修改原对象，而是返回新对象表示新状态。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Zustand 购物车 store</span><em>typescript</em><button class="ccopy">复制</button></div><pre><code>import { create } from &quot;zustand&quot;;
+
+type Item = { id: string; qty: number };
+type CartState = {
+  items: Item[];
+  add: (id: string) =&gt; void;
+  remove: (id: string) =&gt; void;
+};
+
+export const useCart = create&lt;CartState&gt;()((set) =&gt; ({
+  items: [],
+  add: (id) =&gt;
+    set((s) =&gt; ({
+      items: s.items.some((i) =&gt; i.id === id)
+        ? s.items.map((i) =&gt; (i.id === id ? { ...i, qty: i.qty + 1 } : i))
+        : [...s.items, { id, qty: 1 }],   // 不可变更新：返回新数组
+    })),
+  remove: (id) =&gt; set((s) =&gt; ({ items: s.items.filter((i) =&gt; i.id !== id) })),
+}));
+
+// 派生值用选择器计算，不另存 count，避免两份数据不同步
+export const useCartCount = () =&gt;
+  useCart((s) =&gt; s.items.reduce((n, i) =&gt; n + i.qty, 0));
+
+export function CartBadge() {
+  const count = useCartCount();   // 只在数量变化时重渲染
+  return &lt;span&gt;{count}&lt;/span&gt;;
+}</code></pre></div><p class="cnote">购物车只存 items，角标数量由选择器派生；商品详情等服务器数据交给请求缓存库。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">状态分类与归属</h3><div class="tw"><table><thead><tr><th>状态类型</th><th>例子</th><th>推荐方案</th></tr></thead><tbody><tr><td data-h="状态类型">局部 UI 状态</td><td data-h="例子">弹窗开关、Tab 选中</td><td data-h="推荐方案">组件内 useState</td></tr><tr><td data-h="状态类型">共享客户端状态</td><td data-h="例子">登录用户、主题、购物车</td><td data-h="推荐方案">Context / Zustand / Redux</td></tr><tr><td data-h="状态类型">服务端状态</td><td data-h="例子">列表、详情数据</td><td data-h="推荐方案">TanStack Query / SWR</td></tr><tr><td data-h="状态类型">URL 状态</td><td data-h="例子">搜索词、分页、筛选</td><td data-h="推荐方案">路由查询参数</td></tr><tr><td data-h="状态类型">表单状态</td><td data-h="例子">字段值、校验错误</td><td data-h="推荐方案">表单库或受控组件</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>React 内置（state + Context）</h4><p><b class="k-p">优点</b>无依赖，概念少</p><p><b class="k-c">代价</b>Context 值变化会使所有消费者重渲染</p><p><b class="k-w">适用</b>中小应用、低频变化的数据</p></div><div class="trd"><h4>轻量 store（Zustand 等）</h4><p><b class="k-p">优点</b>API 简单，选择器订阅精细</p><p><b class="k-c">代价</b>缺少强约束，规模大时需自定规范</p><p><b class="k-w">适用</b>多数中型应用</p></div><div class="trd"><h4>Redux Toolkit</h4><p><b class="k-p">优点</b>规范严格、调试工具强</p><p><b class="k-c">代价</b>样板与概念较多</p><p><b class="k-w">适用</b>大型团队、复杂状态流</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>把服务器数据复制进全局 store 手动同步</p><p class="fix"><b>✓</b>用请求缓存库管理服务端状态与失效</p></li><li><p class="bad"><b>✗</b>同一数据在多个组件各存一份</p><p class="fix"><b>✓</b>上提到共同来源，其余处读取或派生</p></li><li><p class="bad"><b>✗</b>直接修改状态对象（push、赋值属性）</p><p class="fix"><b>✓</b>使用不可变更新，或借助 Immer</p></li><li><p class="bad"><b>✗</b>所有状态都放全局，任何变化都引发大范围重渲染</p><p class="fix"><b>✓</b>就近放置状态，全局 store 用选择器订阅</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每份数据只有一个来源</span></label></li><li><label><input type="checkbox"><span>派生值不单独存储</span></label></li><li><label><input type="checkbox"><span>服务端数据用缓存库管理</span></label></li><li><label><input type="checkbox"><span>可分享的筛选状态在 URL 中</span></label></li><li><label><input type="checkbox"><span>状态更新均为不可变</span></label></li><li><label><input type="checkbox"><span>全局状态有命名与目录约定</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么要区分客户端状态和服务端状态？</summary><p>服务端状态由服务器拥有，可能被他人修改而过期，需要缓存、去重、后台刷新、失效与重试；客户端状态由前端独占、同步可控。把二者混在同一 store 会导致大量手写同步逻辑与陈旧数据 Bug。</p></details><details class="iv"><summary>Context 为什么可能造成性能问题？</summary><p>Provider 的 value 变化时，所有使用该 Context 的组件都会重新渲染，即使只用到其中一个字段。可拆分多个 Context、memo 化 value，或改用支持选择器订阅的 store。</p></details><details class="iv"><summary>如何决定一个状态放在哪里？</summary><p>先问能否由已有数据派生；再看谁在用：单组件用局部状态，几个相邻组件上提到父级，跨远距离共享放全局 store；来自服务器的交给缓存库；需要刷新后保留或可分享的放 URL。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://react.dev/learn/managing-state" target="_blank" rel="noopener"><b>React 文档：Managing State</b><small>react.dev ↗</small></a></li><li><a href="https://zustand.docs.pmnd.rs/" target="_blank" rel="noopener"><b>Zustand 文档</b><small>zustand.docs.pmnd.rs ↗</small></a></li><li><a href="https://tanstack.com/query/latest/docs/framework/react/overview" target="_blank" rel="noopener"><b>TanStack Query 文档</b><small>tanstack.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="dev-containers.pro.html" rel="prev"><small>‹ 上一个</small><b>📦 开发容器 (Dev Container)</b></a><a class="pn next" href="single-page-application.pro.html" rel="next"><small>下一个 ›</small><b>📄 单页应用 (SPA)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

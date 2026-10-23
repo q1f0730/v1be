@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="六边形架构 / 整洁架构 专业模式：六边形架构（Hexagonal Architecture，又称端口与适配器）由 Alistair Cockburn 于 2005 年提出，整洁架构（Clean ">
+<title>🎓 六边形架构 / 整洁架构 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="hexagonal-architecture" data-answer="0" data-prev="domain-driven-design.pro.html" data-next="multi-tenancy.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#arch">🔥 进阶 · 🏛️ 架构设计</a><span>›</span><a href="hexagonal-architecture.html">六边形架构 / 整洁架构</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.460 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="domain-driven-design.pro.html" rel="prev"><small>‹ 上一个</small><b>🗂️ 领域驱动设计 (DDD)</b></a><a class="pn next" href="multi-tenancy.pro.html" rel="next"><small>下一个 ›</small><b>🏢 多租户架构</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">⬡</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🏛️ 架构设计</span><span>⏱ 约 10 分钟</span></div>
+    <h1>六边形架构 / 整洁架构</h1><p class="en">Hexagonal Architecture</p>
+    <div class="hbtns"><a class="prosw back" href="hexagonal-architecture.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">六边形架构（Hexagonal Architecture，又称端口与适配器）由 Alistair Cockburn 于 2005 年提出，整洁架构（Clean Architecture）是 Robert C. Martin 2012 年总结的同类思想。核心是依赖只指向内部：业务核心定义端口（接口），数据库、Web 框架等外部技术以适配器实现端口，使业务可独立测试、技术可替换。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>把应用分为内部（领域模型与用例）和外部（UI、数据库、第三方服务、消息系统）。</p></li><li><span class="sn">2</span><p>内部定义端口：驱动端口是外界调用应用的入口（如用例接口），被驱动端口是应用需要的外部能力（如仓储接口）。</p></li><li><span class="sn">3</span><p>外部实现适配器：HTTP 控制器、CLI 属于驱动适配器；数据库仓储、邮件网关属于被驱动适配器。</p></li><li><span class="sn">4</span><p>依赖倒置：核心只依赖自己定义的抽象，适配器依赖核心，组装在应用启动的组合根中完成。</p></li><li><span class="sn">5</span><p>测试时用内存适配器替换真实数据库，用例测试无需启动框架或外部服务。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>端口 (Port)</dt><dd>由应用核心定义的接口，描述它对外提供或需要的能力。</dd></div><div class="term"><dt>适配器 (Adapter)</dt><dd>把具体技术（SQL、HTTP、SDK）转换为端口接口的实现。</dd></div><div class="term"><dt>驱动/被驱动 (Driving/Driven)</dt><dd>主动调用应用的一侧与被应用调用的一侧，也称主/次适配器。</dd></div><div class="term"><dt>依赖规则 (Dependency Rule)</dt><dd>整洁架构的要求：源代码依赖只能指向更内层的策略。</dd></div><div class="term"><dt>组合根 (Composition Root)</dt><dd>应用入口处集中创建并装配具体适配器的位置。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>端口与内存适配器</span><em>python</em><button class="ccopy">复制</button></div><pre><code>from typing import Protocol
+
+class UserRepo(Protocol):               # 被驱动端口：核心定义
+    def get_email(self, uid: int) -&gt; str | None: ...
+
+class Mailer(Protocol):
+    def send(self, to: str, body: str) -&gt; None: ...
+
+class SendWelcome:                      # 用例：只依赖端口
+    def __init__(self, repo: UserRepo, mailer: Mailer):
+        self.repo, self.mailer = repo, mailer
+    def __call__(self, uid: int) -&gt; bool:
+        email = self.repo.get_email(uid)
+        if not email:
+            return False
+        self.mailer.send(email, &quot;欢迎加入&quot;)
+        return True
+
+# 测试用适配器：无需数据库与邮件服务
+class InMemoryRepo:
+    def __init__(self, data): self.data = data
+    def get_email(self, uid): return self.data.get(uid)
+
+class FakeMailer:
+    def __init__(self): self.sent = []
+    def send(self, to, body): self.sent.append(to)
+
+m = FakeMailer()
+assert SendWelcome(InMemoryRepo({1: &quot;a@x.com&quot;}), m)(1) and m.sent == [&quot;a@x.com&quot;]</code></pre></div><p class="cnote">生产环境换成 SQL 仓储和 SMTP 适配器即可，用例代码不改；Protocol 需要 Python 3.8+，X | None 写法需 3.10+。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">几种分层架构对比</h3><div class="tw"><table><thead><tr><th>架构</th><th>依赖方向</th><th>关注点</th></tr></thead><tbody><tr><td data-h="架构">传统三层</td><td data-h="依赖方向">UI → 业务 → 数据访问</td><td data-h="关注点">业务层直接依赖数据库实现</td></tr><tr><td data-h="架构">六边形</td><td data-h="依赖方向">适配器 → 端口 ← 核心</td><td data-h="关注点">内外对称，强调可替换适配器</td></tr><tr><td data-h="架构">洋葱架构</td><td data-h="依赖方向">外环依赖内环</td><td data-h="关注点">领域模型位于圆心</td></tr><tr><td data-h="架构">整洁架构</td><td data-h="依赖方向">框架 → 接口适配 → 用例 → 实体</td><td data-h="关注点">以依赖规则统一上述思想</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>严格端口与适配器</h4><p><b class="k-p">优点</b>核心可单测，技术栈可替换</p><p><b class="k-c">代价</b>接口与映射代码增多，入门门槛高</p><p><b class="k-w">适用</b>业务复杂、生命周期长的系统</p></div><div class="trd"><h4>轻量分层（只抽仓储）</h4><p><b class="k-p">优点</b>成本低，保留主要测试收益</p><p><b class="k-c">代价</b>框架依赖仍可能渗入业务</p><p><b class="k-w">适用</b>中小型项目、团队较小</p></div><div class="trd"><h4>直接用框架约定</h4><p><b class="k-p">优点</b>开发最快，生态工具最全</p><p><b class="k-c">代价</b>业务与框架强耦合，难迁移难测</p><p><b class="k-w">适用</b>原型、短期项目或纯 CRUD</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>领域实体直接继承 ORM 基类</p><p class="fix"><b>✓</b>领域模型保持纯对象，在适配器中做 ORM 映射</p></li><li><p class="bad"><b>✗</b>为每个类都建接口，抽象泛滥</p><p class="fix"><b>✓</b>只在外部依赖边界建端口，内部代码直接调用</p></li><li><p class="bad"><b>✗</b>端口按数据库表设计，泄漏存储细节</p><p class="fix"><b>✓</b>端口以业务语言命名，如 find_active_orders，而非通用 SQL 操作</p></li><li><p class="bad"><b>✗</b>依赖规则只靠约定，逐渐被破坏</p><p class="fix"><b>✓</b>用 import-linter、ArchUnit 等工具在 CI 中检查依赖方向</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>领域与用例代码不 import 框架和驱动库</span></label></li><li><label><input type="checkbox"><span>外部依赖都通过核心定义的端口访问</span></label></li><li><label><input type="checkbox"><span>用例可用内存适配器完成单元测试</span></label></li><li><label><input type="checkbox"><span>装配集中在组合根或依赖注入容器</span></label></li><li><label><input type="checkbox"><span>CI 中有架构依赖规则检查</span></label></li><li><label><input type="checkbox"><span>给 AI 的规则文件写明分层与依赖方向</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>六边形架构和三层架构的本质区别？</summary><p>三层架构中业务层依赖数据访问层的具体实现，依赖方向自上而下直达数据库。六边形架构通过依赖倒置，让数据库适配器依赖业务核心定义的接口，核心不知道任何技术细节。结果是核心可脱离基础设施测试，替换存储只需新增适配器。</p></details><details class="iv"><summary>如何防止 AI 生成的代码破坏分层？</summary><p>在规则文件中写明目录职责与禁止的 import，例如 domain 目录不得引入 ORM 和 Web 框架；在 CI 加架构测试自动拦截；评审时重点看新代码的依赖方向。把这些约束作为 Agent 的上下文，比事后重构便宜得多。</p></details><details class="iv"><summary>什么情况下这种架构是过度设计？</summary><p>逻辑主要是表单与数据库的直接映射、生命周期短或团队很小时，额外的接口与映射层收益有限。可先只抽象最可能替换或最难测的外部依赖（如支付、邮件），随复杂度增长再逐步演进。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://alistair.cockburn.us/hexagonal-architecture/" target="_blank" rel="noopener"><b>Alistair Cockburn: Hexagonal Architecture</b><small>alistair.cockburn.us ↗</small></a></li><li><a href="https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html" target="_blank" rel="noopener"><b>Robert C. Martin: The Clean Architecture</b><small>blog.cleancoder.com ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Hexagonal_architecture_(software)" target="_blank" rel="noopener"><b>Wikipedia: Hexagonal architecture (software)</b><small>en.wikipedia.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="domain-driven-design.pro.html" rel="prev"><small>‹ 上一个</small><b>🗂️ 领域驱动设计 (DDD)</b></a><a class="pn next" href="multi-tenancy.pro.html" rel="next"><small>下一个 ›</small><b>🏢 多租户架构</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

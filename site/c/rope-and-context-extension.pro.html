@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="旋转位置编码与长上下文扩展 专业模式：旋转位置编码（RoPE，Su 等 2021 年提出于 RoFormer）把位置信息编码为对查询和键向量的旋转：向量的每对维度按位置乘以不同频率的角度旋转，使注意">
+<title>🎓 旋转位置编码与长上下文扩展 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="rope-and-context-extension" data-answer="0" data-prev="rlvr-grpo.pro.html" data-next="http-3-quic.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#llmops">🔥 进阶 · 🧠 模型工程与推理部署</a><span>›</span><a href="rope-and-context-extension.html">旋转位置编码与长上下文扩展</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.487 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="rlvr-grpo.pro.html" rel="prev"><small>‹ 上一个</small><b>🏅 可验证奖励强化学习 (RLVR / GRPO)</b></a><a class="pn next" href="http-3-quic.pro.html" rel="next"><small>下一个 ›</small><b>🚀 HTTP/3 与 QUIC</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🔄</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🧠 模型工程与推理部署</span><span>⏱ 约 10 分钟</span></div>
+    <h1>旋转位置编码与长上下文扩展</h1><p class="en">RoPE &amp; Context Extension</p>
+    <div class="hbtns"><a class="prosw back" href="rope-and-context-extension.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">旋转位置编码（RoPE，Su 等 2021 年提出于 RoFormer）把位置信息编码为对查询和键向量的旋转：向量的每对维度按位置乘以不同频率的角度旋转，使注意力点积只依赖两个 Token 的相对距离。它是当前主流开源 LLM 的位置编码方式。在此基础上，位置插值、NTK 缩放、YaRN 等方法可以让模型以少量或无需额外训练扩展上下文长度。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>把查询/键向量的维度两两配对，第 i 对使用频率 θ_i = base^(−2i/d)，原始 base 为 10000。</p></li><li><span class="sn">2</span><p>位置 m 的 Token 将第 i 对维度旋转角度 m·θ_i；高频维度编码近距离细节，低频维度编码远距离关系。</p></li><li><span class="sn">3</span><p>两个旋转后向量的点积只与位置差 m−n 有关，因此注意力天然具有相对位置性质。</p></li><li><span class="sn">4</span><p>超出训练长度时会出现未见过的旋转角度，模型表现骤降；位置插值把位置按比例压缩回训练范围。</p></li><li><span class="sn">5</span><p>NTK 感知缩放通过增大 base 主要拉伸低频维度；YaRN 按频率分段插值并调整注意力温度，常配合少量长文本继续训练。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>RoPE base (rope_theta)</dt><dd>决定旋转频率范围的超参数，增大它可以支持更长的位置。</dd></div><div class="term"><dt>位置插值 (Position Interpolation)</dt><dd>把超长位置线性缩放到训练长度范围内再计算旋转。</dd></div><div class="term"><dt>YaRN</dt><dd>按频率分段处理的 RoPE 扩展方法，兼顾高频细节与长距离外推。</dd></div><div class="term"><dt>有效上下文 (Effective Context)</dt><dd>模型在该长度下仍能可靠完成检索与推理的实际长度，常小于标称值。</dd></div><div class="term"><dt>RULER</dt><dd>NVIDIA 提出的长上下文评测基准，测量模型的真实有效上下文长度。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>RoPE 的相对位置性质</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import numpy as np
+
+def rope(x, pos, base=10000.0):
+    &quot;&quot;&quot;对向量 x（维度为偶数）施加位置 pos 的旋转&quot;&quot;&quot;
+    d = x.shape[-1]
+    theta = base ** (-np.arange(0, d, 2) / d)       # 每对维度的频率
+    ang = pos * theta
+    x1, x2 = x[0::2], x[1::2]
+    out = np.empty_like(x)
+    out[0::2] = x1 * np.cos(ang) - x2 * np.sin(ang)
+    out[1::2] = x1 * np.sin(ang) + x2 * np.cos(ang)
+    return out
+
+rng = np.random.default_rng(0)
+q, k = rng.standard_normal(64), rng.standard_normal(64)
+
+# 位置 (10, 3) 与 (1007, 1000) 的相对距离都是 7
+s1 = rope(q, 10) @ rope(k, 3)
+s2 = rope(q, 1007) @ rope(k, 1000)
+print(np.isclose(s1, s2))     # True：点积只取决于相对距离
+
+# Hugging Face 配置中启用 YaRN 的常见写法（具体以模型官方文档为准）：
+# &quot;rope_scaling&quot;: {&quot;type&quot;: &quot;yarn&quot;, &quot;factor&quot;: 4.0,
+#                  &quot;original_max_position_embeddings&quot;: 32768}</code></pre></div><p class="cnote">相对位置性质让 RoPE 可以通过调整频率或缩放位置来扩展长度；能否真正用好长上下文仍需评测。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">上下文扩展方法对比</h3><div class="tw"><table><thead><tr><th>方法</th><th>做法</th><th>是否需训练</th><th>特点</th></tr></thead><tbody><tr><td data-h="方法">直接外推</td><td data-h="做法">使用超出训练范围的位置</td><td data-h="是否需训练">否</td><td data-h="特点">超长后质量迅速下降</td></tr><tr><td data-h="方法">位置插值 (PI)</td><td data-h="做法">位置线性压缩到训练范围</td><td data-h="是否需训练">少量微调</td><td data-h="特点">简单有效，高频细节被压缩</td></tr><tr><td data-h="方法">NTK 感知缩放</td><td data-h="做法">增大 RoPE base</td><td data-h="是否需训练">可不训练</td><td data-h="特点">低频拉伸，短文本影响小</td></tr><tr><td data-h="方法">YaRN</td><td data-h="做法">分频段插值并调温度</td><td data-h="是否需训练">少量微调效果更好</td><td data-h="特点">被多款开源模型采用</td></tr><tr><td data-h="方法">增大 base 后长文本继续训练</td><td data-h="做法">预训练阶段设定大 base</td><td data-h="是否需训练">是</td><td data-h="特点">从训练层面支持长上下文</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>使用模型原生长上下文</h4><p><b class="k-p">优点</b>无需额外工程，官方已评测</p><p><b class="k-c">代价</b>长输入成本与延迟高</p><p><b class="k-w">适用</b>确实需要整体理解长文档</p></div><div class="trd"><h4>推理时开启 RoPE 缩放</h4><p><b class="k-p">优点</b>配置即可扩展长度</p><p><b class="k-c">代价</b>可能影响短文本表现，需验证</p><p><b class="k-w">适用</b>官方明确支持该缩放方式时</p></div><div class="trd"><h4>检索与分块（RAG）</h4><p><b class="k-p">优点</b>只送相关内容，便宜且可追溯</p><p><b class="k-c">代价</b>可能漏检跨段信息</p><p><b class="k-w">适用</b>知识库问答、文档量远超窗口</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>把标称上下文长度当作有效长度</p><p class="fix"><b>✓</b>用 RULER 或自建的大海捞针任务实测有效长度</p></li><li><p class="bad"><b>✗</b>随意修改 rope_scaling 而不评测</p><p class="fix"><b>✓</b>按官方推荐配置，并在短、长两类任务上回归评测</p></li><li><p class="bad"><b>✗</b>长上下文中关键信息放在中间</p><p class="fix"><b>✓</b>把指令和关键材料放在开头或结尾，必要时重复要点</p></li><li><p class="bad"><b>✗</b>忽视长上下文的 KV 缓存与成本</p><p class="fix"><b>✓</b>估算显存与费用，优先裁剪无关内容或使用缓存</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>确认模型官方的上下文长度与缩放配置</span></label></li><li><label><input type="checkbox"><span>实测目标长度下的检索与推理准确率</span></label></li><li><label><input type="checkbox"><span>关键指令位于上下文首尾</span></label></li><li><label><input type="checkbox"><span>评估长输入的延迟与成本</span></label></li><li><label><input type="checkbox"><span>缩放配置开启后回归短文本任务</span></label></li><li><label><input type="checkbox"><span>超长资料优先检索或分段汇总</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>RoPE 为什么能编码相对位置？</summary><p>位置 m 的向量被旋转 m·θ 角，位置 n 的被旋转 n·θ 角。二维旋转矩阵满足 R(m)ᵀR(n)=R(n−m)，所以两者点积等于原向量经 R(n−m) 作用后的点积，只取决于相对距离。多组频率叠加，使模型同时感知近距离与远距离关系。</p></details><details class="iv"><summary>位置插值与 NTK 缩放的区别？</summary><p>位置插值把所有位置按同一比例压缩，所有频率同等变慢，近距离分辨率下降；NTK 感知缩放增大 base，主要放慢低频维度、基本保留高频维度，对短距离细节影响更小。YaRN 进一步按频段区别处理，并修正注意力熵。</p></details><details class="iv"><summary>百万 Token 上下文能替代 RAG 吗？</summary><p>不完全能。长上下文适合需要整体理解的少量长文档，但成本与延迟随长度增长，模型对中间位置信息的利用也不稳定；RAG 便宜、可更新、可引用来源。实践中常组合：检索缩小范围，再在较长上下文中综合推理。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://arxiv.org/abs/2104.09864" target="_blank" rel="noopener"><b>Su et al.: RoFormer (arXiv:2104.09864)</b><small>arxiv.org ↗</small></a></li><li><a href="https://arxiv.org/abs/2309.00071" target="_blank" rel="noopener"><b>Peng et al.: YaRN (arXiv:2309.00071)</b><small>arxiv.org ↗</small></a></li><li><a href="https://arxiv.org/abs/2306.15595" target="_blank" rel="noopener"><b>Chen et al.: Position Interpolation (arXiv:2306.15595)</b><small>arxiv.org ↗</small></a></li><li><a href="https://arxiv.org/abs/2404.06654" target="_blank" rel="noopener"><b>RULER (arXiv:2404.06654)</b><small>arxiv.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="rlvr-grpo.pro.html" rel="prev"><small>‹ 上一个</small><b>🏅 可验证奖励强化学习 (RLVR / GRPO)</b></a><a class="pn next" href="http-3-quic.pro.html" rel="next"><small>下一个 ›</small><b>🚀 HTTP/3 与 QUIC</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

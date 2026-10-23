@@ -1,0 +1,3583 @@
+[
+ {
+  "slug": "chunking-strategies",
+  "def": "文档切块（Chunking）是 RAG 索引阶段把长文档拆成适合嵌入与检索的片段的过程。块的大小、边界和附带的上下文决定了检索粒度：太大会稀释语义、挤占上下文窗口，太小会割裂含义、丢失指代。常见策略包括固定长度加重叠、递归按分隔符切分、按文档结构（标题、段落、代码块）切分、语义切分，以及父子块（检索小块、返回大块）。",
+  "how": [
+   "解析原始文档（PDF、HTML、Markdown），去除页眉页脚等噪声，尽量保留标题层级、表格与列表结构。",
+   "按策略确定边界：递归切分按段落→句子→字符逐级回退，尽量让每块不超过目标长度（以 token 或字符计）。",
+   "为相邻块设置重叠（如块长的 10%–20%），缓解边界处信息被截断的问题。",
+   "为每块附加元数据与上下文：来源、章节标题路径、页码，或用模型生成一句块级摘要（上下文化检索）。",
+   "对块计算嵌入并写入索引；检索时可返回命中块本身，或回溯其父块/相邻块以提供更完整的上下文。"
+  ],
+  "terms": [
+   {
+    "t": "块大小 (Chunk Size)",
+    "d": "每块的最大长度，常以 token 计，需小于嵌入模型输入上限。"
+   },
+   {
+    "t": "重叠 (Chunk Overlap)",
+    "d": "相邻块共享的内容长度，用于保留跨边界上下文。"
+   },
+   {
+    "t": "递归字符切分 (Recursive Splitting)",
+    "d": "按分隔符优先级逐级切分，尽量在自然边界断开。"
+   },
+   {
+    "t": "语义切分 (Semantic Chunking)",
+    "d": "根据相邻句子嵌入相似度的突变处切分。"
+   },
+   {
+    "t": "父子块 (Parent-Child / Small-to-Big)",
+    "d": "用小块检索以求精准，返回所属大块以求完整。"
+   },
+   {
+    "t": "上下文化检索 (Contextual Retrieval)",
+    "d": "为每块前置一段说明其在全文位置的上下文再嵌入。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "按标题 + 递归切分 Markdown",
+   "src": "from langchain_text_splitters import (\n    MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter)\n\nmd = open(\"handbook.md\", encoding=\"utf-8\").read()\n\n# 1. 先按标题切，标题路径进入元数据\nheader_splitter = MarkdownHeaderTextSplitter(\n    headers_to_split_on=[(\"#\", \"h1\"), (\"##\", \"h2\"), (\"###\", \"h3\")])\nsections = header_splitter.split_text(md)\n\n# 2. 过长的章节再递归切分，带重叠\nsplitter = RecursiveCharacterTextSplitter(\n    chunk_size=800, chunk_overlap=100,          # 按字符计；可改用 token 计数\n    separators=[\"\\n\\n\", \"\\n\", \"。\", \"！\", \"？\", \" \", \"\"])\nchunks = splitter.split_documents(sections)\n\n# 3. 把标题路径拼到正文前，帮助嵌入理解上下文\nfor c in chunks:\n    path = \" > \".join(v for k, v in c.metadata.items() if k.startswith(\"h\"))\n    c.page_content = f\"[{path}]\\n{c.page_content}\"\nprint(len(chunks), chunks[0].page_content[:120])",
+   "note": "先按文档结构切，再按长度兜底，并把章节路径注入每块；中文分隔符需显式加入。"
+  },
+  "table": {
+   "title": "切块策略对比",
+   "head": [
+    "策略",
+    "优点",
+    "缺点",
+    "适用"
+   ],
+   "rows": [
+    [
+     "固定长度 + 重叠",
+     "简单、可预测",
+     "常在句中断开",
+     "格式杂乱的纯文本"
+    ],
+    [
+     "递归分隔符切分",
+     "多在自然边界断开",
+     "不理解语义",
+     "通用默认方案"
+    ],
+    [
+     "按文档结构切分",
+     "保留章节完整性",
+     "章节长短不均",
+     "Markdown、HTML、技术文档"
+    ],
+    [
+     "语义切分",
+     "话题边界更准确",
+     "需额外嵌入计算，参数敏感",
+     "长篇叙述、对话记录"
+    ],
+    [
+     "父子块",
+     "检索精准且上下文完整",
+     "存储与实现更复杂",
+     "问答需要完整段落时"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "小块（约 100–300 token）",
+    "pros": "检索精准，噪声少",
+    "cons": "易丢上下文与指代",
+    "when": "事实型问答、FAQ"
+   },
+   {
+    "opt": "大块（约 800–1500 token）",
+    "pros": "上下文完整",
+    "cons": "语义稀释，占用更多上下文",
+    "when": "需要理解整段论述"
+   },
+   {
+    "opt": "小块检索 + 返回父块",
+    "pros": "兼顾精准与完整",
+    "cons": "实现复杂、索引更大",
+    "when": "对质量要求高的生产 RAG"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "所有文档统一一种块大小，从不评测",
+    "fix": "按文档类型分别设置，并用评测集比较不同参数"
+   },
+   {
+    "bad": "PDF 表格被拆成碎片，行列关系丢失",
+    "fix": "表格单独解析为 Markdown 或整表成块"
+   },
+   {
+    "bad": "块中缺少章节标题，“本条款”指代不明",
+    "fix": "在块前拼接标题路径或生成上下文摘要"
+   },
+   {
+    "bad": "块长度超过嵌入模型输入上限被静默截断",
+    "fix": "按 token 计数切分，并低于模型最大输入长度"
+   }
+  ],
+  "checklist": [
+   "按文档类型选择切分策略",
+   "块大小按 token 计且低于嵌入上限",
+   "设置合理重叠",
+   "块附带来源与标题元数据",
+   "表格、代码块单独处理",
+   "用评测集比较不同切块参数"
+  ],
+  "interview": [
+   {
+    "q": "块大小如何选择？",
+    "a": "没有通用最优值。需要考虑嵌入模型的最佳输入长度、问题类型（事实型偏小块，综合型偏大块）、文档结构和上下文预算。实践中准备评测集，测试几组块大小与重叠的 Recall@K 和最终答案质量，选择最优组合。"
+   },
+   {
+    "q": "为什么要加重叠，重叠越大越好吗？",
+    "a": "重叠让跨边界的句子在至少一个块中完整出现，减少截断带来的信息丢失。但重叠越大，冗余越多，索引变大、检索结果更容易重复，浪费上下文。通常取块长的一小部分并通过评测确认。"
+   },
+   {
+    "q": "上下文化检索解决了什么问题？",
+    "a": "孤立的块常缺少主体信息，例如“该公司营收增长 3%”不知是哪家公司。为每块前置一段由模型生成的、说明其在原文中位置与主题的上下文，再做嵌入和 BM25 索引，可显著减少检索失败，代价是索引时的额外模型调用。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "LangChain：Text splitters",
+    "url": "https://python.langchain.com/docs/concepts/text_splitters/"
+   },
+   {
+    "title": "Pinecone：Chunking Strategies",
+    "url": "https://www.pinecone.io/learn/chunking-strategies/"
+   },
+   {
+    "title": "Anthropic：Contextual Retrieval",
+    "url": "https://www.anthropic.com/news/contextual-retrieval"
+   }
+  ]
+ },
+ {
+  "slug": "react-agent-pattern",
+  "def": "ReAct（Reasoning + Acting）是 2022 年论文提出的 Agent 范式：让大模型交替产生推理（Thought）与行动（Action，即调用工具），并把工具返回的观察（Observation）加入上下文，循环直到得出最终答案。它把思维链推理与外部工具结合，减少凭空编造，是当今多数 Agent 框架和编程 Agent 循环的基础思想。",
+  "how": [
+   "系统提示定义任务、可用工具及其参数，并要求模型在每一步先给出推理，再选择行动或给出最终答案。",
+   "模型输出一个工具调用（现代实现多用原生 tool calling 的结构化格式，而非解析文本）。",
+   "运行时（harness）执行工具，把结果作为观察追加到消息历史中。",
+   "模型基于新的观察继续推理，决定下一次行动、修正计划，或判断信息足够后输出最终答案。",
+   "运行时施加终止条件：最大步数、token 预算、超时，以及对危险工具的人工确认。"
+  ],
+  "terms": [
+   {
+    "t": "思考 (Thought)",
+    "d": "模型对当前状态和下一步的推理文本。"
+   },
+   {
+    "t": "行动 (Action)",
+    "d": "模型选择调用的工具及参数。"
+   },
+   {
+    "t": "观察 (Observation)",
+    "d": "工具执行结果，作为下一轮输入。"
+   },
+   {
+    "t": "Agent 循环 (Agent Loop)",
+    "d": "模型调用、工具执行、结果回填的反复迭代。"
+   },
+   {
+    "t": "终止条件 (Stop Condition)",
+    "d": "最大步数、预算或模型声明完成等结束循环的规则。"
+   },
+   {
+    "t": "Harness",
+    "d": "包裹模型的运行时，负责工具执行、权限、上下文管理。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "最小 ReAct 循环（原生工具调用）",
+   "src": "import json\nfrom openai import OpenAI\n\nclient = OpenAI()\ndef get_weather(city: str) -> str:          # 示例工具\n    return json.dumps({\"city\": city, \"forecast\": \"rain\"})\nTOOLS = {\"get_weather\": get_weather}\nschema = [{\"type\": \"function\", \"function\": {\n    \"name\": \"get_weather\", \"description\": \"查询城市天气\",\n    \"parameters\": {\"type\": \"object\", \"properties\": {\"city\": {\"type\": \"string\"}},\n                   \"required\": [\"city\"]}}}]\n\nmsgs = [{\"role\": \"system\", \"content\": \"先简述思考，再按需调用工具。\"},\n        {\"role\": \"user\", \"content\": \"明天去杭州要带伞吗？\"}]\nfor step in range(8):                        # 终止条件：最多 8 步\n    m = client.chat.completions.create(model=\"gpt-4o-mini\",  # 以官方文档为准\n        messages=msgs, tools=schema).choices[0].message\n    msgs.append(m)\n    if not m.tool_calls:                     # 无工具调用 = 最终答案\n        print(m.content); break\n    for call in m.tool_calls:                # 行动 -> 观察\n        result = TOOLS[call.function.name](**json.loads(call.function.arguments))\n        msgs.append({\"role\": \"tool\", \"tool_call_id\": call.id, \"content\": result})",
+   "note": "模型决定行动，运行时执行并回填观察，直到不再调用工具；步数上限防止无限循环。"
+  },
+  "table": {
+   "title": "Agent 范式对比",
+   "head": [
+    "范式",
+    "流程",
+    "优点",
+    "缺点"
+   ],
+   "rows": [
+    [
+     "ReAct",
+     "想—做—看 逐步循环",
+     "灵活，能根据观察纠错",
+     "步数多、成本与延迟高"
+    ],
+    [
+     "Plan-and-Execute",
+     "先完整规划再逐步执行",
+     "结构清晰、可审阅计划",
+     "计划失效时调整慢"
+    ],
+    [
+     "单次工具调用",
+     "一次调用后直接回答",
+     "快、便宜",
+     "无法处理多步任务"
+    ],
+    [
+     "固定工作流",
+     "开发者编排步骤",
+     "可预测、易测试",
+     "缺乏灵活性"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "自由 ReAct 循环",
+    "pros": "适应开放任务",
+    "cons": "行为难预测，可能绕圈",
+    "when": "探索性任务、编程 Agent"
+   },
+   {
+    "opt": "固定工作流 + 局部 ReAct",
+    "pros": "可控性高",
+    "cons": "设计成本高",
+    "when": "业务流程明确的生产系统"
+   },
+   {
+    "opt": "先规划后执行",
+    "pros": "计划可被人审阅",
+    "cons": "对动态环境适应较差",
+    "when": "长任务、需审批的场景"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "不设最大步数和预算，Agent 无限循环",
+    "fix": "设置步数、token、时间上限，并检测重复调用"
+   },
+   {
+    "bad": "工具报错只返回空字符串",
+    "fix": "返回结构化、可读的错误信息，帮助模型自我纠正"
+   },
+   {
+    "bad": "一次暴露几十个工具，模型选错",
+    "fix": "精简工具集，写清描述与参数约束，按任务动态加载"
+   },
+   {
+    "bad": "把工具结果中的指令当作可信输入",
+    "fix": "把观察视为不可信数据，敏感操作需人工确认"
+   }
+  ],
+  "checklist": [
+   "设置最大步数、超时与预算",
+   "工具描述清晰且参数有 schema",
+   "工具错误信息可读",
+   "危险操作需要人工确认",
+   "记录完整轨迹用于调试与评测"
+  ],
+  "interview": [
+   {
+    "q": "ReAct 和思维链（CoT）有什么区别？",
+    "a": "思维链只在模型内部推理，所有信息来自参数记忆，容易编造事实；ReAct 在推理中穿插工具调用，用外部观察校正推理。代价是更多轮调用，带来更高延迟和成本。"
+   },
+   {
+    "q": "现代 Agent 还需要显式写出 Thought 吗？",
+    "a": "原论文用文本格式让模型写 Thought/Action。如今主流模型有原生工具调用，推理模型也有内部思考，因此不一定需要显式 Thought 文本，但“推理—行动—观察”的循环结构不变；保留简短的推理说明有助于调试与审计。"
+   },
+   {
+    "q": "如何防止 Agent 陷入循环？",
+    "a": "设置最大步数与预算；检测相同工具和参数的重复调用；在观察中提供明确的成功或失败信号；上下文过长时压缩历史；必要时引入反思步骤或交给人工处理。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "ReAct 论文 (arXiv)",
+    "url": "https://arxiv.org/abs/2210.03629"
+   },
+   {
+    "title": "ReAct 项目页",
+    "url": "https://react-lm.github.io/"
+   },
+   {
+    "title": "Anthropic：Building effective agents",
+    "url": "https://www.anthropic.com/research/building-effective-agents"
+   }
+  ]
+ },
+ {
+  "slug": "computer-use-agents",
+  "def": "电脑/浏览器操作智能体（Computer Use Agents）是通过“看屏幕—决定动作—执行鼠标键盘操作”循环来使用图形界面的 AI Agent。模型以截图（有时加上可访问性树或 DOM）为输入，输出点击坐标、输入文本、滚动等动作，由运行环境执行。它能操作没有 API 的系统，但速度慢、可靠性有限，并面临网页内容提示注入等安全风险。",
+  "how": [
+   "运行环境（虚拟机、容器或浏览器实例）截取当前屏幕，连同任务描述和历史动作发给模型。",
+   "模型理解界面元素，输出结构化动作，如 click(x, y)、type(text)、key(\"Enter\")、scroll。",
+   "执行器（如 xdotool、Playwright）在环境中执行动作，等待页面稳定后再次截图。",
+   "循环直到任务完成、达到步数上限，或遇到需要人类介入的步骤（登录、验证码、付款确认）。",
+   "另一类实现不靠像素坐标，而是读取 DOM 或可访问性树，用选择器操作元素，速度与精确度更高。"
+  ],
+  "terms": [
+   {
+    "t": "截图驱动 (Screenshot-based)",
+    "d": "只用屏幕像素理解界面，通用但对坐标精度敏感。"
+   },
+   {
+    "t": "可访问性树 (Accessibility Tree)",
+    "d": "系统为辅助技术提供的界面元素结构，可供 Agent 定位元素。"
+   },
+   {
+    "t": "间接提示注入 (Indirect Prompt Injection)",
+    "d": "网页或文档中的文字被模型当作指令执行。"
+   },
+   {
+    "t": "沙箱环境 (Sandbox)",
+    "d": "与主机隔离的虚拟机或容器，限制 Agent 的破坏范围。"
+   },
+   {
+    "t": "OSWorld",
+    "d": "评估 Agent 在真实操作系统中完成任务能力的基准。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Playwright 执行器骨架",
+   "src": "from playwright.sync_api import sync_playwright\n\ndef decide_next_action(png: bytes, goal: str) -> dict:\n    \"\"\"占位：把截图和目标发给支持电脑操作的模型，返回动作。\n    具体工具名与参数以所用厂商官方文档为准。\"\"\"\n    raise NotImplementedError\n\nALLOWED = {\"click\", \"type\", \"scroll\", \"done\"}\n\nwith sync_playwright() as p:\n    browser = p.chromium.launch(headless=True)          # 在隔离环境中运行\n    page = browser.new_page(viewport={\"width\": 1280, \"height\": 800})\n    page.goto(\"https://example.com\")\n    for step in range(20):                               # 步数上限\n        action = decide_next_action(page.screenshot(), \"找到 More information 链接\")\n        kind = action.get(\"type\")\n        if kind not in ALLOWED or kind == \"done\":\n            break\n        if kind == \"click\":\n            page.mouse.click(action[\"x\"], action[\"y\"])\n        elif kind == \"type\":\n            page.keyboard.type(action[\"text\"])\n        elif kind == \"scroll\":\n            page.mouse.wheel(0, action.get(\"dy\", 400))\n        page.wait_for_load_state()\n    browser.close()",
+   "note": "展示截图—决策—执行循环与动作白名单；模型调用部分为占位，需对接具体厂商接口。"
+  },
+  "table": {
+   "title": "操作方式对比",
+   "head": [
+    "方式",
+    "输入",
+    "优点",
+    "缺点"
+   ],
+   "rows": [
+    [
+     "截图 + 坐标",
+     "屏幕像素",
+     "适用任何 GUI 应用",
+     "慢，坐标易偏，成本高"
+    ],
+    [
+     "DOM / 选择器",
+     "网页结构",
+     "精确、快",
+     "仅限网页，动态页面易变"
+    ],
+    [
+     "可访问性树",
+     "系统 UI 结构",
+     "语义清晰",
+     "部分应用支持不完整"
+    ],
+    [
+     "直接调用 API",
+     "结构化接口",
+     "最快最可靠",
+     "需系统提供 API"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "电脑操作 Agent",
+    "pros": "能用没有 API 的系统",
+    "cons": "慢、不稳定、安全风险高",
+    "when": "遗留系统、跨应用操作"
+   },
+   {
+    "opt": "传统 RPA / 脚本自动化",
+    "pros": "确定性强、速度快",
+    "cons": "界面变化即失效，开发成本高",
+    "when": "流程固定的高频任务"
+   },
+   {
+    "opt": "API / MCP 集成",
+    "pros": "可靠、可审计",
+    "cons": "需要服务方提供接口",
+    "when": "有接口时优先选择"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在日常主力电脑和已登录账号上直接运行",
+    "fix": "使用隔离虚拟机或浏览器配置文件，只授予最小账号权限"
+   },
+   {
+    "bad": "允许 Agent 自主完成付款、删除等不可逆操作",
+    "fix": "对高风险动作设置人工确认"
+   },
+   {
+    "bad": "信任网页中出现的任何文字",
+    "fix": "把页面内容视为不可信数据，限制可访问域名"
+   },
+   {
+    "bad": "有 API 却仍用截图点击",
+    "fix": "优先用 API 或 MCP 工具，界面操作作为兜底"
+   }
+  ],
+  "checklist": [
+   "运行在隔离的虚拟机或容器中",
+   "限制可访问的域名与账号权限",
+   "高风险动作需人工确认",
+   "设置步数与时间上限",
+   "记录截图与动作轨迹便于审计"
+  ],
+  "interview": [
+   {
+    "q": "电脑操作 Agent 的主要安全风险是什么？",
+    "a": "最大风险是间接提示注入：网页、邮件或文件里的文字可能诱导 Agent 执行用户未授权的操作，如泄露数据或下单。此外还有误操作与凭据暴露。缓解措施包括沙箱隔离、域名白名单、最小权限账号和关键步骤人工确认。"
+   },
+   {
+    "q": "为什么它比 API 集成慢且不稳定？",
+    "a": "每一步都需要截图、上传图片、模型推理再执行动作，单步耗时较长；界面布局变化、弹窗、加载延迟都会导致点错位置。API 返回结构化数据且语义稳定，因此有接口时应优先使用。"
+   },
+   {
+    "q": "如何评估这类 Agent？",
+    "a": "使用 OSWorld、WebArena 等在真实或仿真环境中执行任务的基准，按任务成功率衡量；在自己的场景中准备固定任务集，记录成功率、步数、耗时和人工介入次数，并对失败轨迹做归因分析。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Anthropic：Computer use tool",
+    "url": "https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/computer-use-tool"
+   },
+   {
+    "title": "OpenAI：Computer use",
+    "url": "https://platform.openai.com/docs/guides/tools-computer-use"
+   },
+   {
+    "title": "OSWorld 基准",
+    "url": "https://os-world.github.io/"
+   },
+   {
+    "title": "Playwright for Python",
+    "url": "https://playwright.dev/python/docs/intro"
+   }
+  ]
+ },
+ {
+  "slug": "synthetic-data",
+  "def": "合成数据（Synthetic Data）是由模型或程序生成、而非直接采集自真实世界的数据，在 LLM 开发中用于构造微调指令数据、评测用例、对抗样本与长尾场景。典型做法是用少量高质量种子样例引导强模型批量生成，再经过去重、过滤、验证与人工抽检。它能降低标注成本、规避隐私问题，但存在分布偏移、错误放大和模型坍缩风险。",
+  "how": [
+   "准备种子数据：少量真实且高质量的示例，以及覆盖目标场景的主题、难度和格式清单。",
+   "设计生成提示：给出角色、约束和多样性要求，并用结构化输出保证格式可解析。",
+   "批量生成时变换主题、语气、长度和难度参数，避免样本高度同质化（如 Self-Instruct、Evol-Instruct 等方法）。",
+   "质量控制：精确与近似去重、规则过滤、用模型或执行（代码可运行、答案可验证）校验正确性。",
+   "人工抽检并与真实数据混合使用，在独立的真实评测集上验证效果，避免只在合成数据上“自证”。"
+  ],
+  "terms": [
+   {
+    "t": "种子数据 (Seed Data)",
+    "d": "引导生成的少量真实高质量样例。"
+   },
+   {
+    "t": "Self-Instruct",
+    "d": "用模型自身从种子任务扩展生成指令数据的方法。"
+   },
+   {
+    "t": "模型坍缩 (Model Collapse)",
+    "d": "反复用模型生成数据训练导致分布尾部丢失、质量退化。"
+   },
+   {
+    "t": "近似去重 (Near-dedup)",
+    "d": "用 MinHash 或嵌入相似度去除高度相似样本。"
+   },
+   {
+    "t": "可验证奖励 (Verifiable)",
+    "d": "能用程序判定对错的数据，如数学答案、单元测试。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "基于种子样例生成并去重",
+   "src": "import json, hashlib\nfrom openai import OpenAI\n\nclient = OpenAI()\nseeds = [\"我的快递三天没更新了\", \"收到的杯子是碎的，怎么退？\"]\ntopics = [\"退款\", \"物流\", \"发票\", \"账号安全\"]\n\ndef gen(topic: str) -> list[dict]:\n    prompt = (f\"参考这些真实客服问题风格：{seeds}\\n\"\n              f\"生成 5 条关于「{topic}」的用户问题，语气、长度各不相同。\"\n              '输出 JSON：{\"items\": [{\"q\": \"...\", \"difficulty\": \"easy|hard\"}]}')\n    r = client.chat.completions.create(\n        model=\"gpt-4o-mini\",                 # 以官方文档为准\n        messages=[{\"role\": \"user\", \"content\": prompt}],\n        response_format={\"type\": \"json_object\"}, temperature=1.0)\n    return json.loads(r.choices[0].message.content)[\"items\"]\n\nseen, data = set(), []\nfor t in topics:\n    for item in gen(t):\n        key = hashlib.md5(item[\"q\"].strip().encode()).hexdigest()\n        if key not in seen:                  # 精确去重；生产中再做近似去重\n            seen.add(key); data.append({**item, \"topic\": t})\nprint(len(data), \"条，需人工抽检后使用\")",
+   "note": "用种子样例和主题清单控制多样性，JSON 输出便于解析，去重后仍需人工抽检。"
+  },
+  "table": {
+   "title": "合成数据用途与风险",
+   "head": [
+    "用途",
+    "做法",
+    "主要风险"
+   ],
+   "rows": [
+    [
+     "微调指令数据",
+     "强模型生成问答对",
+     "错误被学进模型、风格同质化"
+    ],
+    [
+     "评测用例补充",
+     "生成边界与对抗问题",
+     "与真实分布不符，评分失真"
+    ],
+    [
+     "隐私替代",
+     "生成仿真用户记录",
+     "可能复现训练数据中的敏感信息"
+    ],
+    [
+     "蒸馏",
+     "大模型输出训练小模型",
+     "受上游模型条款约束，需核查许可"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "纯合成数据",
+    "pros": "成本低、规模大",
+    "cons": "分布偏移，质量上限受生成模型限制",
+    "when": "冷启动、无真实数据时"
+   },
+   {
+    "opt": "真实 + 合成混合",
+    "pros": "兼顾真实性与覆盖面",
+    "cons": "需要配比调优",
+    "when": "多数微调与评测场景"
+   },
+   {
+    "opt": "人工标注",
+    "pros": "质量与真实性最好",
+    "cons": "昂贵、慢",
+    "when": "高风险领域与最终评测集"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只用合成数据评测合成数据训练的模型",
+    "fix": "保留独立的真实数据评测集作为最终依据"
+   },
+   {
+    "bad": "不检查多样性，大量近似重复样本",
+    "fix": "做近似去重，并统计主题、长度、难度分布"
+   },
+   {
+    "bad": "忽视生成模型的使用条款",
+    "fix": "核查厂商条款中对输出用于训练其他模型的限制"
+   },
+   {
+    "bad": "相信生成的答案都正确",
+    "fix": "对可验证任务用程序校验，其余人工抽检"
+   }
+  ],
+  "checklist": [
+   "有高质量种子样例与场景清单",
+   "输出结构化并可解析",
+   "做精确与近似去重",
+   "正确性经过程序或人工验证",
+   "在真实评测集上验证收益",
+   "已核查生成模型的使用条款"
+  ],
+  "interview": [
+   {
+    "q": "什么是模型坍缩？",
+    "a": "模型反复用前代模型生成的数据训练时，低概率的长尾内容在每一代都更少被采样，分布逐渐收窄，最终输出单一且失真。缓解方法是始终保留真实数据、控制合成比例并持续监控多样性。"
+   },
+   {
+    "q": "如何保证合成数据的多样性？",
+    "a": "在提示中显式变换主题、角色、难度、长度与格式；使用较高温度并分批生成；用进化式方法改写已有样本；生成后用嵌入聚类检查覆盖情况，删除过密簇中的重复样本，补足稀疏区域。"
+   },
+   {
+    "q": "合成数据适合用来做评测集吗？",
+    "a": "可以作为补充，用于覆盖罕见场景和对抗用例，但核心评测集应来自真实用户数据并经过人工标注。否则评测会偏向生成模型的风格，高估或低估真实效果。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Self-Instruct (arXiv)",
+    "url": "https://arxiv.org/abs/2212.10560"
+   },
+   {
+    "title": "AI models collapse when trained on recursively generated data (Nature)",
+    "url": "https://www.nature.com/articles/s41586-024-07566-y"
+   },
+   {
+    "title": "Hugging Face：Synthetic data 博客",
+    "url": "https://huggingface.co/blog/synthetic-data-save-costs"
+   }
+  ]
+ },
+ {
+  "slug": "golden-datasets",
+  "def": "黄金评测集（Golden Dataset）是一组经过精心挑选和人工审核的输入样例，配有期望输出或明确评分标准，用作衡量 LLM 应用质量的固定基准。每次修改提示词、模型、检索参数或代码时都在同一数据集上回归运行，量化改动的好坏。它是 LLM 工程中“评测驱动开发”的核心资产，需要像代码一样版本化维护。",
+  "how": [
+   "从真实日志、用户反馈和已知故障中收集代表性输入，覆盖常见场景、边界情况和对抗样例。",
+   "为每条样例编写参考答案或评分细则：精确值、必须包含的要点、禁止出现的内容，或结构化断言。",
+   "选择评分方式：确定性检查（匹配、正则、JSON schema、代码执行）优先，难以规则化的用 LLM 评审并人工校准。",
+   "把评测接入 CI 或发布流程：每次改动自动跑分，与基线对比，低于阈值则阻止上线。",
+   "持续维护：把线上新发现的失败案例加入数据集，定期复审过时样例，并记录数据集版本。"
+  ],
+  "terms": [
+   {
+    "t": "回归评测 (Regression Eval)",
+    "d": "改动后在固定数据集上重跑，检查是否变差。"
+   },
+   {
+    "t": "参考答案 (Reference Answer)",
+    "d": "人工给出的期望输出，用于对比评分。"
+   },
+   {
+    "t": "评分细则 (Rubric)",
+    "d": "描述合格标准的可操作条目，供人或模型打分。"
+   },
+   {
+    "t": "LLM 评审 (LLM-as-a-Judge)",
+    "d": "用模型按细则给输出打分，需要与人工判断对齐。"
+   },
+   {
+    "t": "数据泄露 (Leakage)",
+    "d": "评测样例混入提示词或训练数据，导致分数虚高。"
+   },
+   {
+    "t": "切片分析 (Slice Analysis)",
+    "d": "按场景、难度等维度分别统计分数，定位短板。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "JSONL 评测集回归跑分",
+   "src": "import json\n\n# golden.jsonl 每行：{\"id\": \"...\", \"input\": \"...\", \"must_include\": [...], \"must_not\": [...], \"tag\": \"refund\"}\ndef run_app(text: str) -> str:\n    raise NotImplementedError  # 调用你的 LLM 应用\n\ndef score(case: dict, output: str) -> bool:\n    ok_in = all(k in output for k in case.get(\"must_include\", []))\n    ok_out = not any(k in output for k in case.get(\"must_not\", []))\n    return ok_in and ok_out\n\ncases = [json.loads(l) for l in open(\"golden.jsonl\", encoding=\"utf-8\")]\nresults = {}\nfor c in cases:\n    passed = score(c, run_app(c[\"input\"]))\n    results.setdefault(c[\"tag\"], []).append(passed)\n\ntotal = sum(sum(v) for v in results.values()) / len(cases)\nfor tag, v in results.items():                     # 按场景切片\n    print(f\"{tag:10s} {sum(v)}/{len(v)}\")\nprint(f\"总通过率 {total:.1%}\")\nassert total >= 0.85, \"低于基线，阻止发布\"        # 阈值按项目设定",
+   "note": "确定性断言打分并按标签切片统计，接入 CI 后可作为提示词或模型变更的发布门禁。"
+  },
+  "table": {
+   "title": "评分方式对比",
+   "head": [
+    "方式",
+    "适用输出",
+    "优点",
+    "局限"
+   ],
+   "rows": [
+    [
+     "精确/正则匹配",
+     "分类标签、数值、格式",
+     "快、稳定、免费",
+     "无法评价开放式回答"
+    ],
+    [
+     "结构断言",
+     "JSON、函数调用参数",
+     "可验证字段与类型",
+     "不判断语义质量"
+    ],
+    [
+     "执行验证",
+     "代码、SQL",
+     "直接验证正确性",
+     "需要沙箱与测试用例"
+    ],
+    [
+     "LLM 评审",
+     "开放式文本",
+     "可扩展、可评价语气与完整性",
+     "有偏差，需人工校准"
+    ],
+    [
+     "人工评审",
+     "高风险或模糊任务",
+     "最可靠",
+     "慢且昂贵"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "小而精（几十到几百条）",
+    "pros": "维护成本低，可快速迭代",
+    "cons": "统计波动大",
+    "when": "早期产品、频繁改提示词"
+   },
+   {
+    "opt": "大规模评测集",
+    "pros": "结论更稳定，可细分切片",
+    "cons": "标注与运行成本高",
+    "when": "成熟产品、模型选型"
+   },
+   {
+    "opt": "线上采样持续补充",
+    "pros": "贴近真实分布变化",
+    "cons": "需要隐私处理与标注流程",
+    "when": "长期运营的产品"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "评测样例只覆盖开发者想到的简单情况",
+    "fix": "从真实日志与失败案例中挑选，刻意加入边界与对抗样例"
+   },
+   {
+    "bad": "把评测样例直接塞进 few-shot 示例",
+    "fix": "评测集与提示示例严格分离，防止泄露"
+   },
+   {
+    "bad": "LLM 评审结果不经人工校准就信任",
+    "fix": "抽样对比人工打分，调整细则直到一致性可接受"
+   },
+   {
+    "bad": "数据集不做版本管理，分数无法横向比较",
+    "fix": "数据集纳入版本控制，报告中注明数据集版本"
+   }
+  ],
+  "checklist": [
+   "样例来自真实场景并覆盖边界情况",
+   "每条有参考答案或评分细则",
+   "评测集与提示示例分离",
+   "优先使用确定性评分",
+   "接入 CI 并设置基线阈值",
+   "数据集有版本号与维护人"
+  ],
+  "interview": [
+   {
+    "q": "黄金评测集需要多大？",
+    "a": "取决于要检测的效果差异。几十条足以发现明显退化，适合早期迭代；要区分细微差异或做模型选型，则需要数百条以上并按场景切片。关键是质量与覆盖度，而非盲目追求数量。"
+   },
+   {
+    "q": "如何避免评测集过拟合？",
+    "a": "反复针对同一评测集调提示词，可能让分数上升但真实效果不变。可保留一部分隐藏测试集只在重大发布时使用，定期加入新的线上样例，并结合线上指标与用户反馈综合判断。"
+   },
+   {
+    "q": "LLM 评审如何与人工对齐？",
+    "a": "先由人工标注一批样例，再让模型按细则打分，计算一致率或相关性；分析不一致样例，细化评分细则或改用成对比较；对齐达到可接受水平后再规模化使用，并定期抽查。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Anthropic：Define success criteria and build evaluations",
+    "url": "https://docs.anthropic.com/en/docs/test-and-evaluate/develop-tests"
+   },
+   {
+    "title": "OpenAI：Evals 指南",
+    "url": "https://platform.openai.com/docs/guides/evals"
+   },
+   {
+    "title": "Hamel Husain：Your AI Product Needs Evals",
+    "url": "https://hamel.dev/blog/posts/evals/"
+   }
+  ]
+ },
+ {
+  "slug": "prompt-versioning",
+  "def": "提示词版本管理（Prompt Versioning）是把提示词视为可部署的代码资产：独立存储、按版本标识、记录变更原因、与评测结果关联，并能在线上快速切换与回滚。由于提示词的细微修改就可能显著改变模型行为，版本化让每次线上输出都能追溯到具体的提示词、模型与参数组合，是 LLM 应用可复现与可审计的基础。",
+  "how": [
+   "把提示词从业务代码中抽离为独立文件（如 YAML、Markdown 模板）或存入提示词管理平台。",
+   "每次修改生成新版本：用语义化版本号或内容哈希标识，并附变更说明与作者。",
+   "新版本先在黄金评测集上跑分，与当前生产版本对比，达标后才允许发布。",
+   "通过标签或环境指针（如 production、staging）控制线上使用哪个版本，可配合功能开关灰度发布。",
+   "每次调用在日志或 trace 中记录提示词版本、模型名与参数，出问题时一键切回上一版本。"
+  ],
+  "terms": [
+   {
+    "t": "提示词模板 (Prompt Template)",
+    "d": "带变量占位符的提示词，运行时填充具体内容。"
+   },
+   {
+    "t": "提示词注册表 (Prompt Registry)",
+    "d": "集中存储、版本化和分发提示词的服务。"
+   },
+   {
+    "t": "环境标签 (Label / Alias)",
+    "d": "把 production 等名称指向某个版本，切换无需改代码。"
+   },
+   {
+    "t": "内容哈希 (Content Hash)",
+    "d": "根据提示词文本计算的指纹，用于精确识别版本。"
+   },
+   {
+    "t": "灰度发布 (Gradual Rollout)",
+    "d": "先让部分流量使用新版本，观察指标后再全量。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "文件化提示词并记录版本",
+   "src": "import hashlib, logging\nfrom pathlib import Path\nimport yaml   # pip install pyyaml\n\n# prompts/support_reply.yaml 内容示例：\n# version: 1.3.0\n# changelog: 语气更简洁，新增退款政策链接\n# model: gpt-4o-mini        # 以官方文档为准\n# template: |\n#   你是客服助手，回答不超过 3 句。用户问题：{question}\n\ndef load_prompt(name: str) -> dict:\n    data = yaml.safe_load(Path(f\"prompts/{name}.yaml\").read_text(encoding=\"utf-8\"))\n    data[\"hash\"] = hashlib.sha256(data[\"template\"].encode()).hexdigest()[:8]\n    return data\n\np = load_prompt(\"support_reply\")\nmessages = [{\"role\": \"user\", \"content\": p[\"template\"].format(question=\"怎么退货？\")}]\n# 每次调用记录版本、哈希与模型，便于追溯和回滚\nlogging.warning(\"prompt=%s version=%s hash=%s model=%s\",\n                \"support_reply\", p[\"version\"], p[\"hash\"], p[\"model\"])",
+   "note": "提示词与代码分离、带版本号和变更说明；日志记录版本与哈希，线上问题可精确追溯。"
+  },
+  "table": {
+   "title": "提示词管理方式对比",
+   "head": [
+    "方式",
+    "回滚速度",
+    "协作",
+    "适用"
+   ],
+   "rows": [
+    [
+     "硬编码在代码里",
+     "需重新部署",
+     "差，改动混在代码中",
+     "不推荐"
+    ],
+    [
+     "仓库内独立文件 + Git",
+     "需部署，但历史清晰",
+     "PR 评审",
+     "开发者主导的团队"
+    ],
+    [
+     "提示词管理平台",
+     "即时切换标签",
+     "非开发者也可编辑",
+     "产品/运营频繁调提示词"
+    ],
+    [
+     "平台 + Git 同步",
+     "即时且有审计",
+     "兼顾两者",
+     "中大型团队"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "Git 管理提示词文件",
+    "pros": "与代码同评审、同版本，零额外依赖",
+    "cons": "改提示词需走发布流程",
+    "when": "提示词与代码强耦合"
+   },
+   {
+    "opt": "提示词注册表运行时拉取",
+    "pros": "无需部署即可切换与回滚",
+    "cons": "引入外部依赖，需缓存与降级",
+    "when": "需要快速迭代与非技术人员参与"
+   },
+   {
+    "opt": "功能开关控制版本",
+    "pros": "可按用户灰度与 A/B",
+    "cons": "配置复杂度上升",
+    "when": "高流量产品的提示词实验"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "线上直接改提示词，没有评测就发布",
+    "fix": "新版本必须先通过黄金评测集回归"
+   },
+   {
+    "bad": "只版本化提示词，不记录模型与参数",
+    "fix": "版本记录应包含模型名、温度等完整配置"
+   },
+   {
+    "bad": "日志中不记录提示词版本",
+    "fix": "每次请求记录版本号或哈希，关联到 trace"
+   },
+   {
+    "bad": "运行时拉取提示词，平台故障时服务中断",
+    "fix": "本地缓存最近可用版本并设置降级默认值"
+   }
+  ],
+  "checklist": [
+   "提示词与业务代码分离存储",
+   "每个版本有变更说明与作者",
+   "发布前通过评测集回归",
+   "线上可一键回滚",
+   "请求日志记录提示词版本与模型",
+   "运行时拉取有缓存与降级"
+  ],
+  "interview": [
+   {
+    "q": "为什么提示词需要像代码一样版本化？",
+    "a": "提示词直接决定模型行为，一个词的改动就可能影响格式、语气或准确率，且效果难以凭肉眼判断。版本化让每次变更可评审、可评测、可回滚，并能把线上异常精确追溯到某个版本。"
+   },
+   {
+    "q": "提示词版本应包含哪些信息？",
+    "a": "除模板文本外，还应包括模型名与版本、温度等采样参数、工具定义、输出 schema、变更说明、作者和对应的评测结果。只有完整配置才能复现输出，单独的提示词文本不足以确定行为。"
+   },
+   {
+    "q": "如何安全地发布新版本提示词？",
+    "a": "先在黄金评测集上与当前版本对比；再用功能开关或标签对小比例流量灰度，监控质量指标、用户反馈与成本；确认无退化后逐步全量，出现问题立即把标签指回旧版本。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Langfuse：Prompt Management",
+    "url": "https://langfuse.com/docs/prompt-management/overview"
+   },
+   {
+    "title": "MLflow：Prompt Registry",
+    "url": "https://mlflow.org/docs/latest/genai/prompt-registry/"
+   },
+   {
+    "title": "Anthropic：Prompt engineering overview",
+    "url": "https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview"
+   }
+  ]
+ },
+ {
+  "slug": "lost-in-the-middle",
+  "def": "长上下文中段遗忘（Lost in the Middle）指大模型在长输入中对位于中间位置的信息利用明显变差的现象：相关信息放在开头或结尾时准确率最高，放在中间时显著下降，呈“U 形曲线”。该现象由 2023 年 Liu 等人的论文系统描述。新一代模型已有改善，但长上下文中的信息利用仍不均匀，这直接影响 RAG 拼接与长文档问答的设计。",
+  "how": [
+   "实验把一个包含答案的文档与多个干扰文档拼接，改变答案文档的位置，测量模型回答准确率。",
+   "结果显示首位效应与近因效应：开头和结尾的信息被利用得最好，中间位置的准确率最低。",
+   "增加上下文中的文档数量会整体拉低表现，即使答案文档没有被移除。",
+   "可能原因包括训练数据中关键信息分布偏向首尾、注意力分配随距离与位置变化，以及位置编码外推的局限。",
+   "“大海捞针”类简单检索测试表现好，不代表模型能在长上下文中做多跳推理和信息综合。"
+  ],
+  "terms": [
+   {
+    "t": "U 形曲线 (U-shaped Curve)",
+    "d": "准确率随信息位置变化，两端高、中间低。"
+   },
+   {
+    "t": "首位/近因效应 (Primacy / Recency)",
+    "d": "对开头和结尾信息利用更好的倾向。"
+   },
+   {
+    "t": "大海捞针 (Needle in a Haystack)",
+    "d": "在长文本中插入一句事实并测试能否找回的评测。"
+   },
+   {
+    "t": "有效上下文长度 (Effective Context)",
+    "d": "模型能可靠利用信息的长度，常小于标称窗口。"
+   },
+   {
+    "t": "上下文重排 (Context Reordering)",
+    "d": "把最相关的文档放在首尾、较弱的放中间。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "把最相关文档放到首尾",
+   "src": "def reorder_for_long_context(docs_by_relevance: list[str]) -> list[str]:\n    \"\"\"输入按相关性降序的文档，输出首尾最相关、中间最弱的顺序。\n    思路同 LangChain 的 LongContextReorder。\"\"\"\n    front, back = [], []\n    for i, doc in enumerate(docs_by_relevance):\n        (front if i % 2 == 0 else back).append(doc)\n    return front + back[::-1]\n\nranked = [\"D1 最相关\", \"D2\", \"D3\", \"D4\", \"D5 最弱\"]\nprint(reorder_for_long_context(ranked))\n# ['D1 最相关', 'D3', 'D5 最弱', 'D4', 'D2']\n\ndef build_prompt(question: str, docs: list[str]) -> str:\n    ctx = \"\\n\\n\".join(f\"<doc id={i}>{d}</doc>\" for i, d in enumerate(docs))\n    # 问题和关键要求在资料后再重复一次，利用近因效应\n    return f\"问题：{question}\\n\\n{ctx}\\n\\n请只依据以上资料回答：{question}，并注明 doc id。\"",
+   "note": "把强相关文档放首尾、问题在末尾重复；更根本的做法仍是减少无关文档。"
+  },
+  "table": {
+   "title": "缓解手段对比",
+   "head": [
+    "手段",
+    "做法",
+    "效果与代价"
+   ],
+   "rows": [
+    [
+     "精简上下文",
+     "检索 + 重排后只放 Top-K",
+     "最有效，依赖检索质量"
+    ],
+    [
+     "上下文重排",
+     "最相关的放首尾",
+     "零成本，改善有限"
+    ],
+    [
+     "问题置后/重复",
+     "资料后再写一遍问题",
+     "简单有效，略增 token"
+    ],
+    [
+     "分而治之",
+     "分段提取再汇总（map-reduce）",
+     "更准，调用次数增加"
+    ],
+    [
+     "结构化标记",
+     "用 XML 标签分隔并编号",
+     "便于引用与定位"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "整篇塞入长上下文",
+    "pros": "实现简单，不会漏检索",
+    "cons": "中段信息易被忽略，成本高",
+    "when": "文档短于有效上下文、需全局理解"
+   },
+   {
+    "opt": "检索 + 精简",
+    "pros": "准确、便宜、可引用",
+    "cons": "依赖检索与切块质量",
+    "when": "大多数知识问答"
+   },
+   {
+    "opt": "Map-Reduce 分段处理",
+    "pros": "覆盖完整、每段关注度高",
+    "cons": "调用次数多、延迟高",
+    "when": "长报告摘要、多文档比较"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "认为窗口越大就能放心塞入全部资料",
+    "fix": "以评测为准，优先检索精简，监控长度与准确率关系"
+   },
+   {
+    "bad": "只用“大海捞针”测试就认定长上下文可靠",
+    "fix": "用贴近业务的多跳问答和综合任务做评测"
+   },
+   {
+    "bad": "把核心指令写在长资料中间",
+    "fix": "系统指令放开头，问题与关键约束放在资料之后"
+   },
+   {
+    "bad": "长对话持续累积不做压缩",
+    "fix": "定期总结压缩历史，或开新会话携带摘要"
+   }
+  ],
+  "checklist": [
+   "上下文只包含与任务相关的内容",
+   "关键指令位于开头或结尾",
+   "检索结果经过重排再拼接",
+   "用业务评测验证不同上下文长度的效果",
+   "长对话有压缩或重置策略"
+  ],
+  "interview": [
+   {
+    "q": "Lost in the Middle 的实验结论是什么？",
+    "a": "在多文档问答和键值检索任务中，答案位于输入开头或结尾时模型表现最好，位于中间时显著下降，即使模型的上下文窗口足以容纳全部输入。增加文档数也会降低整体表现，说明“能放下”不等于“能用好”。"
+   },
+   {
+    "q": "这对 RAG 系统设计有什么启示？",
+    "a": "不要靠增加检索条数来提高召回后直接拼接，而应召回后重排、只保留最相关的少量片段；把最相关内容放在首尾；在资料之后重复问题；需要综合大量材料时采用分段提取再汇总。"
+   },
+   {
+    "q": "新模型还存在这个问题吗？",
+    "a": "不少新模型在大海捞针测试上接近满分，但在需要多跳推理、信息综合或长度接近上限的任务上，性能仍会随上下文增长与位置变化而下降。因此应在自己的任务上实测，而不是依赖标称窗口。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Lost in the Middle (arXiv)",
+    "url": "https://arxiv.org/abs/2307.03172"
+   },
+   {
+    "title": "LangChain：Long context reorder",
+    "url": "https://python.langchain.com/docs/how_to/long_context_reorder/"
+   },
+   {
+    "title": "Anthropic：Prompt engineering overview",
+    "url": "https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview"
+   }
+  ]
+ },
+ {
+  "slug": "background-agents",
+  "def": "后台/云端智能体（Background Agents）是在远程隔离环境中异步执行编程任务的 AI Agent：开发者派发任务后，Agent 在云端容器中克隆仓库、改代码、跑测试，完成后推送分支并创建 PR 供人审核。代表有 GitHub Copilot coding agent、OpenAI Codex 云端任务等（名称与能力以官方文档为准）。",
+  "how": [
+   "开发者通过 Issue 指派、评论触发或产品界面提交任务描述，并指定仓库与基础分支。",
+   "平台启动隔离的云端环境（容器或虚拟机），克隆代码，并按配置文件执行环境初始化脚本。",
+   "Agent 在该环境中运行“读代码—修改—执行命令—看结果”的循环，网络访问与密钥按策略受限。",
+   "完成后推送到新分支并创建 PR，附带变更说明、测试结果与运行日志。",
+   "人类在 PR 中审核，可通过评论要求 Agent 继续修改；CI 与分支保护作为合并前的最后关卡。"
+  ],
+  "terms": [
+   {
+    "t": "异步任务 (Async Task)",
+    "d": "派发后无需等待，Agent 独立完成并回报结果。"
+   },
+   {
+    "t": "环境初始化 (Environment Setup)",
+    "d": "为 Agent 准备依赖、工具链与测试数据的脚本或配置。"
+   },
+   {
+    "t": "出站网络策略 (Egress Policy)",
+    "d": "限制 Agent 可访问的外部域名，降低数据泄露风险。"
+   },
+   {
+    "t": "分支隔离 (Branch Isolation)",
+    "d": "每个任务在独立分支上工作，互不干扰。"
+   },
+   {
+    "t": "人工审核门禁 (Review Gate)",
+    "d": "Agent 的改动必须经人审核和 CI 通过才能合并。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "评论 @claude 触发云端修改",
+   "src": "# .github/workflows/claude.yml（参照 anthropics/claude-code-action 官方示例精简）\nname: Claude Code\non:\n  issue_comment:\n    types: [created]\njobs:\n  claude:\n    if: contains(github.event.comment.body, '@claude')\n    runs-on: ubuntu-latest\n    permissions:\n      contents: write        # 推送分支\n      pull-requests: write   # 创建/更新 PR\n      issues: write\n      id-token: write\n    steps:\n      - uses: actions/checkout@v4\n        with:\n          fetch-depth: 1\n      - uses: anthropics/claude-code-action@v1\n        with:\n          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}\n          # 可选：限制轮数与可用工具（参数以官方文档为准）\n          # claude_args: --max-turns 10 --allowedTools \"Bash(npm run test:*)\"",
+   "note": "在 Issue/PR 评论中 @claude 即触发 Agent 在 CI 环境中改代码并提交，权限按需最小化。"
+  },
+  "table": {
+   "title": "本地 Agent vs 后台 Agent",
+   "head": [
+    "维度",
+    "本地交互式 Agent",
+    "后台云端 Agent"
+   ],
+   "rows": [
+    [
+     "运行位置",
+     "开发者电脑",
+     "云端隔离环境"
+    ],
+    [
+     "人的参与",
+     "实时观察和批准",
+     "派发后异步审核 PR"
+    ],
+    [
+     "并行能力",
+     "受本机资源限制",
+     "可同时运行多个任务"
+    ],
+    [
+     "环境",
+     "开发者完整本地环境",
+     "需显式配置依赖与密钥"
+    ],
+    [
+     "适合任务",
+     "探索性、需频繁沟通",
+     "边界清晰、可测试验证"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "后台 Agent 处理小而明确的任务",
+    "pros": "并行提效，不打断开发者",
+    "cons": "需求模糊时产出偏离",
+    "when": "修 bug、补测试、依赖升级、文档"
+   },
+   {
+    "opt": "本地交互式协作",
+    "pros": "可随时纠正方向",
+    "cons": "占用开发者注意力",
+    "when": "架构调整、需求不清的探索"
+   },
+   {
+    "opt": "多个后台 Agent 并行",
+    "pros": "吞吐高",
+    "cons": "PR 冲突与审核负担",
+    "when": "任务相互独立时"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "任务描述含糊，如“优化一下性能”",
+    "fix": "写清目标、范围、验收标准和需运行的测试命令"
+   },
+   {
+    "bad": "环境未配置，Agent 无法运行测试就提交",
+    "fix": "提供环境初始化脚本，要求测试通过后才提 PR"
+   },
+   {
+    "bad": "给云端环境注入生产密钥和无限制网络",
+    "fix": "只提供测试用凭据，启用出站域名白名单"
+   },
+   {
+    "bad": "同时派发互相重叠的任务导致冲突",
+    "fix": "按模块拆分任务，避免多个 Agent 修改同一文件"
+   }
+  ],
+  "checklist": [
+   "任务有明确的验收标准",
+   "云端环境能完整运行测试",
+   "密钥为最小权限的测试凭据",
+   "出站网络受限",
+   "分支保护与 CI 作为合并门禁",
+   "人工审核每个 Agent PR"
+  ],
+  "interview": [
+   {
+    "q": "什么样的任务适合交给后台 Agent？",
+    "a": "边界清晰、可通过测试自动验证、上下文主要在仓库内的任务，如修复有复现步骤的 bug、补充测试、依赖升级、小型功能。需要大量产品判断或跨系统协调的任务，更适合人机实时协作。"
+   },
+   {
+    "q": "后台 Agent 有哪些安全风险？",
+    "a": "它在无人值守的情况下执行命令，可能被仓库内容或 Issue 中的提示注入诱导泄露密钥、引入恶意依赖。应限制网络出站、使用最小权限凭据、禁止直接推主分支，并对 PR 做与人类代码同等的审核。"
+   },
+   {
+    "q": "如何提高后台 Agent 的成功率？",
+    "a": "维护好规则文件（如 AGENTS.md、CLAUDE.md）说明项目约定与命令；提供可一键运行的测试与环境脚本；任务描述包含复现步骤和验收标准；把大任务拆小；从失败的 PR 中总结并更新规则。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "GitHub：About Copilot coding agent",
+    "url": "https://docs.github.com/en/copilot/concepts/agents/coding-agent/about-coding-agent"
+   },
+   {
+    "title": "anthropics/claude-code-action",
+    "url": "https://github.com/anthropics/claude-code-action"
+   },
+   {
+    "title": "OpenAI Codex 云端任务",
+    "url": "https://developers.openai.com/codex/cloud"
+   }
+  ]
+ },
+ {
+  "slug": "agent-hooks",
+  "def": "智能体钩子（Agent Hooks）是编程 Agent 在生命周期特定节点（如工具调用前后、会话开始、任务结束）自动执行的用户自定义命令。与写在提示词里的“软约束”不同，钩子由运行时确定性地执行，可阻止危险操作、改文件后自动格式化、注入上下文。Claude Code、Cursor 等均提供（细节以官方文档为准）。",
+  "how": [
+   "在配置文件（如 Claude Code 的 .claude/settings.json）中为事件注册钩子，并可用 matcher 匹配特定工具名。",
+   "Agent 准备调用工具时触发 PreToolUse 类事件，运行时把工具名与参数以 JSON 通过标准输入传给钩子命令。",
+   "钩子返回决定：以 Claude Code 为例，退出码 0 表示放行，退出码 2 表示阻止并把 stderr 反馈给模型；也可输出 JSON 精细控制。",
+   "工具执行成功后触发 PostToolUse 类事件，常用于对刚改动的文件运行格式化、lint 或测试。",
+   "其他事件如 UserPromptSubmit、SessionStart、Stop 可用于注入上下文、校验提示或在任务结束时做检查与通知。"
+  ],
+  "terms": [
+   {
+    "t": "PreToolUse",
+    "d": "工具调用前触发，可放行、拒绝或要求确认。"
+   },
+   {
+    "t": "PostToolUse",
+    "d": "工具调用成功后触发，常用于格式化与校验。"
+   },
+   {
+    "t": "matcher",
+    "d": "按工具名匹配钩子适用范围，如 Bash、Edit|Write。"
+   },
+   {
+    "t": "退出码 2 (Exit Code 2)",
+    "d": "Claude Code 约定的阻止信号，stderr 会反馈给模型。"
+   },
+   {
+    "t": "确定性控制 (Deterministic Control)",
+    "d": "不依赖模型自觉、由程序保证执行的约束。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "拦截危险命令的 PreToolUse 钩子",
+   "src": "#!/usr/bin/env python3\n# .claude/hooks/block_dangerous.py  （需 chmod +x）\n# 在 .claude/settings.json 中注册（格式以官方文档为准）：\n# {\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\",\n#   \"hooks\": [{\"type\": \"command\",\n#              \"command\": \".claude/hooks/block_dangerous.py\"}]}]}}\nimport json, re, sys\n\nevent = json.load(sys.stdin)                    # 运行时通过 stdin 传入 JSON\ncmd = event.get(\"tool_input\", {}).get(\"command\", \"\")\n\nRULES = [\n    (r\"\\brm\\s+-rf\\s+(/|~|\\*)\", \"禁止递归删除根目录、家目录或通配\"),\n    (r\"git\\s+push\\b.*\\b(main|master)\\b\", \"禁止直接推送主分支，请提 PR\"),\n    (r\"--no-verify\", \"禁止跳过 Git 钩子\"),\n]\nfor pattern, reason in RULES:\n    if re.search(pattern, cmd):\n        print(f\"已拦截：{reason}\", file=sys.stderr)  # 反馈给模型\n        sys.exit(2)                              # 退出码 2 = 阻止该工具调用\nsys.exit(0)                                      # 放行",
+   "note": "钩子读取工具参数并按规则阻止；正则黑名单只是示例，生产中应结合权限白名单使用。"
+  },
+  "table": {
+   "title": "常见钩子事件与用途（以 Claude Code 为例）",
+   "head": [
+    "事件",
+    "触发时机",
+    "典型用途"
+   ],
+   "rows": [
+    [
+     "PreToolUse",
+     "工具调用前",
+     "拦截危险命令、保护敏感文件"
+    ],
+    [
+     "PostToolUse",
+     "工具调用成功后",
+     "格式化、lint、运行相关测试"
+    ],
+    [
+     "UserPromptSubmit",
+     "用户提交提示时",
+     "注入上下文、过滤敏感信息"
+    ],
+    [
+     "SessionStart",
+     "会话开始时",
+     "加载项目状态、环境信息"
+    ],
+    [
+     "Stop",
+     "Agent 结束回复时",
+     "检查任务完成度、发送通知"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "钩子强制执行",
+    "pros": "确定性，模型无法绕过",
+    "cons": "需编写维护脚本，规则过严会妨碍工作",
+    "when": "安全底线、格式规范"
+   },
+   {
+    "opt": "提示词/规则文件约束",
+    "pros": "编写简单、灵活",
+    "cons": "模型可能忽略",
+    "when": "风格偏好、一般建议"
+   },
+   {
+    "opt": "权限白名单配置",
+    "pros": "声明式、易审计",
+    "cons": "粒度有限",
+    "when": "控制可用工具与命令范围"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只靠正则黑名单防危险命令",
+    "fix": "黑名单易被变形绕过，应结合权限白名单与沙箱"
+   },
+   {
+    "bad": "PostToolUse 钩子运行全量测试，每次改文件等很久",
+    "fix": "只针对改动文件运行快速检查，全量测试放到 Stop 或 CI"
+   },
+   {
+    "bad": "钩子脚本出错时静默放行或卡死",
+    "fix": "处理异常并设置超时，失败时给出明确信息"
+   },
+   {
+    "bad": "使用来源不明的钩子配置",
+    "fix": "钩子以用户权限执行任意命令，配置需代码审查"
+   }
+  ],
+  "checklist": [
+   "不可逆操作有 PreToolUse 拦截",
+   "改文件后自动格式化或 lint",
+   "钩子脚本有超时与错误处理",
+   "钩子配置纳入版本控制并经审查",
+   "与权限白名单、沙箱配合使用"
+  ],
+  "interview": [
+   {
+    "q": "钩子和提示词里的规则有什么本质区别？",
+    "a": "提示词规则是对模型的请求，模型可能误解、遗忘或在压力下忽略；钩子是运行时在固定事件上执行的程序，结果由退出码或返回值决定，模型无法绕过。硬性约束应放在钩子或权限配置里，提示词用于表达偏好与背景。"
+   },
+   {
+    "q": "钩子会带来哪些安全风险？",
+    "a": "钩子以当前用户权限自动执行任意命令，恶意或有缺陷的配置可能泄露数据或破坏文件。因此要审查钩子来源、把配置纳入版本控制、避免执行不可信输入拼接的命令，并注意项目级配置可能被他人提交修改。"
+   },
+   {
+    "q": "PostToolUse 钩子如何提升 Agent 的代码质量？",
+    "a": "每次编辑后自动运行格式化、类型检查或相关测试，并把错误反馈给模型，让 Agent 立即修复，而不是等到最后才发现。这把“写完再检查”变成持续的快速反馈循环，减少人工返工。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Claude Code：Hooks 参考",
+    "url": "https://docs.anthropic.com/en/docs/claude-code/hooks"
+   },
+   {
+    "title": "Cursor：Hooks",
+    "url": "https://cursor.com/docs/agent/hooks"
+   }
+  ]
+ },
+ {
+  "slug": "agent-sdk-headless",
+  "def": "智能体 SDK 与无头模式（Agent SDK & Headless Mode）指以编程方式而非交互界面驱动编程 Agent：通过 CLI 非交互参数（如 claude -p、codex exec）或语言 SDK 提交任务、配置工具权限、接收结构化输出，让 Agent 能嵌入脚本、CI/CD 和自研产品。",
+  "how": [
+   "调用方以命令行参数或 SDK 函数传入提示、工作目录、系统提示与可用工具列表。",
+   "运行时在无人值守的情况下执行 Agent 循环，权限由预先配置决定（允许的工具、权限模式），不会弹窗询问。",
+   "输出以纯文本、JSON 或流式 JSON 返回，包含最终结果、轮数、耗时、费用等元数据，便于程序解析。",
+   "SDK 通常以异步迭代器逐条返回消息（助手消息、工具调用、最终结果），调用方可实时记录或中断。",
+   "会话 ID 可用于续接多轮任务；轮数与预算上限防止失控，退出码用于在 CI 中判断成功失败。"
+  ],
+  "terms": [
+   {
+    "t": "无头模式 (Headless Mode)",
+    "d": "不启动交互界面、一次性执行并输出结果的运行方式。"
+   },
+   {
+    "t": "print 模式 (claude -p)",
+    "d": "Claude Code 的非交互调用方式，执行后打印结果并退出。"
+   },
+   {
+    "t": "允许工具列表 (allowedTools)",
+    "d": "预先批准的工具或命令模式，未列出的不自动执行。"
+   },
+   {
+    "t": "权限模式 (Permission Mode)",
+    "d": "决定 Agent 遇到需批准操作时如何处理的整体策略。"
+   },
+   {
+    "t": "结构化输出 (Structured Output)",
+    "d": "JSON 或流式 JSON 格式，便于脚本解析结果与元数据。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Agent SDK 只读代码审查",
+   "src": "# pip install claude-agent-sdk  （接口以官方文档为准）\n# CLI 等价写法：\n#   claude -p \"审查最近一次提交\" --allowedTools \"Read,Grep,Glob,Bash(git diff:*)\" --output-format json\nimport asyncio\nfrom claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage\n\nasync def main():\n    options = ClaudeAgentOptions(\n        system_prompt=\"你是严格的代码审查员，只指出问题，不修改文件。\",\n        allowed_tools=[\"Read\", \"Grep\", \"Glob\"],   # 只读工具\n        max_turns=8,                              # 轮数上限\n        cwd=\".\",\n    )\n    async for msg in query(prompt=\"审查 src/ 下的鉴权逻辑，按严重程度列出问题\",\n                           options=options):\n        if isinstance(msg, ResultMessage):\n            print(msg.result)\n            print(\"轮数:\", msg.num_turns, \"费用(USD):\", msg.total_cost_usd)\n\nasyncio.run(main())",
+   "note": "以只读工具与轮数上限运行无人值守任务，并从结果消息读取输出、轮数与费用。"
+  },
+  "table": {
+   "title": "调用方式对比",
+   "head": [
+    "方式",
+    "集成难度",
+    "可控性",
+    "适用"
+   ],
+   "rows": [
+    [
+     "交互式 CLI/IDE",
+     "无",
+     "人实时把关",
+     "日常开发"
+    ],
+    [
+     "CLI 无头模式",
+     "低，一行命令",
+     "靠参数控制",
+     "脚本、CI、定时任务"
+    ],
+    [
+     "语言 SDK",
+     "中",
+     "可编程回调、细粒度控制",
+     "自研产品、复杂流水线"
+    ],
+    [
+     "托管 Action / 集成",
+     "低",
+     "受平台功能限制",
+     "GitHub 评论触发、PR 审查"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "CLI 无头模式",
+    "pros": "上手快、适合 shell 与 CI",
+    "cons": "复杂逻辑需靠脚本拼接",
+    "when": "简单自动化任务"
+   },
+   {
+    "opt": "SDK 嵌入",
+    "pros": "可编程处理消息、权限与工具",
+    "cons": "需要编写和维护代码",
+    "when": "把 Agent 做成产品功能"
+   },
+   {
+    "opt": "交互式使用",
+    "pros": "人随时纠偏",
+    "cons": "无法自动化",
+    "when": "探索性开发"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "CI 中使用跳过所有权限检查的模式",
+    "fix": "只授予任务所需的最小工具集，运行在隔离环境"
+   },
+   {
+    "bad": "不设轮数或预算上限",
+    "fix": "设置最大轮数、预算与作业超时"
+   },
+   {
+    "bad": "直接解析自然语言输出做判断",
+    "fix": "使用 JSON 输出或结构化结果字段"
+   },
+   {
+    "bad": "把 API Key 写进脚本或日志",
+    "fix": "通过 CI 密钥注入，日志中脱敏"
+   }
+  ],
+  "checklist": [
+   "工具权限按任务最小化",
+   "设置轮数、预算与超时",
+   "使用结构化输出并检查退出码",
+   "API Key 由密钥管理注入",
+   "在隔离环境或容器中运行",
+   "记录会话 ID 与费用便于追踪"
+  ],
+  "interview": [
+   {
+    "q": "无头模式下如何保证安全？",
+    "a": "无人值守意味着没人能在危险操作前拒绝，所以权限必须事先收紧：只允许必要的工具和命令模式、在容器或临时环境中运行、使用最小权限凭据、限制网络出站，并保留完整日志供事后审计。"
+   },
+   {
+    "q": "CLI 无头模式和 SDK 怎么选？",
+    "a": "任务简单、在 shell 或 CI 中一次性执行，用 CLI 加参数即可；需要在程序中处理中间消息、动态决定权限、注册自定义工具或把 Agent 嵌入产品时，用 SDK 获得更细粒度的控制。"
+   },
+   {
+    "q": "典型的 CI 场景有哪些？",
+    "a": "PR 自动代码审查并发表评论、根据失败测试尝试修复、生成变更日志与发布说明、Issue 自动分类、定期依赖升级。关键是输出可解析、权限受限、结果仍需人工或 CI 门禁把关。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Claude Code：Headless / CLI 非交互用法",
+    "url": "https://docs.anthropic.com/en/docs/claude-code/headless"
+   },
+   {
+    "title": "Claude Agent SDK 概览",
+    "url": "https://docs.claude.com/en/docs/agent-sdk/overview"
+   },
+   {
+    "title": "OpenAI Codex SDK",
+    "url": "https://developers.openai.com/codex/sdk"
+   }
+  ]
+ },
+ {
+  "slug": "dependency-injection",
+  "def": "依赖注入（Dependency Injection，DI）是一种设计技术：对象不在内部自行创建其依赖（数据库连接、HTTP 客户端、配置等），而是由外部通过构造函数、参数或属性传入。它是控制反转（IoC）的一种实现，使代码依赖抽象而非具体实现，从而易于测试、替换和组合，是分层架构与六边形架构落地的基础手段。",
+  "how": [
+   "识别依赖：类或函数完成工作所需的外部协作者，如仓储、邮件服务、时钟。",
+   "用接口或协议定义依赖的抽象（Python 的 Protocol、TypeScript 的 interface），业务代码只依赖抽象。",
+   "通过构造函数注入（最常用）、方法参数注入或框架提供的注入机制，把具体实现传入。",
+   "在应用入口的组合根（Composition Root）集中创建并装配所有具体实现，生产与测试使用不同装配。",
+   "可选使用 DI 容器或框架（如 FastAPI Depends、Spring、NestJS）自动解析依赖图并管理生命周期。"
+  ],
+  "terms": [
+   {
+    "t": "控制反转 (IoC)",
+    "d": "对象不再主动获取依赖，由外部控制创建与装配。"
+   },
+   {
+    "t": "构造函数注入 (Constructor Injection)",
+    "d": "通过构造参数传入依赖，依赖关系显式且不可变。"
+   },
+   {
+    "t": "组合根 (Composition Root)",
+    "d": "应用中集中装配依赖的唯一位置，通常在入口处。"
+   },
+   {
+    "t": "DI 容器 (DI Container)",
+    "d": "根据注册信息自动创建和注入依赖的框架组件。"
+   },
+   {
+    "t": "服务定位器 (Service Locator)",
+    "d": "对象主动向全局注册表索取依赖，常被视为反模式。"
+   },
+   {
+    "t": "生命周期 (Lifetime / Scope)",
+    "d": "依赖实例的存活范围，如单例、每请求、每次新建。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "构造函数注入 + 测试替身",
+   "src": "from typing import Protocol\n\nclass Mailer(Protocol):\n    def send(self, to: str, body: str) -> None: ...\n\nclass UserRepo(Protocol):\n    def add(self, email: str) -> int: ...\n\nclass SignupService:\n    def __init__(self, repo: UserRepo, mailer: Mailer):   # 依赖从外部传入\n        self.repo, self.mailer = repo, mailer\n\n    def signup(self, email: str) -> int:\n        uid = self.repo.add(email)\n        self.mailer.send(email, \"欢迎注册\")\n        return uid\n\n# 测试：注入假实现，不连数据库、不真发邮件\nclass FakeRepo:\n    def __init__(self): self.rows = []\n    def add(self, email): self.rows.append(email); return len(self.rows)\nclass FakeMailer:\n    def __init__(self): self.sent = []\n    def send(self, to, body): self.sent.append(to)\n\ndef test_signup_sends_mail():\n    repo, mailer = FakeRepo(), FakeMailer()\n    assert SignupService(repo, mailer).signup(\"a@x.com\") == 1\n    assert mailer.sent == [\"a@x.com\"]",
+   "note": "业务类只依赖协议；生产在组合根注入真实实现，测试注入内存假对象。"
+  },
+  "table": {
+   "title": "依赖获取方式对比",
+   "head": [
+    "方式",
+    "可测试性",
+    "依赖是否显式",
+    "评价"
+   ],
+   "rows": [
+    [
+     "内部直接 new / 全局单例",
+     "差",
+     "否",
+     "紧耦合，难以替换"
+    ],
+    [
+     "服务定位器",
+     "中",
+     "否，藏在实现里",
+     "常被视为反模式"
+    ],
+    [
+     "构造函数注入",
+     "好",
+     "是",
+     "首选"
+    ],
+    [
+     "框架 DI 容器",
+     "好",
+     "是（通过声明）",
+     "规模大时减少装配代码"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "手动注入（纯构造函数）",
+    "pros": "简单透明，无框架依赖",
+    "cons": "依赖多时装配代码冗长",
+    "when": "中小型项目、库代码"
+   },
+   {
+    "opt": "框架内置 DI（如 FastAPI Depends）",
+    "pros": "与框架集成，按请求管理生命周期",
+    "cons": "绑定框架",
+    "when": "Web 应用"
+   },
+   {
+    "opt": "通用 DI 容器",
+    "pros": "自动解析复杂依赖图",
+    "cons": "引入魔法，排错困难",
+    "when": "大型企业应用"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在业务代码各处调用容器取依赖",
+    "fix": "只在组合根使用容器，业务类通过构造参数接收依赖"
+   },
+   {
+    "bad": "构造函数参数越来越多仍不拆分",
+    "fix": "依赖过多提示职责过多，应拆分类"
+   },
+   {
+    "bad": "为每个类都定义接口，过度抽象",
+    "fix": "只为确实需要替换或隔离的外部依赖定义抽象"
+   },
+   {
+    "bad": "单例依赖持有请求级状态，导致数据串号",
+    "fix": "明确生命周期，请求相关数据使用请求作用域"
+   }
+  ],
+  "checklist": [
+   "外部 I/O 依赖可被替换为测试替身",
+   "依赖通过构造函数显式声明",
+   "装配集中在组合根",
+   "依赖生命周期定义清晰",
+   "无全局可变单例隐藏依赖"
+  ],
+  "interview": [
+   {
+    "q": "依赖注入和控制反转是什么关系？",
+    "a": "控制反转是更宽泛的原则：把流程或对象创建的控制权从业务代码交给框架或外部。依赖注入是实现 IoC 的一种具体方式，专指依赖由外部提供。模板方法、事件回调也是 IoC 的其他形式。"
+   },
+   {
+    "q": "为什么说服务定位器是反模式？",
+    "a": "对象内部调用全局定位器获取依赖，依赖关系不出现在构造签名中，阅读代码看不出它需要什么，测试时必须配置全局状态，且缺少依赖要到运行时才报错。构造函数注入让依赖显式、可在编译或启动期检查。"
+   },
+   {
+    "q": "依赖注入如何帮助 AI 编程？",
+    "a": "依赖显式且可替换的代码更容易让 AI 生成单元测试：可以直接注入假对象，而不必启动数据库或调用外部服务。在规则文件中要求“外部依赖通过构造函数注入”，能让 Agent 生成的代码更易测、更易审查。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Martin Fowler：Inversion of Control Containers and the DI pattern",
+    "url": "https://martinfowler.com/articles/injection.html"
+   },
+   {
+    "title": "FastAPI：Dependencies",
+    "url": "https://fastapi.tiangolo.com/tutorial/dependencies/"
+   },
+   {
+    "title": "Wikipedia: Dependency injection",
+    "url": "https://en.wikipedia.org/wiki/Dependency_injection"
+   }
+  ]
+ },
+ {
+  "slug": "event-driven-architecture",
+  "def": "事件驱动架构（Event-Driven Architecture，EDA）是以“事件”——系统中已发生的、不可变的事实（如订单已创建）——作为服务间通信核心的架构风格。生产者发布事件而不关心谁消费，消费者通过消息代理订阅并异步处理。它降低服务间的时间与依赖耦合，便于扩展新功能，但带来最终一致性、调试难度和消息语义等挑战。",
+  "how": [
+   "识别领域事件：以过去式命名的业务事实，如 OrderPlaced、PaymentFailed，定义其 schema 与版本。",
+   "生产者在完成本地状态变更后发布事件；为保证状态与事件一致，常用事务性发件箱（Outbox）模式。",
+   "消息代理（Kafka、RabbitMQ、云事件总线等）持久化并路由事件，支持多个消费者独立订阅。",
+   "消费者异步处理事件并更新自身状态；由于通常是至少一次投递，消费者必须幂等。",
+   "复杂业务流程可采用编舞（服务互相响应事件）或编排（中心协调者驱动步骤，如 Saga 编排器）。"
+  ],
+  "terms": [
+   {
+    "t": "领域事件 (Domain Event)",
+    "d": "业务中已发生的事实，不可变，以过去式命名。"
+   },
+   {
+    "t": "事件通知 (Event Notification)",
+    "d": "事件只携带标识，消费者需回查详情。"
+   },
+   {
+    "t": "事件携带状态转移 (Event-Carried State Transfer)",
+    "d": "事件包含足够数据，消费者无需回查生产者。"
+   },
+   {
+    "t": "编舞 vs 编排 (Choreography vs Orchestration)",
+    "d": "去中心化响应事件 vs 由协调者统一驱动流程。"
+   },
+   {
+    "t": "幂等消费者 (Idempotent Consumer)",
+    "d": "重复处理同一事件不会产生额外副作用。"
+   },
+   {
+    "t": "CloudEvents",
+    "d": "CNCF 的事件元数据格式规范，统一事件描述。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Redis Streams 发布与幂等消费",
+   "src": "import json, redis\n\nr = redis.Redis(decode_responses=True)\nSTREAM, GROUP = \"orders.events\", \"sms-service\"\n\n# 生产者：订单写库成功后发布事件（生产中用 Outbox 保证一致）\nr.xadd(STREAM, {\"type\": \"OrderPlaced\", \"id\": \"evt-1001\",\n                \"data\": json.dumps({\"order_id\": 42, \"phone\": \"138****0000\"})})\n\n# 消费者组：每个服务一个组，组内多个实例分摊消息\ntry:\n    r.xgroup_create(STREAM, GROUP, id=\"0\", mkstream=True)\nexcept redis.ResponseError:\n    pass  # 组已存在\n\nresp = r.xreadgroup(GROUP, \"worker-1\", {STREAM: \">\"}, count=10, block=5000)\nfor _, messages in resp or []:\n    for msg_id, fields in messages:\n        # 幂等：用事件 ID 去重，SET NX 成功才处理\n        if r.set(f\"done:{GROUP}:{fields['id']}\", 1, nx=True, ex=86400):\n            print(\"发送短信\", json.loads(fields[\"data\"]))\n        r.xack(STREAM, GROUP, msg_id)   # 处理完确认",
+   "note": "每个服务独立消费组订阅同一事件流；事件 ID 去重保证至少一次投递下的幂等。"
+  },
+  "table": {
+   "title": "同步调用 vs 事件驱动",
+   "head": [
+    "维度",
+    "同步请求/响应",
+    "事件驱动"
+   ],
+   "rows": [
+    [
+     "耦合",
+     "调用方需知道被调方及其可用性",
+     "生产者不知道消费者"
+    ],
+    [
+     "一致性",
+     "易实现强一致",
+     "通常为最终一致"
+    ],
+    [
+     "故障影响",
+     "下游故障直接传导",
+     "代理缓冲，下游可稍后处理"
+    ],
+    [
+     "可观测性",
+     "调用链直观",
+     "需追踪 ID 串联事件流"
+    ],
+    [
+     "扩展新功能",
+     "修改调用方",
+     "新增订阅者"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "编舞（纯事件响应）",
+    "pros": "高度解耦，易扩展",
+    "cons": "全局流程不可见，难排查",
+    "when": "步骤少、团队自治"
+   },
+   {
+    "opt": "编排（中心协调者）",
+    "pros": "流程清晰，便于补偿与监控",
+    "cons": "协调者成为耦合点",
+    "when": "多步骤事务，如 Saga"
+   },
+   {
+    "opt": "同步 API 调用",
+    "pros": "简单直观，强一致",
+    "cons": "耦合高，级联故障风险",
+    "when": "需要立即结果的查询"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "先发事件再写数据库，或反之，二者不在同一事务",
+    "fix": "使用 Outbox 模式或 CDC，保证状态与事件一致"
+   },
+   {
+    "bad": "消费者不幂等，重复投递导致重复扣款",
+    "fix": "以事件 ID 去重，或让操作天然幂等"
+   },
+   {
+    "bad": "事件 schema 随意修改，下游解析失败",
+    "fix": "为事件定义版本与兼容规则，使用 schema 注册中心"
+   },
+   {
+    "bad": "把命令伪装成事件，如“SendEmail”",
+    "fix": "事件描述已发生事实，命令定向请求应使用队列或 API"
+   }
+  ],
+  "checklist": [
+   "事件命名为过去式业务事实",
+   "事件有 schema 与版本策略",
+   "发布使用 Outbox 或等效机制",
+   "消费者幂等并有死信队列",
+   "事件携带追踪 ID",
+   "流程有端到端监控"
+  ],
+  "interview": [
+   {
+    "q": "事件和命令有什么区别？",
+    "a": "事件是已发生的事实，用过去式命名，发布者不关心谁处理、处理与否，可以有零到多个消费者；命令是请求某个特定接收者执行动作，期望被处理，通常只有一个处理者。混淆二者会导致隐性耦合。"
+   },
+   {
+    "q": "如何保证数据库写入和事件发布的一致性？",
+    "a": "直接“写库后发消息”存在双写问题：写库成功而发消息失败会丢事件。常用事务性 Outbox：在同一数据库事务中写业务数据和待发事件表，再由中继进程或 CDC 把事件可靠投递到消息代理。"
+   },
+   {
+    "q": "事件驱动系统如何调试和观测？",
+    "a": "为每个事件附带关联 ID 与追踪上下文，在生产、代理、消费各环节记录；使用分布式追踪串联异步链路；监控消费延迟、积压和死信数量；保留事件日志以便重放和排查。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Martin Fowler：What do you mean by “Event-Driven”?",
+    "url": "https://martinfowler.com/articles/201701-event-driven.html"
+   },
+   {
+    "title": "CloudEvents 规范",
+    "url": "https://cloudevents.io/"
+   },
+   {
+    "title": "Redis Streams 文档",
+    "url": "https://redis.io/docs/latest/develop/data-types/streams/"
+   }
+  ]
+ },
+ {
+  "slug": "api-gateway",
+  "def": "API 网关（API Gateway）是位于客户端与后端服务之间的统一入口层，负责请求路由，并集中处理横切关注点：认证鉴权、限流、TLS 终止、请求/响应转换、缓存、日志与指标。它常见于微服务架构，向外暴露统一的 API 面，屏蔽内部服务拆分细节。代表实现有 Kong、Apache APISIX、Envoy、AWS API Gateway 等。",
+  "how": [
+   "客户端请求到达网关，网关终止 TLS，并根据主机名、路径、方法或请求头匹配路由规则。",
+   "依次执行插件/过滤器链：认证（API Key、JWT、OAuth）、授权、限流、请求体大小与格式校验。",
+   "通过服务发现或静态配置选择上游实例，结合负载均衡、超时、重试和熔断转发请求。",
+   "可对响应做转换、聚合多个服务结果（BFF 模式）或缓存，并附加统一的错误格式与 CORS 头。",
+   "全过程记录访问日志、指标与追踪信息，为可观测性和计费提供统一数据源。"
+  ],
+  "terms": [
+   {
+    "t": "路由 (Route)",
+    "d": "把匹配的请求映射到某个上游服务的规则。"
+   },
+   {
+    "t": "上游 (Upstream)",
+    "d": "网关后面实际处理请求的服务或实例组。"
+   },
+   {
+    "t": "BFF (Backend for Frontend)",
+    "d": "为特定前端定制聚合接口的网关层模式。"
+   },
+   {
+    "t": "插件 / 过滤器 (Plugin / Filter)",
+    "d": "在请求生命周期中执行的可组合处理单元。"
+   },
+   {
+    "t": "南北向流量 (North-South Traffic)",
+    "d": "外部客户端与内部系统之间的流量，网关主要处理此类。"
+   },
+   {
+    "t": "服务网格 (Service Mesh)",
+    "d": "处理服务间东西向流量的基础设施，与网关互补。"
+   }
+  ],
+  "code": {
+   "lang": "yaml",
+   "title": "Kong 声明式配置：路由+鉴权+限流",
+   "src": "# kong.yml（DB-less 模式，字段以 Kong 官方文档为准）\n_format_version: \"3.0\"\nservices:\n  - name: order-service\n    url: http://orders.internal:8080\n    routes:\n      - name: orders\n        paths: [\"/api/orders\"]\n    plugins:\n      - name: key-auth            # 需要携带 API Key\n      - name: rate-limiting\n        config:\n          minute: 60              # 每个消费者每分钟 60 次\n          policy: local\n  - name: user-service\n    url: http://users.internal:8080\n    routes:\n      - name: users\n        paths: [\"/api/users\"]\nconsumers:\n  - username: mobile-app\n    keyauth_credentials:\n      - key: <从密钥管理注入，勿提交明文>",
+   "note": "在网关层集中声明路由、认证和限流，后端服务无需各自实现这些横切逻辑。"
+  },
+  "table": {
+   "title": "网关、反向代理与服务网格",
+   "head": [
+    "组件",
+    "主要职责",
+    "流量方向",
+    "典型产品"
+   ],
+   "rows": [
+    [
+     "反向代理",
+     "转发、TLS、负载均衡",
+     "南北向",
+     "Nginx、HAProxy"
+    ],
+    [
+     "API 网关",
+     "反向代理 + 鉴权、限流、API 管理",
+     "南北向",
+     "Kong、APISIX、AWS API Gateway"
+    ],
+    [
+     "服务网格",
+     "服务间 mTLS、重试、观测",
+     "东西向",
+     "Istio、Linkerd"
+    ],
+    [
+     "BFF",
+     "按前端聚合与裁剪数据",
+     "南北向",
+     "自研 Node/GraphQL 层"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "集中式网关",
+    "pros": "横切逻辑统一，安全策略一致",
+    "cons": "可能成为瓶颈与单点，需高可用部署",
+    "when": "多数微服务系统的入口"
+   },
+   {
+    "opt": "每个前端一个 BFF",
+    "pros": "接口贴合前端需求",
+    "cons": "服务数量增多，逻辑重复",
+    "when": "Web、移动端需求差异大"
+   },
+   {
+    "opt": "无网关，服务直接暴露",
+    "pros": "架构简单",
+    "cons": "鉴权限流分散，暴露内部结构",
+    "when": "单体或极少量服务"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在网关里写大量业务逻辑",
+    "fix": "网关只做横切关注点，业务逻辑留在服务内"
+   },
+   {
+    "bad": "后端服务完全信任网关，内部端口可被直接访问",
+    "fix": "网络隔离上游服务，服务内部仍做必要的授权校验"
+   },
+   {
+    "bad": "网关单实例部署",
+    "fix": "多实例 + 负载均衡，配置健康检查与故障转移"
+   },
+   {
+    "bad": "超时与重试未配置，慢服务拖垮网关",
+    "fix": "为每条路由设置超时、重试上限和熔断"
+   }
+  ],
+  "checklist": [
+   "所有外部流量经网关进入",
+   "统一认证与按消费者限流",
+   "上游服务不对公网暴露",
+   "路由级超时、重试与熔断已配置",
+   "网关多实例高可用",
+   "访问日志与指标已接入监控"
+  ],
+  "interview": [
+   {
+    "q": "API 网关和反向代理有什么区别？",
+    "a": "反向代理主要负责转发、TLS 终止和负载均衡；API 网关在此基础上增加 API 管理能力，如认证、按消费者限流、请求转换、聚合、开发者门户与计费。很多网关本身基于 Nginx 或 Envoy 构建。"
+   },
+   {
+    "q": "网关会成为单点故障或性能瓶颈吗？",
+    "a": "会有这种风险，所以要多实例水平扩展、前置负载均衡、保持网关无状态，并避免在网关中执行重计算或阻塞调用。限流计数等共享状态可放在 Redis 等外部存储，或接受本地近似计数。"
+   },
+   {
+    "q": "有了网关，后端服务还需要鉴权吗？",
+    "a": "需要做纵深防御。网关负责认证身份，但细粒度的资源级授权（这个用户能否访问这个订单）依赖业务数据，应在服务内完成。同时内部网络要隔离，防止绕过网关直接访问服务。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "microservices.io：API Gateway pattern",
+    "url": "https://microservices.io/patterns/apigateway.html"
+   },
+   {
+    "title": "Kong Gateway 文档",
+    "url": "https://developer.konghq.com/gateway/"
+   },
+   {
+    "title": "Amazon API Gateway 开发者指南",
+    "url": "https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html"
+   }
+  ]
+ },
+ {
+  "slug": "modular-monolith",
+  "def": "模块化单体（Modular Monolith）是作为单个可部署单元运行、但内部按业务能力划分为边界清晰模块的架构。每个模块拥有自己的领域逻辑和数据，只通过显式的公开接口或进程内事件与其他模块交互，并借助工具强制依赖规则。它保留单体的部署与调试简单性，又获得微服务式的边界，是在拆分微服务前更务实的选择。",
+  "how": [
+   "按业务能力（限界上下文）划分模块，如订单、计费、商品，而不是按技术层（controller、service）划分。",
+   "每个模块定义公开 API（接口、门面或事件），内部实现对外不可见。",
+   "数据归属明确：模块只访问自己的表或 schema，不跨模块直接查询或 JOIN 他人数据。",
+   "通过静态检查工具（如 import-linter、Spring Modulith、ArchUnit）在 CI 中强制模块依赖规则。",
+   "当某模块确有独立扩展或部署需求时，因边界已清晰，可较低成本地将其抽取为独立服务。"
+  ],
+  "terms": [
+   {
+    "t": "限界上下文 (Bounded Context)",
+    "d": "领域模型适用的边界，常作为模块划分依据。"
+   },
+   {
+    "t": "模块公开接口 (Module API)",
+    "d": "模块对外暴露的唯一访问入口。"
+   },
+   {
+    "t": "架构适应度函数 (Fitness Function)",
+    "d": "自动化检查架构约束是否被遵守的测试。"
+   },
+   {
+    "t": "进程内事件 (In-process Event)",
+    "d": "模块间通过事件解耦，但仍在同一进程内传递。"
+   },
+   {
+    "t": "分布式单体 (Distributed Monolith)",
+    "d": "拆成多个服务却仍紧密耦合，兼具两者缺点的反模式。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "用 import-linter 强制模块边界",
+   "src": "# .importlinter （pip install import-linter，运行 lint-imports）\n[importlinter]\nroot_package = shop\n\n# 业务模块之间互不直接导入\n[importlinter:contract:modules-independent]\nname = Business modules are independent\ntype = independence\nmodules =\n    shop.orders\n    shop.billing\n    shop.catalog\n\n# 每个模块内部分层：api 可依赖 domain，反之不行\n[importlinter:contract:orders-layers]\nname = Orders layering\ntype = layers\nlayers =\n    shop.orders.api\n    shop.orders.domain\n    shop.orders.infra",
+   "note": "在 CI 中运行 lint-imports，违反模块独立性或分层规则即失败；模块间协作改走共享事件或接口包。"
+  },
+  "table": {
+   "title": "三种架构对比",
+   "head": [
+    "维度",
+    "传统单体",
+    "模块化单体",
+    "微服务"
+   ],
+   "rows": [
+    [
+     "部署单元",
+     "一个",
+     "一个",
+     "多个"
+    ],
+    [
+     "模块边界",
+     "弱，易形成“大泥球”",
+     "强，由工具约束",
+     "强，由网络隔离"
+    ],
+    [
+     "调用方式",
+     "任意函数调用",
+     "公开接口/进程内事件",
+     "网络调用"
+    ],
+    [
+     "运维复杂度",
+     "低",
+     "低",
+     "高"
+    ],
+    [
+     "独立扩缩容",
+     "不能",
+     "不能",
+     "能"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "模块化单体",
+    "pros": "部署简单、事务简单、重构成本低",
+    "cons": "无法按模块独立扩缩容与部署",
+    "when": "中小团队、业务边界仍在演化"
+   },
+   {
+    "opt": "微服务",
+    "pros": "独立部署与扩展，技术栈自治",
+    "cons": "分布式复杂度、运维成本高",
+    "when": "大团队、模块需独立扩展"
+   },
+   {
+    "opt": "传统单体",
+    "pros": "起步最快",
+    "cons": "长期易失控、难拆分",
+    "when": "原型与短期项目"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "按技术层划分模块，业务逻辑散落各处",
+    "fix": "按业务能力划分，每个模块内部再分层"
+   },
+   {
+    "bad": "模块间共享数据库表并相互 JOIN",
+    "fix": "每张表只归一个模块，跨模块数据经接口获取"
+   },
+   {
+    "bad": "只靠约定维持边界，日久失效",
+    "fix": "在 CI 中用工具强制依赖规则"
+   },
+   {
+    "bad": "为“未来可能拆分”过早引入消息中间件",
+    "fix": "先用进程内接口或事件，真正拆分时再替换实现"
+   }
+  ],
+  "checklist": [
+   "模块按业务能力划分",
+   "每个模块有明确的公开接口",
+   "数据表归属单一模块",
+   "CI 中自动检查模块依赖",
+   "模块间无循环依赖"
+  ],
+  "interview": [
+   {
+    "q": "模块化单体和微服务的核心区别是什么？",
+    "a": "两者都强调按业务划分的清晰边界，区别在于部署与通信方式：模块化单体是一个进程，模块间用函数调用或进程内事件，共享一次部署和数据库实例；微服务各自部署，通过网络通信，各自拥有数据存储，获得独立扩展能力，也承担分布式系统的全部复杂度。"
+   },
+   {
+    "q": "什么时候应该从模块化单体拆出微服务？",
+    "a": "当某个模块有明显不同的扩缩容需求、发布节奏或可靠性要求，或团队规模增长到需要独立交付时。若边界已清晰，拆分主要是把进程内调用替换为网络调用并迁移数据，风险可控。"
+   },
+   {
+    "q": "为什么它对 AI 辅助开发友好？",
+    "a": "清晰的模块边界缩小了每次改动需要理解的上下文范围，Agent 可以只读取一个模块及其公开接口；CI 中的依赖检查还能自动拦截 AI 生成的越界引用，减少架构腐化。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Shopify：Deconstructing the Monolith",
+    "url": "https://shopify.engineering/deconstructing-monolith-designing-software-maximizes-developer-productivity"
+   },
+   {
+    "title": "Martin Fowler：MonolithFirst",
+    "url": "https://martinfowler.com/bliki/MonolithFirst.html"
+   },
+   {
+    "title": "import-linter 文档",
+    "url": "https://import-linter.readthedocs.io/"
+   },
+   {
+    "title": "Spring Modulith",
+    "url": "https://spring.io/projects/spring-modulith"
+   }
+  ]
+ },
+ {
+  "slug": "architecture-decision-records",
+  "def": "架构决策记录（Architecture Decision Record，ADR）是记录单个重要架构决策的短文档，包含决策背景、可选方案、最终决定及其后果，按编号存放在代码仓库中。该做法由 Michael Nygard 于 2011 年推广。ADR 让后来者（包括 AI Agent）理解“为什么是现在这样”，避免重复讨论或无意中推翻有意为之的设计。",
+  "how": [
+   "识别值得记录的决策：影响结构、难以逆转、存在多个合理选项或会被反复质疑的选择。",
+   "按模板撰写：标题、状态（提议/已接受/已废弃/被取代）、背景与约束、决定、后果（正面与负面）。",
+   "以编号文件存放在仓库（如 docs/adr/0007-use-postgres.md），通过 PR 评审后标记为已接受。",
+   "ADR 不修改历史：决策变化时新建 ADR 并将旧记录标记为“被 0012 取代”，保留演进脉络。",
+   "在规则文件或文档中引用 ADR 目录，让新成员与编程 Agent 在改动前查阅相关决策。"
+  ],
+  "terms": [
+   {
+    "t": "状态 (Status)",
+    "d": "提议、已接受、已废弃、被取代等决策生命周期标记。"
+   },
+   {
+    "t": "背景 (Context)",
+    "d": "做出决策时的问题、约束与驱动因素。"
+   },
+   {
+    "t": "后果 (Consequences)",
+    "d": "决策带来的影响，包括代价与后续工作。"
+   },
+   {
+    "t": "被取代 (Superseded)",
+    "d": "旧决策被新 ADR 替代时的标记，保留可追溯性。"
+   },
+   {
+    "t": "MADR",
+    "d": "Markdown Architectural Decision Records，一种流行的 ADR 模板。"
+   }
+  ],
+  "code": {
+   "lang": "text",
+   "title": "ADR 文档示例（Nygard 格式）",
+   "src": "# docs/adr/0007-use-postgresql.md\n\n# 7. 使用 PostgreSQL 作为主数据库\n\n状态：已接受（2026-03-02）；取代 ADR-0003\n\n## 背景\n订单与库存需要跨表事务和强一致；团队熟悉 SQL；\n需要 JSON 字段存储商品扩展属性；托管服务可选项多。\n\n## 决定\n使用 PostgreSQL 作为主数据库，扩展属性使用 JSONB，\n不引入 MongoDB。迁移工具统一用 Alembic。\n\n## 后果\n+ 获得 ACID 事务、外键与成熟生态\n+ JSONB 满足半结构化需求\n- 水平扩展需额外方案（读副本、分区）\n- 需要为 JSONB 查询设计 GIN 索引",
+   "note": "一个决策一个文件，写清背景、决定和正负后果；变更时新建 ADR 并标注取代关系。"
+  },
+  "table": {
+   "title": "ADR 与其他文档对比",
+   "head": [
+    "文档",
+    "回答的问题",
+    "生命周期",
+    "存放位置"
+   ],
+   "rows": [
+    [
+     "ADR",
+     "为什么这样决定",
+     "追加式，不修改历史",
+     "代码仓库"
+    ],
+    [
+     "设计文档 / RFC",
+     "打算怎么做，征求意见",
+     "评审期活跃，之后归档",
+     "仓库或文档平台"
+    ],
+    [
+     "README / 架构概览",
+     "现在是什么样",
+     "持续更新",
+     "代码仓库"
+    ],
+    [
+     "规则文件（AGENTS.md 等）",
+     "AI 应遵守什么",
+     "持续更新",
+     "代码仓库根目录"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "轻量 ADR（Nygard 模板）",
+    "pros": "写作成本低，易坚持",
+    "cons": "方案比较信息较少",
+    "when": "大多数团队"
+   },
+   {
+    "opt": "详细模板（MADR 含备选方案）",
+    "pros": "记录被否决的选项与理由",
+    "cons": "写作成本更高",
+    "when": "重大、长期影响的决策"
+   },
+   {
+    "opt": "不写 ADR，只靠口头/聊天",
+    "pros": "零成本",
+    "cons": "知识随人员流失，反复争论",
+    "when": "不推荐"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "把所有小事都写成 ADR，最终无人阅读",
+    "fix": "只记录影响结构、难以逆转或有争议的决策"
+   },
+   {
+    "bad": "决策改变后直接修改旧 ADR",
+    "fix": "新建 ADR 并将旧的标记为被取代"
+   },
+   {
+    "bad": "ADR 存在外部文档平台，与代码脱节",
+    "fix": "放在代码仓库中，随 PR 评审和版本控制"
+   },
+   {
+    "bad": "只写决定不写后果与代价",
+    "fix": "明确列出负面后果和后续需要的工作"
+   }
+  ],
+  "checklist": [
+   "重要决策都有对应 ADR",
+   "ADR 存放在仓库并有编号",
+   "包含背景、决定与后果",
+   "状态与取代关系清晰",
+   "规则文件引导 AI 查阅 ADR"
+  ],
+  "interview": [
+   {
+    "q": "哪些决策值得写 ADR？",
+    "a": "影响系统结构或质量属性（性能、安全、可用性）的、难以逆转的、存在多个合理方案的、或者团队可能反复质疑的决策，例如数据库选型、认证方案、模块边界、同步还是异步通信。日常实现细节不需要。"
+   },
+   {
+    "q": "为什么 ADR 应该是不可变的？",
+    "a": "ADR 记录的是某一时刻基于当时信息做出的决定。修改历史会抹去决策演进的脉络，使人无法理解过去为何如此。新建 ADR 取代旧记录，既保留历史，也明确当前有效的决策。"
+   },
+   {
+    "q": "ADR 对 AI 编程有什么帮助？",
+    "a": "Agent 只看代码时，可能把有意为之的设计当成缺陷“修复”。在规则文件中指向 ADR 目录，让 Agent 在改动相关模块前阅读决策和约束，可减少推翻既定设计；也可让 Agent 在完成重要改动时起草新的 ADR。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Michael Nygard：Documenting Architecture Decisions",
+    "url": "https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions"
+   },
+   {
+    "title": "ADR GitHub 组织",
+    "url": "https://adr.github.io/"
+   },
+   {
+    "title": "MADR 模板",
+    "url": "https://adr.github.io/madr/"
+   }
+  ]
+ },
+ {
+  "slug": "processes-and-threads",
+  "def": "进程（Process）是操作系统资源分配的基本单位，拥有独立的虚拟地址空间、文件描述符等资源；线程（Thread）是 CPU 调度的基本单位，同一进程内的多个线程共享内存与资源，但各自拥有栈和寄存器状态。理解二者的隔离性、开销与通信方式，是选择并发模型、排查资源占用和设计容器化服务的基础。",
+  "how": [
+   "操作系统创建进程时为其分配独立的虚拟地址空间、页表和资源句柄，进程间默认相互隔离。",
+   "进程内可创建多个线程，共享堆内存、全局变量和打开的文件，每个线程有独立的栈与程序计数器。",
+   "调度器在 CPU 核心上切换线程；线程切换不涉及地址空间切换，通常比进程切换开销小。",
+   "线程共享内存使通信高效，但需要锁、原子操作等同步机制避免竞态；进程间则需 IPC（管道、套接字、共享内存）。",
+   "在 CPython 中，全局解释器锁（GIL）使同一时刻只有一个线程执行 Python 字节码，CPU 密集任务常用多进程（3.13 起提供实验性自由线程构建）。"
+  ],
+  "terms": [
+   {
+    "t": "虚拟地址空间 (Virtual Address Space)",
+    "d": "每个进程看到的独立内存视图，由操作系统映射到物理内存。"
+   },
+   {
+    "t": "上下文切换 (Context Switch)",
+    "d": "保存当前执行状态并切换到另一个线程或进程。"
+   },
+   {
+    "t": "进程间通信 (IPC)",
+    "d": "进程交换数据的机制，如管道、套接字、共享内存。"
+   },
+   {
+    "t": "GIL (Global Interpreter Lock)",
+    "d": "CPython 中保证同一时刻只有一个线程执行字节码的锁。"
+   },
+   {
+    "t": "竞态条件 (Race Condition)",
+    "d": "多个线程无同步地访问共享数据导致结果不确定。"
+   },
+   {
+    "t": "PID",
+    "d": "操作系统分配给每个进程的唯一标识号。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "CPU 密集任务：线程池 vs 进程池",
+   "src": "import time\nfrom concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor\n\ndef cpu_task(n: int) -> int:\n    return sum(i * i for i in range(n))   # 纯计算，不等待 I/O\n\ndef bench(executor_cls, label):\n    start = time.perf_counter()\n    with executor_cls(max_workers=4) as ex:\n        list(ex.map(cpu_task, [5_000_000] * 4))\n    print(f\"{label}: {time.perf_counter() - start:.2f}s\")\n\nif __name__ == \"__main__\":                # 多进程在部分平台需要此保护\n    bench(ThreadPoolExecutor, \"4 线程\")    # 标准 CPython 受 GIL 限制，接近串行\n    bench(ProcessPoolExecutor, \"4 进程\")   # 多核真正并行，通常明显更快",
+   "note": "标准 CPython 中 CPU 密集任务多线程难以利用多核，多进程可以；具体加速比取决于机器核数。"
+  },
+  "table": {
+   "title": "进程与线程对比",
+   "head": [
+    "维度",
+    "进程",
+    "线程"
+   ],
+   "rows": [
+    [
+     "地址空间",
+     "独立",
+     "共享所属进程"
+    ],
+    [
+     "创建与切换开销",
+     "较大",
+     "较小"
+    ],
+    [
+     "通信方式",
+     "IPC（管道、套接字等）",
+     "直接读写共享内存"
+    ],
+    [
+     "故障隔离",
+     "一个崩溃通常不影响其他进程",
+     "一个线程崩溃可能拖垮整个进程"
+    ],
+    [
+     "同步需求",
+     "较少",
+     "需要锁等同步机制"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "多进程",
+    "pros": "隔离性好，可绕开 GIL 利用多核",
+    "cons": "内存占用高，通信成本高",
+    "when": "CPU 密集、需要隔离的任务"
+   },
+   {
+    "opt": "多线程",
+    "pros": "共享内存、创建快",
+    "cons": "竞态与死锁风险，Python 受 GIL 限制",
+    "when": "I/O 密集、需共享状态"
+   },
+   {
+    "opt": "单线程异步（事件循环）",
+    "pros": "极低开销处理大量并发 I/O",
+    "cons": "CPU 密集任务会阻塞循环",
+    "when": "高并发网络服务"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "Python 中用多线程加速纯计算",
+    "fix": "CPU 密集用多进程或原生扩展，I/O 密集用线程或异步"
+   },
+   {
+    "bad": "多线程修改共享变量不加锁",
+    "fix": "使用锁、队列或线程安全的数据结构"
+   },
+   {
+    "bad": "进程池中传递巨大对象，序列化开销抵消收益",
+    "fix": "只传必要数据，或使用共享内存"
+   },
+   {
+    "bad": "容器内开过多工作进程导致 OOM",
+    "fix": "按容器内存与 CPU 限额设置工作进程数"
+   }
+  ],
+  "checklist": [
+   "明确任务是 CPU 密集还是 I/O 密集",
+   "共享可变状态有同步保护",
+   "工作进程/线程数与资源限额匹配",
+   "监控进程内存与线程数",
+   "子进程异常能被捕获与重启"
+  ],
+  "interview": [
+   {
+    "q": "进程和线程的根本区别是什么？",
+    "a": "进程是资源分配单位，拥有独立地址空间，彼此隔离；线程是调度单位，同进程线程共享地址空间和资源。由此带来差异：线程通信快但需要同步，进程隔离好但创建和通信成本高。"
+   },
+   {
+    "q": "Python 的 GIL 对并发有什么影响？",
+    "a": "GIL 让标准 CPython 中同一时刻只有一个线程执行 Python 字节码，因此多线程无法让纯 Python 计算利用多核。但线程在等待 I/O 时会释放 GIL，所以 I/O 密集任务仍可受益；许多 C 扩展在计算时也会释放 GIL。PEP 703 引入了可选的自由线程构建。"
+   },
+   {
+    "q": "为什么一个线程崩溃可能导致整个进程退出？",
+    "a": "线程共享同一地址空间，段错误等致命错误会破坏整个进程的状态，操作系统通常终止整个进程。进程间则有地址空间隔离，因此 Chrome 等程序用多进程架构隔离标签页，提高稳定性。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Wikipedia: Process (computing)",
+    "url": "https://en.wikipedia.org/wiki/Process_(computing)"
+   },
+   {
+    "title": "Python：concurrent.futures",
+    "url": "https://docs.python.org/3/library/concurrent.futures.html"
+   },
+   {
+    "title": "PEP 703：Making the GIL Optional",
+    "url": "https://peps.python.org/pep-0703/"
+   }
+  ]
+ },
+ {
+  "slug": "concurrency-vs-parallelism",
+  "def": "并发（Concurrency）是指程序结构上能同时处理多个任务，任务在时间上交错推进，单核也能实现；并行（Parallelism）是指多个任务在同一时刻真正同时执行，需要多核或多机。Rob Pike 的概括是：并发关乎“处理”多件事，并行关乎“执行”多件事。区分二者是选择异步、多线程还是多进程等优化手段的前提。",
+  "how": [
+   "先判断瓶颈：任务大部分时间在等待 I/O（网络、磁盘、数据库）还是在占用 CPU 计算。",
+   "I/O 密集任务适合并发：在等待期间切换到其他任务，常用事件循环（async/await）或线程实现。",
+   "CPU 密集任务需要并行：把计算拆分到多个核心或机器上同时执行，如多进程、线程池（无 GIL 语言）或分布式计算。",
+   "并行加速受阿姆达尔定律限制：程序中不可并行的串行部分决定了加速比的上限。",
+   "两者可以组合：例如多个工作进程（并行），每个进程内运行异步事件循环处理大量连接（并发）。"
+  ],
+  "terms": [
+   {
+    "t": "I/O 密集 (I/O-bound)",
+    "d": "耗时主要在等待外部输入输出的任务。"
+   },
+   {
+    "t": "CPU 密集 (CPU-bound)",
+    "d": "耗时主要在计算、受 CPU 速度限制的任务。"
+   },
+   {
+    "t": "事件循环 (Event Loop)",
+    "d": "单线程调度大量异步任务、在 I/O 就绪时恢复执行的机制。"
+   },
+   {
+    "t": "阿姆达尔定律 (Amdahl's Law)",
+    "d": "加速比上限由程序中串行部分所占比例决定。"
+   },
+   {
+    "t": "协程 (Coroutine)",
+    "d": "可在等待点暂停并恢复的函数，是异步并发的基础单元。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "asyncio 并发 vs 多进程并行",
+   "src": "import asyncio, time\nfrom concurrent.futures import ProcessPoolExecutor\n\nasync def fake_io(i):          # 模拟网络请求：大部分时间在等待\n    await asyncio.sleep(1)\n    return i\n\nasync def concurrent_io():\n    t = time.perf_counter()\n    await asyncio.gather(*(fake_io(i) for i in range(100)))\n    print(f\"100 个 I/O 任务并发：{time.perf_counter() - t:.1f}s\")  # 约 1 秒\n\ndef crunch(n):                 # CPU 密集：只有多核并行能加速\n    return sum(i * i for i in range(n))\n\nif __name__ == \"__main__\":\n    asyncio.run(concurrent_io())\n    t = time.perf_counter()\n    with ProcessPoolExecutor() as ex:\n        list(ex.map(crunch, [3_000_000] * 8))\n    print(f\"8 个计算任务并行：{time.perf_counter() - t:.1f}s\")",
+   "note": "100 个各等 1 秒的任务并发只需约 1 秒，单线程即可；计算任务则要靠多进程使用多核。"
+  },
+  "table": {
+   "title": "并发与并行对比",
+   "head": [
+    "维度",
+    "并发",
+    "并行"
+   ],
+   "rows": [
+    [
+     "核心含义",
+     "交错推进多个任务",
+     "同一时刻同时执行"
+    ],
+    [
+     "硬件要求",
+     "单核即可",
+     "多核或多机"
+    ],
+    [
+     "适合瓶颈",
+     "I/O 等待",
+     "CPU 计算"
+    ],
+    [
+     "典型手段",
+     "async/await、线程",
+     "多进程、GPU、分布式"
+    ],
+    [
+     "主要风险",
+     "共享状态竞态、阻塞事件循环",
+     "通信与同步开销、负载不均"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "异步并发（asyncio、Node.js）",
+    "pros": "单线程即可处理大量连接，开销低",
+    "cons": "CPU 密集代码会阻塞全部任务",
+    "when": "网络服务、爬虫、调用 LLM API"
+   },
+   {
+    "opt": "多线程",
+    "pros": "编程模型直观，可共享内存",
+    "cons": "竞态、死锁；CPython 受 GIL 限制",
+    "when": "阻塞式 I/O 库、GUI"
+   },
+   {
+    "opt": "多进程 / 分布式并行",
+    "pros": "真正利用多核或多机",
+    "cons": "通信与序列化开销",
+    "when": "数据处理、模型推理、编码转码"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "在 async 函数里调用阻塞的同步库",
+    "fix": "使用异步客户端，或用 asyncio.to_thread 放到线程中"
+   },
+   {
+    "bad": "CPU 密集任务用 asyncio 期望变快",
+    "fix": "用多进程或把计算交给原生扩展"
+   },
+   {
+    "bad": "无限制并发请求，触发限流或耗尽连接",
+    "fix": "用信号量或连接池控制并发上限"
+   },
+   {
+    "bad": "并行任务粒度过细，调度开销超过收益",
+    "fix": "合并为较大块，减少进程间通信次数"
+   }
+  ],
+  "checklist": [
+   "已确认瓶颈是 I/O 还是 CPU",
+   "异步代码中无阻塞调用",
+   "并发数有上限控制",
+   "并行任务粒度合理",
+   "用基准测试验证优化效果"
+  ],
+  "interview": [
+   {
+    "q": "并发和并行能否同时存在？",
+    "a": "可以，而且很常见。例如 Web 服务器启动与 CPU 核数相同的工作进程实现并行，每个进程内用事件循环并发处理数千个连接。并发是程序结构，并行是执行方式，二者正交。"
+   },
+   {
+    "q": "批量调用 LLM API 应该用并发还是并行？",
+    "a": "调用 API 时程序主要在等待网络响应，是典型的 I/O 密集任务，使用 asyncio 等异步并发即可显著提速，无需多进程。同时要用信号量限制并发数，遵守速率限制并处理 429 重试。"
+   },
+   {
+    "q": "阿姆达尔定律说明了什么？",
+    "a": "若程序中比例为 p 的部分可并行，使用 N 个处理器的加速比为 1/((1-p)+p/N)。即使无限增加处理器，加速比也不超过 1/(1-p)。例如 90% 可并行，最多加速 10 倍。优化应先减少串行部分。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Rob Pike：Concurrency is not Parallelism",
+    "url": "https://go.dev/blog/waza-talk"
+   },
+   {
+    "title": "Python：asyncio",
+    "url": "https://docs.python.org/3/library/asyncio.html"
+   },
+   {
+    "title": "Wikipedia: Amdahl's law",
+    "url": "https://en.wikipedia.org/wiki/Amdahl%27s_law"
+   }
+  ]
+ },
+ {
+  "slug": "cache-aside",
+  "def": "旁路缓存（Cache-Aside，又称 Lazy Loading）是最常用的缓存读写模式：应用读取时先查缓存，命中直接返回；未命中则查询数据库，把结果写入缓存并设置过期时间。写入时先更新数据库，再删除（而非更新）对应缓存。缓存只是数据库的可丢弃副本，由应用代码而非缓存系统负责维护一致性。",
+  "how": [
+   "读请求先按键查询缓存（如 Redis GET），命中则直接返回，避免访问数据库。",
+   "未命中时查询数据库，将结果序列化写入缓存并设置 TTL，再返回给调用方。",
+   "写请求先更新数据库，成功后删除对应缓存键，使下一次读取重新加载最新数据。",
+   "选择删除而非更新缓存，可避免并发写入时缓存与数据库出现不同的写入顺序。",
+   "TTL 作为最终兜底：即使删除失败或出现竞态，脏数据也会在过期后被自动纠正。"
+  ],
+  "terms": [
+   {
+    "t": "缓存命中 (Cache Hit)",
+    "d": "请求的数据在缓存中存在，直接返回。"
+   },
+   {
+    "t": "懒加载 (Lazy Loading)",
+    "d": "只在首次被请求时才把数据加载到缓存。"
+   },
+   {
+    "t": "缓存失效 (Invalidation)",
+    "d": "数据变更后让旧缓存不再被使用，常用删除键。"
+   },
+   {
+    "t": "TTL",
+    "d": "缓存键的存活时间，到期自动删除。"
+   },
+   {
+    "t": "延迟双删 (Delayed Double Delete)",
+    "d": "写库前后各删一次缓存，第二次延迟执行以缓解竞态。"
+   },
+   {
+    "t": "负缓存 (Negative Caching)",
+    "d": "缓存“不存在”的结果，防止重复查询数据库。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "redis-py 实现旁路缓存",
+   "src": "import json, random\nimport redis\n\nr = redis.Redis(decode_responses=True)\nTTL = 600  # 10 分钟\n\ndef get_product(pid: int, db) -> dict | None:\n    key = f\"product:{pid}\"\n    if (cached := r.get(key)) is not None:      # 1. 先查缓存\n        return json.loads(cached)\n    row = db.fetch_product(pid)                  # 2. 未命中查数据库\n    if row is not None:\n        # 3. 写回缓存；TTL 加随机抖动，避免大量键同时过期\n        r.set(key, json.dumps(row), ex=TTL + random.randint(0, 60))\n    return row\n\ndef update_price(pid: int, price: float, db) -> None:\n    db.update_price(pid, price)                  # 1. 先更新数据库\n    r.delete(f\"product:{pid}\")                   # 2. 再删除缓存（不是更新）",
+   "note": "读路径懒加载并带随机 TTL，写路径先写库后删缓存；db 为示意的数据访问对象。"
+  },
+  "table": {
+   "title": "常见缓存模式对比",
+   "head": [
+    "模式",
+    "读路径",
+    "写路径",
+    "一致性特点"
+   ],
+   "rows": [
+    [
+     "Cache-Aside",
+     "应用查缓存，未命中查库回填",
+     "写库后删缓存",
+     "应用负责，最常用"
+    ],
+    [
+     "Read-Through",
+     "缓存层自动从库加载",
+     "通常配合其他模式",
+     "对应用透明"
+    ],
+    [
+     "Write-Through",
+     "同上",
+     "同步写缓存与数据库",
+     "一致性较好，写延迟高"
+    ],
+    [
+     "Write-Back",
+     "同上",
+     "先写缓存，异步刷库",
+     "写快，宕机可能丢数据"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "写后删除缓存",
+    "pros": "实现简单，避免并发更新顺序问题",
+    "cons": "下次读取有一次未命中",
+    "when": "绝大多数读多写少场景"
+   },
+   {
+    "opt": "写后更新缓存",
+    "pros": "读取始终命中",
+    "cons": "并发写可能导致缓存与库不一致",
+    "when": "计算成本高、写少且串行"
+   },
+   {
+    "opt": "订阅变更（CDC）删除缓存",
+    "pros": "与业务代码解耦，可靠重试",
+    "cons": "引入额外组件与延迟",
+    "when": "多服务共享数据、高一致性要求"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "先删缓存再写数据库，并发读把旧值写回缓存",
+    "fix": "先写数据库再删缓存，并设置 TTL 兜底"
+   },
+   {
+    "bad": "缓存不设 TTL，脏数据永久存在",
+    "fix": "所有缓存键设置 TTL，并加随机抖动"
+   },
+   {
+    "bad": "热点键过期瞬间大量请求击穿数据库",
+    "fix": "对热点键加互斥锁重建或提前异步刷新"
+   },
+   {
+    "bad": "查询不存在的数据每次都打到数据库",
+    "fix": "对空结果做短 TTL 负缓存或使用布隆过滤器"
+   }
+  ],
+  "checklist": [
+   "所有缓存键都有 TTL",
+   "写路径先写库后删缓存",
+   "删除缓存失败有重试或兜底",
+   "热点键有防击穿措施",
+   "监控命中率与数据库负载",
+   "缓存故障时可降级直连数据库"
+  ],
+  "interview": [
+   {
+    "q": "为什么是先写数据库再删缓存，而不是反过来？",
+    "a": "若先删缓存，在写库完成前有并发读请求未命中，会把旧值读出并写回缓存，导致长期脏数据。先写库再删缓存时，出现不一致需要更苛刻的时序（读在写前查库、在删除后才回填），概率低得多，且 TTL 可兜底。"
+   },
+   {
+    "q": "为什么删除缓存而不是直接更新缓存？",
+    "a": "两个并发写请求可能以不同顺序完成数据库更新和缓存更新，使缓存保留较旧的值。删除让下一次读取从数据库加载最新值，避免顺序问题；同时也避免为可能不会被读取的数据做无谓的序列化计算。"
+   },
+   {
+    "q": "Cache-Aside 能保证强一致吗？",
+    "a": "不能，它提供的是最终一致：在写库与删缓存之间、删除失败或极端竞态下，短时间内可能读到旧数据。需要强一致的场景应直接读数据库，或使用带版本号的缓存、分布式锁等更复杂方案，并权衡性能。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Azure Architecture Center：Cache-Aside pattern",
+    "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/cache-aside"
+   },
+   {
+    "title": "AWS：Caching Best Practices",
+    "url": "https://aws.amazon.com/caching/best-practices/"
+   }
+  ]
+ },
+ {
+  "slug": "cache-penetration",
+  "def": "缓存穿透（Cache Penetration）指请求查询的数据在缓存和数据库中都不存在，因此每次都无法命中缓存而直接打到数据库。在恶意构造随机 ID 或爬虫遍历时，大量此类请求会压垮数据库。常见防护是参数校验、缓存空结果（负缓存）和布隆过滤器。它常与缓存击穿（热点键过期）和缓存雪崩（大量键同时过期或缓存宕机）一起讨论。",
+  "how": [
+   "正常的旁路缓存只在数据库返回结果时写缓存，查询结果为空时不写，导致同一不存在的键每次都回源。",
+   "攻击者或缺陷代码用大量不存在的键（如负数 ID、随机 UUID）发起请求，缓存命中率趋近于零。",
+   "第一道防线是接口层参数校验：格式、范围、权限不合法的请求直接拒绝，不访问缓存或数据库。",
+   "负缓存：把“不存在”也写入缓存（如特殊空值），设置较短 TTL，防止同一键反复回源。",
+   "布隆过滤器：预先把所有合法键加入过滤器，查询前判断，若“肯定不存在”则直接返回；它有误判率但无漏判。"
+  ],
+  "terms": [
+   {
+    "t": "负缓存 (Negative Caching)",
+    "d": "缓存“查无结果”，用较短 TTL 防止重复回源。"
+   },
+   {
+    "t": "布隆过滤器 (Bloom Filter)",
+    "d": "概率型集合结构，能确定“一定不存在”，存在判断有误判率。"
+   },
+   {
+    "t": "缓存击穿 (Cache Breakdown)",
+    "d": "热点键过期瞬间大量并发请求同时回源。"
+   },
+   {
+    "t": "缓存雪崩 (Cache Avalanche)",
+    "d": "大量键同时过期或缓存整体故障，流量涌向数据库。"
+   },
+   {
+    "t": "误判率 (False Positive Rate)",
+    "d": "布隆过滤器把不存在的元素判为存在的概率。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "空值缓存 + 布隆过滤器防穿透",
+   "src": "import json\nimport redis\n\nr = redis.Redis(decode_responses=True)\nNULL = \"__NULL__\"\n\ndef get_user(uid: str, db) -> dict | None:\n    if not uid.isdigit() or len(uid) > 12:              # 1. 参数校验\n        return None\n    # 2. 布隆过滤器（需 Redis 8 或 RedisBloom 模块）：0 表示一定不存在\n    if r.execute_command(\"BF.EXISTS\", \"bf:users\", uid) == 0:\n        return None\n    key = f\"user:{uid}\"\n    cached = r.get(key)\n    if cached == NULL:                                   # 3. 命中空值缓存\n        return None\n    if cached is not None:\n        return json.loads(cached)\n    row = db.find_user(uid)\n    if row is None:\n        r.set(key, NULL, ex=120)                         # 不存在：短 TTL\n    else:\n        r.set(key, json.dumps(row), ex=3600)\n    return row\n\n# 新增用户时同步写入过滤器：r.execute_command(\"BF.ADD\", \"bf:users\", uid)",
+   "note": "三层防护依次拦截非法参数、肯定不存在的键与重复的空查询；db 为示意对象。"
+  },
+  "table": {
+   "title": "穿透、击穿、雪崩对比",
+   "head": [
+    "问题",
+    "触发条件",
+    "主要对策"
+   ],
+   "rows": [
+    [
+     "穿透",
+     "查询不存在的数据",
+     "参数校验、负缓存、布隆过滤器"
+    ],
+    [
+     "击穿",
+     "单个热点键过期瞬间高并发",
+     "互斥锁重建、逻辑过期、提前刷新"
+    ],
+    [
+     "雪崩",
+     "大量键同时过期或缓存宕机",
+     "TTL 随机抖动、多级缓存、限流降级、缓存高可用"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "负缓存",
+    "pros": "实现简单，对重复键有效",
+    "cons": "随机键攻击下仍会占满缓存空间",
+    "when": "少量不存在键被反复查询"
+   },
+   {
+    "opt": "布隆过滤器",
+    "pros": "内存占用小，挡住海量随机键",
+    "cons": "需维护键集合，删除困难，有误判",
+    "when": "合法键集合可预知、攻击面大"
+   },
+   {
+    "opt": "限流与风控",
+    "pros": "直接遏制恶意来源",
+    "cons": "无法区分合法的偶发空查询",
+    "when": "叠加使用，应对恶意流量"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "空值缓存使用与正常数据相同的长 TTL",
+    "fix": "空值使用较短 TTL，数据新增时主动删除空值缓存"
+   },
+   {
+    "bad": "布隆过滤器建好后不随数据新增更新",
+    "fix": "写入数据时同步加入过滤器，并定期重建"
+   },
+   {
+    "bad": "用普通布隆过滤器处理需要删除的键",
+    "fix": "选择支持删除的变体（如计数布隆、Cuckoo 过滤器）或定期重建"
+   },
+   {
+    "bad": "只做缓存防护，不做参数校验和限流",
+    "fix": "在网关和接口层先校验参数并按来源限流"
+   }
+  ],
+  "checklist": [
+   "接口有参数格式与范围校验",
+   "空结果缓存且 TTL 较短",
+   "数据新增时清除对应空值缓存",
+   "合法键集合大时评估布隆过滤器",
+   "按 IP/用户限流并监控缓存命中率"
+  ],
+  "interview": [
+   {
+    "q": "布隆过滤器为什么能防穿透，又有什么局限？",
+    "a": "它用多个哈希函数把元素映射到位数组；查询时若任一位为 0，元素一定不存在，可直接拒绝。局限是存在误判（少量不存在的键被判为可能存在，仍会回源），标准实现不支持删除，且需要随数据变化维护。"
+   },
+   {
+    "q": "负缓存会带来什么一致性问题？",
+    "a": "如果某键先被缓存为“不存在”，随后数据被创建，在空值 TTL 到期前读请求仍返回不存在。解决办法是空值 TTL 设短，并在创建数据时主动删除对应的空值缓存。"
+   },
+   {
+    "q": "如何区分穿透、击穿和雪崩？",
+    "a": "穿透是数据根本不存在，缓存永远命中不了；击穿是某个存在的热点键恰好过期，瞬间并发回源；雪崩是大量键集中过期或缓存服务整体不可用。三者对策不同，监控上可分别观察空结果比例、单键回源并发和整体命中率。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Redis：Bloom filter",
+    "url": "https://redis.io/docs/latest/develop/data-types/probabilistic/bloom-filter/"
+   },
+   {
+    "title": "Wikipedia: Bloom filter",
+    "url": "https://en.wikipedia.org/wiki/Bloom_filter"
+   },
+   {
+    "title": "Azure：Cache-Aside pattern",
+    "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/cache-aside"
+   }
+  ]
+ },
+ {
+  "slug": "stale-while-revalidate",
+  "def": "Stale-While-Revalidate（SWR）是一种缓存策略：缓存过了新鲜期后的一段宽限时间内，先立即返回旧（stale）内容，同时在后台异步重新验证或获取新内容并更新缓存。它由 RFC 5861 定义为 HTTP Cache-Control 扩展指令，也被前端库（如 Vercel 的 SWR）广泛采用，以少量陈旧换稳定低延迟。",
+  "how": [
+   "响应携带 Cache-Control: max-age=N, stale-while-revalidate=M，表示 N 秒内为新鲜，此后 M 秒内可用旧内容。",
+   "在 max-age 规定的新鲜期内，请求直接由缓存返回内容，完全不访问源站。",
+   "超过 max-age 但在宽限期内的请求，缓存立即返回旧内容，并在后台向源站发起重新验证（可带 ETag 条件请求）。",
+   "后台请求成功后更新缓存，后续请求获得新内容；超过 max-age + M 后缓存不可再直接使用旧内容，必须等待源站响应。",
+   "配合 stale-if-error 指令，可在源站出错时继续返回旧内容，提高可用性。"
+  ],
+  "terms": [
+   {
+    "t": "新鲜期 (Freshness Lifetime)",
+    "d": "由 max-age 或 s-maxage 定义，期间缓存可直接使用。"
+   },
+   {
+    "t": "重新验证 (Revalidation)",
+    "d": "向源站确认缓存是否仍有效，常用 ETag/If-None-Match。"
+   },
+   {
+    "t": "stale-if-error",
+    "d": "源站出错时允许在指定时间内返回过期内容。"
+   },
+   {
+    "t": "s-maxage",
+    "d": "只作用于共享缓存（CDN、代理）的新鲜期。"
+   },
+   {
+    "t": "useSWR",
+    "d": "Vercel 的 React 数据请求 Hook，按 SWR 思路先返回缓存再重新请求。"
+   }
+  ],
+  "code": {
+   "lang": "javascript",
+   "title": "HTTP 响应头与前端 useSWR",
+   "src": "// 服务端（Express）：CDN 60 秒新鲜，之后 5 分钟内可先返回旧内容并后台刷新\napp.get(\"/api/articles\", async (req, res) => {\n  res.set(\"Cache-Control\",\n    \"public, s-maxage=60, stale-while-revalidate=300, stale-if-error=86400\");\n  res.json(await listArticles());\n});\n// 注意：不同 CDN 对 stale-while-revalidate 的支持不同，以各自文档为准\n\n// 前端（React）：先显示缓存数据，同时后台重新请求\nimport useSWR from \"swr\";\nconst fetcher = (url) => fetch(url).then((r) => r.json());\n\nexport function ArticleList() {\n  const { data, error, isLoading } = useSWR(\"/api/articles\", fetcher);\n  if (error) return <p>加载失败</p>;\n  if (isLoading) return <p>加载中…</p>;\n  return <ul>{data.map((a) => <li key={a.id}>{a.title}</li>)}</ul>;\n}",
+   "note": "同一思想在 CDN 层（响应头）和浏览器层（useSWR）各用一次，均以短暂旧数据换即时响应。"
+  },
+  "table": {
+   "title": "Cache-Control 相关指令",
+   "head": [
+    "指令",
+    "作用",
+    "示例"
+   ],
+   "rows": [
+    [
+     "max-age",
+     "浏览器与共享缓存的新鲜期（秒）",
+     "max-age=60"
+    ],
+    [
+     "s-maxage",
+     "仅共享缓存的新鲜期",
+     "s-maxage=300"
+    ],
+    [
+     "stale-while-revalidate",
+     "过期后可先用旧内容并后台刷新的时长",
+     "stale-while-revalidate=600"
+    ],
+    [
+     "stale-if-error",
+     "源站错误时可用旧内容的时长",
+     "stale-if-error=86400"
+    ],
+    [
+     "no-cache",
+     "每次使用前都必须重新验证",
+     "no-cache"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "SWR",
+    "pros": "响应始终快，源站压力平滑",
+    "cons": "用户可能看到稍旧的数据",
+    "when": "文章列表、商品目录、仪表盘"
+   },
+   {
+    "opt": "严格过期（max-age 后同步回源）",
+    "pros": "过期后数据较新",
+    "cons": "过期瞬间请求变慢，可能并发回源",
+    "when": "数据时效性要求中等"
+   },
+   {
+    "opt": "不缓存 / no-store",
+    "pros": "始终最新",
+    "cons": "延迟与源站负载最高",
+    "when": "余额、库存扣减、个人敏感数据"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "对个性化或敏感接口设置 public + SWR",
+    "fix": "个人数据使用 private 或 no-store，共享缓存只缓存公共内容"
+   },
+   {
+    "bad": "宽限期设得过长，用户长时间看到过时内容",
+    "fix": "按业务可接受的陈旧度设置，并在数据变更时主动清除 CDN 缓存"
+   },
+   {
+    "bad": "假设所有 CDN 都支持该指令",
+    "fix": "查阅所用 CDN 文档，必要时在边缘函数中实现"
+   },
+   {
+    "bad": "前端 useSWR 未处理错误与重复请求",
+    "fix": "配置去重、错误重试与降级展示"
+   }
+  ],
+  "checklist": [
+   "确认数据可接受短暂陈旧",
+   "新鲜期与宽限期按业务设定",
+   "个人数据不进入共享缓存",
+   "确认 CDN 支持相关指令",
+   "数据变更时有主动清除缓存的手段"
+  ],
+  "interview": [
+   {
+    "q": "SWR 与普通 TTL 缓存有什么区别？",
+    "a": "普通 TTL 缓存过期后，下一个请求必须同步等待回源，延迟突增且可能多个请求同时回源。SWR 在宽限期内立即返回旧内容并后台刷新，用户不感知等待，源站请求也更平滑，代价是短时间内看到旧数据。"
+   },
+   {
+    "q": "什么数据不适合用 SWR？",
+    "a": "对时效和正确性要求严格的数据，如账户余额、库存扣减、支付状态、权限变更；以及个性化或敏感内容（不能进入共享缓存）。这些应直接读源，或用短 TTL 加主动失效。"
+   },
+   {
+    "q": "前端 useSWR 解决了什么问题？",
+    "a": "它把“先显示缓存、再后台请求、获得结果后更新界面”的模式封装成 Hook，并提供请求去重、窗口聚焦时重新验证、错误重试和乐观更新等能力，减少手写加载状态和缓存管理代码。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "RFC 5861：HTTP Cache-Control Extensions for Stale Content",
+    "url": "https://www.rfc-editor.org/rfc/rfc5861"
+   },
+   {
+    "title": "MDN：Cache-Control",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cache-Control"
+   },
+   {
+    "title": "web.dev：Keeping things fresh with stale-while-revalidate",
+    "url": "https://web.dev/articles/stale-while-revalidate"
+   },
+   {
+    "title": "SWR (Vercel)",
+    "url": "https://swr.vercel.app/"
+   }
+  ]
+ },
+ {
+  "slug": "pub-sub",
+  "def": "发布订阅（Publish/Subscribe，Pub/Sub）是一种消息模式：发布者把消息发送到主题或频道，而不指定接收者；所有订阅该主题的订阅者各自收到一份副本，实现一对多扇出与解耦。从“即发即弃”的 Redis Pub/Sub 到持久化的 Google Cloud Pub/Sub、Kafka，投递保证差异很大。",
+  "how": [
+   "订阅者向代理声明感兴趣的主题或频道（可支持通配符模式匹配）。",
+   "发布者把消息发送到某个主题，无需知道有哪些订阅者、是否在线。",
+   "代理把消息复制并投递给该主题的每个订阅（扇出）；同一订阅内的多个实例可竞争消费以实现负载分担（取决于实现）。",
+   "投递语义由实现决定：Redis Pub/Sub 不持久化，订阅者离线即丢失；托管 Pub/Sub 与 Kafka 会持久化并要求确认，通常为至少一次。",
+   "订阅者处理消息并确认；未确认的消息会被重投，多次失败可进入死信主题。"
+  ],
+  "terms": [
+   {
+    "t": "主题 / 频道 (Topic / Channel)",
+    "d": "发布者投递消息的逻辑命名通道。"
+   },
+   {
+    "t": "扇出 (Fan-out)",
+    "d": "一条消息被复制给多个订阅者。"
+   },
+   {
+    "t": "订阅 (Subscription)",
+    "d": "某个消费方对主题的订阅关系，可有多个实例共享。"
+   },
+   {
+    "t": "即发即弃 (Fire-and-forget)",
+    "d": "不持久化、不确认，订阅者不在线时消息丢失。"
+   },
+   {
+    "t": "至少一次投递 (At-least-once)",
+    "d": "保证不丢但可能重复，消费者需要幂等。"
+   },
+   {
+    "t": "死信主题 (Dead-letter Topic)",
+    "d": "存放多次处理失败消息的主题。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "Redis Pub/Sub 发布与订阅",
+   "src": "import json, threading, time\nimport redis\n\nr = redis.Redis(decode_responses=True)\n\ndef subscriber(name: str):\n    p = r.pubsub()\n    p.subscribe(\"order.status\")          # 订阅频道\n    for msg in p.listen():\n        if msg[\"type\"] == \"message\":\n            print(name, \"收到\", json.loads(msg[\"data\"]))\n\nfor n in (\"通知服务\", \"日志服务\"):\n    threading.Thread(target=subscriber, args=(n,), daemon=True).start()\ntime.sleep(0.5)                           # 等订阅建立\n\n# 发布：返回值是当前收到消息的订阅者数量\ncount = r.publish(\"order.status\", json.dumps({\"order_id\": 42, \"status\": \"paid\"}))\nprint(\"送达订阅者数：\", count)\ntime.sleep(0.5)\n# 注意：Redis Pub/Sub 不持久化，订阅者离线期间的消息会丢失",
+   "note": "一条消息被两个订阅者同时收到；Redis Pub/Sub 适合实时通知，不适合必须可靠送达的业务事件。"
+  },
+  "table": {
+   "title": "常见实现对比",
+   "head": [
+    "实现",
+    "持久化",
+    "投递保证",
+    "适用"
+   ],
+   "rows": [
+    [
+     "Redis Pub/Sub",
+     "否",
+     "至多一次，离线即丢",
+     "实时通知、缓存失效广播"
+    ],
+    [
+     "Redis Streams",
+     "是",
+     "至少一次（消费组 + ACK）",
+     "轻量可靠事件"
+    ],
+    [
+     "Google Cloud Pub/Sub",
+     "是",
+     "至少一次，可选按序、精确一次（以文档为准）",
+     "云上异步解耦"
+    ],
+    [
+     "Kafka",
+     "是，按保留策略",
+     "至少一次为主，可配置事务",
+     "高吞吐事件流、回放"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "即发即弃 Pub/Sub",
+    "pros": "延迟极低，实现简单",
+    "cons": "消息可能丢失，无回放",
+    "when": "可容忍丢失的实时广播"
+   },
+   {
+    "opt": "持久化 Pub/Sub",
+    "pros": "可靠投递，支持重试与死信",
+    "cons": "需处理重复消息，成本更高",
+    "when": "订单、支付等业务事件"
+   },
+   {
+    "opt": "点对点队列",
+    "pros": "每条消息只被一个消费者处理",
+    "cons": "不能天然广播",
+    "when": "任务分发、后台作业"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "用 Redis Pub/Sub 传递不能丢的业务事件",
+    "fix": "改用 Redis Streams、Kafka 或托管 Pub/Sub 等持久化方案"
+   },
+   {
+    "bad": "订阅者不幂等，重投导致重复处理",
+    "fix": "以消息 ID 去重或设计幂等操作"
+   },
+   {
+    "bad": "订阅者处理慢，消息积压无人发现",
+    "fix": "监控积压量与消费延迟，配置死信与告警"
+   },
+   {
+    "bad": "把发布订阅当作请求/响应使用",
+    "fix": "需要结果的调用使用 API 或带回复通道的请求模式"
+   }
+  ],
+  "checklist": [
+   "根据可靠性需求选择实现",
+   "消费者幂等",
+   "配置死信与重试策略",
+   "监控积压与消费延迟",
+   "消息格式有版本约定"
+  ],
+  "interview": [
+   {
+    "q": "发布订阅和消息队列有什么区别？",
+    "a": "发布订阅是一对多：每个订阅者都收到消息副本，用于广播事件；点对点队列是一对一：每条消息只被其中一个消费者处理，用于分发任务。许多系统两者兼具，例如 Kafka 中不同消费组相当于订阅，组内消费者分担分区。"
+   },
+   {
+    "q": "Redis Pub/Sub 适合什么场景？",
+    "a": "适合可容忍丢失的实时广播，如在线通知推送、多实例间的缓存失效通知、聊天室在线消息。它不持久化、不确认，订阅者断线期间的消息直接丢失，因此不适合订单、支付等必须可靠处理的事件。"
+   },
+   {
+    "q": "至少一次投递下如何避免重复处理？",
+    "a": "让消费者幂等：用消息或业务唯一 ID 记录已处理状态，处理前先检查；或让操作天然幂等（如设置状态而非累加）。也可借助数据库唯一约束，在重复写入时安全失败。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Redis：Pub/Sub",
+    "url": "https://redis.io/docs/latest/develop/pubsub/"
+   },
+   {
+    "title": "Google Cloud Pub/Sub 概览",
+    "url": "https://cloud.google.com/pubsub/docs/overview"
+   },
+   {
+    "title": "Wikipedia: Publish–subscribe pattern",
+    "url": "https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern"
+   }
+  ]
+ },
+ {
+  "slug": "semantic-caching",
+  "def": "语义缓存（Semantic Caching）是面向 LLM 应用的缓存方式：把用户查询转为嵌入向量，在缓存中按向量相似度查找语义相近的历史查询，若相似度超过阈值，就直接返回其已缓存的回答，跳过模型调用。它比精确匹配缓存命中率高，可降低成本与延迟，但有误命中、跨用户泄露和过时风险；它不同于厂商的提示缓存。",
+  "how": [
+   "收到查询后先做规范化（去空白、统一大小写），并判断是否属于可缓存类别（排除个性化、实时数据类问题）。",
+   "用嵌入模型把查询编码为向量，在向量索引中做最近邻搜索。",
+   "若最相似条目的相似度高于阈值（且满足元数据过滤，如语言、租户、模型版本），返回其缓存回答。",
+   "未命中则调用大模型生成回答，把“查询向量 + 回答 + 元数据”写入缓存，并设置 TTL。",
+   "持续监控命中率与误命中，抽样人工评估，按业务调节阈值与可缓存范围。"
+  ],
+  "terms": [
+   {
+    "t": "相似度阈值 (Similarity Threshold)",
+    "d": "判定命中的最低相似度，过低会误命中。"
+   },
+   {
+    "t": "余弦相似度 (Cosine Similarity)",
+    "d": "比较两个向量方向的指标，常用于语义相似度。"
+   },
+   {
+    "t": "误命中 (False Hit)",
+    "d": "语义相近但意图不同的查询被错误复用回答。"
+   },
+   {
+    "t": "提示缓存 (Prompt Caching)",
+    "d": "厂商复用相同前缀的计算结果，输出仍由模型实时生成。"
+   },
+   {
+    "t": "缓存分区 (Cache Partitioning)",
+    "d": "按用户、租户或场景隔离缓存，防止数据串用。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "最小语义缓存实现",
+   "src": "import numpy as np\nfrom openai import OpenAI\n\nclient = OpenAI()\nEMB_MODEL = \"text-embedding-3-small\"   # 以官方文档为准\nTHRESHOLD = 0.95                      # 需按业务评测调整\ncache: list[tuple[np.ndarray, str]] = []  # 生产中用向量数据库并设 TTL\n\ndef embed(text: str) -> np.ndarray:\n    v = client.embeddings.create(model=EMB_MODEL, input=text).data[0].embedding\n    v = np.array(v)\n    return v / np.linalg.norm(v)          # 归一化后点积即余弦相似度\n\ndef answer(question: str, call_llm) -> str:\n    q = embed(question)\n    if cache:\n        sims = [float(q @ v) for v, _ in cache]\n        best = int(np.argmax(sims))\n        if sims[best] >= THRESHOLD:       # 命中：直接复用\n            return cache[best][1]\n    reply = call_llm(question)            # 未命中：调用模型\n    cache.append((q, reply))\n    return reply",
+   "note": "演示嵌入—相似度—阈值判定的核心流程；生产中需向量索引、TTL、按租户隔离与可缓存性判断。"
+  },
+  "table": {
+   "title": "三种缓存对比",
+   "head": [
+    "类型",
+    "匹配方式",
+    "缓存内容",
+    "主要风险"
+   ],
+   "rows": [
+    [
+     "精确匹配缓存",
+     "查询字符串完全相同",
+     "最终回答",
+     "命中率低"
+    ],
+    [
+     "语义缓存",
+     "嵌入相似度超过阈值",
+     "最终回答",
+     "误命中、跨用户泄露"
+    ],
+    [
+     "提示缓存（厂商侧）",
+     "提示前缀完全相同",
+     "中间计算（KV）",
+     "几乎无正确性风险，只省成本与延迟"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "高阈值语义缓存",
+    "pros": "误命中少",
+    "cons": "命中率有限",
+    "when": "通用客服、FAQ 类问答"
+   },
+   {
+    "opt": "低阈值语义缓存",
+    "pros": "命中率高、更省钱",
+    "cons": "答非所问风险上升",
+    "when": "只适合低风险、答案高度一致的场景"
+   },
+   {
+    "opt": "只用精确缓存 + 提示缓存",
+    "pros": "零正确性风险",
+    "cons": "节省有限",
+    "when": "回答高度个性化或要求严格准确"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "缓存涉及个人数据或订单状态的回答，返回给其他用户",
+    "fix": "排除个性化问题，或按用户/租户分区缓存"
+   },
+   {
+    "bad": "阈值凭感觉设定",
+    "fix": "用标注的相似/不相似查询对评测，选择误命中可接受的阈值"
+   },
+   {
+    "bad": "模型或提示词升级后仍复用旧回答",
+    "fix": "把模型与提示词版本写入元数据，变更时失效旧缓存"
+   },
+   {
+    "bad": "忽视时效性，过期政策仍被复用",
+    "fix": "设置 TTL，知识更新时清除相关缓存"
+   }
+  ],
+  "checklist": [
+   "明确可缓存与不可缓存的问题类型",
+   "阈值经评测确定",
+   "缓存按租户或用户隔离",
+   "元数据包含模型与提示词版本",
+   "设置 TTL 与主动失效",
+   "监控命中率并抽检误命中"
+  ],
+  "interview": [
+   {
+    "q": "语义缓存和厂商的 Prompt Caching 有何不同？",
+    "a": "语义缓存在应用层运行，命中时完全跳过模型调用，直接返回旧回答，节省最多但可能答错。Prompt Caching 由模型服务商提供，复用相同提示前缀的计算，模型仍实时生成新回答，只降低成本与首字延迟，不影响正确性。"
+   },
+   {
+    "q": "如何设置相似度阈值？",
+    "a": "收集真实查询，标注“应命中”和“不应命中”的查询对，在不同阈值下计算误命中率和命中率，选择业务可接受的点。不同嵌入模型的分数分布不同，阈值不可直接照搬，且需随模型更换重新校准。"
+   },
+   {
+    "q": "语义缓存有哪些安全与隐私风险？",
+    "a": "若缓存不分区，用户 A 的个性化回答可能被用户 B 的相似问题命中，造成数据泄露；攻击者也可能通过构造查询探测缓存内容。应只缓存通用知识类回答，按租户隔离，并对敏感信息做过滤。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "GPTCache (GitHub)",
+    "url": "https://github.com/zilliztech/GPTCache"
+   },
+   {
+    "title": "RedisVL：LLM 语义缓存",
+    "url": "https://docs.redisvl.com/en/latest/user_guide/03_llmcache.html"
+   },
+   {
+    "title": "OpenAI：Embeddings 指南",
+    "url": "https://platform.openai.com/docs/guides/embeddings"
+   }
+  ]
+ },
+ {
+  "slug": "event-streaming",
+  "def": "事件流平台（Event Streaming Platform）以持久化、只追加的分布式日志存储事件流，支持多个消费者按各自进度读取和回放历史数据。Apache Kafka 是代表：事件写入主题（topic）的分区（partition），按偏移量（offset）有序存储并按保留策略保存；消费者组实现并行消费与扩展。它是实时数据管道与流处理的中枢。",
+  "how": [
+   "生产者把事件写入主题，按消息键（key）哈希选择分区；相同键的事件进入同一分区，保证该键内的顺序。",
+   "每个分区是只追加的有序日志，事件获得递增的偏移量，并复制到多个 broker 以实现容错。",
+   "事件按保留策略（时间、大小，或按键压缩）保存，被消费后不会立即删除。",
+   "消费者以消费者组为单位订阅，组内各消费者分配不同分区并行处理；不同组彼此独立，各自维护偏移量。",
+   "消费者提交偏移量记录进度，故障恢复或需要重算时可从指定偏移量或时间点回放。"
+  ],
+  "terms": [
+   {
+    "t": "主题 (Topic)",
+    "d": "事件的逻辑分类，由一个或多个分区组成。"
+   },
+   {
+    "t": "分区 (Partition)",
+    "d": "有序、只追加的日志，是并行与顺序保证的基本单位。"
+   },
+   {
+    "t": "偏移量 (Offset)",
+    "d": "事件在分区中的位置序号，消费者用它记录进度。"
+   },
+   {
+    "t": "消费者组 (Consumer Group)",
+    "d": "共享订阅的一组消费者，分区在组内分配。"
+   },
+   {
+    "t": "日志压缩 (Log Compaction)",
+    "d": "按键只保留最新值的保留策略，用于状态快照。"
+   },
+   {
+    "t": "副本因子 (Replication Factor)",
+    "d": "每个分区的副本数量，决定容错能力。"
+   }
+  ],
+  "code": {
+   "lang": "python",
+   "title": "confluent-kafka 生产与消费",
+   "src": "from confluent_kafka import Producer, Consumer\n\nconf = {\"bootstrap.servers\": \"localhost:9092\"}\n\n# 生产者：同一 order_id 作为 key，保证该订单事件有序\np = Producer(conf)\nfor status in [\"created\", \"paid\", \"shipped\"]:\n    p.produce(\"orders\", key=\"order-42\", value=f'{{\"status\":\"{status}\"}}')\np.flush()                                   # 等待全部送达\n\n# 消费者：组名决定独立进度；不同组可各自完整读取同一主题\nc = Consumer({**conf, \"group.id\": \"analytics\",\n              \"auto.offset.reset\": \"earliest\",   # 无进度时从头读（可回放）\n              \"enable.auto.commit\": False})\nc.subscribe([\"orders\"])\nfor _ in range(10):\n    msg = c.poll(1.0)\n    if msg is None or msg.error():\n        continue\n    print(msg.partition(), msg.offset(), msg.key(), msg.value())\n    c.commit(message=msg)                   # 处理成功后再提交偏移量\nc.close()",
+   "note": "键决定分区与顺序，消费者组决定独立进度；处理后手动提交偏移量，实现至少一次语义。"
+  },
+  "table": {
+   "title": "消息队列与事件流对比",
+   "head": [
+    "维度",
+    "传统消息队列",
+    "事件流平台"
+   ],
+   "rows": [
+    [
+     "消费后",
+     "消息通常被删除",
+     "按保留策略保留"
+    ],
+    [
+     "回放",
+     "一般不支持",
+     "可从任意偏移量回放"
+    ],
+    [
+     "多消费方",
+     "需额外配置交换机/广播",
+     "多个消费者组各自独立读取"
+    ],
+    [
+     "顺序",
+     "队列级或无保证",
+     "分区内有序"
+    ],
+    [
+     "典型产品",
+     "RabbitMQ、SQS",
+     "Kafka、Redpanda、Pulsar、Kinesis"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "自建 Kafka 集群",
+    "pros": "完全可控、生态丰富",
+    "cons": "运维复杂（容量、升级、监控）",
+    "when": "有平台团队的大规模场景"
+   },
+   {
+    "opt": "托管事件流服务",
+    "pros": "免运维、弹性扩展",
+    "cons": "成本较高，存在厂商绑定",
+    "when": "中小团队、云原生"
+   },
+   {
+    "opt": "轻量队列（SQS、Redis Streams）",
+    "pros": "简单便宜",
+    "cons": "回放与生态能力有限",
+    "when": "吞吐不高、无需回放"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "业务量很小就引入 Kafka 集群",
+    "fix": "先评估队列或托管服务，确有回放与高吞吐需求再引入"
+   },
+   {
+    "bad": "需要全局顺序却使用多个分区",
+    "fix": "顺序只在分区内保证，按业务键分区，必要时接受单分区吞吐上限"
+   },
+   {
+    "bad": "处理前提交偏移量，崩溃导致消息丢失",
+    "fix": "处理成功后提交，并让消费者幂等"
+   },
+   {
+    "bad": "分区数设置过少，后期扩展消费者无效",
+    "fix": "按预期峰值吞吐规划分区数，增加分区会改变键到分区的映射"
+   }
+  ],
+  "checklist": [
+   "确认确有回放或高吞吐需求",
+   "分区键按业务顺序需求选择",
+   "副本因子与 min.insync.replicas 已配置",
+   "消费者幂等并在处理后提交偏移量",
+   "监控消费者延迟（lag）",
+   "事件 schema 有版本与兼容规则"
+  ],
+  "interview": [
+   {
+    "q": "Kafka 如何保证消息顺序？",
+    "a": "Kafka 只保证单个分区内的顺序。生产者用业务键（如订单 ID）分区，同一键的事件进入同一分区，从而保证该键的事件有序。若需要全局顺序只能用单分区，牺牲并行度；同时需注意生产者重试可能导致乱序，可开启幂等生产者。"
+   },
+   {
+    "q": "消费者组的分区分配规则是什么？",
+    "a": "一个分区在同一时刻只分配给组内一个消费者，一个消费者可处理多个分区。因此组内消费者数超过分区数时，多余的消费者会空闲。不同消费者组相互独立，各自完整消费同一主题。"
+   },
+   {
+    "q": "事件流平台为什么适合做 CDC 和数据管道？",
+    "a": "它持久保存有序事件，多个下游（搜索索引、数据仓库、缓存失效）可各自按进度消费，互不影响；新系统上线时可从头回放历史事件补齐数据；出错时也能重置偏移量重新处理。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "Apache Kafka：Introduction",
+    "url": "https://kafka.apache.org/intro"
+   },
+   {
+    "title": "Confluent Kafka Python 客户端",
+    "url": "https://docs.confluent.io/kafka-clients/python/current/overview.html"
+   }
+  ]
+ },
+ {
+  "slug": "etl-vs-elt",
+  "def": "ETL（Extract-Transform-Load）与 ELT（Extract-Load-Transform）是把数据从业务系统搬运到分析系统的两种流程。ETL 在加载前于独立引擎中完成清洗转换，只写入整理好的数据；ELT 先把原始数据原样加载进云数据仓库或湖仓，再利用仓库的计算能力用 SQL 转换。云数仓普及后，ELT + dbt 成为主流。",
+  "how": [
+   "抽取（Extract）：从业务数据库、SaaS API、日志等源系统批量或增量（如基于时间戳或 CDC）读取数据。",
+   "ETL 路径：在独立引擎（如 Spark、传统 ETL 工具）中清洗、去重、关联、脱敏，再加载结构化结果。",
+   "ELT 路径：用 Fivetran、Airbyte 等工具把原始数据原样加载到仓库的原始层（raw / staging）。",
+   "在仓库内用 SQL 分层建模：staging 清洗字段、intermediate 关联整合、marts 产出面向业务的宽表与指标。",
+   "编排工具（如 Airflow、Dagster）调度各步骤，配合数据测试、血缘和文档保证质量与可追溯。"
+  ],
+  "terms": [
+   {
+    "t": "数据仓库 (Data Warehouse)",
+    "d": "面向分析查询优化的集中式存储，如 BigQuery、Snowflake。"
+   },
+   {
+    "t": "dbt (data build tool)",
+    "d": "用 SQL 和模板在仓库内做转换、测试与文档的工具。"
+   },
+   {
+    "t": "增量加载 (Incremental Load)",
+    "d": "只同步自上次以来新增或变化的数据。"
+   },
+   {
+    "t": "原始层 (Raw / Staging Layer)",
+    "d": "保存原样或轻度清洗数据的层，便于重算。"
+   },
+   {
+    "t": "数据血缘 (Data Lineage)",
+    "d": "记录数据从源到报表经过的转换链路。"
+   },
+   {
+    "t": "数据契约 (Data Contract)",
+    "d": "生产方与消费方约定的数据结构与质量规则。"
+   }
+  ],
+  "code": {
+   "lang": "sql",
+   "title": "dbt 模型：在仓库内转换（ELT 中的 T）",
+   "src": "-- models/marts/daily_sales.sql\n-- 原始数据已由 EL 工具加载到 raw 层，stg_ 模型做了字段清洗\n{{ config(materialized='incremental', unique_key='order_date') }}\n\nselect\n    date(o.created_at)            as order_date,\n    count(distinct o.order_id)    as orders,\n    sum(p.amount)                 as revenue\nfrom {{ ref('stg_orders') }}   as o\njoin {{ ref('stg_payments') }} as p\n  on p.order_id = o.order_id\nwhere p.status = 'succeeded'\n{% if is_incremental() %}\n  -- 增量：只重算最近 3 天，覆盖迟到数据\n  and date(o.created_at) >= (select max(order_date) - interval 3 day from {{ this }})\n{% endif %}\ngroup by 1",
+   "note": "ref() 自动建立依赖与血缘，incremental 只重算近期分区；日期函数语法因仓库而异。"
+  },
+  "table": {
+   "title": "ETL 与 ELT 对比",
+   "head": [
+    "维度",
+    "ETL",
+    "ELT"
+   ],
+   "rows": [
+    [
+     "转换位置",
+     "仓库外的处理引擎",
+     "仓库内（SQL）"
+    ],
+    [
+     "原始数据",
+     "通常不保留",
+     "保留在原始层，可重算"
+    ],
+    [
+     "灵活性",
+     "新需求需改管道",
+     "改 SQL 模型即可"
+    ],
+    [
+     "敏感数据",
+     "加载前可脱敏",
+     "原始敏感数据进入仓库，需权限管控"
+    ],
+    [
+     "典型工具",
+     "Informatica、Spark 作业",
+     "Fivetran/Airbyte + dbt"
+    ]
+   ]
+  },
+  "tradeoffs": [
+   {
+    "opt": "ETL",
+    "pros": "进入仓库前完成脱敏与过滤，存储更少",
+    "cons": "变更成本高，丢失原始数据",
+    "when": "合规要求严格、仓库算力有限"
+   },
+   {
+    "opt": "ELT",
+    "pros": "保留原始数据，迭代快，SQL 门槛低",
+    "cons": "仓库计算与存储成本上升",
+    "when": "云数仓、需求快速变化"
+   },
+   {
+    "opt": "流式 ETL / CDC",
+    "pros": "近实时",
+    "cons": "架构复杂，运维成本高",
+    "when": "实时看板、风控"
+   }
+  ],
+  "pitfalls": [
+   {
+    "bad": "只保存加工后的结果，口径变更无法重算",
+    "fix": "原始层完整保留数据，转换可重复执行"
+   },
+   {
+    "bad": "原始层中的个人信息对所有分析师开放",
+    "fix": "原始层严格授权，在 staging 层脱敏"
+   },
+   {
+    "bad": "全量重跑所有模型，成本与耗时失控",
+    "fix": "对大表使用增量模型与分区"
+   },
+   {
+    "bad": "转换没有测试，脏数据流入报表",
+    "fix": "为关键模型加唯一性、非空、关联完整性测试"
+   }
+  ],
+  "checklist": [
+   "源数据增量同步策略已确定",
+   "原始层完整保留且权限受控",
+   "转换代码版本化并经评审",
+   "关键模型有数据测试",
+   "调度失败有告警",
+   "有血缘与文档便于追溯"
+  ],
+  "interview": [
+   {
+    "q": "为什么 ELT 在云数仓时代成为主流？",
+    "a": "云数仓存算分离、可弹性扩展，在仓库内用 SQL 做大规模转换变得便宜高效；保留原始数据后，口径变化只需修改模型重算。dbt 让转换代码可以版本控制、测试和复用，使数据工程实践更接近软件工程。"
+   },
+   {
+    "q": "什么情况下仍应选择 ETL？",
+    "a": "当法规要求敏感数据在进入分析环境前就脱敏或过滤，目标系统算力有限或按扫描计费很贵，或需要在加载前进行复杂的非 SQL 处理（如图像、半结构化解析）时，ETL 更合适。实际中两者常混合使用。"
+   },
+   {
+    "q": "如何处理迟到数据和增量更新？",
+    "a": "增量模型每次只处理新数据，但事件可能迟到，因此通常回溯重算最近几天的分区；配合 unique_key 做合并（merge）避免重复。源端使用更新时间戳或 CDC 捕获修改与删除，保证仓库与源系统一致。"
+   }
+  ],
+  "refs": [
+   {
+    "title": "dbt 文档",
+    "url": "https://docs.getdbt.com/"
+   },
+   {
+    "title": "dbt：What is ELT?",
+    "url": "https://docs.getdbt.com/terms/elt"
+   },
+   {
+    "title": "Wikipedia: Extract, transform, load",
+    "url": "https://en.wikipedia.org/wiki/Extract,_transform,_load"
+   }
+  ]
+ }
+]

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="依赖注入 (DI) 专业模式：依赖注入（Dependency Injection，DI）是一种设计技术：对象不在内部自行创建其依赖（数据库连接、HTTP 客户端、配置等），而是由外部通过构造">
+<title>🎓 依赖注入 (DI) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="dependency-injection" data-answer="0" data-prev="agent-sdk-headless.pro.html" data-next="event-driven-architecture.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#arch">🔮 高级 · 🏛️ 架构设计</a><span>›</span><a href="dependency-injection.html">依赖注入 (DI)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.345 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="agent-sdk-headless.pro.html" rel="prev"><small>‹ 上一个</small><b>🧰 智能体 SDK 与无头模式</b></a><a class="pn next" href="event-driven-architecture.pro.html" rel="next"><small>下一个 ›</small><b>📣 事件驱动架构 (EDA)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">💉</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🏛️ 架构设计</span><span>⏱ 约 10 分钟</span></div>
+    <h1>依赖注入 (DI)</h1><p class="en">Dependency Injection</p>
+    <div class="hbtns"><a class="prosw back" href="dependency-injection.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">依赖注入（Dependency Injection，DI）是一种设计技术：对象不在内部自行创建其依赖（数据库连接、HTTP 客户端、配置等），而是由外部通过构造函数、参数或属性传入。它是控制反转（IoC）的一种实现，使代码依赖抽象而非具体实现，从而易于测试、替换和组合，是分层架构与六边形架构落地的基础手段。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>识别依赖：类或函数完成工作所需的外部协作者，如仓储、邮件服务、时钟。</p></li><li><span class="sn">2</span><p>用接口或协议定义依赖的抽象（Python 的 Protocol、TypeScript 的 interface），业务代码只依赖抽象。</p></li><li><span class="sn">3</span><p>通过构造函数注入（最常用）、方法参数注入或框架提供的注入机制，把具体实现传入。</p></li><li><span class="sn">4</span><p>在应用入口的组合根（Composition Root）集中创建并装配所有具体实现，生产与测试使用不同装配。</p></li><li><span class="sn">5</span><p>可选使用 DI 容器或框架（如 FastAPI Depends、Spring、NestJS）自动解析依赖图并管理生命周期。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>控制反转 (IoC)</dt><dd>对象不再主动获取依赖，由外部控制创建与装配。</dd></div><div class="term"><dt>构造函数注入 (Constructor Injection)</dt><dd>通过构造参数传入依赖，依赖关系显式且不可变。</dd></div><div class="term"><dt>组合根 (Composition Root)</dt><dd>应用中集中装配依赖的唯一位置，通常在入口处。</dd></div><div class="term"><dt>DI 容器 (DI Container)</dt><dd>根据注册信息自动创建和注入依赖的框架组件。</dd></div><div class="term"><dt>服务定位器 (Service Locator)</dt><dd>对象主动向全局注册表索取依赖，常被视为反模式。</dd></div><div class="term"><dt>生命周期 (Lifetime / Scope)</dt><dd>依赖实例的存活范围，如单例、每请求、每次新建。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>构造函数注入 + 测试替身</span><em>python</em><button class="ccopy">复制</button></div><pre><code>from typing import Protocol
+
+class Mailer(Protocol):
+    def send(self, to: str, body: str) -&gt; None: ...
+
+class UserRepo(Protocol):
+    def add(self, email: str) -&gt; int: ...
+
+class SignupService:
+    def __init__(self, repo: UserRepo, mailer: Mailer):   # 依赖从外部传入
+        self.repo, self.mailer = repo, mailer
+
+    def signup(self, email: str) -&gt; int:
+        uid = self.repo.add(email)
+        self.mailer.send(email, &quot;欢迎注册&quot;)
+        return uid
+
+# 测试：注入假实现，不连数据库、不真发邮件
+class FakeRepo:
+    def __init__(self): self.rows = []
+    def add(self, email): self.rows.append(email); return len(self.rows)
+class FakeMailer:
+    def __init__(self): self.sent = []
+    def send(self, to, body): self.sent.append(to)
+
+def test_signup_sends_mail():
+    repo, mailer = FakeRepo(), FakeMailer()
+    assert SignupService(repo, mailer).signup(&quot;a@x.com&quot;) == 1
+    assert mailer.sent == [&quot;a@x.com&quot;]</code></pre></div><p class="cnote">业务类只依赖协议；生产在组合根注入真实实现，测试注入内存假对象。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">依赖获取方式对比</h3><div class="tw"><table><thead><tr><th>方式</th><th>可测试性</th><th>依赖是否显式</th><th>评价</th></tr></thead><tbody><tr><td data-h="方式">内部直接 new / 全局单例</td><td data-h="可测试性">差</td><td data-h="依赖是否显式">否</td><td data-h="评价">紧耦合，难以替换</td></tr><tr><td data-h="方式">服务定位器</td><td data-h="可测试性">中</td><td data-h="依赖是否显式">否，藏在实现里</td><td data-h="评价">常被视为反模式</td></tr><tr><td data-h="方式">构造函数注入</td><td data-h="可测试性">好</td><td data-h="依赖是否显式">是</td><td data-h="评价">首选</td></tr><tr><td data-h="方式">框架 DI 容器</td><td data-h="可测试性">好</td><td data-h="依赖是否显式">是（通过声明）</td><td data-h="评价">规模大时减少装配代码</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>手动注入（纯构造函数）</h4><p><b class="k-p">优点</b>简单透明，无框架依赖</p><p><b class="k-c">代价</b>依赖多时装配代码冗长</p><p><b class="k-w">适用</b>中小型项目、库代码</p></div><div class="trd"><h4>框架内置 DI（如 FastAPI Depends）</h4><p><b class="k-p">优点</b>与框架集成，按请求管理生命周期</p><p><b class="k-c">代价</b>绑定框架</p><p><b class="k-w">适用</b>Web 应用</p></div><div class="trd"><h4>通用 DI 容器</h4><p><b class="k-p">优点</b>自动解析复杂依赖图</p><p><b class="k-c">代价</b>引入魔法，排错困难</p><p><b class="k-w">适用</b>大型企业应用</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>在业务代码各处调用容器取依赖</p><p class="fix"><b>✓</b>只在组合根使用容器，业务类通过构造参数接收依赖</p></li><li><p class="bad"><b>✗</b>构造函数参数越来越多仍不拆分</p><p class="fix"><b>✓</b>依赖过多提示职责过多，应拆分类</p></li><li><p class="bad"><b>✗</b>为每个类都定义接口，过度抽象</p><p class="fix"><b>✓</b>只为确实需要替换或隔离的外部依赖定义抽象</p></li><li><p class="bad"><b>✗</b>单例依赖持有请求级状态，导致数据串号</p><p class="fix"><b>✓</b>明确生命周期，请求相关数据使用请求作用域</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>外部 I/O 依赖可被替换为测试替身</span></label></li><li><label><input type="checkbox"><span>依赖通过构造函数显式声明</span></label></li><li><label><input type="checkbox"><span>装配集中在组合根</span></label></li><li><label><input type="checkbox"><span>依赖生命周期定义清晰</span></label></li><li><label><input type="checkbox"><span>无全局可变单例隐藏依赖</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>依赖注入和控制反转是什么关系？</summary><p>控制反转是更宽泛的原则：把流程或对象创建的控制权从业务代码交给框架或外部。依赖注入是实现 IoC 的一种具体方式，专指依赖由外部提供。模板方法、事件回调也是 IoC 的其他形式。</p></details><details class="iv"><summary>为什么说服务定位器是反模式？</summary><p>对象内部调用全局定位器获取依赖，依赖关系不出现在构造签名中，阅读代码看不出它需要什么，测试时必须配置全局状态，且缺少依赖要到运行时才报错。构造函数注入让依赖显式、可在编译或启动期检查。</p></details><details class="iv"><summary>依赖注入如何帮助 AI 编程？</summary><p>依赖显式且可替换的代码更容易让 AI 生成单元测试：可以直接注入假对象，而不必启动数据库或调用外部服务。在规则文件中要求“外部依赖通过构造函数注入”，能让 Agent 生成的代码更易测、更易审查。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://martinfowler.com/articles/injection.html" target="_blank" rel="noopener"><b>Martin Fowler：Inversion of Control Containers and the DI pattern</b><small>martinfowler.com ↗</small></a></li><li><a href="https://fastapi.tiangolo.com/tutorial/dependencies/" target="_blank" rel="noopener"><b>FastAPI：Dependencies</b><small>fastapi.tiangolo.com ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Dependency_injection" target="_blank" rel="noopener"><b>Wikipedia: Dependency injection</b><small>en.wikipedia.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="agent-sdk-headless.pro.html" rel="prev"><small>‹ 上一个</small><b>🧰 智能体 SDK 与无头模式</b></a><a class="pn next" href="event-driven-architecture.pro.html" rel="next"><small>下一个 ›</small><b>📣 事件驱动架构 (EDA)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

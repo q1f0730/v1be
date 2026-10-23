@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="列式存储 (Parquet) 专业模式：列式存储（Columnar Storage）是一种数据物理布局：同一列的值连续存放，而不是同一行的所有列连续存放。它属于存储引擎与文件格式层，代表有 Apach">
+<title>🎓 列式存储 (Parquet) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="columnar-storage" data-answer="0" data-prev="olap-vs-oltp.pro.html" data-next="workflow-orchestration.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#data">🔮 高级 · 📊 数据工程</a><span>›</span><a href="columnar-storage.html">列式存储 (Parquet)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.361 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="olap-vs-oltp.pro.html" rel="prev"><small>‹ 上一个</small><b>⚖️ 分析型与事务型数据库</b></a><a class="pn next" href="workflow-orchestration.pro.html" rel="next"><small>下一个 ›</small><b>🎼 数据任务编排 (Airflow / Dagster)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🗂️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>📊 数据工程</span><span>⏱ 约 10 分钟</span></div>
+    <h1>列式存储 (Parquet)</h1><p class="en">Columnar Storage</p>
+    <div class="hbtns"><a class="prosw back" href="columnar-storage.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">列式存储（Columnar Storage）是一种数据物理布局：同一列的值连续存放，而不是同一行的所有列连续存放。它属于存储引擎与文件格式层，代表有 Apache Parquet、ORC 以及 ClickHouse 等数据库的存储引擎。分析查询只读涉及的列、同类型数据压缩率高，因此能大幅降低 I/O，是数仓与湖仓的基础。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>表被切成行组（row group），每个行组内每列单独存为一个列块（column chunk）。</p></li><li><span class="sn">2</span><p>列块内再分页，并按列类型使用字典编码、RLE、位压缩等编码，再叠加 Snappy/ZSTD 等压缩。</p></li><li><span class="sn">3</span><p>文件尾部元数据记录每列块的 min/max 等统计信息，查询可据此跳过不满足条件的行组（谓词下推）。</p></li><li><span class="sn">4</span><p>查询引擎只读取 SELECT 与 WHERE 用到的列（列裁剪），未用到的列完全不读。</p></li><li><span class="sn">5</span><p>读出的列以批为单位进入向量化执行，最终在需要时再拼回行（延迟物化）。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>列裁剪 (Projection Pushdown)</dt><dd>只读取查询涉及的列，跳过其余列的数据。</dd></div><div class="term"><dt>谓词下推 (Predicate Pushdown)</dt><dd>利用统计信息在读取前过滤掉不可能命中的数据块。</dd></div><div class="term"><dt>行组 (Row Group)</dt><dd>Parquet 中按行水平切分的数据块，内部按列存放。</dd></div><div class="term"><dt>字典编码 (Dictionary Encoding)</dt><dd>把重复值替换成小整数编号，低基数列压缩效果好。</dd></div><div class="term"><dt>延迟物化 (Late Materialization)</dt><dd>先在列上过滤，最后才拼装需要输出的整行。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Parquet 列裁剪与过滤读取</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import pandas as pd
+import pyarrow.parquet as pq
+
+# CSV 转 Parquet（需安装 pyarrow），默认 snappy 压缩
+df = pd.read_csv(&quot;events.csv&quot;)
+df.to_parquet(&quot;events.parquet&quot;, index=False)
+
+# 只读两列，并把过滤条件下推到文件层
+table = pq.read_table(
+    &quot;events.parquet&quot;,
+    columns=[&quot;user_id&quot;, &quot;amount&quot;],
+    filters=[(&quot;amount&quot;, &quot;&gt;&quot;, 100)],
+)
+print(table.num_rows)
+
+# 查看行组与每列的统计信息
+meta = pq.ParquetFile(&quot;events.parquet&quot;).metadata
+print(meta.num_row_groups, meta.row_group(0).column(0).statistics)</code></pre></div><p class="cnote">columns 实现列裁剪，filters 借助行组统计跳过数据块，两者共同减少 I/O。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见数据文件格式对比</h3><div class="tw"><table><thead><tr><th>格式</th><th>布局</th><th>适用场景</th></tr></thead><tbody><tr><td data-h="格式">CSV</td><td data-h="布局">行式文本，无类型</td><td data-h="适用场景">交换小数据、人工查看</td></tr><tr><td data-h="格式">JSON Lines</td><td data-h="布局">行式文本，半结构化</td><td data-h="适用场景">日志、事件原始落地</td></tr><tr><td data-h="格式">Avro</td><td data-h="布局">行式二进制，带 Schema</td><td data-h="适用场景">消息流、写多读整行</td></tr><tr><td data-h="格式">Parquet / ORC</td><td data-h="布局">列式二进制，带统计</td><td data-h="适用场景">分析查询、数仓与湖仓</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>Parquet 等列式文件</h4><p><b class="k-p">优点</b>压缩率高、分析读取快、生态广</p><p><b class="k-c">代价</b>单行更新难，小文件多时性能差</p><p><b class="k-w">适用</b>批量分析、数据湖</p></div><div class="trd"><h4>行式数据库</h4><p><b class="k-p">优点</b>单行读写快、事务完整</p><p><b class="k-c">代价</b>大聚合要读全行，I/O 浪费</p><p><b class="k-w">适用</b>在线业务</p></div><div class="trd"><h4>列式数据库（如 ClickHouse）</h4><p><b class="k-p">优点</b>实时写入+快速聚合</p><p><b class="k-c">代价</b>更新删除代价较高，需额外运维</p><p><b class="k-w">适用</b>实时分析看板</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>把大量 KB 级小 Parquet 文件写入数据湖</p><p class="fix"><b>✓</b>合并为较大文件（常见做法是数百 MB 级），减少元数据与打开开销</p></li><li><p class="bad"><b>✗</b>查询仍 SELECT *，列存优势全无</p><p class="fix"><b>✓</b>只选需要的列，让引擎做列裁剪</p></li><li><p class="bad"><b>✗</b>排序/分区键选得与过滤条件无关</p><p class="fix"><b>✓</b>按常用过滤列排序或分区，统计信息才能有效跳过数据</p></li><li><p class="bad"><b>✗</b>用列式格式承载高频单行更新</p><p class="fix"><b>✓</b>高频更新留在 OLTP；湖仓用 Iceberg/Delta 管理批量 upsert</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>分析数据统一存成 Parquet/ORC 而非 CSV</span></label></li><li><label><input type="checkbox"><span>文件大小合理，定期 compaction</span></label></li><li><label><input type="checkbox"><span>按常用过滤列分区或排序</span></label></li><li><label><input type="checkbox"><span>查询只选所需列</span></label></li><li><label><input type="checkbox"><span>Schema 变更有兼容策略</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Parquet 如何实现谓词下推？</summary><p>每个行组/页记录列的 min/max、空值数等统计；读取前引擎用 WHERE 条件与统计比较，区间不可能命中的行组直接跳过。数据按过滤列有序时效果最好。</p></details><details class="iv"><summary>为什么列存压缩率高于行存？</summary><p>同列数据类型相同、取值相近，适合字典、RLE、增量等编码；行存把不同类型交错存放，通用压缩算法能找到的重复模式少得多，因此列存往往能省下数倍存储与 I/O。</p></details><details class="iv"><summary>列存写入为何偏向批量？</summary><p>一行要拆写到多个列块，且编码与压缩以块为单位；逐行写会产生大量小块和小文件，所以通常先在内存缓冲再批量落盘；ClickHouse 等引擎还会在后台合并小数据块。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://parquet.apache.org/docs/" target="_blank" rel="noopener"><b>Apache Parquet 官方文档</b><small>parquet.apache.org ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Apache_Parquet" target="_blank" rel="noopener"><b>Wikipedia: Apache Parquet</b><small>en.wikipedia.org ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Column-oriented_DBMS" target="_blank" rel="noopener"><b>Wikipedia: Column-oriented DBMS</b><small>en.wikipedia.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="olap-vs-oltp.pro.html" rel="prev"><small>‹ 上一个</small><b>⚖️ 分析型与事务型数据库</b></a><a class="pn next" href="workflow-orchestration.pro.html" rel="next"><small>下一个 ›</small><b>🎼 数据任务编排 (Airflow / Dagster)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

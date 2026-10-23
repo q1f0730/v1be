@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="Git 钩子 (pre-commit) 专业模式：Git Hooks（Git 钩子）是 Git 在特定事件（提交、推送等）前后自动执行的脚本，位于 .git/hooks 或 core.hooksPath 指定目">
+<title>🎓 Git 钩子 (pre-commit) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="git-hooks" data-answer="0" data-prev="conventional-commits.pro.html" data-next="transformer.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#git">🌊 中级 · 🌿 Git 协作</a><span>›</span><a href="git-hooks.html">Git 钩子 (pre-commit)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.183 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="conventional-commits.pro.html" rel="prev"><small>‹ 上一个</small><b>🏷️ 约定式提交</b></a><a class="pn next" href="transformer.pro.html" rel="next"><small>下一个 ›</small><b>🏗️ Transformer 架构</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🪝</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🌿 Git 协作</span><span>⏱ 约 10 分钟</span></div>
+    <h1>Git 钩子 (pre-commit)</h1><p class="en">Git Hooks</p>
+    <div class="hbtns"><a class="prosw back" href="git-hooks.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">Git Hooks（Git 钩子）是 Git 在特定事件（提交、推送等）前后自动执行的脚本，位于 .git/hooks 或 core.hooksPath 指定目录。客户端钩子用于在代码进入仓库前做格式化、静态检查和密钥扫描；pre-* 类钩子以非零退出码即可中止操作。因为 .git 目录不随仓库分发，团队通常借助 pre-commit、husky 等框架共享配置。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>Git 在执行 commit、push 等命令的固定节点查找同名可执行文件，如 pre-commit、commit-msg、pre-push。</p></li><li><span class="sn">2</span><p>pre-commit 在生成提交对象前运行，常只针对暂存区（staged）文件做 lint、格式化与密钥扫描。</p></li><li><span class="sn">3</span><p>commit-msg 收到提交信息临时文件路径作为参数，可读取并校验格式，例如约定式提交。</p></li><li><span class="sn">4</span><p>脚本退出码非 0 时 Git 中止当前操作；用户可用 --no-verify 跳过 pre-commit 与 commit-msg 钩子。</p></li><li><span class="sn">5</span><p>pre-commit 框架读取仓库内的 .pre-commit-config.yaml，执行 pre-commit install 写入钩子，按配置下载并缓存各工具环境。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>core.hooksPath</dt><dd>Git 配置项，指定钩子目录，可指向仓库内受版本控制的文件夹。</dd></div><div class="term"><dt>客户端钩子 (Client-side Hook)</dt><dd>在开发者本机运行，可被绕过，不能作为唯一安全措施。</dd></div><div class="term"><dt>服务端钩子 (Server-side Hook)</dt><dd>pre-receive 等，在远端仓库接收推送时运行，托管平台常以规则替代。</dd></div><div class="term"><dt>--no-verify</dt><dd>跳过 pre-commit 和 commit-msg 钩子的命令行参数。</dd></div><div class="term"><dt>gitleaks</dt><dd>开源密钥扫描工具，可作为 pre-commit 钩子检测提交中的凭证。</dd></div><div class="term"><dt>lint-staged</dt><dd>JS 生态工具，只对暂存文件运行指定命令，常与 husky 搭配。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>pre-commit 框架配置</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code># 安装：pip install pre-commit &amp;&amp; pre-commit install
+# rev 请改为各仓库当前发布的版本号
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: detect-private-key     # 拦截私钥文件
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.0
+    hooks:
+      - id: gitleaks               # 扫描 API Key 等密钥
+# 手动对全部文件跑一遍：pre-commit run --all-files
+# 升级 rev：pre-commit autoupdate</code></pre></div><p class="cnote">共享到仓库的钩子配置：基础卫生检查加私钥与密钥扫描，rev 以官方最新为准。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常用客户端钩子</h3><div class="tw"><table><thead><tr><th>钩子</th><th>触发时机</th><th>可否中止</th><th>典型用途</th></tr></thead><tbody><tr><td data-h="钩子">pre-commit</td><td data-h="触发时机">生成提交前</td><td data-h="可否中止">是</td><td data-h="典型用途">格式化、lint、密钥扫描</td></tr><tr><td data-h="钩子">prepare-commit-msg</td><td data-h="触发时机">打开编辑器前</td><td data-h="可否中止">是</td><td data-h="典型用途">预填模板或分支号</td></tr><tr><td data-h="钩子">commit-msg</td><td data-h="触发时机">提交信息写完后</td><td data-h="可否中止">是</td><td data-h="典型用途">校验提交信息格式</td></tr><tr><td data-h="钩子">post-commit</td><td data-h="触发时机">提交完成后</td><td data-h="可否中止">否</td><td data-h="典型用途">通知、统计</td></tr><tr><td data-h="钩子">pre-push</td><td data-h="触发时机">推送前</td><td data-h="可否中止">是</td><td data-h="典型用途">跑单元测试、阻止推 main</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>pre-commit 框架（Python）</h4><p><b class="k-p">优点</b>多语言、环境隔离、生态丰富</p><p><b class="k-c">代价</b>需要 Python 环境</p><p><b class="k-w">适用</b>多语言或非 JS 项目</p></div><div class="trd"><h4>husky + lint-staged</h4><p><b class="k-p">优点</b>与 npm 生态无缝，安装自动化</p><p><b class="k-c">代价</b>主要服务 JS 项目</p><p><b class="k-w">适用</b>前端 / Node 项目</p></div><div class="trd"><h4>手写脚本 + core.hooksPath</h4><p><b class="k-p">优点</b>零依赖，完全可控</p><p><b class="k-c">代价</b>维护成本高，跨平台麻烦</p><p><b class="k-w">适用</b>极简项目或特殊需求</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>把钩子当作唯一的安全防线</p><p class="fix"><b>✓</b>钩子可被 --no-verify 绕过，CI 中必须重复执行同样的检查</p></li><li><p class="bad"><b>✗</b>pre-commit 里跑完整测试，每次提交等几分钟</p><p class="fix"><b>✓</b>提交钩子只做秒级检查，耗时测试放 pre-push 或 CI</p></li><li><p class="bad"><b>✗</b>密钥已经提交后才加扫描钩子</p><p class="fix"><b>✓</b>历史中的密钥仍可被取到，应立刻轮换密钥并清理历史</p></li><li><p class="bad"><b>✗</b>钩子只检查全部文件，改一行也很慢</p><p class="fix"><b>✓</b>只处理暂存文件（pre-commit 框架默认如此），用 run --all-files 做定期全量</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>钩子配置文件纳入版本控制</span></label></li><li><label><input type="checkbox"><span>README 写明安装命令（如 pre-commit install）</span></label></li><li><label><input type="checkbox"><span>包含密钥扫描与私钥检测</span></label></li><li><label><input type="checkbox"><span>CI 中运行相同检查（pre-commit run --all-files）</span></label></li><li><label><input type="checkbox"><span>提交钩子耗时控制在数秒内</span></label></li><li><label><input type="checkbox"><span>定期 autoupdate 并审查版本变更</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么钩子不能直接提交到仓库生效？</summary><p>.git 目录不受版本控制，克隆时不会带上 hooks。共享方式是把配置或脚本放在仓库内，再由 pre-commit install、husky 安装脚本或 core.hooksPath 让每个开发者本地启用。这也意味着必须有人执行安装，所以要在 CI 兜底。</p></details><details class="iv"><summary>客户端钩子与 CI 检查如何分工？</summary><p>钩子负责快速反馈，在提交前拦住格式错误和明显的密钥泄露，降低 CI 噪音；CI 负责强制执行，因为钩子可被跳过或未安装。两者运行同一套配置，保证本地通过即 CI 通过。</p></details><details class="iv"><summary>AI Agent 改代码时钩子有什么价值？</summary><p>Agent 执行 git commit 同样会触发钩子，格式与密钥问题会被当场拒绝，Agent 读到错误后可自行修复。注意要在规则中禁止 Agent 使用 --no-verify，否则它可能为了完成任务直接绕过。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://git-scm.com/docs/githooks" target="_blank" rel="noopener"><b>Git 官方文档：githooks</b><small>git-scm.com ↗</small></a></li><li><a href="https://pre-commit.com/" target="_blank" rel="noopener"><b>pre-commit 官方文档</b><small>pre-commit.com ↗</small></a></li><li><a href="https://github.com/gitleaks/gitleaks" target="_blank" rel="noopener"><b>Gitleaks</b><small>github.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="conventional-commits.pro.html" rel="prev"><small>‹ 上一个</small><b>🏷️ 约定式提交</b></a><a class="pn next" href="transformer.pro.html" rel="next"><small>下一个 ›</small><b>🏗️ Transformer 架构</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

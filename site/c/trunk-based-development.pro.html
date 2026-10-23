@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="主干开发 (Trunk-Based) 专业模式：主干开发（Trunk-Based Development）是一种版本控制分支策略：开发者把小批量改动频繁合入单一主干（main/trunk），功能分支寿命通常不">
+<title>🎓 主干开发 (Trunk-Based) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="trunk-based-development" data-answer="0" data-prev="git-bisect.pro.html" data-next="kv-cache.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#git">🔮 高级 · 🌿 Git 协作</a><span>›</span><a href="trunk-based-development.html">主干开发 (Trunk-Based)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.382 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="git-bisect.pro.html" rel="prev"><small>‹ 上一个</small><b>🔎 二分定位 (Bisect)</b></a><a class="pn next" href="kv-cache.pro.html" rel="next"><small>下一个 ›</small><b>🗄️ KV 缓存 (KV Cache)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🌲</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🌿 Git 协作</span><span>⏱ 约 10 分钟</span></div>
+    <h1>主干开发 (Trunk-Based)</h1><p class="en">Trunk-Based Development</p>
+    <div class="hbtns"><a class="prosw back" href="trunk-based-development.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">主干开发（Trunk-Based Development）是一种版本控制分支策略：开发者把小批量改动频繁合入单一主干（main/trunk），功能分支寿命通常不超过一两天，未完成功能通过功能开关隐藏，主干始终保持可发布。它属于工程流程与持续集成层，是持续交付的前提，DORA 研究将其列为与高交付效能相关的能力之一。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>开发者从主干拉出短命分支（或直接在主干提交），只包含一个小的、可独立集成的改动。</p></li><li><span class="sn">2</span><p>提交前在本地和 CI 中运行快速测试；PR 小、评审快，当天合并。</p></li><li><span class="sn">3</span><p>未完成功能用功能开关（feature flag）或抽象分支（branch by abstraction）隐藏，代码合入但不对用户生效。</p></li><li><span class="sn">4</span><p>每次合并触发 CI 构建与测试，主干一旦失败优先修复或回滚。</p></li><li><span class="sn">5</span><p>发布从主干直接部署，或按需切出短期发布分支，只做必要的修复挑拣（cherry-pick）。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>主干 (Trunk)</dt><dd>团队共享的唯一长期分支，如 main。</dd></div><div class="term"><dt>短命分支 (Short-lived Branch)</dt><dd>存在时间通常不超过一两天的功能分支。</dd></div><div class="term"><dt>功能开关 (Feature Flag)</dt><dd>运行时开关，使未完成代码合入但不生效。</dd></div><div class="term"><dt>抽象分支 (Branch by Abstraction)</dt><dd>先引入抽象层，在主干上逐步替换实现的大改方法。</dd></div><div class="term"><dt>GitFlow</dt><dd>使用 develop、feature、release、hotfix 等长期分支的模型，与主干开发相对。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>功能开关隐藏未完成功能</span><em>typescript</em><button class="ccopy">复制</button></div><pre><code>// 新结算流程还没做完，但代码每天合入 main
+import { isEnabled } from &quot;./flags&quot;;
+
+export function CheckoutPage({ user }: { user: { id: string } }) {
+  // 开关默认关闭；内部员工可先打开测试
+  if (isEnabled(&quot;new-checkout&quot;, user)) {
+    return &lt;NewCheckout /&gt;;      // 半成品，只对白名单可见
+  }
+  return &lt;LegacyCheckout /&gt;;     // 线上用户仍走旧流程
+}
+
+// flags.ts：最简单的实现，可替换为 LaunchDarkly、Unleash 等
+const internal = new Set([&quot;u_001&quot;, &quot;u_002&quot;]);
+export function isEnabled(flag: string, user: { id: string }) {
+  if (flag === &quot;new-checkout&quot;) return internal.has(user.id);
+  return false;
+}</code></pre></div><p class="cnote">代码先合入主干但默认不生效；功能完成并验证后移除开关与旧代码。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">分支策略对比</h3><div class="tw"><table><thead><tr><th>策略</th><th>长期分支</th><th>集成频率</th><th>适用</th></tr></thead><tbody><tr><td data-h="策略">主干开发</td><td data-h="长期分支">仅 main</td><td data-h="集成频率">每天多次</td><td data-h="适用">持续部署的 Web/SaaS</td></tr><tr><td data-h="策略">GitHub Flow</td><td data-h="长期分支">main + 短期 PR 分支</td><td data-h="集成频率">每个 PR</td><td data-h="适用">中小团队、持续交付</td></tr><tr><td data-h="策略">GitFlow</td><td data-h="长期分支">main、develop 等多个</td><td data-h="集成频率">按版本周期</td><td data-h="适用">有固定版本节奏的软件</td></tr><tr><td data-h="策略">发布分支 + 主干</td><td data-h="长期分支">main + 短期 release</td><td data-h="集成频率">每天，发布时切分支</td><td data-h="适用">需要版本稳定期的产品</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>主干开发</h4><p><b class="k-p">优点</b>冲突少、反馈快、随时可发布</p><p><b class="k-c">代价</b>依赖完善测试与功能开关纪律</p><p><b class="k-w">适用</b>CI 成熟、部署频繁的团队</p></div><div class="trd"><h4>长期功能分支</h4><p><b class="k-p">优点</b>隔离开发，主干不受未完成代码影响</p><p><b class="k-c">代价</b>合并地狱、集成风险后置</p><p><b class="k-w">适用</b>实验性、可能被放弃的大改动</p></div><div class="trd"><h4>GitFlow</h4><p><b class="k-p">优点</b>版本边界清晰</p><p><b class="k-c">代价</b>流程重，分支多，交付慢</p><p><b class="k-w">适用</b>需维护多个已发布版本</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>名义上主干开发，分支却活一两周</p><p class="fix"><b>✓</b>设置分支寿命目标，把功能拆成可独立合并的小步</p></li><li><p class="bad"><b>✗</b>功能开关用完不删，代码里堆满死分支</p><p class="fix"><b>✓</b>开关设负责人与到期日，发布稳定后清理</p></li><li><p class="bad"><b>✗</b>测试慢且不稳定，主干经常红</p><p class="fix"><b>✓</b>保证快速可靠的 CI，主干失败时停止合并优先修复</p></li><li><p class="bad"><b>✗</b>把大重构一次性合进主干</p><p class="fix"><b>✓</b>用抽象分支或并行实现逐步替换</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>分支平均寿命不超过一两天</span></label></li><li><label><input type="checkbox"><span>每次合并都跑自动化测试</span></label></li><li><label><input type="checkbox"><span>未完成功能都有开关保护</span></label></li><li><label><input type="checkbox"><span>主干失败有立即修复或回滚机制</span></label></li><li><label><input type="checkbox"><span>开关有清理计划</span></label></li><li><label><input type="checkbox"><span>AI Agent 生成的改动拆成小 PR</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>主干开发如何保证主干稳定？</summary><p>依靠小批量改动、合并前自动化测试、快速代码评审、功能开关隐藏未完成功能，以及主干失败时的停线修复文化。必要时用合并队列（merge queue）确保合入的组合也通过测试。</p></details><details class="iv"><summary>功能开关会带来哪些问题？</summary><p>开关组合导致测试路径增加；长期不清理形成技术债；开关配置错误可能误放功能。需给开关分类（发布、实验、运维），设置负责人与到期日并定期清理。</p></details><details class="iv"><summary>AI 编码 Agent 和主干开发如何配合？</summary><p>Agent 适合产出小而独立的改动；每个任务一个短命分支与小 PR，让 CI 和人工评审快速通过。避免让 Agent 长时间在大分支上累积大量改动，否则合并冲突与评审成本陡增。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://trunkbaseddevelopment.com/" target="_blank" rel="noopener"><b>trunkbaseddevelopment.com</b><small>trunkbaseddevelopment.com ↗</small></a></li><li><a href="https://dora.dev/capabilities/trunk-based-development/" target="_blank" rel="noopener"><b>DORA：Trunk-based development</b><small>dora.dev ↗</small></a></li><li><a href="https://martinfowler.com/articles/branching-patterns.html" target="_blank" rel="noopener"><b>Martin Fowler：Patterns for Managing Source Code Branches</b><small>martinfowler.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="git-bisect.pro.html" rel="prev"><small>‹ 上一个</small><b>🔎 二分定位 (Bisect)</b></a><a class="pn next" href="kv-cache.pro.html" rel="next"><small>下一个 ›</small><b>🗄️ KV 缓存 (KV Cache)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

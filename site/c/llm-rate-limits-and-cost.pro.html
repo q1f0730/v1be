@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="模型限速与成本控制 专业模式：模型限速与成本控制是调用商用 LLM API 时必须处理的两类约束：供应商按账号或组织限制每分钟请求数（RPM）和 token 数（TPM 等），超限返回 42">
+<title>🎓 模型限速与成本控制 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="llm-rate-limits-and-cost" data-answer="0" data-prev="prompt-caching.pro.html" data-next="local-models.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#ai">🔮 高级 · 🤖 AI 与提示词</a><span>›</span><a href="llm-rate-limits-and-cost.html">模型限速与成本控制</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.212 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="prompt-caching.pro.html" rel="prev"><small>‹ 上一个</small><b>♻️ 提示词缓存</b></a><a class="pn next" href="local-models.pro.html" rel="next"><small>下一个 ›</small><b>🏠 本地模型 (Ollama / LM Studio)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">💸</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>模型限速与成本控制</h1><p class="en">LLM Rate Limits &amp; Cost</p>
+    <div class="hbtns"><a class="prosw back" href="llm-rate-limits-and-cost.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">模型限速与成本控制是调用商用 LLM API 时必须处理的两类约束：供应商按账号或组织限制每分钟请求数（RPM）和 token 数（TPM 等），超限返回 429；费用按输入、输出 token 分别计价。它属于 AI 应用的运维与财务治理层，需要重试退避、并发控制、预算告警和用量归因。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>供应商按使用层级设定限额，常见维度为每分钟请求数、输入 token 数与输出 token 数。</p></li><li><span class="sn">2</span><p>超限时返回 429 并可能附带 retry-after 头；客户端应退避重试而非立即重发。</p></li><li><span class="sn">3</span><p>每次响应的 usage 字段给出输入、输出及缓存 token 数，乘以单价即得单次成本。</p></li><li><span class="sn">4</span><p>降本手段包括：路由到小模型、提示词缓存、限制 max_tokens、批处理接口、精简上下文。</p></li><li><span class="sn">5</span><p>按用户、功能、环境打标签汇总用量，设置预算阈值与告警，防止失控循环烧钱。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>RPM / TPM</dt><dd>每分钟请求数 / 每分钟 token 数限额。</dd></div><div class="term"><dt>使用层级 (Usage Tier)</dt><dd>按累计消费或充值提升限额的分级制度。</dd></div><div class="term"><dt>批处理接口 (Batch API)</dt><dd>异步批量提交请求，价格更低但不保证实时。</dd></div><div class="term"><dt>max_tokens</dt><dd>单次输出 token 上限，限制成本与长度。</dd></div><div class="term"><dt>成本归因 (Cost Attribution)</dt><dd>把 token 消耗分摊到用户、功能或团队。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>限并发、退避与成本记录</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import asyncio
+import anthropic
+
+# SDK 自带对 429/5xx 的指数退避重试，可调 max_retries
+client = anthropic.AsyncAnthropic(max_retries=5)
+sem = asyncio.Semaphore(8)            # 控制并发，避免瞬间打满限额
+PRICE_IN, PRICE_OUT = 3.0, 15.0       # 美元/百万 token，示例值，以官网为准
+
+async def call(prompt: str, feature: str) -&gt; str:
+    async with sem:
+        resp = await client.messages.create(
+            model=&quot;claude-sonnet-4-5&quot;,
+            max_tokens=512,               # 限制输出长度
+            messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: prompt}],
+        )
+    u = resp.usage
+    cost = (u.input_tokens * PRICE_IN + u.output_tokens * PRICE_OUT) / 1e6
+    print(f&quot;[{feature}] in={u.input_tokens} out={u.output_tokens} ${cost:.5f}&quot;)
+    return resp.content[0].text
+
+async def main(prompts):
+    try:
+        return await asyncio.gather(*(call(p, &quot;summarize&quot;) for p in prompts))
+    except anthropic.RateLimitError:
+        print(&quot;重试后仍被限流：降低并发或申请更高额度&quot;)
+
+asyncio.run(main([&quot;总结：…&quot;] * 20))</code></pre></div><p class="cnote">信号量限并发，SDK 内置退避，按功能记录 token 与成本；价格为示例需以官网为准。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见降本手段</h3><div class="tw"><table><thead><tr><th>手段</th><th>作用于</th><th>代价</th></tr></thead><tbody><tr><td data-h="手段">小模型路由</td><td data-h="作用于">单价</td><td data-h="代价">需评测质量</td></tr><tr><td data-h="手段">提示词缓存</td><td data-h="作用于">重复输入</td><td data-h="代价">需稳定提示结构</td></tr><tr><td data-h="手段">批处理接口</td><td data-h="作用于">单价</td><td data-h="代价">结果延迟数小时内返回</td></tr><tr><td data-h="手段">精简上下文/max_tokens</td><td data-h="作用于">token 数量</td><td data-h="代价">可能截断信息</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>客户端排队限速</h4><p><b class="k-p">优点</b>平滑请求，减少 429</p><p><b class="k-c">代价</b>高峰时延迟增加</p><p><b class="k-w">适用</b>批量任务、后台处理</p></div><div class="trd"><h4>批处理接口</h4><p><b class="k-p">优点</b>价格更低，不占实时限额</p><p><b class="k-c">代价</b>非实时</p><p><b class="k-w">适用</b>离线评测、数据标注</p></div><div class="trd"><h4>多供应商分流</h4><p><b class="k-p">优点</b>叠加限额，提高可用性</p><p><b class="k-c">代价</b>行为差异与集成成本</p><p><b class="k-w">适用</b>大流量、高可用要求</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>Agent 循环无上限，一晚上烧掉大量额度</p><p class="fix"><b>✓</b>设置步数、token 与金额上限，超限中止并告警</p></li><li><p class="bad"><b>✗</b>收到 429 立即并发重试，形成重试风暴</p><p class="fix"><b>✓</b>遵循 retry-after，指数退避加抖动，并限制并发</p></li><li><p class="bad"><b>✗</b>max_tokens 设得极大以防截断</p><p class="fix"><b>✓</b>按任务设合理上限，必要时检测截断后续写</p></li><li><p class="bad"><b>✗</b>所有环境共用一个 API Key，无法归因</p><p class="fix"><b>✓</b>按环境/功能分 Key 或打标签，分别设预算</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有调用记录 usage 与成本</span></label></li><li><label><input type="checkbox"><span>有并发与重试退避策略</span></label></li><li><label><input type="checkbox"><span>Agent 有步数与金额上限</span></label></li><li><label><input type="checkbox"><span>按环境/功能隔离 Key</span></label></li><li><label><input type="checkbox"><span>控制台预算与告警已配置</span></label></li><li><label><input type="checkbox"><span>离线任务使用批处理接口</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>429 和 529/503 应如何区别处理？</summary><p>429 是你的账号超出限额，应退避、降并发或排队；529（Anthropic 的过载）或 503 表示服务端繁忙，与你的用量无关，同样退避重试，持续时可切换备用模型或供应商。</p></details><details class="iv"><summary>如何估算一个 AI 功能的成本？</summary><p>统计典型请求的输入与输出 token（含系统提示、工具定义、历史和检索内容），乘以单价得单次成本，再乘以预期调用量；Agent 需乘以平均步数。上线后用实际 usage 校准。</p></details><details class="iv"><summary>为什么输出 token 通常更贵？</summary><p>输入可以并行一次处理，输出必须逐 token 自回归生成，每步都要占用计算资源，吞吐更低，因此多数供应商的输出单价高于输入。控制输出长度往往是最直接的降本手段。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://docs.claude.com/en/api/rate-limits" target="_blank" rel="noopener"><b>Anthropic 文档：Rate limits</b><small>docs.claude.com ↗</small></a></li><li><a href="https://platform.openai.com/docs/guides/rate-limits" target="_blank" rel="noopener"><b>OpenAI 文档：Rate limits</b><small>platform.openai.com ↗</small></a></li><li><a href="https://docs.claude.com/en/docs/build-with-claude/batch-processing" target="_blank" rel="noopener"><b>Anthropic 文档：Message Batches</b><small>docs.claude.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="prompt-caching.pro.html" rel="prev"><small>‹ 上一个</small><b>♻️ 提示词缓存</b></a><a class="pn next" href="local-models.pro.html" rel="next"><small>下一个 ›</small><b>🏠 本地模型 (Ollama / LM Studio)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

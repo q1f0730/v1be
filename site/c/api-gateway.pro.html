@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="API 网关 专业模式：API 网关（API Gateway）是位于客户端与后端服务之间的统一入口层，负责请求路由，并集中处理横切关注点：认证鉴权、限流、TLS 终止、请求/响应转换、">
+<title>🎓 API 网关 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="api-gateway" data-answer="0" data-prev="event-driven-architecture.pro.html" data-next="modular-monolith.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#arch">🔮 高级 · 🏛️ 架构设计</a><span>›</span><a href="api-gateway.html">API 网关</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.347 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="event-driven-architecture.pro.html" rel="prev"><small>‹ 上一个</small><b>📣 事件驱动架构 (EDA)</b></a><a class="pn next" href="modular-monolith.pro.html" rel="next"><small>下一个 ›</small><b>🧱 模块化单体</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🚪</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🏛️ 架构设计</span><span>⏱ 约 10 分钟</span></div>
+    <h1>API 网关</h1><p class="en">API Gateway</p>
+    <div class="hbtns"><a class="prosw back" href="api-gateway.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">API 网关（API Gateway）是位于客户端与后端服务之间的统一入口层，负责请求路由，并集中处理横切关注点：认证鉴权、限流、TLS 终止、请求/响应转换、缓存、日志与指标。它常见于微服务架构，向外暴露统一的 API 面，屏蔽内部服务拆分细节。代表实现有 Kong、Apache APISIX、Envoy、AWS API Gateway 等。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>客户端请求到达网关，网关终止 TLS，并根据主机名、路径、方法或请求头匹配路由规则。</p></li><li><span class="sn">2</span><p>依次执行插件/过滤器链：认证（API Key、JWT、OAuth）、授权、限流、请求体大小与格式校验。</p></li><li><span class="sn">3</span><p>通过服务发现或静态配置选择上游实例，结合负载均衡、超时、重试和熔断转发请求。</p></li><li><span class="sn">4</span><p>可对响应做转换、聚合多个服务结果（BFF 模式）或缓存，并附加统一的错误格式与 CORS 头。</p></li><li><span class="sn">5</span><p>全过程记录访问日志、指标与追踪信息，为可观测性和计费提供统一数据源。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>路由 (Route)</dt><dd>把匹配的请求映射到某个上游服务的规则。</dd></div><div class="term"><dt>上游 (Upstream)</dt><dd>网关后面实际处理请求的服务或实例组。</dd></div><div class="term"><dt>BFF (Backend for Frontend)</dt><dd>为特定前端定制聚合接口的网关层模式。</dd></div><div class="term"><dt>插件 / 过滤器 (Plugin / Filter)</dt><dd>在请求生命周期中执行的可组合处理单元。</dd></div><div class="term"><dt>南北向流量 (North-South Traffic)</dt><dd>外部客户端与内部系统之间的流量，网关主要处理此类。</dd></div><div class="term"><dt>服务网格 (Service Mesh)</dt><dd>处理服务间东西向流量的基础设施，与网关互补。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Kong 声明式配置：路由+鉴权+限流</span><em>yaml</em><button class="ccopy">复制</button></div><pre><code># kong.yml（DB-less 模式，字段以 Kong 官方文档为准）
+_format_version: &quot;3.0&quot;
+services:
+  - name: order-service
+    url: http://orders.internal:8080
+    routes:
+      - name: orders
+        paths: [&quot;/api/orders&quot;]
+    plugins:
+      - name: key-auth            # 需要携带 API Key
+      - name: rate-limiting
+        config:
+          minute: 60              # 每个消费者每分钟 60 次
+          policy: local
+  - name: user-service
+    url: http://users.internal:8080
+    routes:
+      - name: users
+        paths: [&quot;/api/users&quot;]
+consumers:
+  - username: mobile-app
+    keyauth_credentials:
+      - key: &lt;从密钥管理注入，勿提交明文&gt;</code></pre></div><p class="cnote">在网关层集中声明路由、认证和限流，后端服务无需各自实现这些横切逻辑。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">网关、反向代理与服务网格</h3><div class="tw"><table><thead><tr><th>组件</th><th>主要职责</th><th>流量方向</th><th>典型产品</th></tr></thead><tbody><tr><td data-h="组件">反向代理</td><td data-h="主要职责">转发、TLS、负载均衡</td><td data-h="流量方向">南北向</td><td data-h="典型产品">Nginx、HAProxy</td></tr><tr><td data-h="组件">API 网关</td><td data-h="主要职责">反向代理 + 鉴权、限流、API 管理</td><td data-h="流量方向">南北向</td><td data-h="典型产品">Kong、APISIX、AWS API Gateway</td></tr><tr><td data-h="组件">服务网格</td><td data-h="主要职责">服务间 mTLS、重试、观测</td><td data-h="流量方向">东西向</td><td data-h="典型产品">Istio、Linkerd</td></tr><tr><td data-h="组件">BFF</td><td data-h="主要职责">按前端聚合与裁剪数据</td><td data-h="流量方向">南北向</td><td data-h="典型产品">自研 Node/GraphQL 层</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>集中式网关</h4><p><b class="k-p">优点</b>横切逻辑统一，安全策略一致</p><p><b class="k-c">代价</b>可能成为瓶颈与单点，需高可用部署</p><p><b class="k-w">适用</b>多数微服务系统的入口</p></div><div class="trd"><h4>每个前端一个 BFF</h4><p><b class="k-p">优点</b>接口贴合前端需求</p><p><b class="k-c">代价</b>服务数量增多，逻辑重复</p><p><b class="k-w">适用</b>Web、移动端需求差异大</p></div><div class="trd"><h4>无网关，服务直接暴露</h4><p><b class="k-p">优点</b>架构简单</p><p><b class="k-c">代价</b>鉴权限流分散，暴露内部结构</p><p><b class="k-w">适用</b>单体或极少量服务</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>在网关里写大量业务逻辑</p><p class="fix"><b>✓</b>网关只做横切关注点，业务逻辑留在服务内</p></li><li><p class="bad"><b>✗</b>后端服务完全信任网关，内部端口可被直接访问</p><p class="fix"><b>✓</b>网络隔离上游服务，服务内部仍做必要的授权校验</p></li><li><p class="bad"><b>✗</b>网关单实例部署</p><p class="fix"><b>✓</b>多实例 + 负载均衡，配置健康检查与故障转移</p></li><li><p class="bad"><b>✗</b>超时与重试未配置，慢服务拖垮网关</p><p class="fix"><b>✓</b>为每条路由设置超时、重试上限和熔断</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有外部流量经网关进入</span></label></li><li><label><input type="checkbox"><span>统一认证与按消费者限流</span></label></li><li><label><input type="checkbox"><span>上游服务不对公网暴露</span></label></li><li><label><input type="checkbox"><span>路由级超时、重试与熔断已配置</span></label></li><li><label><input type="checkbox"><span>网关多实例高可用</span></label></li><li><label><input type="checkbox"><span>访问日志与指标已接入监控</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>API 网关和反向代理有什么区别？</summary><p>反向代理主要负责转发、TLS 终止和负载均衡；API 网关在此基础上增加 API 管理能力，如认证、按消费者限流、请求转换、聚合、开发者门户与计费。很多网关本身基于 Nginx 或 Envoy 构建。</p></details><details class="iv"><summary>网关会成为单点故障或性能瓶颈吗？</summary><p>会有这种风险，所以要多实例水平扩展、前置负载均衡、保持网关无状态，并避免在网关中执行重计算或阻塞调用。限流计数等共享状态可放在 Redis 等外部存储，或接受本地近似计数。</p></details><details class="iv"><summary>有了网关，后端服务还需要鉴权吗？</summary><p>需要做纵深防御。网关负责认证身份，但细粒度的资源级授权（这个用户能否访问这个订单）依赖业务数据，应在服务内完成。同时内部网络要隔离，防止绕过网关直接访问服务。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://microservices.io/patterns/apigateway.html" target="_blank" rel="noopener"><b>microservices.io：API Gateway pattern</b><small>microservices.io ↗</small></a></li><li><a href="https://developer.konghq.com/gateway/" target="_blank" rel="noopener"><b>Kong Gateway 文档</b><small>developer.konghq.com ↗</small></a></li><li><a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html" target="_blank" rel="noopener"><b>Amazon API Gateway 开发者指南</b><small>docs.aws.amazon.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="event-driven-architecture.pro.html" rel="prev"><small>‹ 上一个</small><b>📣 事件驱动架构 (EDA)</b></a><a class="pn next" href="modular-monolith.pro.html" rel="next"><small>下一个 ›</small><b>🧱 模块化单体</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="文档型数据库 (NoSQL / MongoDB) 专业模式：文档型数据库以 JSON 类文档（MongoDB 使用二进制的 BSON）为存储单元，文档可嵌套数组与子文档、同一集合中字段结构可以不同。它属于 NoSQL 家">
+<title>🎓 文档型数据库 (NoSQL / MongoDB) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="nosql-document-databases" data-answer="0" data-prev="dataframes.pro.html" data-next="sql-joins.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#db">🌊 中级 · 🗄️ 数据库</a><span>›</span><a href="nosql-document-databases.html">文档型数据库 (NoSQL / MongoDB)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.168 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="dataframes.pro.html" rel="prev"><small>‹ 上一个</small><b>🧮 数据框 (pandas / Polars)</b></a><a class="pn next" href="sql-joins.pro.html" rel="next"><small>下一个 ›</small><b>🔗 表连接 (JOIN)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📁</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>文档型数据库 (NoSQL / MongoDB)</h1><p class="en">NoSQL Document Databases</p>
+    <div class="hbtns"><a class="prosw back" href="nosql-document-databases.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">文档型数据库以 JSON 类文档（MongoDB 使用二进制的 BSON）为存储单元，文档可嵌套数组与子文档、同一集合中字段结构可以不同。它属于 NoSQL 家族，强调按访问模式建模、读取一个聚合只需一次查询；代价是跨文档关联与约束弱于关系数据库。MongoDB、Firestore、Couchbase 是代表。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>数据按集合（Collection）组织，每个文档有唯一 _id，可直接嵌入相关子数据。</p></li><li><span class="sn">2</span><p>建模围绕查询模式：经常一起读取的数据嵌入同一文档，独立增长或多处共享的数据用引用。</p></li><li><span class="sn">3</span><p>二级索引、复合索引与聚合管道支持过滤、排序、分组与有限的关联（$lookup）。</p></li><li><span class="sn">4</span><p>单文档写入是原子的；MongoDB 自 4.0 起支持副本集上的多文档事务，但开销更高。</p></li><li><span class="sn">5</span><p>模式灵活不代表无模式：可用 $jsonSchema 校验器在数据库层约束字段与类型。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>BSON</dt><dd>MongoDB 使用的二进制 JSON 格式，支持日期、Decimal128 等类型。</dd></div><div class="term"><dt>嵌入 vs 引用 (Embedding vs Referencing)</dt><dd>把关联数据放进同一文档，或只存另一文档的 ID。</dd></div><div class="term"><dt>聚合管道 (Aggregation Pipeline)</dt><dd>由 $match、$group 等阶段组成的数据处理流水线。</dd></div><div class="term"><dt>模式校验 (Schema Validation)</dt><dd>用 $jsonSchema 等规则在写入时校验文档结构。</dd></div><div class="term"><dt>JSONB</dt><dd>PostgreSQL 的二进制 JSON 类型，可在关系库中存文档。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>mongosh：校验、嵌入与索引</span><em>javascript</em><button class="ccopy">复制</button></div><pre><code>// 集合级模式校验：灵活但不失控
+db.createCollection(&quot;orders&quot;, {
+  validator: { $jsonSchema: {
+    bsonType: &quot;object&quot;,
+    required: [&quot;userId&quot;, &quot;items&quot;, &quot;total&quot;, &quot;createdAt&quot;],
+    properties: {
+      userId: { bsonType: &quot;int&quot; },
+      total: { bsonType: &quot;decimal&quot; },   // 金额用 Decimal128，避免浮点误差
+      items: { bsonType: &quot;array&quot;, minItems: 1 },
+    },
+  }},
+});
+
+// 订单明细随订单一起读写：嵌入
+db.orders.insertOne({
+  userId: 42, createdAt: new Date(), total: NumberDecimal(&quot;59.80&quot;),
+  items: [{ sku: &quot;TEA-01&quot;, qty: 2, price: NumberDecimal(&quot;29.90&quot;) }],
+});
+
+// 按查询模式建复合索引
+db.orders.createIndex({ userId: 1, createdAt: -1 });
+db.orders.find({ userId: 42 }).sort({ createdAt: -1 }).limit(10);
+
+// 聚合：每个用户的消费总额
+db.orders.aggregate([{ $group: { _id: &quot;$userId&quot;, spent: { $sum: &quot;$total&quot; } } }]);</code></pre></div><p class="cnote">明细嵌入订单、用户信息引用；校验器与索引都按真实查询与约束设计。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">文档库与关系库对比</h3><div class="tw"><table><thead><tr><th>维度</th><th>文档数据库</th><th>关系数据库</th></tr></thead><tbody><tr><td data-h="维度">数据模型</td><td data-h="文档数据库">嵌套文档，模式灵活</td><td data-h="关系数据库">表与行，模式严格</td></tr><tr><td data-h="维度">关联查询</td><td data-h="文档数据库">嵌入或 $lookup，能力有限</td><td data-h="关系数据库">JOIN 成熟高效</td></tr><tr><td data-h="维度">事务</td><td data-h="文档数据库">单文档原子，多文档事务开销较大</td><td data-h="关系数据库">多行事务是核心能力</td></tr><tr><td data-h="维度">水平扩展</td><td data-h="文档数据库">原生分片较常见</td><td data-h="关系数据库">需分片方案或分布式 SQL</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>文档数据库</h4><p><b class="k-p">优点</b>贴合对象结构、迭代快、读聚合一次到位</p><p><b class="k-c">代价</b>复杂关联与跨文档约束弱</p><p><b class="k-w">适用</b>内容、目录、事件、用户配置</p></div><div class="trd"><h4>关系数据库</h4><p><b class="k-p">优点</b>强约束、JOIN 与事务成熟</p><p><b class="k-c">代价</b>模式变更需迁移</p><p><b class="k-w">适用</b>订单、账务等强一致关系数据</p></div><div class="trd"><h4>关系库 + JSONB 列</h4><p><b class="k-p">优点</b>兼顾约束与灵活字段</p><p><b class="k-c">代价</b>JSON 内字段约束与索引需额外设计</p><p><b class="k-w">适用</b>大部分结构固定、少量扩展字段</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>把关系模型照搬成多个集合再频繁 $lookup</p><p class="fix"><b>✓</b>按访问模式重新建模，经常一起读的数据嵌入</p></li><li><p class="bad"><b>✗</b>无限增长的数组嵌入文档（如全部评论）</p><p class="fix"><b>✓</b>无界数据拆到独立集合，文档有大小上限</p></li><li><p class="bad"><b>✗</b>没有模式校验，同一字段类型混乱</p><p class="fix"><b>✓</b>启用 $jsonSchema 校验，应用层也做校验</p></li><li><p class="bad"><b>✗</b>金额用 double 存储</p><p class="fix"><b>✓</b>使用 Decimal128 或以分为单位的整数</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>按主要查询模式完成建模</span></label></li><li><label><input type="checkbox"><span>启用集合级模式校验</span></label></li><li><label><input type="checkbox"><span>核心查询有匹配的索引</span></label></li><li><label><input type="checkbox"><span>无无界增长的嵌入数组</span></label></li><li><label><input type="checkbox"><span>金额与时间类型正确</span></label></li><li><label><input type="checkbox"><span>认证开启且不暴露公网</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>什么时候嵌入，什么时候引用？</summary><p>一对少、总是一起读取、生命周期一致的数据适合嵌入；一对多且无界增长、被多个父文档共享、需独立查询或频繁单独更新的数据适合引用。核心原则是按读写访问模式设计，并注意单文档大小上限。</p></details><details class="iv"><summary>MongoDB 支持事务吗？为何仍建议少用？</summary><p>支持：4.0 起副本集多文档事务，4.2 起扩展到分片集群。但多文档事务有额外开销与时间限制，良好的文档建模通常能让大多数写入落在单文档内，利用单文档原子性即可。</p></details><details class="iv"><summary>博客系统选 MongoDB 还是 PostgreSQL？</summary><p>关系清晰（用户、文章、评论、标签）且需要一致性与灵活查询时，PostgreSQL 更稳，必要字段可用 JSONB 扩展；若内容结构多变、读多写少且按文章聚合读取为主，文档库也合适。团队熟悉度也是关键因素。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.mongodb.com/docs/manual/data-modeling/" target="_blank" rel="noopener"><b>MongoDB 文档：Data Modeling</b><small>mongodb.com ↗</small></a></li><li><a href="https://www.mongodb.com/docs/manual/core/schema-validation/" target="_blank" rel="noopener"><b>MongoDB 文档：Schema Validation</b><small>mongodb.com ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/datatype-json.html" target="_blank" rel="noopener"><b>PostgreSQL 文档：JSON Types</b><small>postgresql.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="dataframes.pro.html" rel="prev"><small>‹ 上一个</small><b>🧮 数据框 (pandas / Polars)</b></a><a class="pn next" href="sql-joins.pro.html" rel="next"><small>下一个 ›</small><b>🔗 表连接 (JOIN)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="真实执行计划剖析 专业模式：EXPLAIN ANALYZE 是关系型数据库的执行计划剖析命令：它真正执行 SQL，并在计划树的每个节点上报告实际行数、循环次数和耗时（PostgreSQL ">
+<title>🎓 真实执行计划剖析 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="explain-analyze" data-answer="0" data-prev="supply-chain-attacks.pro.html" data-next="connection-pooling.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#db">🔮 高级 · 🗄️ 数据库</a><span>›</span><a href="explain-analyze.html">真实执行计划剖析</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.236 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="supply-chain-attacks.pro.html" rel="prev"><small>‹ 上一个</small><b>☠️ 软件供应链攻击</b></a><a class="pn next" href="connection-pooling.pro.html" rel="next"><small>下一个 ›</small><b>🏊 数据库连接池</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">⏱️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>真实执行计划剖析</h1><p class="en">EXPLAIN ANALYZE</p>
+    <div class="hbtns"><a class="prosw back" href="explain-analyze.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">EXPLAIN ANALYZE 是关系型数据库的执行计划剖析命令：它真正执行 SQL，并在计划树的每个节点上报告实际行数、循环次数和耗时（PostgreSQL 还可附带缓冲区命中）。与只给估算的 EXPLAIN 不同，它能暴露估算偏差、全表扫描和低效连接，是查询调优的第一手证据。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>优化器根据统计信息生成多个候选计划，选总代价（cost）最低的一个执行。</p></li><li><span class="sn">2</span><p>ANALYZE 选项让数据库真实执行该计划，并对每个节点计时、计数。</p></li><li><span class="sn">3</span><p>输出为树形结构，自底向上读：叶子是扫描节点，上层是连接、排序、聚合。</p></li><li><span class="sn">4</span><p>每个节点对比估算 rows 与实际 rows，偏差数量级大说明统计信息过期或谓词相关性未被建模。</p></li><li><span class="sn">5</span><p>加 BUFFERS 可看到 shared hit（内存命中）与 read（磁盘读），判断瓶颈在 IO 还是 CPU。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>执行计划 (Query Plan)</dt><dd>优化器决定的扫描方式、连接顺序与算法组成的树。</dd></div><div class="term"><dt>代价估算 (Cost)</dt><dd>优化器内部的相对代价单位，不等于毫秒。</dd></div><div class="term"><dt>Seq Scan / Index Scan</dt><dd>顺序全表扫描与按索引访问两种扫描节点。</dd></div><div class="term"><dt>Nested Loop / Hash Join</dt><dd>嵌套循环连接与哈希连接，适用于不同数据规模。</dd></div><div class="term"><dt>loops</dt><dd>节点被执行的次数，实际总行数 ≈ rows × loops。</dd></div><div class="term"><dt>统计信息 (Statistics)</dt><dd>ANALYZE 采集的列分布数据，决定估算准确度。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>PostgreSQL 剖析慢查询</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- EXPLAIN ANALYZE 会真正执行语句；写操作务必包在事务里回滚
+BEGIN;
+
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT o.id, o.total
+FROM orders o
+JOIN customers c ON c.id = o.customer_id
+WHERE c.country = &#x27;CN&#x27;
+  AND o.created_at &gt;= now() - interval &#x27;7 days&#x27;
+ORDER BY o.created_at DESC
+LIMIT 50;
+
+ROLLBACK;
+
+-- 读输出时重点看：
+--  1. rows=估算 vs actual rows=实际，差距是否达到数量级
+--  2. 哪个节点 actual time 最大（时间是包含子节点的累计值）
+--  3. Seq Scan 是否出现在大表上，Rows Removed by Filter 是否很多
+--  4. Buffers: shared read 多说明大量走磁盘
+
+-- 估算偏差大时，先刷新统计信息再看
+ANALYZE orders;</code></pre></div><p class="cnote">先找耗时最大、估算偏差最大的节点；BUFFERS 区分内存命中与磁盘读取。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见节点与信号</h3><div class="tw"><table><thead><tr><th>输出现象</th><th>可能原因</th><th>处理方向</th></tr></thead><tbody><tr><td data-h="输出现象">大表 Seq Scan + 大量过滤</td><td data-h="可能原因">缺少合适索引</td><td data-h="处理方向">按过滤与排序列建索引</td></tr><tr><td data-h="输出现象">估算 1 行，实际上万</td><td data-h="可能原因">统计过期或列相关</td><td data-h="处理方向">ANALYZE、扩展统计</td></tr><tr><td data-h="输出现象">Nested Loop 内层 loops 很大</td><td data-h="可能原因">选错连接算法</td><td data-h="处理方向">修正估算或改写查询</td></tr><tr><td data-h="输出现象">Sort Method: external merge</td><td data-h="可能原因">work_mem 不足</td><td data-h="处理方向">加索引避免排序或调参</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>EXPLAIN（仅估算）</h4><p><b class="k-p">优点</b>不执行，安全、瞬间返回</p><p><b class="k-c">代价</b>看不到真实行数与耗时</p><p><b class="k-w">适用</b>生产上查看长查询的计划</p></div><div class="trd"><h4>EXPLAIN ANALYZE</h4><p><b class="k-p">优点</b>真实耗时与行数，证据充分</p><p><b class="k-c">代价</b>会执行语句，有计时开销</p><p><b class="k-w">适用</b>副本或预发环境调优</p></div><div class="trd"><h4>auto_explain / 慢日志</h4><p><b class="k-p">优点</b>自动捕获线上真实慢查询</p><p><b class="k-c">代价</b>有性能开销，需控制阈值</p><p><b class="k-w">适用</b>排查偶发慢查询</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>对 UPDATE/DELETE 直接 EXPLAIN ANALYZE</p><p class="fix"><b>✓</b>包在 BEGIN … ROLLBACK 中，或只在副本执行</p></li><li><p class="bad"><b>✗</b>把 cost 数值当成毫秒比较</p><p class="fix"><b>✓</b>cost 是相对单位，看 actual time 判断耗时</p></li><li><p class="bad"><b>✗</b>只看总时间，不看 loops</p><p class="fix"><b>✓</b>节点时间按每次循环给出，需乘 loops</p></li><li><p class="bad"><b>✗</b>在空测试库上调优，结论不适用生产</p><p class="fix"><b>✓</b>用接近生产的数据量和分布验证</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>写语句的剖析在事务中回滚</span></label></li><li><label><input type="checkbox"><span>对比估算与实际行数</span></label></li><li><label><input type="checkbox"><span>定位耗时最大的节点</span></label></li><li><label><input type="checkbox"><span>检查是否有大表全表扫描</span></label></li><li><label><input type="checkbox"><span>统计信息最近已更新</span></label></li><li><label><input type="checkbox"><span>优化前后各保留一份计划对比</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>估算行数严重偏差会导致什么？</summary><p>优化器基于错误基数选择计划，例如以为只有几行而选 Nested Loop，实际上万行导致内层循环爆炸；或以为很多行放弃索引。修复从 ANALYZE 刷新统计、提高统计目标、建立多列扩展统计入手。</p></details><details class="iv"><summary>为什么建了索引却仍是 Seq Scan？</summary><p>可能是谓词选择性低，全表扫更便宜；对列用了函数或隐式类型转换导致索引不可用；统计信息过期；或表本身很小。用 EXPLAIN ANALYZE 比较实际耗时，确认是否真的更慢。</p></details><details class="iv"><summary>MySQL 有 EXPLAIN ANALYZE 吗？</summary><p>有。MySQL 8.0.18 起支持 EXPLAIN ANALYZE，以树形格式输出每个迭代器的实际耗时与行数，同样会真正执行查询。更早版本只能用 EXPLAIN 与 optimizer trace 等手段。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.postgresql.org/docs/current/using-explain.html" target="_blank" rel="noopener"><b>PostgreSQL: Using EXPLAIN</b><small>postgresql.org ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/sql-explain.html" target="_blank" rel="noopener"><b>PostgreSQL: EXPLAIN 命令</b><small>postgresql.org ↗</small></a></li><li><a href="https://dev.mysql.com/doc/refman/8.0/en/explain.html" target="_blank" rel="noopener"><b>MySQL 8.0: EXPLAIN Statement</b><small>dev.mysql.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="supply-chain-attacks.pro.html" rel="prev"><small>‹ 上一个</small><b>☠️ 软件供应链攻击</b></a><a class="pn next" href="connection-pooling.pro.html" rel="next"><small>下一个 ›</small><b>🏊 数据库连接池</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

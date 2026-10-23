@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="浏览器渲染流程 (重排 / 重绘) 专业模式：浏览器渲染流程（Rendering Pipeline）是浏览器把 HTML、CSS、JS 转为屏幕像素的一系列阶段：解析构建 DOM 与 CSSOM、样式计算、">
+<title>🎓 浏览器渲染流程 (重排 / 重绘) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="browser-rendering-pipeline" data-answer="0" data-prev="core-web-vitals.pro.html" data-next="event-loop.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#fe">🔮 高级 · 🎨 前端工程</a><span>›</span><a href="browser-rendering-pipeline.html">浏览器渲染流程 (重排 / 重绘)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.377 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="core-web-vitals.pro.html" rel="prev"><small>‹ 上一个</small><b>📏 网页核心指标 (LCP / INP / CLS)</b></a><a class="pn next" href="event-loop.pro.html" rel="next"><small>下一个 ›</small><b>🔄 JS 事件循环 (Event Loop)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🖌️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🎨 前端工程</span><span>⏱ 约 10 分钟</span></div>
+    <h1>浏览器渲染流程 (重排 / 重绘)</h1><p class="en">Browser Rendering Pipeline</p>
+    <div class="hbtns"><a class="prosw back" href="browser-rendering-pipeline.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">浏览器渲染流程（Rendering Pipeline）是浏览器把 HTML、CSS、JS 转为屏幕像素的一系列阶段：解析构建 DOM 与 CSSOM、样式计算、布局（Layout/Reflow）、绘制（Paint）、合成（Composite）。它属于浏览器引擎与前端性能层，理解哪些改动触发哪些阶段，是排查卡顿、掉帧和 INP 问题的基础。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>解析 HTML 生成 DOM 树，解析 CSS 生成 CSSOM；遇到同步脚本会阻塞解析。</p></li><li><span class="sn">2</span><p>样式计算（Recalculate Style）为每个 DOM 节点确定最终的计算样式。</p></li><li><span class="sn">3</span><p>布局阶段计算每个可见元素的几何信息（位置、尺寸）；几何改变需要重新布局，即重排。</p></li><li><span class="sn">4</span><p>绘制阶段把元素的文本、颜色、边框、阴影等记录为绘制指令并栅格化为像素，即重绘。</p></li><li><span class="sn">5</span><p>合成阶段把分层后的图层按顺序组合输出到屏幕，transform 与 opacity 通常只需合成，可由合成线程/GPU 处理。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>重排 (Reflow / Layout)</dt><dd>重新计算元素几何信息，代价通常最高，可能波及大量节点。</dd></div><div class="term"><dt>重绘 (Repaint)</dt><dd>外观变化但几何不变时重新绘制像素。</dd></div><div class="term"><dt>合成层 (Compositing Layer)</dt><dd>单独栅格化、可独立变换的图层，如 will-change 元素。</dd></div><div class="term"><dt>强制同步布局 (Forced Synchronous Layout)</dt><dd>JS 修改样式后立即读取布局属性，迫使浏览器提前布局。</dd></div><div class="term"><dt>布局抖动 (Layout Thrashing)</dt><dd>循环中交替读写布局属性，反复触发强制布局。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>避免布局抖动</span><em>javascript</em><button class="ccopy">复制</button></div><pre><code>const items = document.querySelectorAll(&quot;.card&quot;);
+
+// ❌ 读写交替：每次读 offsetWidth 都强制浏览器重新布局
+items.forEach(el =&gt; {
+  el.style.width = el.parentElement.offsetWidth / 2 + &quot;px&quot;;
+});
+
+// ✅ 先批量读，再批量写，只触发一次布局
+const widths = [...items].map(el =&gt; el.parentElement.offsetWidth);
+items.forEach((el, i) =&gt; {
+  el.style.width = widths[i] / 2 + &quot;px&quot;;
+});
+
+// ✅ 动画优先用 transform/opacity，并在下一帧前统一写入
+requestAnimationFrame(() =&gt; {
+  items.forEach(el =&gt; (el.style.transform = &quot;translateX(100px)&quot;));
+});</code></pre></div><p class="cnote">读写分离避免强制同步布局；transform 动画通常跳过布局与绘制。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">CSS 属性触发的阶段</h3><div class="tw"><table><thead><tr><th>属性示例</th><th>布局</th><th>绘制</th><th>合成</th></tr></thead><tbody><tr><td data-h="属性示例">width / height / top / margin</td><td data-h="布局">是</td><td data-h="绘制">是</td><td data-h="合成">是</td></tr><tr><td data-h="属性示例">color / background / box-shadow</td><td data-h="布局">否</td><td data-h="绘制">是</td><td data-h="合成">是</td></tr><tr><td data-h="属性示例">transform / opacity</td><td data-h="布局">否</td><td data-h="绘制">否</td><td data-h="合成">是</td></tr><tr><td data-h="属性示例">font-size</td><td data-h="布局">是</td><td data-h="绘制">是</td><td data-h="合成">是</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>transform/opacity 动画</h4><p><b class="k-p">优点</b>通常只需合成，帧率稳定</p><p><b class="k-c">代价</b>不改变布局，其他元素不会让位</p><p><b class="k-w">适用</b>位移、缩放、淡入淡出</p></div><div class="trd"><h4>will-change 提升图层</h4><p><b class="k-p">优点</b>提前创建合成层，动画更顺</p><p><b class="k-c">代价</b>每层占用显存，过多反而变慢</p><p><b class="k-w">适用</b>确定即将动画的少量元素</p></div><div class="trd"><h4>CSS containment / content-visibility</h4><p><b class="k-p">优点</b>限制布局与绘制影响范围</p><p><b class="k-c">代价</b>需理解副作用，兼容性需确认</p><p><b class="k-w">适用</b>长列表、复杂独立区块</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>用 top/left 或 width 做动画</p><p class="fix"><b>✓</b>改用 transform: translate/scale</p></li><li><p class="bad"><b>✗</b>给大量元素加 will-change 作为「优化」</p><p class="fix"><b>✓</b>只对即将动画的元素临时设置，结束后移除</p></li><li><p class="bad"><b>✗</b>循环中读取 offsetHeight、getBoundingClientRect 后又写样式</p><p class="fix"><b>✓</b>先批量读再批量写，或使用 requestAnimationFrame 分帧</p></li><li><p class="bad"><b>✗</b>长列表全部渲染，滚动时大面积重绘</p><p class="fix"><b>✓</b>虚拟列表或 content-visibility: auto</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>动画只使用 transform 与 opacity</span></label></li><li><label><input type="checkbox"><span>无循环内读写交替布局属性</span></label></li><li><label><input type="checkbox"><span>关键 CSS 不被阻塞，脚本使用 defer/async</span></label></li><li><label><input type="checkbox"><span>用 Performance 面板确认无长时间 Layout</span></label></li><li><label><input type="checkbox"><span>长列表已虚拟化</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>一帧内浏览器大致做哪些事？</summary><p>处理输入与任务 → 执行 requestAnimationFrame 回调 → 样式计算 → 布局 → 绘制 → 合成。60Hz 屏幕每帧约 16.7ms，主线程工作超出预算就会掉帧。</p></details><details class="iv"><summary>为什么 transform 动画比 left 动画流畅？</summary><p>left 改变几何，需要重新布局与绘制；transform 作用于合成层，浏览器可只重新合成，且常可在合成线程上执行，不受主线程繁忙影响。</p></details><details class="iv"><summary>什么是强制同步布局，如何发现？</summary><p>JS 写入样式后立即读取布局属性，浏览器必须立刻执行布局来返回准确值。在 DevTools Performance 面板中会看到紫色 Layout 块并带有强制重排警告。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://web.dev/articles/rendering-performance" target="_blank" rel="noopener"><b>web.dev：Rendering performance</b><small>web.dev ↗</small></a></li><li><a href="https://web.dev/articles/avoid-large-complex-layouts-and-layout-thrashing" target="_blank" rel="noopener"><b>web.dev：Avoid large, complex layouts and layout thrashing</b><small>web.dev ↗</small></a></li><li><a href="https://developer.mozilla.org/en-US/docs/Web/Performance/Guides/How_browsers_work" target="_blank" rel="noopener"><b>MDN：How browsers work</b><small>developer.mozilla.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="core-web-vitals.pro.html" rel="prev"><small>‹ 上一个</small><b>📏 网页核心指标 (LCP / INP / CLS)</b></a><a class="pn next" href="event-loop.pro.html" rel="next"><small>下一个 ›</small><b>🔄 JS 事件循环 (Event Loop)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

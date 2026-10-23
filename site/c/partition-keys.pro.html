@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="消息分区路由键 专业模式：消息分区路由键（Partition Key）是生产者为每条消息指定的键，消息系统据此计算哈希并决定写入哪个分区（或分片）。它同时决定了三件事：同一键内的消息顺序">
+<title>🎓 消息分区路由键 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="partition-keys" data-answer="0" data-prev="kafka-consumer-groups.pro.html" data-next="cap-theorem.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#cache">🔥 进阶 · ⚡ 缓存与队列</a><span>›</span><a href="partition-keys.html">消息分区路由键</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.427 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="kafka-consumer-groups.pro.html" rel="prev"><small>‹ 上一个</small><b>👥 Kafka消费者组</b></a><a class="pn next" href="cap-theorem.pro.html" rel="next"><small>下一个 ›</small><b>⚖️ CAP定理</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🏷️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>⚡ 缓存与队列</span><span>⏱ 约 10 分钟</span></div>
+    <h1>消息分区路由键</h1><p class="en">Partition Keys</p>
+    <div class="hbtns"><a class="prosw back" href="partition-keys.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">消息分区路由键（Partition Key）是生产者为每条消息指定的键，消息系统据此计算哈希并决定写入哪个分区（或分片）。它同时决定了三件事：同一键内的消息顺序、各分区间的负载均衡程度，以及消费并行度的上限分布，是 Kafka、Kinesis 等流系统设计中最关键的选择之一。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>生产者为消息设置键，通常是业务实体 ID，如订单号或用户 ID。</p></li><li><span class="sn">2</span><p>分区器对键做哈希再对分区数取模；Kafka Java 客户端默认使用 murmur2。</p></li><li><span class="sn">3</span><p>键为空时，Kafka 新版客户端用粘性分区器批量写入某分区，再轮换以均衡负载。</p></li><li><span class="sn">4</span><p>保序：同一键总落在同一分区，因而同一实体的消息保持写入顺序。</p></li><li><span class="sn">5</span><p>分区数变化会改变取模结果，同一键可能映射到新分区，破坏原有顺序与局部性。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>分区器 (Partitioner)</dt><dd>根据键计算目标分区的生产者组件，可自定义。</dd></div><div class="term"><dt>murmur2</dt><dd>Kafka Java 客户端默认用于键哈希的非加密哈希算法。</dd></div><div class="term"><dt>粘性分区器 (Sticky Partitioner)</dt><dd>无键消息先填满一个批次再换分区，提升批量效率。</dd></div><div class="term"><dt>键倾斜 (Key Skew)</dt><dd>少数键消息量极大，导致对应分区成为热点。</dd></div><div class="term"><dt>复合键 (Composite Key)</dt><dd>由多个字段拼接的键，用于提高基数或控制共置。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>按订单号设置分区键</span><em>python</em><button class="ccopy">复制</button></div><pre><code>from confluent_kafka import Producer
+
+p = Producer({
+    &quot;bootstrap.servers&quot;: &quot;kafka:9092&quot;,
+    &quot;enable.idempotence&quot;: True,
+    # librdkafka 默认分区器是 consistent_random（CRC32）；
+    # 若需与 Java 生产者对同一键落到相同分区，显式改用 murmur2_random
+    &quot;partitioner&quot;: &quot;murmur2_random&quot;,
+})
+
+def send(order_id: str, event: bytes):
+    # 同一 order_id → 同一分区 → 该订单事件保持顺序
+    p.produce(&quot;order-events&quot;, key=order_id.encode(), value=event)
+
+send(&quot;order-1001&quot;, b&#x27;{&quot;type&quot;:&quot;Created&quot;}&#x27;)
+send(&quot;order-1001&quot;, b&#x27;{&quot;type&quot;:&quot;Paid&quot;}&#x27;)
+p.flush()</code></pre></div><p class="cnote">跨语言生产者混用时，分区器不一致会让同一键落到不同分区，导致乱序。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">分区键选择对比</h3><div class="tw"><table><thead><tr><th>键</th><th>顺序保证</th><th>负载风险</th></tr></thead><tbody><tr><td data-h="键">无键 (null)</td><td data-h="顺序保证">无</td><td data-h="负载风险">分布均匀</td></tr><tr><td data-h="键">用户/订单 ID</td><td data-h="顺序保证">同一实体内有序</td><td data-h="负载风险">头部用户可能成热点</td></tr><tr><td data-h="键">租户 ID</td><td data-h="顺序保证">同一租户内有序</td><td data-h="负载风险">大租户倾斜明显</td></tr><tr><td data-h="键">租户+实体复合键</td><td data-h="顺序保证">同一实体内有序</td><td data-h="负载风险">分布较均匀</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>按实体 ID 作键</h4><p><b class="k-p">优点</b>实体内有序，便于状态处理</p><p><b class="k-c">代价</b>热点实体导致分区倾斜</p><p><b class="k-w">适用</b>需要按实体有序的事件流</p></div><div class="trd"><h4>不设键</h4><p><b class="k-p">优点</b>负载最均匀，吞吐最高</p><p><b class="k-c">代价</b>不保证任何顺序</p><p><b class="k-w">适用</b>日志、指标等无序数据</p></div><div class="trd"><h4>自定义分区器</h4><p><b class="k-p">优点</b>可隔离大客户、控制共置</p><p><b class="k-c">代价</b>增加维护成本，易出错</p><p><b class="k-w">适用</b>有明确倾斜且需特殊路由</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>Python 与 Java 生产者混写同一主题，同键落不同分区</p><p class="fix"><b>✓</b>统一分区器，librdkafka 设置 partitioner=murmur2_random</p></li><li><p class="bad"><b>✗</b>上线后随意增加分区数，同键映射改变导致短期乱序</p><p class="fix"><b>✓</b>初始预留足够分区，扩容前评估对顺序与状态的影响</p></li><li><p class="bad"><b>✗</b>用国家、状态等低基数字段作键，少数分区过载</p><p class="fix"><b>✓</b>选高基数键或使用复合键打散</p></li><li><p class="bad"><b>✗</b>大量消息带空字符串键，全部落入同一分区</p><p class="fix"><b>✓</b>区分空串与 null，无业务键时显式不设键</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>键与有序需求一致</span></label></li><li><label><input type="checkbox"><span>键基数足够高</span></label></li><li><label><input type="checkbox"><span>各语言客户端分区器一致</span></label></li><li><label><input type="checkbox"><span>分区数预留了扩展空间</span></label></li><li><label><input type="checkbox"><span>监控各分区流量分布</span></label></li><li><label><input type="checkbox"><span>有热点键的处理预案</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>分区键如何影响消费并行度？</summary><p>并行度上限是分区数，但实际负载取决于键的分布：若流量集中在少数键，对应分区的消费者忙而其他空闲，加消费者也无效。因此键需高基数且分布均匀，热点键需单独处理。</p></details><details class="iv"><summary>为什么扩分区会破坏顺序？</summary><p>默认分区算法是哈希对分区数取模，分区数改变后同一键可能映射到新分区；新分区的新消息可能先于旧分区里尚未消费的旧消息被处理，造成同一实体的事件乱序。</p></details><details class="iv"><summary>大客户占了一半流量，怎么设计键？</summary><p>可把大客户键拆为复合键（客户 ID+子实体 ID）分散到多个分区，只保证子实体内有序；或为大客户设独立主题；也可自定义分区器给其分配专用分区。前提是业务能接受更细粒度的顺序。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://kafka.apache.org/documentation/" target="_blank" rel="noopener"><b>Apache Kafka Documentation</b><small>kafka.apache.org ↗</small></a></li><li><a href="https://cwiki.apache.org/confluence/display/KAFKA/KIP-480%3A+Sticky+Partitioner" target="_blank" rel="noopener"><b>KIP-480: Sticky Partitioner</b><small>cwiki.apache.org ↗</small></a></li><li><a href="https://github.com/confluentinc/librdkafka/blob/master/CONFIGURATION.md" target="_blank" rel="noopener"><b>librdkafka CONFIGURATION.md</b><small>github.com ↗</small></a></li><li><a href="https://docs.aws.amazon.com/streams/latest/dev/key-concepts.html" target="_blank" rel="noopener"><b>Amazon Kinesis Data Streams key concepts</b><small>docs.aws.amazon.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="kafka-consumer-groups.pro.html" rel="prev"><small>‹ 上一个</small><b>👥 Kafka消费者组</b></a><a class="pn next" href="cap-theorem.pro.html" rel="next"><small>下一个 ›</small><b>⚖️ CAP定理</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="唯一性约束 专业模式：唯一性约束（Unique Constraint）要求表中某列或列组合的值不重复，数据库通常通过建立唯一索引来实现并在写入时检查。它是数据完整性层的最后防线：应用">
+<title>🎓 唯一性约束 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l2" id="main" data-slug="unique-constraints" data-answer="0" data-prev="foreign-keys.pro.html" data-next="soft-deletes.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l2.html#db">🌊 中级 · 🗄️ 数据库</a><span>›</span><a href="unique-constraints.html">唯一性约束</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.129 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="foreign-keys.pro.html" rel="prev"><small>‹ 上一个</small><b>🔗 外键约束</b></a><a class="pn next" href="soft-deletes.pro.html" rel="next"><small>下一个 ›</small><b>🗃️ 软删除 / 逻辑删除</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🆔</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌊 中级</span><span>🗄️ 数据库</span><span>⏱ 约 10 分钟</span></div>
+    <h1>唯一性约束</h1><p class="en">Unique Constraints</p>
+    <div class="hbtns"><a class="prosw back" href="unique-constraints.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">唯一性约束（Unique Constraint）要求表中某列或列组合的值不重复，数据库通常通过建立唯一索引来实现并在写入时检查。它是数据完整性层的最后防线：应用层「先查后插」在并发下必然有竞态，只有数据库约束能原子地保证唯一，同时为幂等写入和 upsert 提供基础。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>声明 UNIQUE 或 CREATE UNIQUE INDEX 后，数据库为对应列建立唯一 B-tree 索引。</p></li><li><span class="sn">2</span><p>插入或更新时，在索引中查找相同键；若已存在已提交或进行中的冲突行，则等待或报错。</p></li><li><span class="sn">3</span><p>并发事务插入同一键时，后者会等待前者结束，前者提交则后者报唯一冲突错误。</p></li><li><span class="sn">4</span><p>SQL 标准中 NULL 互不相等，因此多数数据库允许唯一列存在多行 NULL。</p></li><li><span class="sn">5</span><p>冲突可由 INSERT … ON CONFLICT（PostgreSQL）或 ON DUPLICATE KEY UPDATE（MySQL）转为更新。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>唯一索引 (Unique Index)</dt><dd>实现唯一约束的索引结构，也可加速等值查询。</dd></div><div class="term"><dt>复合唯一 (Composite Unique)</dt><dd>多列组合唯一，如 (tenant_id, email)。</dd></div><div class="term"><dt>部分唯一索引 (Partial Unique Index)</dt><dd>只对满足条件的行生效，如未删除行。</dd></div><div class="term"><dt>Upsert</dt><dd>插入若冲突则更新，依赖唯一约束判定冲突。</dd></div><div class="term"><dt>NULLS NOT DISTINCT</dt><dd>PostgreSQL 15+ 选项，让多个 NULL 也视为重复。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>多租户唯一与 upsert</span><em>sql</em><button class="ccopy">复制</button></div><pre><code>-- 同一租户内邮箱唯一（不同租户可重复）
+ALTER TABLE users
+  ADD CONSTRAINT users_tenant_email_uniq UNIQUE (tenant_id, email);
+
+-- 软删除场景：只约束未删除的行
+CREATE UNIQUE INDEX users_active_email_uniq
+  ON users (tenant_id, lower(email))
+  WHERE deleted_at IS NULL;
+
+-- 幂等写入：同一请求键重复提交只生效一次
+INSERT INTO payments (idempotency_key, amount)
+VALUES (&#x27;req-123&#x27;, 100)
+ON CONFLICT (idempotency_key) DO NOTHING;
+
+-- upsert：存在则更新计数
+INSERT INTO daily_stats (day, page, views)
+VALUES (CURRENT_DATE, &#x27;/home&#x27;, 1)
+ON CONFLICT (day, page)
+DO UPDATE SET views = daily_stats.views + EXCLUDED.views;</code></pre></div><p class="cnote">复合唯一、部分唯一索引和 ON CONFLICT 组合，覆盖多租户、软删除和幂等场景。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">保证唯一的几种做法</h3><div class="tw"><table><thead><tr><th>做法</th><th>并发安全</th><th>备注</th></tr></thead><tbody><tr><td data-h="做法">应用先查再插</td><td data-h="并发安全">否</td><td data-h="备注">两个请求可同时查到不存在</td></tr><tr><td data-h="做法">数据库唯一约束</td><td data-h="并发安全">是</td><td data-h="备注">冲突时报错，需捕获处理</td></tr><tr><td data-h="做法">唯一约束 + upsert</td><td data-h="并发安全">是</td><td data-h="备注">冲突转为更新或忽略</td></tr><tr><td data-h="做法">分布式锁 + 查询</td><td data-h="并发安全">依赖锁实现</td><td data-h="备注">复杂且仍建议加约束兜底</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>UNIQUE 约束</h4><p><b class="k-p">优点</b>语义清晰，可被外键引用</p><p><b class="k-c">代价</b>无法带条件或表达式</p><p><b class="k-w">适用</b>普通单列或多列唯一</p></div><div class="trd"><h4>部分/表达式唯一索引</h4><p><b class="k-p">优点</b>支持条件、大小写不敏感等</p><p><b class="k-c">代价</b>不能被外键引用，ORM 支持不一</p><p><b class="k-w">适用</b>软删除、忽略大小写邮箱</p></div><div class="trd"><h4>仅应用层校验</h4><p><b class="k-p">优点</b>能给友好提示</p><p><b class="k-c">代价</b>并发下必然漏</p><p><b class="k-w">适用</b>只作体验优化，必须配数据库约束</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>只在接口里查重，没有数据库约束</p><p class="fix"><b>✓</b>加唯一约束兜底，捕获冲突错误转为业务提示</p></li><li><p class="bad"><b>✗</b>软删除后同邮箱无法重新注册</p><p class="fix"><b>✓</b>改用 WHERE deleted_at IS NULL 的部分唯一索引</p></li><li><p class="bad"><b>✗</b>邮箱大小写不同被当成两个用户</p><p class="fix"><b>✓</b>统一规范化存储，或对 lower(email) 建唯一索引</p></li><li><p class="bad"><b>✗</b>在已有重复数据的大表上直接加约束失败</p><p class="fix"><b>✓</b>先查出并清理重复，再用 CREATE UNIQUE INDEX CONCURRENTLY</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>业务唯一键都有数据库层约束</span></label></li><li><label><input type="checkbox"><span>唯一冲突错误被捕获并映射为 409 等</span></label></li><li><label><input type="checkbox"><span>大小写、空格等规范化策略明确</span></label></li><li><label><input type="checkbox"><span>软删除表使用部分唯一索引</span></label></li><li><label><input type="checkbox"><span>幂等键字段带唯一约束</span></label></li><li><label><input type="checkbox"><span>NULL 的唯一语义符合预期</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么「先查后插」不能保证唯一？</summary><p>两个并发请求可能在对方插入前同时查询到「不存在」，随后都执行插入，形成竞态（TOCTOU）。只有数据库在索引层原子检查才能保证；应用层查询仅用于提前给出友好提示。</p></details><details class="iv"><summary>唯一列允许多个 NULL 吗？</summary><p>按 SQL 标准 NULL 不等于 NULL，PostgreSQL、MySQL 默认允许多个 NULL。PostgreSQL 15 起可用 NULLS NOT DISTINCT 改变此行为；SQL Server 的唯一约束默认只允许一个 NULL，跨库时要注意。</p></details><details class="iv"><summary>ON CONFLICT DO NOTHING 有什么坑？</summary><p>冲突时不返回行，RETURNING 拿不到已有记录，需要再查一次；且它要求冲突目标与某个唯一索引精确匹配，部分索引需写出相同 WHERE 条件。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.postgresql.org/docs/current/ddl-constraints.html" target="_blank" rel="noopener"><b>PostgreSQL 文档：Constraints（Unique）</b><small>postgresql.org ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/sql-insert.html" target="_blank" rel="noopener"><b>PostgreSQL 文档：INSERT（ON CONFLICT）</b><small>postgresql.org ↗</small></a></li><li><a href="https://www.postgresql.org/docs/current/indexes-partial.html" target="_blank" rel="noopener"><b>PostgreSQL 文档：Partial Indexes</b><small>postgresql.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="foreign-keys.pro.html" rel="prev"><small>‹ 上一个</small><b>🔗 外键约束</b></a><a class="pn next" href="soft-deletes.pro.html" rel="next"><small>下一个 ›</small><b>🗃️ 软删除 / 逻辑删除</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

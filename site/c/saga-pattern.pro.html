@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="Saga 分布式事务模式 专业模式：Saga 是处理跨服务长事务的模式，最早由 Garcia-Molina 与 Salem 于 1987 年提出：把一个全局事务拆成一串本地事务，每步提交后发布事件">
+<title>🎓 Saga 分布式事务模式 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="saga-pattern" data-answer="0" data-prev="namespaces-and-cgroups.pro.html" data-next="crdts.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#dist">🔥 进阶 · 🕸️ 分布式</a><span>›</span><a href="saga-pattern.html">Saga 分布式事务模式</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.474 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="namespaces-and-cgroups.pro.html" rel="prev"><small>‹ 上一个</small><b>📦 容器底层隔离 (Namespace / cgroups)</b></a><a class="pn next" href="crdts.pro.html" rel="next"><small>下一个 ›</small><b>🧶 无冲突复制数据类型 (CRDT)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🧾</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>Saga 分布式事务模式</h1><p class="en">Saga Pattern</p>
+    <div class="hbtns"><a class="prosw back" href="saga-pattern.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">Saga 是处理跨服务长事务的模式，最早由 Garcia-Molina 与 Salem 于 1987 年提出：把一个全局事务拆成一串本地事务，每步提交后发布事件或由协调者推进下一步；任一步失败时，按相反顺序执行已完成步骤的补偿事务，使系统回到业务上一致的状态。它以最终一致取代分布式锁和两阶段提交。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>把业务流程拆成有序的本地事务 T1…Tn，每个只修改自己服务的数据并立即提交。</p></li><li><span class="sn">2</span><p>为每个可回滚步骤设计补偿事务 C1…Cn，在语义上撤销其效果，如退款、释放库存，而非数据库层面的回滚。</p></li><li><span class="sn">3</span><p>编排式由中央协调者驱动步骤与补偿；协同式由各服务监听事件自行决定下一步。</p></li><li><span class="sn">4</span><p>关键转折步骤（pivot）之后的步骤应设计为可重试直至成功，之前的步骤可补偿。</p></li><li><span class="sn">5</span><p>协调状态需持久化，步骤与补偿都必须幂等，并配合发件箱模式可靠发布事件。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>补偿事务 (Compensating Transaction)</dt><dd>在业务语义上撤销已提交步骤效果的操作，如取消订单、退款。</dd></div><div class="term"><dt>编排 (Orchestration)</dt><dd>由一个协调者集中决定调用哪个服务以及何时补偿。</dd></div><div class="term"><dt>协同 (Choreography)</dt><dd>无中心协调者，各服务订阅事件并发布新事件推进流程。</dd></div><div class="term"><dt>转折事务 (Pivot Transaction)</dt><dd>Saga 中的不可逆分界点，之后的步骤只能重试不能补偿。</dd></div><div class="term"><dt>语义锁 (Semantic Lock)</dt><dd>用 PENDING 等状态标记处理中的数据，应对 Saga 缺乏隔离性的问题。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>最小编排式 Saga</span><em>python</em><button class="ccopy">复制</button></div><pre><code>class SagaFailed(Exception):
+    pass
+
+def run_saga(steps, ctx):
+    &quot;&quot;&quot;steps: [(动作, 补偿)]，动作与补偿都必须幂等&quot;&quot;&quot;
+    done = []
+    for action, compensate in steps:
+        try:
+            action(ctx)
+            done.append(compensate or (lambda c: None))  # 无补偿的步骤占位
+        except Exception as e:
+            for comp in reversed(done):      # 逆序补偿已完成的步骤
+                comp(ctx)
+            raise SagaFailed(f&quot;失败于 {action.__name__}: {e}&quot;) from e
+
+def reserve(ctx): ctx[&quot;log&quot;].append(&quot;预留库存&quot;)
+def release(ctx): ctx[&quot;log&quot;].append(&quot;释放库存&quot;)
+def charge(ctx):  ctx[&quot;log&quot;].append(&quot;扣款&quot;)
+def refund(ctx):  ctx[&quot;log&quot;].append(&quot;退款&quot;)
+def ship(ctx):    raise RuntimeError(&quot;物流不可用&quot;)
+
+ctx = {&quot;log&quot;: []}
+try:
+    run_saga([(reserve, release), (charge, refund), (ship, None)], ctx)
+except SagaFailed as e:
+    print(e, ctx[&quot;log&quot;])
+# 失败于 ship: 物流不可用 [&#x27;预留库存&#x27;, &#x27;扣款&#x27;, &#x27;退款&#x27;, &#x27;释放库存&#x27;]</code></pre></div><p class="cnote">演示补偿顺序；生产中协调状态需持久化，可用 Temporal 等持久化执行框架承载。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">Saga 与两阶段提交</h3><div class="tw"><table><thead><tr><th>维度</th><th>Saga</th><th>两阶段提交 (2PC)</th></tr></thead><tbody><tr><td data-h="维度">一致性</td><td data-h="Saga">最终一致，中间态可见</td><td data-h="两阶段提交 (2PC)">强一致，原子提交</td></tr><tr><td data-h="维度">锁持有</td><td data-h="Saga">每步本地提交即释放</td><td data-h="两阶段提交 (2PC)">准备阶段到提交期间一直持有</td></tr><tr><td data-h="维度">失败处理</td><td data-h="Saga">执行补偿事务</td><td data-h="两阶段提交 (2PC)">协调者决定回滚或提交</td></tr><tr><td data-h="维度">可用性</td><td data-h="Saga">参与方故障不阻塞其他服务</td><td data-h="两阶段提交 (2PC)">协调者故障可能阻塞参与方</td></tr><tr><td data-h="维度">适用</td><td data-h="Saga">跨服务、长时间业务流程</td><td data-h="两阶段提交 (2PC)">同一信任域内短事务</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>编排式</h4><p><b class="k-p">优点</b>流程集中可见，易于监控与修改</p><p><b class="k-c">代价</b>协调者成为关键组件，有耦合</p><p><b class="k-w">适用</b>步骤多、分支复杂的流程</p></div><div class="trd"><h4>协同式</h4><p><b class="k-p">优点</b>服务松耦合，无中心依赖</p><p><b class="k-c">代价</b>流程分散在事件中，难追踪与排查</p><p><b class="k-w">适用</b>步骤少、团队自治度高</p></div><div class="trd"><h4>避免拆分（同库事务）</h4><p><b class="k-p">优点</b>直接用 ACID，最简单</p><p><b class="k-c">代价</b>限制服务独立演进</p><p><b class="k-w">适用</b>强一致需求且数据可放在同一服务</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>补偿不幂等，重试时重复退款</p><p class="fix"><b>✓</b>补偿使用幂等键，并记录已执行状态</p></li><li><p class="bad"><b>✗</b>忽略中间态被其他请求读到</p><p class="fix"><b>✓</b>使用 PENDING 等语义锁状态，读取方据此处理</p></li><li><p class="bad"><b>✗</b>把不可撤销操作（如发短信）放在早期步骤</p><p class="fix"><b>✓</b>不可逆步骤尽量后置，放在转折点之后</p></li><li><p class="bad"><b>✗</b>本地事务提交成功但事件发布丢失</p><p class="fix"><b>✓</b>使用发件箱模式，事件与业务数据同事务写入</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>每个步骤都定义了补偿或标记为可重试</span></label></li><li><label><input type="checkbox"><span>步骤与补偿均幂等</span></label></li><li><label><input type="checkbox"><span>Saga 状态持久化，可从中断处恢复</span></label></li><li><label><input type="checkbox"><span>中间态对其他读者有明确语义</span></label></li><li><label><input type="checkbox"><span>事件发布可靠（发件箱或 CDC）</span></label></li><li><label><input type="checkbox"><span>补偿失败有告警与人工处理流程</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>Saga 缺少隔离性会导致什么问题？</summary><p>各步骤独立提交，其他事务可能读到中间结果（脏读类问题）、两个 Saga 交错导致更新丢失。常用对策：语义锁标记处理中状态、交换式更新、重读校验、调整步骤顺序把风险高的放后，或按业务键串行化同一实体的 Saga。</p></details><details class="iv"><summary>补偿事务本身失败怎么办？</summary><p>补偿应设计为可重试且幂等，失败后按退避持续重试；超过阈值进入死信或人工处理队列并告警。设计上应确保补偿最终能够成功，例如退款失败可转为挂账待处理，而不是让流程停在不一致状态。</p></details><details class="iv"><summary>为什么微服务通常不用 2PC 而用 Saga？</summary><p>2PC 要求所有参与者支持 XA 并在准备阶段持锁，协调者故障会阻塞，跨服务和跨技术栈时可用性与性能代价高。Saga 每步本地提交、释放资源，用补偿换取可用性，契合服务自治与异步通信。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://microservices.io/patterns/data/saga.html" target="_blank" rel="noopener"><b>microservices.io: Saga pattern</b><small>microservices.io ↗</small></a></li><li><a href="https://learn.microsoft.com/en-us/azure/architecture/patterns/saga" target="_blank" rel="noopener"><b>Azure Architecture Center: Saga design pattern</b><small>learn.microsoft.com ↗</small></a></li><li><a href="https://www.cs.cornell.edu/andru/cs711/2002fa/reading/sagas.pdf" target="_blank" rel="noopener"><b>Garcia-Molina &amp; Salem: Sagas (1987)</b><small>cs.cornell.edu ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="namespaces-and-cgroups.pro.html" rel="prev"><small>‹ 上一个</small><b>📦 容器底层隔离 (Namespace / cgroups)</b></a><a class="pn next" href="crdts.pro.html" rel="next"><small>下一个 ›</small><b>🧶 无冲突复制数据类型 (CRDT)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

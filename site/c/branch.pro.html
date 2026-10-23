@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="分支 (Branch) 专业模式：分支（Branch）在 Git 中只是一个指向某个提交的可移动指针，创建和切换几乎零成本。它让开发者在隔离的历史线上并行开发功能、修复缺陷或做实验，完成后再合并">
+<title>🎓 分支 (Branch) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l1" id="main" data-slug="branch" data-answer="0" data-prev="commit.pro.html" data-next="clone-push-pull.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l1.html#git">🌱 初级 · 🌿 Git 协作</a><span>›</span><a href="branch.html">分支 (Branch)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.43 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="commit.pro.html" rel="prev"><small>‹ 上一个</small><b>💾 提交 (Commit)</b></a><a class="pn next" href="clone-push-pull.pro.html" rel="next"><small>下一个 ›</small><b>🔄 克隆 / 推送 / 拉取</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🌿</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🌱 初级</span><span>🌿 Git 协作</span><span>⏱ 约 10 分钟</span></div>
+    <h1>分支 (Branch)</h1><p class="en">Branch</p>
+    <div class="hbtns"><a class="prosw back" href="branch.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">分支（Branch）在 Git 中只是一个指向某个提交的可移动指针，创建和切换几乎零成本。它让开发者在隔离的历史线上并行开发功能、修复缺陷或做实验，完成后再合并回主分支。分支策略（如 GitHub Flow、主干开发）决定团队如何组织并行工作与发布。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>创建：git switch -c 新建一个指向当前提交的指针，不复制任何文件，几乎瞬间完成。</p></li><li><span class="sn">2</span><p>切换：HEAD 指向新分支，Git 把工作区更新为该分支最新提交的状态。</p></li><li><span class="sn">3</span><p>前进：在分支上提交时，只有当前分支的指针随新提交向前移动，其他分支保持不动。</p></li><li><span class="sn">4</span><p>分叉：多个分支从同一祖先提交出发各自提交，形成互不影响的并行历史线。</p></li><li><span class="sn">5</span><p>合并或删除：通过 merge 或 PR 合回主分支，完成后删除分支指针，提交仍保留。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>主分支 (main)</dt><dd>代表可发布状态的默认分支，旧称 master。</dd></div><div class="term"><dt>功能分支 (Feature Branch)</dt><dd>为单个功能或修复创建的短期分支。</dd></div><div class="term"><dt>主干开发 (Trunk-based Development)</dt><dd>所有人频繁向主干合入小改动，分支存活很短。</dd></div><div class="term"><dt>跟踪分支 (Tracking Branch)</dt><dd>与远程分支关联的本地分支，便于 push/pull。</dd></div><div class="term"><dt>快进合并 (Fast-forward)</dt><dd>目标分支无新提交时，直接移动指针完成合并。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>分支日常与并行 Agent</span><em>bash</em><button class="ccopy">复制</button></div><pre><code>git switch -c feat/search          # 新建并切换到功能分支
+git branch -vv                     # 查看本地分支及跟踪关系
+
+# 推送并建立跟踪关系
+git push -u origin feat/search
+
+# 保持与主干同步（在功能分支上）
+git fetch origin
+git rebase origin/main             # 或 git merge origin/main
+
+# 用 worktree 同时检出多个分支到不同目录
+# 适合让两个 AI Agent 并行开发而互不干扰
+git worktree add ../app-fix-login -b fix/login
+git worktree list
+
+# 合并后清理
+git switch main &amp;&amp; git pull
+git branch -d feat/search          # 已合并才允许删除
+git worktree remove ../app-fix-login</code></pre></div><p class="cnote">分支只是指针，代价极低；worktree 让多个分支同时拥有独立工作目录。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见分支策略</h3><div class="tw"><table><thead><tr><th>策略</th><th>做法</th><th>适合</th></tr></thead><tbody><tr><td data-h="策略">GitHub Flow</td><td data-h="做法">main + 短期功能分支 + PR</td><td data-h="适合">持续部署的 Web 项目</td></tr><tr><td data-h="策略">主干开发</td><td data-h="做法">极短分支或直接小步合入，配合特性开关</td><td data-h="适合">CI 成熟的高频发布团队</td></tr><tr><td data-h="策略">Git Flow</td><td data-h="做法">develop、release、hotfix 等多条长期分支</td><td data-h="适合">有固定版本发布周期的软件</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>短期分支（数小时到几天）</h4><p><b class="k-p">优点</b>冲突少，合并简单</p><p><b class="k-c">代价</b>需拆小任务</p><p><b class="k-w">适用</b>大多数团队的默认选择</p></div><div class="trd"><h4>长期功能分支</h4><p><b class="k-p">优点</b>大功能可完整开发后再合</p><p><b class="k-c">代价</b>与主干偏离大，合并冲突多</p><p><b class="k-w">适用</b>尽量避免，必要时定期同步主干</p></div><div class="trd"><h4>特性开关代替长分支</h4><p><b class="k-p">优点</b>代码早合入，按开关发布</p><p><b class="k-c">代价</b>需管理开关与清理</p><p><b class="k-w">适用</b>高频发布、灰度上线</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>直接在 main 上开发并推送</p><p class="fix"><b>✓</b>所有改动走功能分支与 PR，并开启分支保护</p></li><li><p class="bad"><b>✗</b>功能分支几周不同步主干</p><p class="fix"><b>✓</b>定期 rebase 或 merge 主干，及早暴露冲突</p></li><li><p class="bad"><b>✗</b>多个 Agent 在同一工作目录切换不同分支</p><p class="fix"><b>✓</b>每个 Agent 用独立 worktree 或克隆</p></li><li><p class="bad"><b>✗</b>分支命名随意，难以识别</p><p class="fix"><b>✓</b>约定前缀，如 feat/、fix/、chore/</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>main 受保护，禁止直接推送</span></label></li><li><label><input type="checkbox"><span>分支命名遵循约定前缀</span></label></li><li><label><input type="checkbox"><span>功能分支定期同步主干</span></label></li><li><label><input type="checkbox"><span>合并后及时删除分支</span></label></li><li><label><input type="checkbox"><span>并行 Agent 使用独立 worktree</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么 Git 分支比 SVN 分支轻量？</summary><p>Git 分支只是一个记录提交哈希的小文件（引用），创建和切换不复制文件；SVN 分支是服务器上的目录拷贝，概念和操作都更重。正因为轻量，Git 鼓励为每个小任务开分支。</p></details><details class="iv"><summary>主干开发如何保证主干稳定？</summary><p>依靠小批量改动、完整的自动化测试与 CI 必需检查、代码评审、特性开关隐藏未完成功能，以及快速回滚能力。主干随时可发布，问题通过小步修复或回滚解决，而不是靠长时间隔离分支。</p></details><details class="iv"><summary>如何让多个 AI Agent 并行开发？</summary><p>给每个 Agent 分配独立任务与分支，用 git worktree 为每个分支提供独立目录，避免互相覆盖文件；各自运行测试后提交 PR；由人或合并流程统一处理冲突与集成测试。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell" target="_blank" rel="noopener"><b>Pro Git: Branches in a Nutshell</b><small>git-scm.com ↗</small></a></li><li><a href="https://docs.github.com/en/get-started/using-github/github-flow" target="_blank" rel="noopener"><b>GitHub Docs: GitHub flow</b><small>docs.github.com ↗</small></a></li><li><a href="https://git-scm.com/docs/git-worktree" target="_blank" rel="noopener"><b>Git 文档: git-worktree</b><small>git-scm.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="commit.pro.html" rel="prev"><small>‹ 上一个</small><b>💾 提交 (Commit)</b></a><a class="pn next" href="clone-push-pull.pro.html" rel="next"><small>下一个 ›</small><b>🔄 克隆 / 推送 / 拉取</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="发布订阅 (Pub/Sub) 专业模式：发布订阅（Publish/Subscribe，Pub/Sub）是一种消息模式：发布者把消息发送到主题或频道，而不指定接收者；所有订阅该主题的订阅者各自收到一份副">
+<title>🎓 发布订阅 (Pub/Sub) · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="pub-sub" data-answer="0" data-prev="stale-while-revalidate.pro.html" data-next="semantic-caching.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#cache">🔮 高级 · ⚡ 缓存与队列</a><span>›</span><a href="pub-sub.html">发布订阅 (Pub/Sub)</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.355 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="stale-while-revalidate.pro.html" rel="prev"><small>‹ 上一个</small><b>🔄 过期仍用后台刷新 (SWR)</b></a><a class="pn next" href="semantic-caching.pro.html" rel="next"><small>下一个 ›</small><b>🧠 语义缓存</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">📢</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>⚡ 缓存与队列</span><span>⏱ 约 10 分钟</span></div>
+    <h1>发布订阅 (Pub/Sub)</h1><p class="en">Pub/Sub</p>
+    <div class="hbtns"><a class="prosw back" href="pub-sub.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">发布订阅（Publish/Subscribe，Pub/Sub）是一种消息模式：发布者把消息发送到主题或频道，而不指定接收者；所有订阅该主题的订阅者各自收到一份副本，实现一对多扇出与解耦。从“即发即弃”的 Redis Pub/Sub 到持久化的 Google Cloud Pub/Sub、Kafka，投递保证差异很大。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>订阅者向代理声明感兴趣的主题或频道（可支持通配符模式匹配）。</p></li><li><span class="sn">2</span><p>发布者把消息发送到某个主题，无需知道有哪些订阅者、是否在线。</p></li><li><span class="sn">3</span><p>代理把消息复制并投递给该主题的每个订阅（扇出）；同一订阅内的多个实例可竞争消费以实现负载分担（取决于实现）。</p></li><li><span class="sn">4</span><p>投递语义由实现决定：Redis Pub/Sub 不持久化，订阅者离线即丢失；托管 Pub/Sub 与 Kafka 会持久化并要求确认，通常为至少一次。</p></li><li><span class="sn">5</span><p>订阅者处理消息并确认；未确认的消息会被重投，多次失败可进入死信主题。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>主题 / 频道 (Topic / Channel)</dt><dd>发布者投递消息的逻辑命名通道。</dd></div><div class="term"><dt>扇出 (Fan-out)</dt><dd>一条消息被复制给多个订阅者。</dd></div><div class="term"><dt>订阅 (Subscription)</dt><dd>某个消费方对主题的订阅关系，可有多个实例共享。</dd></div><div class="term"><dt>即发即弃 (Fire-and-forget)</dt><dd>不持久化、不确认，订阅者不在线时消息丢失。</dd></div><div class="term"><dt>至少一次投递 (At-least-once)</dt><dd>保证不丢但可能重复，消费者需要幂等。</dd></div><div class="term"><dt>死信主题 (Dead-letter Topic)</dt><dd>存放多次处理失败消息的主题。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Redis Pub/Sub 发布与订阅</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import json, threading, time
+import redis
+
+r = redis.Redis(decode_responses=True)
+
+def subscriber(name: str):
+    p = r.pubsub()
+    p.subscribe(&quot;order.status&quot;)          # 订阅频道
+    for msg in p.listen():
+        if msg[&quot;type&quot;] == &quot;message&quot;:
+            print(name, &quot;收到&quot;, json.loads(msg[&quot;data&quot;]))
+
+for n in (&quot;通知服务&quot;, &quot;日志服务&quot;):
+    threading.Thread(target=subscriber, args=(n,), daemon=True).start()
+time.sleep(0.5)                           # 等订阅建立
+
+# 发布：返回值是当前收到消息的订阅者数量
+count = r.publish(&quot;order.status&quot;, json.dumps({&quot;order_id&quot;: 42, &quot;status&quot;: &quot;paid&quot;}))
+print(&quot;送达订阅者数：&quot;, count)
+time.sleep(0.5)
+# 注意：Redis Pub/Sub 不持久化，订阅者离线期间的消息会丢失</code></pre></div><p class="cnote">一条消息被两个订阅者同时收到；Redis Pub/Sub 适合实时通知，不适合必须可靠送达的业务事件。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">常见实现对比</h3><div class="tw"><table><thead><tr><th>实现</th><th>持久化</th><th>投递保证</th><th>适用</th></tr></thead><tbody><tr><td data-h="实现">Redis Pub/Sub</td><td data-h="持久化">否</td><td data-h="投递保证">至多一次，离线即丢</td><td data-h="适用">实时通知、缓存失效广播</td></tr><tr><td data-h="实现">Redis Streams</td><td data-h="持久化">是</td><td data-h="投递保证">至少一次（消费组 + ACK）</td><td data-h="适用">轻量可靠事件</td></tr><tr><td data-h="实现">Google Cloud Pub/Sub</td><td data-h="持久化">是</td><td data-h="投递保证">至少一次，可选按序、精确一次（以文档为准）</td><td data-h="适用">云上异步解耦</td></tr><tr><td data-h="实现">Kafka</td><td data-h="持久化">是，按保留策略</td><td data-h="投递保证">至少一次为主，可配置事务</td><td data-h="适用">高吞吐事件流、回放</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>即发即弃 Pub/Sub</h4><p><b class="k-p">优点</b>延迟极低，实现简单</p><p><b class="k-c">代价</b>消息可能丢失，无回放</p><p><b class="k-w">适用</b>可容忍丢失的实时广播</p></div><div class="trd"><h4>持久化 Pub/Sub</h4><p><b class="k-p">优点</b>可靠投递，支持重试与死信</p><p><b class="k-c">代价</b>需处理重复消息，成本更高</p><p><b class="k-w">适用</b>订单、支付等业务事件</p></div><div class="trd"><h4>点对点队列</h4><p><b class="k-p">优点</b>每条消息只被一个消费者处理</p><p><b class="k-c">代价</b>不能天然广播</p><p><b class="k-w">适用</b>任务分发、后台作业</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>用 Redis Pub/Sub 传递不能丢的业务事件</p><p class="fix"><b>✓</b>改用 Redis Streams、Kafka 或托管 Pub/Sub 等持久化方案</p></li><li><p class="bad"><b>✗</b>订阅者不幂等，重投导致重复处理</p><p class="fix"><b>✓</b>以消息 ID 去重或设计幂等操作</p></li><li><p class="bad"><b>✗</b>订阅者处理慢，消息积压无人发现</p><p class="fix"><b>✓</b>监控积压量与消费延迟，配置死信与告警</p></li><li><p class="bad"><b>✗</b>把发布订阅当作请求/响应使用</p><p class="fix"><b>✓</b>需要结果的调用使用 API 或带回复通道的请求模式</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>根据可靠性需求选择实现</span></label></li><li><label><input type="checkbox"><span>消费者幂等</span></label></li><li><label><input type="checkbox"><span>配置死信与重试策略</span></label></li><li><label><input type="checkbox"><span>监控积压与消费延迟</span></label></li><li><label><input type="checkbox"><span>消息格式有版本约定</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>发布订阅和消息队列有什么区别？</summary><p>发布订阅是一对多：每个订阅者都收到消息副本，用于广播事件；点对点队列是一对一：每条消息只被其中一个消费者处理，用于分发任务。许多系统两者兼具，例如 Kafka 中不同消费组相当于订阅，组内消费者分担分区。</p></details><details class="iv"><summary>Redis Pub/Sub 适合什么场景？</summary><p>适合可容忍丢失的实时广播，如在线通知推送、多实例间的缓存失效通知、聊天室在线消息。它不持久化、不确认，订阅者断线期间的消息直接丢失，因此不适合订单、支付等必须可靠处理的事件。</p></details><details class="iv"><summary>至少一次投递下如何避免重复处理？</summary><p>让消费者幂等：用消息或业务唯一 ID 记录已处理状态，处理前先检查；或让操作天然幂等（如设置状态而非累加）。也可借助数据库唯一约束，在重复写入时安全失败。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://redis.io/docs/latest/develop/pubsub/" target="_blank" rel="noopener"><b>Redis：Pub/Sub</b><small>redis.io ↗</small></a></li><li><a href="https://cloud.google.com/pubsub/docs/overview" target="_blank" rel="noopener"><b>Google Cloud Pub/Sub 概览</b><small>cloud.google.com ↗</small></a></li><li><a href="https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern" target="_blank" rel="noopener"><b>Wikipedia: Publish–subscribe pattern</b><small>en.wikipedia.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="stale-while-revalidate.pro.html" rel="prev"><small>‹ 上一个</small><b>🔄 过期仍用后台刷新 (SWR)</b></a><a class="pn next" href="semantic-caching.pro.html" rel="next"><small>下一个 ›</small><b>🧠 语义缓存</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

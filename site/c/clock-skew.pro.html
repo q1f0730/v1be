@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="时钟偏斜 专业模式：时钟偏斜（Clock Skew）指分布式系统中不同机器的本地时钟在同一时刻读数不同，且由于晶振频率差异（漂移）会随时间扩大。即使使用 NTP 同步，也只能把误差">
+<title>🎓 时钟偏斜 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="clock-skew" data-answer="0" data-prev="quorums.pro.html" data-next="distributed-locks.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#dist">🔥 进阶 · 🕸️ 分布式</a><span>›</span><a href="clock-skew.html">时钟偏斜</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.435 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="quorums.pro.html" rel="prev"><small>‹ 上一个</small><b>✋ 法定人数机制</b></a><a class="pn next" href="distributed-locks.pro.html" rel="next"><small>下一个 ›</small><b>🔐 分布式锁</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🕰️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🕸️ 分布式</span><span>⏱ 约 10 分钟</span></div>
+    <h1>时钟偏斜</h1><p class="en">Clock Skew</p>
+    <div class="hbtns"><a class="prosw back" href="clock-skew.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">时钟偏斜（Clock Skew）指分布式系统中不同机器的本地时钟在同一时刻读数不同，且由于晶振频率差异（漂移）会随时间扩大。即使使用 NTP 同步，也只能把误差控制在一定范围内。依赖墙上时钟做排序、超时、锁过期或冲突合并时，偏斜可能导致数据丢失或逻辑错误。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>来源：每台机器的晶振频率略有差异，本地时钟以不同速度走，误差持续累积。</p></li><li><span class="sn">2</span><p>同步：NTP/chrony 定期与上游时间源校对，逐步调整速率或直接跳变修正时间。</p></li><li><span class="sn">3</span><p>误差：同步受网络延迟不对称影响，偏差只能缩小到一个范围而无法完全消除。</p></li><li><span class="sn">4</span><p>影响：用时间戳比较不同机器上的事件先后可能出错，例如最后写入胜出丢更新。</p></li><li><span class="sn">5</span><p>对策：计时用单调时钟，排序用逻辑时钟或混合逻辑时钟，必要时等待误差上界。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>时钟漂移 (Clock Drift)</dt><dd>时钟走速与真实时间的偏差率，导致误差随时间累积。</dd></div><div class="term"><dt>单调时钟 (Monotonic Clock)</dt><dd>只增不减、不受校时跳变影响，适合测量时间间隔。</dd></div><div class="term"><dt>Lamport 时钟</dt><dd>逻辑计数器，保证因果相关事件的时间戳单调递增。</dd></div><div class="term"><dt>混合逻辑时钟 (HLC)</dt><dd>结合物理时间与逻辑计数，接近真实时间又保持因果顺序。</dd></div><div class="term"><dt>TrueTime</dt><dd>Spanner 的时间 API，返回带误差上界的时间区间。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>单调时钟与 Lamport 时钟</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import time
+
+# 1) 计算耗时/超时：用单调时钟，不受 NTP 校时跳变影响
+start = time.monotonic()
+time.sleep(0.2)
+elapsed = time.monotonic() - start      # 用 time.time() 相减可能为负或偏大
+
+# 2) 跨节点事件排序：Lamport 逻辑时钟
+class LamportClock:
+    def __init__(self):
+        self.t = 0
+    def tick(self):                     # 本地事件或发送消息前
+        self.t += 1
+        return self.t
+    def recv(self, remote_t):           # 收到消息时取较大值再加一
+        self.t = max(self.t, remote_t) + 1
+        return self.t
+
+a, b = LamportClock(), LamportClock()
+msg_t = a.tick()                        # A 发送消息，时间戳 1
+print(b.recv(msg_t), round(elapsed, 2)) # B 收到后时间戳 2，保证晚于发送</code></pre></div><p class="cnote">墙上时钟用于展示，单调时钟用于计时，逻辑时钟用于跨节点的因果排序。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">时间方案对比</h3><div class="tw"><table><thead><tr><th>方案</th><th>提供什么</th><th>局限</th></tr></thead><tbody><tr><td data-h="方案">NTP 同步墙上时钟</td><td data-h="提供什么">近似真实时间</td><td data-h="局限">有误差，可能回跳</td></tr><tr><td data-h="方案">单调时钟</td><td data-h="提供什么">单机内可靠的时间间隔</td><td data-h="局限">不能跨机器比较</td></tr><tr><td data-h="方案">Lamport/向量时钟</td><td data-h="提供什么">因果顺序</td><td data-h="局限">与真实时间无关</td></tr><tr><td data-h="方案">HLC / TrueTime</td><td data-h="提供什么">接近真实时间且有序</td><td data-h="局限">需要实现或专用硬件支持</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>依赖 NTP 时间戳</h4><p><b class="k-p">优点</b>简单直观，可读性好</p><p><b class="k-c">代价</b>偏斜导致排序错误</p><p><b class="k-w">适用</b>日志展示、粗粒度统计</p></div><div class="trd"><h4>逻辑时钟/版本号</h4><p><b class="k-p">优点</b>不依赖物理时间，排序可靠</p><p><b class="k-c">代价</b>不反映真实时间</p><p><b class="k-w">适用</b>冲突检测、事件因果</p></div><div class="trd"><h4>HLC</h4><p><b class="k-p">优点</b>兼顾因果与近似物理时间</p><p><b class="k-c">代价</b>实现更复杂</p><p><b class="k-w">适用</b>分布式数据库、跨节点事务</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>用 time.time() 计算超时或耗时，校时后出现负值</p><p class="fix"><b>✓</b>计时一律使用单调时钟</p></li><li><p class="bad"><b>✗</b>用各节点本地时间戳做最后写入胜出</p><p class="fix"><b>✓</b>使用版本号、逻辑时钟或由单一节点分配顺序</p></li><li><p class="bad"><b>✗</b>分布式锁过期依赖不同机器时钟一致</p><p class="fix"><b>✓</b>锁使用存储端计时并配合防护令牌</p></li><li><p class="bad"><b>✗</b>未监控 NTP 同步状态，偏差悄悄扩大</p><p class="fix"><b>✓</b>监控时钟偏移并在超阈值时告警或摘除节点</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>所有节点运行 NTP/chrony</span></label></li><li><label><input type="checkbox"><span>监控时钟偏移并告警</span></label></li><li><label><input type="checkbox"><span>计时代码使用单调时钟</span></label></li><li><label><input type="checkbox"><span>不以本地时间戳跨节点排序</span></label></li><li><label><input type="checkbox"><span>日志带时区与高精度时间</span></label></li><li><label><input type="checkbox"><span>容器/虚拟机时间源可靠</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么不能用时间戳判断跨节点事件先后？</summary><p>不同机器时钟存在偏斜，NTP 也只保证误差在一定范围内；两事件间隔小于该误差时，时间戳大小与真实先后可能相反。需要因果顺序时应使用逻辑时钟或由单点分配序号。</p></details><details class="iv"><summary>Spanner 怎么解决时钟问题？</summary><p>TrueTime 借助 GPS 和原子钟把时钟误差控制在较小的已知范围内，并返回时间区间。提交时等待误差区间过去（commit wait）再对外可见，从而保证时间戳顺序与真实提交顺序一致。</p></details><details class="iv"><summary>chrony 的跳变和渐调有什么区别？</summary><p>跳变（step）直接把时钟设为正确值，修正快但会造成时间回退或跳跃；渐调（slew）微调时钟速率逐步追上，时间连续但修正慢。生产中通常只在启动时允许跳变，运行时渐调。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://lamport.azurewebsites.net/pubs/time-clocks.pdf" target="_blank" rel="noopener"><b>Lamport: Time, Clocks, and the Ordering of Events</b><small>lamport.azurewebsites.net ↗</small></a></li><li><a href="https://research.google/pubs/spanner-googles-globally-distributed-database-2/" target="_blank" rel="noopener"><b>Spanner: Google&#x27;s Globally-Distributed Database</b><small>research.google ↗</small></a></li><li><a href="https://cse.buffalo.edu/tech-reports/2014-04.pdf" target="_blank" rel="noopener"><b>Logical Physical Clocks (HLC 论文)</b><small>cse.buffalo.edu ↗</small></a></li><li><a href="https://chrony-project.org/documentation.html" target="_blank" rel="noopener"><b>chrony 文档</b><small>chrony-project.org ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="quorums.pro.html" rel="prev"><small>‹ 上一个</small><b>✋ 法定人数机制</b></a><a class="pn next" href="distributed-locks.pro.html" rel="next"><small>下一个 ›</small><b>🔐 分布式锁</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

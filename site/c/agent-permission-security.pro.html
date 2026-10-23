@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="智能体权限安全 专业模式：智能体权限安全是为 AI Agent 设计访问控制的实践：按最小权限原则限定它能读写的文件、能执行的命令、能访问的网络与凭证，并对高风险操作要求人工确认。它针对">
+<title>🎓 智能体权限安全 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l4" id="main" data-slug="agent-permission-security" data-answer="0" data-prev="parallel-agents-and-worktrees.pro.html" data-next="agent-harness.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l4.html#ai">🔥 进阶 · 🤖 AI 与提示词</a><span>›</span><a href="agent-permission-security.html">智能体权限安全</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.409 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="parallel-agents-and-worktrees.pro.html" rel="prev"><small>‹ 上一个</small><b>👯 并行智能体与 Git Worktree</b></a><a class="pn next" href="agent-harness.pro.html" rel="next"><small>下一个 ›</small><b>🏎️ 智能体外壳 (Harness)</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🛡️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔥 进阶</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>智能体权限安全</h1><p class="en">Agent Permission Security</p>
+    <div class="hbtns"><a class="prosw back" href="agent-permission-security.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">智能体权限安全是为 AI Agent 设计访问控制的实践：按最小权限原则限定它能读写的文件、能执行的命令、能访问的网络与凭证，并对高风险操作要求人工确认。它针对的是提示注入、模型误判导致的越权操作和数据外泄，对应 OWASP 所说的过度授权（Excessive Agency）。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>盘点能力：列出 Agent 可用的工具、文件系统范围、网络出口和凭证。</p></li><li><span class="sn">2</span><p>最小授权：只开放完成任务所需的工具和路径，敏感文件（如 .env、密钥）显式拒绝。</p></li><li><span class="sn">3</span><p>分级确认：只读操作可自动放行，写入、删除、部署、付款等需人工审批。</p></li><li><span class="sn">4</span><p>隔离执行：在容器、虚拟机或沙箱中运行，限制网络出口，凭证用短期、低权限令牌。</p></li><li><span class="sn">5</span><p>审计与回滚：记录所有工具调用，保留版本控制和备份，异常时可追溯与撤销。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>最小权限 (Least Privilege)</dt><dd>只授予完成当前任务所必需的最小权限集合。</dd></div><div class="term"><dt>提示注入 (Prompt Injection)</dt><dd>恶意文本混入输入或网页，诱导模型执行非预期指令。</dd></div><div class="term"><dt>过度授权 (Excessive Agency)</dt><dd>Agent 拥有超出需要的功能、权限或自主性而导致风险。</dd></div><div class="term"><dt>致命三要素 (Lethal Trifecta)</dt><dd>同时具备私有数据访问、接触不可信内容和外传能力时风险最高。</dd></div><div class="term"><dt>人在环 (Human-in-the-loop)</dt><dd>关键动作执行前需要人确认的机制。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>Claude Code 权限配置</span><em>json</em><button class="ccopy">复制</button></div><pre><code>{
+  &quot;permissions&quot;: {
+    &quot;allow&quot;: [
+      &quot;Bash(npm run test:*)&quot;,
+      &quot;Bash(git diff:*)&quot;,
+      &quot;Read(./src/**)&quot;
+    ],
+    &quot;ask&quot;: [
+      &quot;Bash(git push:*)&quot;
+    ],
+    &quot;deny&quot;: [
+      &quot;Read(./.env)&quot;,
+      &quot;Read(./secrets/**)&quot;,
+      &quot;Bash(curl:*)&quot;,
+      &quot;WebFetch&quot;
+    ]
+  }
+}</code></pre></div><p class="cnote">写在 .claude/settings.json：测试和查看自动放行，推送需确认，读取密钥和外联直接拒绝。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">操作风险分级示例</h3><div class="tw"><table><thead><tr><th>操作类型</th><th>风险</th><th>建议策略</th></tr></thead><tbody><tr><td data-h="操作类型">读代码、跑测试</td><td data-h="风险">低</td><td data-h="建议策略">自动放行</td></tr><tr><td data-h="操作类型">改文件、装依赖</td><td data-h="风险">中</td><td data-h="建议策略">在版本控制下放行，事后审查</td></tr><tr><td data-h="操作类型">git push、部署</td><td data-h="风险">高</td><td data-h="建议策略">每次人工确认</td></tr><tr><td data-h="操作类型">读密钥、外发网络请求</td><td data-h="风险">极高</td><td data-h="建议策略">默认拒绝，按需临时开放</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>白名单放行</h4><p><b class="k-p">优点</b>默认安全，边界清晰</p><p><b class="k-c">代价</b>初期频繁弹确认，打断节奏</p><p><b class="k-w">适用</b>生产仓库、含敏感数据</p></div><div class="trd"><h4>沙箱内全自动</h4><p><b class="k-p">优点</b>效率最高，Agent 可长时间自主</p><p><b class="k-c">代价</b>沙箱配置成本，需防网络外泄</p><p><b class="k-w">适用</b>一次性任务、可丢弃环境</p></div><div class="trd"><h4>逐条人工确认</h4><p><b class="k-p">优点</b>每步可控</p><p><b class="k-c">代价</b>效率低，人容易疲劳盲点</p><p><b class="k-w">适用</b>首次接入陌生 Agent 或工具</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>为图省事开启跳过所有权限确认的模式在本机运行</p><p class="fix"><b>✓</b>只在无凭证、无敏感数据的容器或沙箱中使用全自动模式</p></li><li><p class="bad"><b>✗</b>把长期、高权限的云凭证放在 Agent 可读的环境变量里</p><p class="fix"><b>✓</b>使用短期、最小权限的令牌，敏感文件加入 deny 规则</p></li><li><p class="bad"><b>✗</b>认为写进系统提示的禁止事项就能防住注入</p><p class="fix"><b>✓</b>用工具层的硬性权限和网络隔离兜底，而非依赖模型自律</p></li><li><p class="bad"><b>✗</b>接入第三方 MCP 服务器不审查其工具和权限</p><p class="fix"><b>✓</b>只用可信来源，审查工具描述，限制其可访问的数据</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>密钥文件在 deny 列表</span></label></li><li><label><input type="checkbox"><span>推送/部署需人工确认</span></label></li><li><label><input type="checkbox"><span>网络出口有限制或白名单</span></label></li><li><label><input type="checkbox"><span>凭证为短期低权限</span></label></li><li><label><input type="checkbox"><span>工具调用有审计日志</span></label></li><li><label><input type="checkbox"><span>第三方工具/MCP 已审查</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么不能只靠系统提示约束 Agent？</summary><p>模型会被提示注入或误解指令覆盖，系统提示只是软约束。权限必须在工具执行层强制：路径白名单、命令黑白名单、网络隔离、凭证最小化，让模型即便想做也做不到。</p></details><details class="iv"><summary>什么是致命三要素？怎么打破？</summary><p>Agent 同时能访问私有数据、会读取不可信内容（网页、邮件、issue）、又能对外发送数据时，注入即可导致外泄。打破任意一环即可：去掉外传通道、隔离不可信输入，或不给私有数据。</p></details><details class="iv"><summary>给编码 Agent 设计权限，你会怎么分层？</summary><p>按风险分层：读与测试自动放行；文件修改在 Git 管控下放行并审查 diff；push、部署、数据库迁移需确认；读密钥和任意外联默认拒绝。全自动只在一次性沙箱里开，并配审计日志。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://genai.owasp.org/llmrisk/llm062025-excessive-agency/" target="_blank" rel="noopener"><b>OWASP LLM06:2025 Excessive Agency</b><small>genai.owasp.org ↗</small></a></li><li><a href="https://docs.claude.com/en/docs/claude-code/iam" target="_blank" rel="noopener"><b>Claude Code: Identity and Access Management</b><small>docs.claude.com ↗</small></a></li><li><a href="https://docs.claude.com/en/docs/claude-code/settings" target="_blank" rel="noopener"><b>Claude Code settings</b><small>docs.claude.com ↗</small></a></li><li><a href="https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/" target="_blank" rel="noopener"><b>The lethal trifecta for AI agents (Simon Willison)</b><small>simonwillison.net ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="parallel-agents-and-worktrees.pro.html" rel="prev"><small>‹ 上一个</small><b>👯 并行智能体与 Git Worktree</b></a><a class="pn next" href="agent-harness.pro.html" rel="next"><small>下一个 ›</small><b>🏎️ 智能体外壳 (Harness)</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

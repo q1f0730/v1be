@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="上下文压缩 专业模式：上下文压缩（Context Compaction）是在长对话或长任务中，当累积的消息、工具结果接近上下文窗口上限时，把较早的内容压缩为摘要或删除可再获取的信息，">
+<title>🎓 上下文压缩 · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="context-compaction" data-answer="0" data-prev="model-routing.pro.html" data-next="agent-memory.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#ai">🔮 高级 · 🤖 AI 与提示词</a><span>›</span><a href="context-compaction.html">上下文压缩</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.208 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="model-routing.pro.html" rel="prev"><small>‹ 上一个</small><b>🚦 模型路由</b></a><a class="pn next" href="agent-memory.pro.html" rel="next"><small>下一个 ›</small><b>🧠 智能体记忆</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🗜️</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🤖 AI 与提示词</span><span>⏱ 约 10 分钟</span></div>
+    <h1>上下文压缩</h1><p class="en">Context Compaction</p>
+    <div class="hbtns"><a class="prosw back" href="context-compaction.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">上下文压缩（Context Compaction）是在长对话或长任务中，当累积的消息、工具结果接近上下文窗口上限时，把较早的内容压缩为摘要或删除可再获取的信息，以腾出空间继续工作的技术。它属于上下文工程层，常见于编码 Agent 的长会话，如 Claude Code 的 /compact。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>持续统计当前上下文的 token 数，接近阈值（如窗口的某个比例）时触发压缩。</p></li><li><span class="sn">2</span><p>原样保留系统提示词、当前任务目标和最近若干轮对话，不做摘要。</p></li><li><span class="sn">3</span><p>把更早的对话交给模型总结：已做决定、已修改文件、未解决问题和下一步。</p></li><li><span class="sn">4</span><p>清理可重新获取的大块内容，如旧的工具输出、文件全文，只留引用路径。</p></li><li><span class="sn">5</span><p>用「摘要 + 最近消息」替换原历史继续对话，必要时把关键状态写入外部文件。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>上下文窗口 (Context Window)</dt><dd>模型单次请求能处理的最大 token 数。</dd></div><div class="term"><dt>上下文工程 (Context Engineering)</dt><dd>决定每一步把哪些信息放进上下文的设计。</dd></div><div class="term"><dt>工具结果清理 (Tool Result Clearing)</dt><dd>删除旧工具调用的输出，保留调用记录。</dd></div><div class="term"><dt>结构化笔记 (Structured Note-taking)</dt><dd>Agent 把进度写入外部文件，压缩后可读回。</dd></div><div class="term"><dt>上下文腐化 (Context Rot)</dt><dd>上下文越长，模型回忆与利用信息的准确度下降。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>超阈值时摘要旧消息</span><em>python</em><button class="ccopy">复制</button></div><pre><code>import anthropic
+
+client = anthropic.Anthropic()
+MODEL = &quot;claude-sonnet-4-5&quot;     # 以实际可用模型为准
+LIMIT = 150_000                  # 触发阈值，按模型窗口设定
+KEEP_RECENT = 6                  # 保留最近 6 条原文
+
+def tokens(messages, system):
+    r = client.messages.count_tokens(model=MODEL, system=system, messages=messages)
+    return r.input_tokens
+
+def compact(messages, system):
+    if tokens(messages, system) &lt; LIMIT:
+        return messages
+    old, recent = messages[:-KEEP_RECENT], messages[-KEEP_RECENT:]
+    summary = client.messages.create(
+        model=MODEL, max_tokens=2000,
+        system=&quot;把以下对话压缩为要点：目标、已做决定、改过的文件、待办、关键报错。&quot;,
+        messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: str(old)}],
+    ).content[0].text
+    head = {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: f&quot;[此前对话摘要]\n{summary}&quot;}
+    # 注意：消息需保持 user/assistant 交替，必要时调整 recent 的起点
+    return [head] + recent</code></pre></div><p class="cnote">用官方 count_tokens 计数，超阈值时把旧消息换成结构化摘要；需注意消息角色交替。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">压缩手段对比</h3><div class="tw"><table><thead><tr><th>手段</th><th>信息损失</th><th>实现难度</th><th>适用</th></tr></thead><tbody><tr><td data-h="手段">截断最旧消息</td><td data-h="信息损失">高，直接丢弃</td><td data-h="实现难度">低</td><td data-h="适用">闲聊类对话</td></tr><tr><td data-h="手段">LLM 摘要</td><td data-h="信息损失">中，取决于摘要质量</td><td data-h="实现难度">中</td><td data-h="适用">长任务会话</td></tr><tr><td data-h="手段">清理工具输出</td><td data-h="信息损失">低，可重新获取</td><td data-h="实现难度">低</td><td data-h="适用">Agent 读文件、搜索</td></tr><tr><td data-h="手段">外部笔记/记忆</td><td data-h="信息损失">低</td><td data-h="实现难度">中</td><td data-h="适用">跨会话的长期任务</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>自动压缩</h4><p><b class="k-p">优点</b>无需用户干预，任务不中断</p><p><b class="k-c">代价</b>时机不可控，可能丢关键细节</p><p><b class="k-w">适用</b>长时间自主运行的 Agent</p></div><div class="trd"><h4>手动压缩（如 /compact）</h4><p><b class="k-p">优点</b>可在阶段边界执行并给出保留重点</p><p><b class="k-c">代价</b>依赖用户判断</p><p><b class="k-w">适用</b>交互式编码会话</p></div><div class="trd"><h4>开新会话 + 交接文档</h4><p><b class="k-p">优点</b>上下文最干净</p><p><b class="k-c">代价</b>需写交接说明</p><p><b class="k-w">适用</b>任务阶段切换</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>摘要丢了用户明确提出的约束</p><p class="fix"><b>✓</b>摘要模板中单列约束与决定，原文保留用户指令</p></li><li><p class="bad"><b>✗</b>在任务中途压缩，正在调试的报错细节消失</p><p class="fix"><b>✓</b>尽量在阶段完成时压缩，或要求摘要保留最近报错原文</p></li><li><p class="bad"><b>✗</b>把大量文件全文留在上下文中</p><p class="fix"><b>✓</b>只保留路径和关键片段，需要时重新读取</p></li><li><p class="bad"><b>✗</b>压缩后消息角色顺序错误导致 API 报错</p><p class="fix"><b>✓</b>压缩后校验消息格式与 user/assistant 交替规则</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>有 token 计数与触发阈值</span></label></li><li><label><input type="checkbox"><span>摘要模板覆盖目标、决定、待办</span></label></li><li><label><input type="checkbox"><span>用户约束原文保留</span></label></li><li><label><input type="checkbox"><span>大块工具输出可被清理</span></label></li><li><label><input type="checkbox"><span>关键状态写入外部文件</span></label></li><li><label><input type="checkbox"><span>压缩前后效果有评测</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>为什么不直接用更大的上下文窗口？</summary><p>窗口再大也有上限，且成本与延迟随长度增长；更重要的是长上下文中模型对信息的利用会退化，无关内容会稀释注意力。主动精简上下文往往比塞满窗口效果更好。</p></details><details class="iv"><summary>压缩时哪些信息必须保留？</summary><p>用户原始目标与约束、已经做出的设计决定、修改过的文件与当前状态、未解决的错误和下一步计划。可重新获取的内容（文件全文、搜索结果）可以只留引用。</p></details><details class="iv"><summary>压缩和外部记忆如何配合？</summary><p>压缩处理单个会话内的窗口压力；外部记忆（如项目说明文件、进度笔记）跨会话持久保存。Agent 在压缩前把关键进度写入文件，压缩后或新会话开始时读回，避免依赖摘要质量。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents" target="_blank" rel="noopener"><b>Anthropic：Effective context engineering for AI agents</b><small>anthropic.com ↗</small></a></li><li><a href="https://docs.claude.com/en/docs/build-with-claude/token-counting" target="_blank" rel="noopener"><b>Anthropic 文档：Token counting</b><small>docs.claude.com ↗</small></a></li><li><a href="https://docs.claude.com/en/docs/claude-code/slash-commands" target="_blank" rel="noopener"><b>Claude Code 文档：Slash commands</b><small>docs.claude.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="model-routing.pro.html" rel="prev"><small>‹ 上一个</small><b>🚦 模型路由</b></a><a class="pn next" href="agent-memory.pro.html" rel="next"><small>下一个 ›</small><b>🧠 智能体记忆</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="description" content="网络防火墙与WAF 专业模式：防火墙是依据规则允许或阻止网络流量的控制点。传统网络防火墙工作在三、四层，按 IP、端口、协议和连接状态过滤；Web 应用防火墙（WAF）工作在七层，检查 HT">
+<title>🎓 网络防火墙与WAF · 专业模式 · AI 造物指南</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head><body class="is-concept is-pro" data-root="../">
+<a class="skip" href="#main">跳到正文</a>
+<div id="readbar"></div>
+<header class="top"><div class="top-in">
+<a class="brand" href="../index.html"><img src="../assets/mascot-sm.webp" alt="" width="32" height="32"><b>AI 造物指南</b></a>
+<nav class="tools" aria-label="工具">
+<button data-act="search" title="搜索（按 / 键）" aria-label="搜索">🔎<span>搜索</span></button>
+<a href="../glossary.html" title="词汇表" aria-label="词汇表">📚<span>词汇表</span></a>
+<button data-act="rand" title="随便学一个没学过的" aria-label="随机一个">🎲<span>随机</span></button>
+<button data-act="settings" title="阅读设置" aria-label="阅读设置" aria-haspopup="dialog">⚙️<span>阅读设置</span></button>
+</nav></div></header>
+
+<main class="cp pro l3" id="main" data-slug="firewalls" data-answer="0" data-prev="subnets.pro.html" data-next="security-groups.pro.html">
+<nav class="crumb" aria-label="位置"><a href="../index.html">首页</a><span>›</span><a href="../l/l3.html#net">🔮 高级 · 🌐 网络与 API</a><span>›</span><a href="firewalls.html">网络防火墙与WAF</a><span>›</span><b>专业模式</b></nav>
+<div class="cp-grid">
+<aside class="rail" aria-label="本页目录">
+  <div class="rail-in">
+    <div class="rail-meta"><span class="lvb pro-b">🎓 专业模式</span><span class="muted">No.269 / 500</span></div>
+    <ol class="rail-list"><li><a href="#p-def" data-sec="p-def"><span class="re">📐</span><span class="rl">定义</span><i class="rc">✓</i></a></li><li><a href="#p-how" data-sec="p-how"><span class="re">⚙️</span><span class="rl">原理</span><i class="rc">✓</i></a></li><li><a href="#p-terms" data-sec="p-terms"><span class="re">🔤</span><span class="rl">术语</span><i class="rc">✓</i></a></li><li><a href="#p-code" data-sec="p-code"><span class="re">💻</span><span class="rl">代码</span><i class="rc">✓</i></a></li><li><a href="#p-tab" data-sec="p-tab"><span class="re">📊</span><span class="rl">参数对比</span><i class="rc">✓</i></a></li><li><a href="#p-trade" data-sec="p-trade"><span class="re">⚖️</span><span class="rl">方案取舍</span><i class="rc">✓</i></a></li><li><a href="#p-pit" data-sec="p-pit"><span class="re">🕳️</span><span class="rl">常见坑</span><i class="rc">✓</i></a></li><li><a href="#p-check" data-sec="p-check"><span class="re">☑️</span><span class="rl">检查清单</span><i class="rc">✓</i></a></li><li><a href="#p-int" data-sec="p-int"><span class="re">🎤</span><span class="rl">面试追问</span><i class="rc">✓</i></a></li><li><a href="#p-refs" data-sec="p-refs"><span class="re">🔗</span><span class="rl">延伸阅读</span><i class="rc">✓</i></a></li></ol>
+    <div class="rail-pn"><a class="pn prev" href="subnets.pro.html" rel="prev"><small>‹ 上一个</small><b>🏘️ 子网划分与公私隔离</b></a><a class="pn next" href="security-groups.pro.html" rel="next"><small>下一个 ›</small><b>🚪 云安全组</b></a></div>
+  </div>
+</aside>
+<div class="cp-main">
+<section class="t chero pro-hero" id="s-hero">
+  <div class="hemo" aria-hidden="true">🧱</div>
+  <div class="chero-txt">
+    <div class="meta"><span class="lvb pro-b">🎓 专业模式</span><span>🔮 高级</span><span>🌐 网络与 API</span><span>⏱ 约 10 分钟</span></div>
+    <h1>网络防火墙与WAF</h1><p class="en">Firewalls</p>
+    <div class="hbtns"><a class="prosw back" href="firewalls.html" data-mode="easy">🧸 回到小白版</a></div>
+  </div>
+</section>
+<div class="strip-wrap">
+  <div class="strip" role="tablist" aria-label="本页卡片"><a class="sc-chip" href="#p-def" data-sec="p-def"><span>📐</span>定义</a><a class="sc-chip" href="#p-how" data-sec="p-how"><span>⚙️</span>原理</a><a class="sc-chip" href="#p-terms" data-sec="p-terms"><span>🔤</span>术语</a><a class="sc-chip" href="#p-code" data-sec="p-code"><span>💻</span>代码</a><a class="sc-chip" href="#p-tab" data-sec="p-tab"><span>📊</span>参数对比</a><a class="sc-chip" href="#p-trade" data-sec="p-trade"><span>⚖️</span>方案取舍</a><a class="sc-chip" href="#p-pit" data-sec="p-pit"><span>🕳️</span>常见坑</a><a class="sc-chip" href="#p-check" data-sec="p-check"><span>☑️</span>检查清单</a><a class="sc-chip" href="#p-int" data-sec="p-int"><span>🎤</span>面试追问</a><a class="sc-chip" href="#p-refs" data-sec="p-refs"><span>🔗</span>延伸阅读</a></div>
+  <button class="modebtn" data-act="mode" aria-pressed="false">☰ 全部展开</button>
+</div>
+<div class="bento cbento pbento">
+<section class="t sec p-def" id="p-def"><header class="th"><span class="tag">📐 01 · 定义</span></header><p class="pdef">防火墙是依据规则允许或阻止网络流量的控制点。传统网络防火墙工作在三、四层，按 IP、端口、协议和连接状态过滤；Web 应用防火墙（WAF）工作在七层，检查 HTTP 请求内容，防御 SQL 注入、XSS 和恶意爬虫等。两者位置与能力不同，常组合成纵深防御。</p></section>
+<section class="t sec p-how" id="p-how"><header class="th"><span class="tag">⚙️ 02 · 原理</span></header><ol class="how"><li><span class="sn">1</span><p>流量到达防火墙后按规则顺序匹配，命中即执行允许、拒绝或记录。</p></li><li><span class="sn">2</span><p>有状态防火墙跟踪连接，已建立连接的回包自动放行，只需写发起方向规则。</p></li><li><span class="sn">3</span><p>默认策略应为拒绝（default deny），只显式放行业务需要的端口与来源。</p></li><li><span class="sn">4</span><p>WAF 解析 HTTP 请求的路径、参数、头部和正文，用签名规则与异常评分识别攻击。</p></li><li><span class="sn">5</span><p>规则命中记录日志，配合告警与观察模式逐步调优，降低误报。</p></li></ol></section>
+<section class="t sec p-terms" id="p-terms"><header class="th"><span class="tag">🔤 03 · 术语</span></header><dl class="terms"><div class="term"><dt>有状态 / 无状态 (Stateful / Stateless)</dt><dd>是否跟踪连接状态并自动放行回包。</dd></div><div class="term"><dt>默认拒绝 (Default Deny)</dt><dd>未明确允许的流量一律阻止。</dd></div><div class="term"><dt>WAF</dt><dd>检查 HTTP 层内容的 Web 应用防火墙。</dd></div><div class="term"><dt>OWASP CRS</dt><dd>开源通用 WAF 规则集，用于 ModSecurity、Coraza 等。</dd></div><div class="term"><dt>出站过滤 (Egress Filtering)</dt><dd>限制内部主机可访问的外部目的地。</dd></div><div class="term"><dt>nftables</dt><dd>Linux 内核新一代包过滤框架，取代 iptables。</dd></div></dl></section>
+<section class="t sec p-code" id="p-code"><header class="th"><span class="tag">💻 04 · 代码</span></header><div class="codebox"><div class="codebar"><span>nftables 主机防火墙</span><em>text</em><button class="ccopy">复制</button></div><pre><code>#!/usr/sbin/nft -f
+# /etc/nftables.conf：默认拒绝入站，只放行必要服务
+flush ruleset
+
+table inet filter {
+  chain input {
+    type filter hook input priority 0; policy drop;
+    ct state established,related accept      # 有状态：放行已建立连接的回包
+    ct state invalid drop
+    iif &quot;lo&quot; accept
+    meta l4proto { icmp, ipv6-icmp } accept  # IPv6 依赖 ICMPv6，不能全禁
+    tcp dport { 80, 443 } accept             # 对外 Web 服务
+    ip saddr 203.0.113.0/24 tcp dport 22 accept   # SSH 只允许办公网段
+    limit rate 5/minute log prefix &quot;nft-drop: &quot;   # 抽样记录被丢弃的包
+  }
+  chain forward {
+    type filter hook forward priority 0; policy drop;
+  }
+  chain output {
+    type filter hook output priority 0; policy accept;
+  }
+}
+# 应用：sudo nft -f /etc/nftables.conf   查看：sudo nft list ruleset</code></pre></div><p class="cnote">默认 drop + 放行已建立连接是有状态防火墙的基本形态；SSH 限定来源网段。</p></section>
+<section class="t sec p-tab" id="p-tab"><header class="th"><span class="tag">📊 05 · 参数对比</span></header><h3 class="tt">防火墙类型对比</h3><div class="tw"><table><thead><tr><th>类型</th><th>工作层</th><th>能防</th><th>防不了</th></tr></thead><tbody><tr><td data-h="类型">网络/主机防火墙</td><td data-h="工作层">L3–L4</td><td data-h="能防">端口暴露、非法来源</td><td data-h="防不了">合法端口上的应用攻击</td></tr><tr><td data-h="类型">云安全组/NACL</td><td data-h="工作层">L3–L4</td><td data-h="能防">实例与子网级访问控制</td><td data-h="防不了">HTTP 内容攻击</td></tr><tr><td data-h="类型">WAF</td><td data-h="工作层">L7（HTTP）</td><td data-h="能防">注入、XSS、恶意爬虫</td><td data-h="防不了">业务逻辑漏洞、越权</td></tr><tr><td data-h="类型">下一代防火墙</td><td data-h="工作层">L3–L7</td><td data-h="能防">应用识别、入侵防御</td><td data-h="防不了">加密流量需解密才能检查</td></tr></tbody></table></div></section>
+<section class="t sec p-trade" id="p-trade"><header class="th"><span class="tag">⚖️ 06 · 方案取舍</span></header><div class="trades"><div class="trd"><h4>云托管 WAF</h4><p><b class="k-p">优点</b>规则托管更新，可抗大流量</p><p><b class="k-c">代价</b>按请求计费，误报需调优</p><p><b class="k-w">适用</b>面向公网的 Web/API</p></div><div class="trd"><h4>自建 WAF（Coraza/ModSecurity）</h4><p><b class="k-p">优点</b>规则完全可控，无请求费</p><p><b class="k-c">代价</b>运维与调优成本高</p><p><b class="k-w">适用</b>私有化部署或合规要求</p></div><div class="trd"><h4>仅网络层防火墙</h4><p><b class="k-p">优点</b>简单、性能好</p><p><b class="k-c">代价</b>看不到应用层攻击</p><p><b class="k-w">适用</b>内部非 HTTP 服务</p></div></div></section>
+<section class="t sec p-pit" id="p-pit"><header class="th"><span class="tag">🕳️ 07 · 常见坑</span></header><ul class="pits"><li><p class="bad"><b>✗</b>上了 WAF 就不修代码里的注入漏洞</p><p class="fix"><b>✓</b>WAF 只是缓解层，根因仍要用参数化查询等修复</p></li><li><p class="bad"><b>✗</b>WAF 直接开拦截模式，误伤正常用户</p><p class="fix"><b>✓</b>先观察模式运行，分析日志后再启用拦截</p></li><li><p class="bad"><b>✗</b>源站 IP 暴露，攻击者绕过 CDN/WAF 直连</p><p class="fix"><b>✓</b>源站只允许 CDN/WAF 出口 IP 或私网访问</p></li><li><p class="bad"><b>✗</b>只管入站不管出站</p><p class="fix"><b>✓</b>限制服务器出站目的地，阻断回连与数据外泄</p></li></ul></section>
+<section class="t sec p-check" id="p-check"><header class="th"><span class="tag">☑️ 08 · 检查清单</span></header><ul class="checks"><li><label><input type="checkbox"><span>入站默认拒绝，只放行必需端口</span></label></li><li><label><input type="checkbox"><span>管理端口限定来源或走零信任访问</span></label></li><li><label><input type="checkbox"><span>公网 Web 入口启用 WAF</span></label></li><li><label><input type="checkbox"><span>源站不可绕过 WAF 直接访问</span></label></li><li><label><input type="checkbox"><span>出站流量有限制策略</span></label></li><li><label><input type="checkbox"><span>规则变更有评审与日志</span></label></li></ul></section>
+<section class="t sec p-int" id="p-int"><header class="th"><span class="tag">🎤 09 · 面试追问</span></header><div class="ivs"><details class="iv"><summary>有状态和无状态防火墙有什么区别？</summary><p>有状态防火墙维护连接表，允许出站请求后回包自动放行，规则简洁；无状态防火墙逐包独立判断，必须显式为双向流量写规则（包括临时端口范围）。AWS 安全组是有状态的，NACL 是无状态的。</p></details><details class="iv"><summary>WAF 的检测原理和局限？</summary><p>基于签名与规则匹配已知攻击模式，配合异常评分、频率限制和机器人识别。局限：无法理解业务逻辑，防不了越权与逻辑漏洞；编码变形可能绕过；误报需持续调优。它是补充而非替代安全编码。</p></details><details class="iv"><summary>如何防止攻击者绕过 CDN 直接打源站？</summary><p>源站安全组只允许 CDN/WAF 的出口 IP 段；或使用私网回源、隧道（如 Cloudflare Tunnel）；验证 CDN 注入的密钥头或 mTLS；并确保历史 DNS 记录与证书透明度日志不暴露源站 IP。</p></details></div></section>
+<section class="t sec p-refs" id="p-refs"><header class="th"><span class="tag">🔗 10 · 延伸阅读</span></header><ul class="refs"><li><a href="https://wiki.nftables.org/wiki-nftables/index.php/Main_Page" target="_blank" rel="noopener"><b>nftables wiki</b><small>wiki.nftables.org ↗</small></a></li><li><a href="https://coreruleset.org/" target="_blank" rel="noopener"><b>OWASP Core Rule Set</b><small>coreruleset.org ↗</small></a></li><li><a href="https://csrc.nist.gov/pubs/sp/800/41/r1/final" target="_blank" rel="noopener"><b>NIST SP 800-41 Rev.1: Firewalls and Firewall Policy</b><small>csrc.nist.gov ↗</small></a></li><li><a href="https://developers.cloudflare.com/waf/" target="_blank" rel="noopener"><b>Cloudflare WAF 文档</b><small>developers.cloudflare.com ↗</small></a></li></ul></section>
+<section class="t fin">
+  <img src="../assets/mascot.webp" alt="" width="640" height="640" class="fin-m">
+  <div class="fin-txt"><h2 class="fin-h">专业版也啃完了</h2><p class="muted">打卡和小白版共用一个进度。</p>
+  <button class="btn pri done">🙋 我学会了！</button></div>
+  <nav class="pnav"><a class="pn prev" href="subnets.pro.html" rel="prev"><small>‹ 上一个</small><b>🏘️ 子网划分与公私隔离</b></a><a class="pn next" href="security-groups.pro.html" rel="next"><small>下一个 ›</small><b>🚪 云安全组</b></a></nav>
+</section>
+</div>
+<div class="cardhint" aria-live="polite"><span class="ch-t"></span><span class="dots" aria-hidden="true"></span></div>
+</div>
+</div>
+<nav class="bbar" aria-label="翻卡">
+  <button class="bb prevc" data-act="prevc">‹ 上一张</button>
+  <button class="bb done" data-compact="1">🙋 我学会了</button>
+  <button class="bb nextc" data-act="nextc">下一张 ›</button>
+</nav>
+</main>
+<footer class="foot">🧭 AI 造物指南 · by Q1f730</footer>
+<div id="scrim" hidden></div>
+<div id="setp" class="sheet" hidden role="dialog" aria-modal="true" aria-label="阅读设置">
+  <div class="grab"></div>
+  <div class="sh-h"><b>⚙️ 阅读设置</b><button class="x" data-act="close" aria-label="关闭">✕</button></div>
+  <div class="srow"><span>🔠 字号</span><div class="fsz"><button data-act="font-" aria-label="字变小">A-</button><em id="fsv">18</em><button data-act="font+" aria-label="字变大">A+</button></div></div>
+  <button class="srow tg" data-act="calm"><span>🫧 宽松阅读<small>字距、行距更大</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="focus"><span>🔦 专注模式<small>只亮当前这一块</small></span><i class="sw2"></i></button>
+  <button class="srow tg" data-act="motion"><span>⏸️ 暂停动画<small>动画定格，不再晃</small></span><i class="sw2"></i></button>
+</div>
+<div id="sov" class="sov" hidden role="dialog" aria-modal="true" aria-label="搜索">
+  <div class="sov-in">
+    <div class="sbox"><span>🔎</span><input id="sq" type="search" placeholder="搜中文或英文，比如 token、数据库" autocomplete="off" aria-label="搜索概念" aria-controls="sres"><button class="x" data-act="close">取消</button></div>
+    <ul id="sres" class="sres" role="listbox"></ul>
+    <p class="shint">↑ ↓ 选择 · 回车打开 · Esc 关闭</p>
+  </div>
+</div>
+<script src="../assets/index.js"></script>
+<script src="../assets/app.js"></script>
+</body></html>

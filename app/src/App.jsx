@@ -21,6 +21,7 @@ const Graph = lazy(() => import('./pages/Graph'))
 const SearchPage = lazy(() => import('./pages/SearchPage'))
 const Plan = lazy(() => import('./pages/Plan'))
 const Projects = lazy(() => import('./pages/Projects'))
+const Lab = lazy(() => import('./pages/Lab'))
 
 const Ctx = createContext(null)
 export const useApp = () => useContext(Ctx)
@@ -38,6 +39,7 @@ function Shell() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const nav = useNavigate()
   const loc = useLocation()
+  const reduce = useReducedMotion() || prefs.still
 
   // 阅读设置 / 主题 → <html>/<body>
   useEffect(() => {
@@ -73,7 +75,7 @@ function Shell() {
   const path = loc.pathname
   const active = path === '/' ? 'home' : path.startsWith('/l/') ? path.slice(3, 5) : path.startsWith('/glossary') ? 'glossary'
     : path.startsWith('/graph') ? 'graph' : path.startsWith('/search') ? 'search'
-    : path.startsWith('/plan') ? 'plan' : path.startsWith('/projects') ? 'projects'
+    : path.startsWith('/plan') ? 'plan' : path.startsWith('/projects') ? 'projects' : path.startsWith('/lab') ? 'lab'
     : path.startsWith('/c/') && idx ? (idx.levelBy[idx.bySlug[path.split('/')[2]]?.level]?.cls || '') : ''
   const isConcept = path.startsWith('/c/')
   const isGraph = path.startsWith('/graph')
@@ -114,6 +116,7 @@ function Shell() {
         <main id="main" tabIndex={-1} className="outline-none">
           {error ? <LoadError /> : !idx ? <PageSkeleton /> : (
             <Suspense fallback={<PageSkeleton />}>
+              <motion.div key={loc.pathname} initial={reduce ? false : { opacity: 0, y: 7 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduce ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] }}>
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/l/:lv" element={<Level />} />
@@ -125,8 +128,10 @@ function Shell() {
                 <Route path="/plan" element={<Plan />} />
                 <Route path="/projects" element={<Projects />} />
                 <Route path="/projects/:id" element={<Projects />} />
+                <Route path="/lab" element={<Lab />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </motion.div>
             </Suspense>
           )}
         </main>

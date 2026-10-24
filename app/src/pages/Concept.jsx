@@ -5,10 +5,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { ChevronLeft, ChevronRight, Volume2, Square, Rows3, GalleryHorizontal, Check } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Volume2, Square, Rows3, GalleryHorizontal, Check, FlaskConical, ArrowRight } from 'lucide-react'
 import { useApp } from '../App'
 import { useConcept, prefetchConcept } from '../lib/data'
 import { setLast } from '../lib/store'
+import { labForConcept } from '../lib/lab-engine'
 import { burst, speak, speechState, onSpeech, canSpeak } from '../lib/fx'
 import { useMedia } from '../lib/useMedia'
 import { EASY_SECS, PRO_SECS, EasySection, ProSection, sectionText } from '../components/Sections'
@@ -299,6 +300,9 @@ function ConceptView({ x, mode }) {
         {rail}
         <div className="min-w-0">
           {hero}
+          {labForConcept(x.slug) && <Link to={`/lab?experiment=${labForConcept(x.slug)}`} className="concept-lab-entry">
+            <span><FlaskConical size={20} /></span><span><b>把这个概念亲手跑一遍</b><small>调参数、看变化，去动手实验室试试</small></span><ArrowRight size={18} />
+          </Link>}
           {/* 手机：章节条 + 全部展开 */}
           <div className="lg:hidden sticky top-[58px] z-30 -mx-3.5 px-3.5 py-2 mt-2 flex gap-2 items-center bg-[var(--bg)]/92 backdrop-blur-md">
             <div className="flex-1 min-w-0 flex gap-1.5 overflow-x-auto no-scrollbar [mask-image:linear-gradient(90deg,#000_85%,transparent)] pr-6" role="tablist" aria-label="本页卡片">

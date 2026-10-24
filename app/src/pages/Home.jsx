@@ -1,7 +1,7 @@
 // 首页：不放任何概念列表。英雄区 + 搜索、继续学习、四个级别入口（真实进度）、AI 帮我规划 + 知识图谱入口、今日推荐、总进度、词汇表入口、怎么用
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Sparkles, FolderKanban, Waypoints } from 'lucide-react'
+import { ArrowRight, Sparkles, FolderKanban, Waypoints, FlaskConical, Zap, Layers3, LockKeyhole } from 'lucide-react'
 import { useApp } from '../App'
 import { getLast, lsGet } from '../lib/store'
 import { todayPick } from '../lib/data'
@@ -100,6 +100,7 @@ export default function Home() {
       </section>
 
       {/* AI 帮我规划 + 知识图谱（两个新功能并排一行：桌面 8 + 4；手机 AI 卡紧跟级别，图谱卡放词汇表后面） */}
+      <LabCard />
       <AiPlanCard />
       <GraphCard total={total} />
 
@@ -148,6 +149,19 @@ export default function Home() {
       </section>
     </div>
   )
+}
+
+function LabCard() {
+  const records = lsGet('labs', {})
+  const count = ['cache', 'queue', 'race'].filter(id => records?.[id]).length
+  return <section className="home-lab-card card col-span-2 lg:col-span-12 p-5 lg:px-8 lg:py-6 order-2 lg:order-none flex flex-wrap items-center gap-4 lg:gap-7 bg-[linear-gradient(110deg,var(--lilac),var(--surface)_55%,var(--pist))]" aria-labelledby="h-lab">
+    <div className="flex-1 min-w-[170px]"><span className="chip-tag !bg-[var(--surface)]/80"><FlaskConical size={15} />动手实验室 {count > 0 && <span>· {count}/3 已通关</span>}</span>
+      <h2 id="h-lab" className="text-[22px] lg:text-[28px] font-black mt-3 mb-2">不只看懂，还能亲手试。</h2>
+      <p className="m-0 text-[14px] lg:text-[15px] text-[var(--ink2)]">玩缓存、调队列、解开并发谜题。每一步都有反馈。</p>
+    </div>
+    <div className="home-lab-art" aria-hidden="true"><span><Zap size={23} /></span><span><Layers3 size={23} /></span><span><LockKeyhole size={23} /></span></div>
+    <Link to="/lab" data-testid="home-lab-card" className="btn btn-pri w-full sm:w-auto">开始动手 <ArrowRight size={18} /></Link>
+  </section>
 }
 
 function AiPlanCard() {

@@ -9,7 +9,7 @@
 //  - 底部加入 Rewamp ThemeToggle；提示文字全部中文；颜色改用本站变量
 import { useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { Settings, Search, Dices, Waypoints, Sparkles, FolderKanban } from 'lucide-react'
+import { Settings, Search, Dices, Waypoints, Sparkles, FolderKanban, FlaskConical } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 import mascot from '../../assets/mascot-sm.webp'
 
@@ -87,6 +87,11 @@ function AnimatedFolderIcon({ isHovered, isActive }) {
     </motion.div>
   )
 }
+function AnimatedLabIcon({ isHovered, isActive }) {
+  return <motion.div animate={isHovered ? { rotate: [0, -12, 8, 0], y: [0, -2, 0] } : { rotate: 0, y: 0 }} transition={{ duration: 0.45 }}>
+    <FlaskConical size={20} strokeWidth={1.9} className={isActive ? 'text-[var(--ink)]' : 'text-[var(--ink2)]'} />
+  </motion.div>
+}
 function EmojiIcon({ emoji, isHovered }) {
   return <motion.span className="emo text-[20px]" animate={isHovered ? { scale: 1.18, rotate: -6 } : { scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 18 }}>{emoji}</motion.span>
 }
@@ -110,8 +115,8 @@ function IconCell({ item, active, hovered, setHovered, onAct, reduce }) {
   const isActive = active === item.id
   const isHovered = hovered === item.id && !reduce
   return (
-    <div className="relative w-full h-[clamp(40px,5.6vh,52px)] flex items-center justify-center" onMouseEnter={() => setHovered(item.id)} onMouseLeave={() => setHovered(null)}>
-      <button type="button" onClick={() => onAct(item)} aria-label={item.label} aria-current={isActive ? 'page' : undefined}
+    <div className="relative w-full h-[clamp(44px,5.1vh,48px)] flex items-center justify-center" onMouseEnter={() => setHovered(item.id)} onMouseLeave={() => setHovered(null)}>
+      <button type="button" onClick={() => onAct(item)} aria-label={item.label} title={item.label} aria-current={isActive ? 'page' : undefined}
         onFocus={() => setHovered(item.id)} onBlur={() => setHovered(null)}
         className={`${item.cls || ''} relative w-11 h-11 flex items-center justify-center rounded-xl cursor-pointer`}>
         {isActive && (
@@ -143,6 +148,7 @@ export default function DockSidebar({ active, levels, onNav, onSearch, onRandom,
     { id: 'projects', label: '我的项目', icon: AnimatedFolderIcon, cls: 'l3', run: () => onNav('/projects') },
   ]
   const tools = [
+    { id: 'lab', label: '动手实验室', icon: AnimatedLabIcon, cls: 'l3', run: () => onNav('/lab') },
     { id: 'glossary', label: '词汇表', icon: AnimatedDocumentsIcon, cls: 'l2', run: () => onNav('/glossary') },
     { id: 'graph', label: '知识图谱', icon: AnimatedGraphIcon, cls: 'l2', run: () => onNav('/graph') },
     { id: 'random', label: '随机学一个没学过的', icon: AnimatedDiceIcon, cls: 'l2', run: onRandom },
@@ -152,7 +158,7 @@ export default function DockSidebar({ active, levels, onNav, onSearch, onRandom,
     <motion.aside initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut' }}
       aria-label="主导航"
       className="hidden lg:flex fixed z-40 left-4 top-4 w-[68px] max-h-[calc(100vh-32px)] rounded-2xl shadow-xl border border-[var(--line)] bg-[var(--surface)] flex-col overflow-visible">
-      <div>
+      <div className="dock-scroll-area">
         <div className="flex items-center justify-center pt-3 pb-2.5 border-b border-[var(--line)]">
           <button type="button" onClick={() => onNav('/')} aria-label="AI 造物指南 首页" title="AI 造物指南"
             className="w-11 h-11 rounded-xl overflow-hidden shadow-xs hover:scale-105 transition-transform">

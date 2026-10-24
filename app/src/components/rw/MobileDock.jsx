@@ -10,13 +10,13 @@
 //    （/projects 仍高亮「AI 规划」，因为项目由规划生成）；搜索不进底栏，因为顶栏已有放大镜
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { Home, BookOpen, Library, Dices, Waypoints, Sparkles, LayoutGrid, FolderKanban, Settings2 } from 'lucide-react'
+import { Home, BookOpen, Library, Dices, Waypoints, Sparkles, LayoutGrid, FolderKanban, Settings2, FlaskConical } from 'lucide-react'
 
 export default function MobileDock({ active, onNav, onRandom, onSettings, learnTo, still }) {
   const reduce = useReducedMotion() || still
   const [more, setMore] = useState(false)
   const wrap = useRef(null)
-  const moreIds = ['glossary']
+  const moreIds = ['glossary', 'lab']
   useEffect(() => { setMore(false) }, [active])
   useEffect(() => {
     if (!more) return
@@ -35,6 +35,7 @@ export default function MobileDock({ active, onNav, onRandom, onSettings, learnT
     { id: 'more', label: '更多', icon: LayoutGrid, run: () => setMore(m => !m) },
   ]
   const extra = [
+    { id: 'lab', label: '动手实验室', icon: FlaskConical, run: close(() => onNav('/lab')) },
     { id: 'projects', label: '我的项目', icon: FolderKanban, run: close(() => onNav('/projects')) },
     { id: 'glossary', label: '词汇表', icon: Library, run: close(() => onNav('/glossary')) },
     { id: 'random', label: '随机一个', icon: Dices, run: close(onRandom) },

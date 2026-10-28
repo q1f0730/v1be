@@ -1,7 +1,6 @@
-// 学习路线规划：系统提示、JSON Schema、输出校验。worker/index.js 和本地脚本 worker/scripts/try-mercury.mjs 共用同一份。
+// 学习路线规划：系统提示、JSON Schema、输入与输出校验（纯前端直连用户自配的 OpenAI 兼容接口）
 import { CATALOG_TEXT, CATS_TEXT, LEVEL_OF } from './catalog.js'
 
-export const MODEL = 'mercury-3'
 export const LIMITS = {
   project: 500, adjust: 200,
   name: 30, goal: 100, title: 24, stageGoal: 120, task: 300, prompt: 900, doneWhen: 160,
@@ -23,7 +22,8 @@ export const SYSTEM_PROMPT = `你是「AI 造物指南」网站的学习路线�
 8. 根据访客的水平和每周时间调整阶段数量和难度：完全不会的人阶段要更小、更具体；时间少就少几个阶段。
 9. name 是给项目起的简短中文名（不超过 15 个字），goal 是一句话说清做完能得到什么。
 10. 如果给了「当前路线」和「调整要求」，在当前路线基础上按要求修改并输出完整的新路线（没被要求改的部分尽量保留）。
-11. 只输出符合 JSON Schema 的 JSON，不要任何别的文字。
+11. 只输出一个合法的 JSON 对象，不要包含 Markdown 代码块，不要任何别的文字。JSON 结构必须严格如下：
+{"name":"项目简短中文名","goal":"一句话目标","stages":[{"title":"阶段名","goal":"本阶段目标","concepts":["slug-1","slug-2"],"task":"动手任务","prompt":"可直接复制给 AI 编程工具的开发指令","done_when":"完成标准"}]}
 
 级别：1=初级（小白起步） 2=中级（能做出东西） 3=高级（做得稳、做得安全） 4=进阶（系统指挥官）
 分类：${CATS_TEXT}
@@ -58,7 +58,7 @@ export const ROUTE_SCHEMA = {
 }
 
 const clip = (s, n) => {
-  s = String(s ?? '').replace(/\u0000/g, '').trim()
+  s = String(s ?? '').split('\0').join('').trim()
   return [...s].length > n ? [...s].slice(0, n - 1).join('') + '…' : s
 }
 export const textLen = s => [...String(s ?? '')].length
@@ -90,9 +90,9 @@ export function buildMessages({ project, level, hours, adjust, current }) {
   if (current) {
     lines.push('', '当前路线（JSON）：', JSON.stringify(current))
     lines.push('', `调整要求：${adjust || '请整体优化一下这条路线'}`)
-    lines.push('请输出调整后的完整路线。')
+    lines.push('请输出调整后的完整路线（纯 JSON）。')
   } else {
-    lines.push('', '请给我设计学习路线。')
+    lines.push('', '请给我设计学习路线（纯 JSON）。')
   }
   return [
     { role: 'system', content: SYSTEM_PROMPT },
@@ -100,24 +100,22 @@ export function buildMessages({ project, level, hours, adjust, current }) {
   ]
 }
 
-export function requestBody(input, { effort = 'low', maxTokens = 8000 } = {}) {
-  return {
-    model: MODEL,
-    messages: buildMessages(input),
-    reasoning_effort: effort,
-    max_completion_tokens: maxTokens,
-    temperature: 0.6,
-    response_format: { type: 'json_schema', json_schema: { name: 'learning_route', strict: true, schema: ROUTE_SCHEMA } },
-  }
-}
-
 // 把模型输出（字符串或对象）变成干净的路线；丢掉不存在/重复的 slug、截断超长字段。
 // 返回 { ok, route, dropped:[slug] } 或 { ok:false, error }
 export function validateRoute(raw) {
   let r = raw
   if (typeof r === 'string') {
-    const s = r.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
-    try { r = JSON.parse(s) } catch { return { ok: false, error: 'not_json' } }
+    let s = r.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim()
+    try {
+      r = JSON.parse(s)
+    } catch {
+      const i = s.indexOf('{'), j = s.lastIndexOf('}')
+      if (i >= 0 && j > i) {
+        try { r = JSON.parse(s.slice(i, j + 1)) } catch { return { ok: false, error: 'not_json' } }
+      } else {
+        return { ok: false, error: 'not_json' }
+      }
+    }
   }
   if (!r || typeof r !== 'object' || !Array.isArray(r.stages)) return { ok: false, error: 'bad_shape' }
   const seen = new Set(), dropped = []

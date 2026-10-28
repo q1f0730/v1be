@@ -1,5 +1,5 @@
 import json,re
-orig=json.load(open('orig198.json'))
+orig=json.load(open('orig198.json', encoding='utf-8'))
 catmap={'sec':'sec','db':'db','dist':'dist','cache':'cache','net':'net','sre':'sre','devops':'devops'}
 L1=[12,17,18,29,70,116,118,195]
 L2=[1,2,3,4,6,13,15,19,21,22,24,25,26,30,33,36,41,43,44,46,48,56,57,59,60,61,119,127,128,130,131,168,169,185,186,188,196,198,141,152,100,104,114]
@@ -140,6 +140,6 @@ for i,c in enumerate(out):
     s=slugify(c['en'])
     while s in seen: s+='-2'
     seen.add(s); c['slug']=s; c['no']=i+1
-json.dump(out,open('master.json','w'),ensure_ascii=False,indent=1)
+json.dump(out,open('master.json','w',encoding='utf-8'),ensure_ascii=False,indent=1)
 from collections import Counter
 print(len(out),Counter(c['level'] for c in out))

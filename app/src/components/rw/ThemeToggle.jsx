@@ -1,6 +1,6 @@
 // 来自 Rewamp UI: src/components/ui/ThemeToggle.jsx（registry: theme-toggle）
 // 改动：中文无障碍标签；受控用法由 useTheme() 驱动；外层加 44px 点击热区（手机可点）。
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Sun, Moon } from 'lucide-react';
 

@@ -1,10 +1,13 @@
-// #/plan：AI 帮我规划。访客描述想做的项目 → worker(/plan, mercury-3) → 结构化学习路线 → 「创建这个项目」存进 aig:projects
+// #/plan：AI 帮我规划。访客描述想做的项目 → 调用用户在浏览器自配的 OpenAI 兼容接口 → 结构化学习路线 → 「创建这个项目」存进 aig:projects
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Sparkles, RotateCcw, FolderPlus, PencilLine, FolderKanban } from 'lucide-react'
+import { Sparkles, RotateCcw, FolderPlus, PencilLine, FolderKanban, Settings2 } from 'lucide-react'
 import { useApp } from '../App'
-import { requestPlan, errorText, canRetry, createProject, useProjects, LEVEL_OPTS, HOURS_OPTS, EXAMPLES, MAX_PROJECT } from '../lib/planner'
-import { StageCard, PlanLoading, ErrorCard } from '../components/plan/RouteParts'
+import {
+  requestPlan, errorText, canRetry, needsAiSetup, createProject, useProjects,
+  useAiConfig, isAiConfigured, LEVEL_OPTS, HOURS_OPTS, EXAMPLES, MAX_PROJECT,
+} from '../lib/planner'
+import { StageCard, PlanLoading, ErrorCard, AiConfigDialog } from '../components/plan/RouteParts'
 
 const DRAFT = 'aig:plan-draft'
 const loadDraft = () => { try { return JSON.parse(sessionStorage.getItem(DRAFT)) || {} } catch { return {} } }
@@ -13,11 +16,15 @@ export default function Plan() {
   const { idx, done, prefs } = useApp()
   const nav = useNavigate()
   const projects = useProjects()
+  const aiCfg = useAiConfig()
+  const configured = isAiConfigured(aiCfg)
   const draft = useRef(loadDraft()).current
   const [text, setText] = useState(draft.text || '')
   const [level, setLevel] = useState(draft.level || null)
   const [hours, setHours] = useState(draft.hours || null)
   const [state, setState] = useState(draft.result ? { st: 'done', result: draft.result, req: draft.req } : { st: 'idle' })
+  const [cfgOpen, setCfgOpen] = useState(false)
+  const pendingReqRef = useRef(null)
   const abortRef = useRef(null)
   const resultRef = useRef(null)
   const taRef = useRef(null)
@@ -31,8 +38,13 @@ export default function Plan() {
   const tooLong = len > MAX_PROJECT
   const busy = state.st === 'loading'
 
-  async function generate(req = { project: text.trim(), level, hours }) {
+  async function generate(req = { project: text.trim(), level, hours }, skipCfgCheck = false) {
     if (!req.project || [...req.project].length > MAX_PROJECT || busy) return
+    if (!skipCfgCheck && !isAiConfigured()) {
+      pendingReqRef.current = req
+      setCfgOpen(true)
+      return
+    }
     abortRef.current?.abort()
     const ctl = new AbortController(); abortRef.current = ctl
     setState({ st: 'loading', req })
@@ -63,12 +75,20 @@ export default function Plan() {
         <div className="orbs" aria-hidden="true"><i /><i /><i /></div>
         <div className="relative">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="chip-tag !bg-[var(--surface)]/80 backdrop-blur"><span className="emo">✨</span>AI 帮我规划 · Mercury 3</span>
-            {projects.length > 0 && (
-              <Link to="/projects" className="inline-flex items-center gap-1.5 min-h-[40px] px-3.5 rounded-full bg-[var(--surface)]/85 text-[14px] font-bold no-underline hover:bg-[var(--surface)]" data-testid="to-projects">
-                <FolderKanban size={16} />我的项目 {projects.length}
-              </Link>
-            )}
+            <span className="chip-tag !bg-[var(--surface)]/80 backdrop-blur">
+              <span className="emo">✨</span>AI 帮我规划{configured ? ` · ${aiCfg.model}` : ' · 需自配 AI'}
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <button type="button" onClick={() => { pendingReqRef.current = null; setCfgOpen(true) }} data-testid="open-ai-config"
+                className={`inline-flex items-center gap-1.5 min-h-[40px] px-3.5 rounded-full text-[14px] font-bold transition-colors ${configured ? 'bg-[var(--surface)]/85 hover:bg-[var(--surface)] text-[var(--ink)]' : 'bg-[var(--ink)] text-[var(--bg)]'}`}>
+                <Settings2 size={16} />{configured ? 'AI 设置' : '配置 AI 接口'}
+              </button>
+              {projects.length > 0 && (
+                <Link to="/projects" className="inline-flex items-center gap-1.5 min-h-[40px] px-3.5 rounded-full bg-[var(--surface)]/85 text-[14px] font-bold no-underline hover:bg-[var(--surface)]" data-testid="to-projects">
+                  <FolderKanban size={16} />我的项目 {projects.length}
+                </Link>
+              )}
+            </div>
           </div>
           <h1 id="h-plan" className="text-[30px] lg:text-[46px] leading-[1.12] font-black mt-4 mb-2">你想做个什么？</h1>
           <p className="text-[15px] lg:text-[18px] text-[var(--ink2)] m-0 mb-4 lg:mb-5">用大白话说说你的项目，AI 帮你排好要学的概念、每一步做什么、直接能复制给 AI 编程工具的指令。</p>
@@ -121,7 +141,11 @@ export default function Plan() {
               className="btn btn-pri !min-h-[54px] !px-8 !text-[17px] disabled:opacity-45 disabled:cursor-not-allowed w-full sm:w-auto">
               <Sparkles size={19} />{busy ? '正在生成…' : route ? '重新生成路线' : '生成路线'}
             </button>
-            <small className="text-[13px] text-[var(--ink3)] leading-relaxed">AI 只会从站内 {idx.items.length} 个概念里挑；路线只存在你的浏览器里。</small>
+            <small className="text-[13px] text-[var(--ink3)] leading-relaxed">
+              {configured
+                ? `当前模型：${aiCfg.model} · AI 只从站内 ${idx.items.length} 个概念里挑，密钥与路线只存在你的浏览器里。`
+                : `首次使用请先配置你自己的 AI 接口密钥（DeepSeek / OpenAI / 硅基流动 / 本地 Ollama 等），只存在你的浏览器里。`}
+            </small>
           </div>
         </div>
       </section>
@@ -129,7 +153,14 @@ export default function Plan() {
       {/* 结果区 */}
       <div ref={resultRef} className="scroll-mt-20 lg:scroll-mt-6 grid gap-4 lg:gap-5">
         {state.st === 'loading' && <PlanLoading still={prefs.still} />}
-        {state.st === 'error' && <ErrorCard message={errorText(state.error)} retryable={canRetry(state.error)} onRetry={() => generate(state.req)} />}
+        {state.st === 'error' && (
+          <ErrorCard
+            message={errorText(state.error)}
+            retryable={canRetry(state.error)}
+            onRetry={() => generate(state.req)}
+            onConfig={needsAiSetup(state.error) ? () => { pendingReqRef.current = state.req; setCfgOpen(true) } : undefined}
+          />
+        )}
         {route && (
           <>
             <section className="card p-5 lg:p-7 bg-[linear-gradient(150deg,var(--pist),var(--surface)_70%)]" data-testid="plan-result" aria-labelledby="h-route">
@@ -146,7 +177,6 @@ export default function Plan() {
                 <button type="button" className="btn btn-soft !min-h-[52px]" onClick={() => generate(state.req)}><RotateCcw size={17} />重新生成</button>
                 <button type="button" className="btn btn-soft !min-h-[52px]" onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); setTimeout(() => taRef.current?.focus(), 300) }}><PencilLine size={17} />改描述</button>
               </div>
-              {state.remaining != null && <p className="m-0 mt-3 text-[13px] text-[var(--ink3)]">今天还能生成 {state.remaining} 次。</p>}
             </section>
             {route.stages.map((s, i) => <StageCard key={i} stage={s} i={i} total={route.stages.length} idx={idx} done={done} />)}
             <div className="flex justify-center">
@@ -155,6 +185,17 @@ export default function Plan() {
           </>
         )}
       </div>
+
+      <AiConfigDialog
+        open={cfgOpen}
+        onClose={() => { pendingReqRef.current = null; setCfgOpen(false) }}
+        onSaved={() => {
+          setCfgOpen(false)
+          const req = pendingReqRef.current
+          pendingReqRef.current = null
+          if (req) generate(req, true)
+        }}
+      />
     </div>
   )
 }

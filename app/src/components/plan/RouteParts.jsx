@@ -1,9 +1,10 @@
-// AI 规划 / 我的项目 共用的小部件：概念卡、阶段卡、复制按钮、确认弹窗、生成中动画
+// AI 规划 / 我的项目 共用的小部件：概念卡、阶段卡、复制按钮、确认弹窗、AI 配置弹窗、生成中动画
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { Check, Copy, Hammer, Target, Flag, X } from 'lucide-react'
+import { Check, Copy, Hammer, Target, Flag, X, Settings2, Eye, EyeOff } from 'lucide-react'
 import { copyText } from '../../lib/fx'
+import { AI_PRESETS, useAiConfig, saveAiConfig, isLocalEndpoint } from '../../lib/planner'
 import Skeleton from '../rw/Skeleton'
 
 export function ConceptCard({ x, lv, learned, order }) {
@@ -129,6 +130,114 @@ export function ConfirmDialog({ open, title, body, okText = '确定', danger, on
   )
 }
 
+export function AiConfigDialog({ open, onClose, onSaved }) {
+  const cfg = useAiConfig()
+  const [baseUrl, setBaseUrl] = useState(cfg.baseUrl)
+  const [apiKey, setApiKey] = useState(cfg.apiKey)
+  const [model, setModel] = useState(cfg.model)
+  const [showKey, setShowKey] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      setBaseUrl(cfg.baseUrl)
+      setApiKey(cfg.apiKey)
+      setModel(cfg.model)
+      setShowKey(false)
+    }
+  }, [open, cfg.baseUrl, cfg.apiKey, cfg.model])
+
+  useEffect(() => {
+    if (!open) return
+    const k = e => { if (e.key === 'Escape') onClose() }
+    addEventListener('keydown', k)
+    return () => removeEventListener('keydown', k)
+  }, [open, onClose])
+
+  if (!open) return null
+
+  const local = isLocalEndpoint(baseUrl)
+  const canSave = !!baseUrl.trim() && !!model.trim() && (local || !!apiKey.trim())
+
+  function handleSave(e) {
+    e.preventDefault()
+    if (!canSave) return
+    const saved = saveAiConfig({ baseUrl, apiKey, model })
+    onSaved ? onSaved(saved) : onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 z-[120] grid place-items-end sm:place-items-center bg-black/40 p-3" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <form onSubmit={handleSave} role="dialog" aria-modal="true" aria-label="配置 AI 接口" data-testid="ai-config-dialog"
+        className="w-full max-w-[540px] max-h-[90vh] overflow-y-auto bg-[var(--surface)] rounded-[24px] shadow-[var(--sh2)] border border-[var(--line)] p-5 grid gap-3.5"
+        style={{ marginBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <b className="text-[19px] flex items-center gap-2"><Settings2 size={19} />配置你自己的 AI 接口</b>
+            <p className="text-[13px] text-[var(--ink2)] m-0 mt-1 leading-relaxed">
+              支持任何 OpenAI 兼容接口（`/v1/chat/completions`）。密钥只存在你当前浏览器的 `localStorage` 里，不会上传到任何第三方服务器。
+            </p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="关闭" className="w-10 h-10 -mt-1 -mr-1 grid place-items-center rounded-full bg-[var(--surface2)] flex-none"><X size={17} /></button>
+        </div>
+
+        <div>
+          <span className="block text-[13px] font-bold text-[var(--ink2)] mb-1.5">快速选择常见服务商：</span>
+          <div className="flex flex-wrap gap-1.5">
+            {AI_PRESETS.map(p => {
+              const active = baseUrl.trim().replace(/\/+$/, '') === p.baseUrl
+              return (
+                <button key={p.id} type="button"
+                  onClick={() => { setBaseUrl(p.baseUrl); setModel(p.model) }}
+                  className={`min-h-[34px] px-3 rounded-full text-[13px] font-bold border transition-colors ${active ? 'bg-[var(--ink)] text-[var(--bg)] border-[var(--ink)]' : 'bg-[var(--surface2)] border-[var(--line)] hover:border-[var(--ink3)]'}`}>
+                  {p.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <label className="grid gap-1">
+          <span className="text-[14px] font-bold">API 地址 (Base URL)</span>
+          <input type="url" required value={baseUrl} onChange={e => setBaseUrl(e.target.value)} data-testid="ai-base-url"
+            placeholder="https://api.deepseek.com/v1"
+            className="h-11 px-3.5 rounded-xl bg-[var(--surface2)] border-2 border-transparent focus:border-[var(--blue)] outline-none text-[15px] font-mono" />
+        </label>
+
+        <label className="grid gap-1">
+          <span className="text-[14px] font-bold">API Key {local && <span className="font-normal text-[var(--ink3)]">（本地接口可留空）</span>}</span>
+          <div className="relative flex items-center">
+            <input type={showKey ? 'text' : 'password'} value={apiKey} onChange={e => setApiKey(e.target.value)} data-testid="ai-api-key"
+              placeholder={local ? '本地 Ollama 可不填' : 'sk-...'}
+              className="w-full h-11 pl-3.5 pr-11 rounded-xl bg-[var(--surface2)] border-2 border-transparent focus:border-[var(--blue)] outline-none text-[15px] font-mono" />
+            <button type="button" onClick={() => setShowKey(s => !s)} aria-label={showKey ? '隐藏密钥' : '显示密钥'}
+              className="absolute right-2 w-8 h-8 grid place-items-center rounded-lg text-[var(--ink2)] hover:bg-[var(--surface)]">
+              {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+        </label>
+
+        <label className="grid gap-1">
+          <span className="text-[14px] font-bold">模型名称 (Model)</span>
+          <input type="text" required value={model} onChange={e => setModel(e.target.value)} data-testid="ai-model"
+            placeholder="deepseek-chat / gpt-4o-mini / qwen-plus"
+            className="h-11 px-3.5 rounded-xl bg-[var(--surface2)] border-2 border-transparent focus:border-[var(--blue)] outline-none text-[15px] font-mono" />
+        </label>
+
+        <div className="flex items-center justify-between gap-2 pt-2">
+          <button type="button" className="text-[13px] text-[var(--ink3)] hover:text-[#D93A2B] font-semibold"
+            onClick={() => { setApiKey(''); saveAiConfig({ baseUrl, apiKey: '', model }) }}>
+            清空已存密钥
+          </button>
+          <div className="flex gap-2">
+            <button type="button" className="btn btn-soft !min-h-[44px]" onClick={onClose}>取消</button>
+            <button type="submit" data-testid="ai-save" disabled={!canSave} className="btn btn-pri !min-h-[44px] disabled:opacity-45">保存配置</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  )
+}
+
 const STEPS = ['读懂你的想法…', '从 500 个概念里挑要学的…', '按难度排顺序…', '拆成一步一步的任务…', '写给 AI 的开发指令…']
 export function PlanLoading({ still }) {
   const [k, setK] = useState(0)
@@ -142,7 +251,7 @@ export function PlanLoading({ still }) {
           <AnimatePresence mode="wait">
             <motion.span key={k} className="block text-[15px] text-[var(--ink2)]" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>{STEPS[k]}</motion.span>
           </AnimatePresence>
-          <small className="block text-[13px] text-[var(--ink3)] mt-1">一般 5–15 秒</small>
+          <small className="block text-[13px] text-[var(--ink3)] mt-1">一般 5–20 秒</small>
         </div>
       </div>
       {[0, 1, 2].map(i => (
@@ -157,12 +266,15 @@ export function PlanLoading({ still }) {
   )
 }
 
-export function ErrorCard({ message, onRetry, retryable = true }) {
+export function ErrorCard({ message, onRetry, retryable = true, onConfig }) {
   return (
     <div role="alert" data-testid="plan-error" className="card p-5 lg:p-6 flex flex-col sm:flex-row sm:items-center gap-3 border-2 border-[color-mix(in_srgb,#D93A2B_35%,transparent)]">
       <span className="emo text-[32px]" aria-hidden="true">😵</span>
       <p className="m-0 flex-1 text-[16px] leading-relaxed">{message}</p>
-      {retryable && onRetry && <button type="button" className="btn btn-pri !min-h-[46px] flex-none" data-testid="plan-retry" onClick={onRetry}>再试一次</button>}
+      <div className="flex gap-2 flex-none">
+        {onConfig && <button type="button" className="btn btn-pri !min-h-[46px]" data-testid="plan-config-btn" onClick={onConfig}><Settings2 size={17} />配置 AI</button>}
+        {retryable && onRetry && <button type="button" className="btn btn-pri !min-h-[46px]" data-testid="plan-retry" onClick={onRetry}>再试一次</button>}
+      </div>
     </div>
   )
 }

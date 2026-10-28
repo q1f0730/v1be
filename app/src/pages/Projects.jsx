@@ -1,14 +1,14 @@
 // #/projects 我的项目列表；#/projects/:id 项目详情（进度、按阶段一张一张看、勾任务、复制指令、重命名、删除、导出、让 AI 调整）
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Download, Pencil, Trash2, Wand2, Sparkles, Check, Plus, Rows3, GalleryHorizontal } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Download, Pencil, Trash2, Wand2, Sparkles, Check, Plus, Rows3, GalleryHorizontal, Settings2 } from 'lucide-react'
 import { useApp } from '../App'
 import { useMedia } from '../lib/useMedia'
 import {
   useProjects, updateProject, deleteProject, toggleTask, replaceRoute, progress, stageState, nextConcept, currentStage,
-  toMarkdown, downloadText, requestPlan, errorText, canRetry, LEVEL_OPTS, MAX_ADJUST,
+  toMarkdown, downloadText, requestPlan, errorText, canRetry, needsAiSetup, isAiConfigured, LEVEL_OPTS, MAX_ADJUST,
 } from '../lib/planner'
-import { StageCard, ConfirmDialog, ErrorCard } from '../components/plan/RouteParts'
+import { StageCard, ConfirmDialog, ErrorCard, AiConfigDialog } from '../components/plan/RouteParts'
 import FlipDeck from '../components/rw/FlipDeck'
 import Skeleton from '../components/rw/Skeleton'
 import mascotSm from '../assets/mascot-sm.webp'
@@ -84,7 +84,8 @@ function ProjectDetail({ id }) {
   const [nameDraft, setNameDraft] = useState('')
   const [askDelete, setAskDelete] = useState(false)
   const [adjustOpen, setAdjustOpen] = useState(false)
-  useEffect(() => { if (p) document.title = p.name + ' · 我的项目' }, [p?.name])
+  const pName = p?.name
+  useEffect(() => { if (pName) document.title = pName + ' · 我的项目' }, [pName])
 
   const total = p?.route.stages.length || 0
   const sParam = sp.get('s')
@@ -224,11 +225,16 @@ function AdjustDialog({ p, onClose, onApplied }) {
   const [text, setText] = useState('')
   const [st, setSt] = useState({ s: 'input' })
   const [ctl, setCtl] = useState(null)
+  const [cfgOpen, setCfgOpen] = useState(false)
   useEffect(() => () => ctl?.abort(), [ctl])
-  useEffect(() => { const k = e => { if (e.key === 'Escape') onClose() }; addEventListener('keydown', k); return () => removeEventListener('keydown', k) }, [onClose])
+  useEffect(() => { const k = e => { if (e.key === 'Escape' && !cfgOpen) onClose() }; addEventListener('keydown', k); return () => removeEventListener('keydown', k) }, [onClose, cfgOpen])
   const len = [...text].length
-  async function run() {
+  async function run(skipCfgCheck = false) {
     if (!text.trim() || len > MAX_ADJUST) return
+    if (!skipCfgCheck && !isAiConfigured()) {
+      setCfgOpen(true)
+      return
+    }
     const c = new AbortController(); setCtl(c); setSt({ s: 'loading' })
     try {
       const d = await requestPlan({ project: p.input?.project || p.name, ...(p.input?.level ? { level: p.input.level } : {}), ...(p.input?.hours ? { hours: p.input.hours } : {}), current_route: p.route, adjust: text.trim() }, { signal: c.signal })
@@ -239,23 +245,37 @@ function AdjustDialog({ p, onClose, onApplied }) {
     <div className="fixed inset-0 z-[110] grid place-items-end sm:place-items-center bg-black/40 p-3" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div role="dialog" aria-modal="true" aria-label="让 AI 调整路线" data-testid="adjust-dialog"
         className="w-full max-w-[560px] max-h-[88vh] overflow-y-auto bg-[var(--surface)] rounded-[24px] shadow-[var(--sh2)] border border-[var(--line)] p-5" style={{ marginBottom: 'env(safe-area-inset-bottom)' }}>
-        <b className="text-[18px] flex items-center gap-2"><Wand2 size={19} />让 AI 调整路线</b>
+        <div className="flex items-center justify-between gap-2">
+          <b className="text-[18px] flex items-center gap-2"><Wand2 size={19} />让 AI 调整路线</b>
+          <button type="button" onClick={() => setCfgOpen(true)} className="inline-flex items-center gap-1.5 min-h-[36px] px-3 rounded-full bg-[var(--surface2)] text-[13px] font-bold hover:bg-[var(--sky)]">
+            <Settings2 size={15} />AI 设置
+          </button>
+        </div>
         {(st.s === 'input' || st.s === 'error') && (
           <>
             <p className="text-[15px] text-[var(--ink2)] mt-2 mb-3">用一句话说想怎么改，比如「不想买域名」「加一个登录功能」「再简单一点」。</p>
             <textarea data-testid="adjust-input" autoFocus rows={3} value={text} onChange={e => setText(e.target.value)} placeholder="想怎么改？"
               className={`block w-full rounded-2xl bg-[var(--surface2)] border-2 ${len > MAX_ADJUST ? 'border-[#D93A2B]' : 'border-transparent focus:border-[var(--blue)]'} outline-none p-3 text-[16px] leading-relaxed resize-none`} />
             <div className="text-right text-[13px] text-[var(--ink3)] tabular mt-1">{len} / {MAX_ADJUST}</div>
-            {st.s === 'error' && <div className="mt-2"><ErrorCard message={errorText(st.error)} retryable={canRetry(st.error)} onRetry={run} /></div>}
+            {st.s === 'error' && (
+              <div className="mt-2">
+                <ErrorCard
+                  message={errorText(st.error)}
+                  retryable={canRetry(st.error)}
+                  onRetry={() => run()}
+                  onConfig={needsAiSetup(st.error) ? () => setCfgOpen(true) : undefined}
+                />
+              </div>
+            )}
             <div className="flex gap-2 justify-end mt-4">
               <button type="button" className="btn btn-soft !min-h-[46px]" onClick={onClose}>取消</button>
-              <button type="button" data-testid="adjust-run" className="btn btn-pri !min-h-[46px] disabled:opacity-45" disabled={!text.trim() || len > MAX_ADJUST} onClick={run}><Sparkles size={17} />生成新路线</button>
+              <button type="button" data-testid="adjust-run" className="btn btn-pri !min-h-[46px] disabled:opacity-45" disabled={!text.trim() || len > MAX_ADJUST} onClick={() => run()}><Sparkles size={17} />生成新路线</button>
             </div>
           </>
         )}
         {st.s === 'loading' && (
           <div className="grid gap-2.5 mt-4" aria-busy="true" data-testid="adjust-loading">
-            <p className="m-0 text-[15px] text-[var(--ink2)]">AI 正在按你的要求改路线…（一般 5–15 秒）</p>
+            <p className="m-0 text-[15px] text-[var(--ink2)]">AI 正在按你的要求改路线…（一般 5–20 秒）</p>
             {[0, 1, 2, 3].map(i => <Skeleton key={i} className="h-12 rounded-2xl" />)}
             <div className="flex justify-end mt-2"><button type="button" className="btn btn-soft !min-h-[46px]" onClick={() => { ctl?.abort(); setSt({ s: 'input' }) }}>取消</button></div>
           </div>
@@ -279,6 +299,7 @@ function AdjustDialog({ p, onClose, onApplied }) {
           </>
         )}
       </div>
+      <AiConfigDialog open={cfgOpen} onClose={() => setCfgOpen(false)} onSaved={() => { setCfgOpen(false); run(true) }} />
     </div>
   )
 }

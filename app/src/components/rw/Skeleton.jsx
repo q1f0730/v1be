@@ -1,6 +1,6 @@
 // 来自 Rewamp UI: src/components/ui/Skeleton.jsx（registry: skeleton）
 // 改动：底色改成本站 --surface2，闪光改成中性白；只保留 Skeleton 基础块，删掉与本站无关的 Folder/Chip 骨架。
-import React from 'react';
+
 
 /**
  * Shared Skeleton primitive

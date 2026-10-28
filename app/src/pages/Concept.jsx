@@ -2,7 +2,7 @@
 //  桌面：左侧「本页目录」+ 中间一块「文件夹标签」内容卡 + 上一节 / 下一节；可「全部展开」
 //  手机：翻牌式一次一张（FlipDeck，可左右滑）+ 底部「上一张 / 我学会了 / 下一张」；可「全部展开」
 //  每个概念都有「小白版 ⇄ 🎓 专业模式」分段开关（记在 aig:prefs.pro）
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Volume2, Square, Rows3, GalleryHorizontal, Check } from 'lucide-react'
@@ -69,7 +69,7 @@ function ConceptView({ x, mode }) {
   const [quizSolved, setQuizSolved] = useState(false)
   const isDone = done.has(x.slug)
   const prev = idx.items[x.i - 1], next = idx.items[x.i + 1]
-  const suffix = mode === 'pro' ? '/pro' : ''
+
   const toConcept = y => y ? `/c/${y.slug}${mode === 'pro' && y.pro ? '/pro' : ''}` : '/'
   const panelTop = useRef(null)
 

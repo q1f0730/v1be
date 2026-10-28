@@ -1,10 +1,11 @@
-// 首页：不放任何概念列表。英雄区 + 搜索、继续学习、四个级别入口（真实进度）、AI 帮我规划 + 知识图谱入口、今日推荐、总进度、词汇表入口、怎么用
+// 首页：不放任何概念列表。英雄区 + 搜索、继续学习、四个级别入口（真实进度）、实战路线 + AI 规划 + 知识图谱入口、今日推荐、总进度、词汇表入口、怎么用
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Sparkles, FolderKanban, Waypoints } from 'lucide-react'
 import { useApp } from '../App'
 import { getLast, lsGet } from '../lib/store'
 import { todayPick } from '../lib/data'
+import { useProjects } from '../lib/planner'
 import SearchCapsule from '../components/rw/SearchCapsule'
 import FolderTabCard from '../components/rw/FolderTabCard'
 import ShimmerButton from '../components/rw/ShimmerButton'
@@ -46,8 +47,8 @@ export default function Home() {
               placeholder={typeof matchMedia !== 'undefined' && matchMedia('(max-width:640px)').matches ? '搜 token、bushu、缓存…' : '中文、英文、拼音都行：token、bushu、缓存…'} />
             <div className="flex lg:flex-wrap items-center gap-2 mt-3.5 -mx-5 px-5 lg:mx-0 lg:px-0 overflow-x-auto no-scrollbar" aria-label="常见的词">
               <span className="text-[13px] text-[var(--ink3)] hidden lg:inline">常见的词：</span>
-              {QUICK.filter(k => bySlug[k]).map((k, i) => (
-                <Link key={k} to={'/c/' + k} className={`inline-flex flex-none items-center gap-1 min-h-[40px] px-3 rounded-full bg-[var(--surface2)]/90 hover:bg-[var(--sky)] no-underline text-[14px] font-semibold`}>
+              {QUICK.filter(k => bySlug[k]).map(k => (
+                <Link key={k} to={'/c/' + k} className="inline-flex flex-none items-center gap-1 min-h-[40px] px-3 rounded-full bg-[var(--surface2)]/90 hover:bg-[var(--sky)] no-underline text-[14px] font-semibold">
                   <span className="emo">{bySlug[k].emoji}</span>{bySlug[k].zh.replace(/\s*\(.*\)$/, '')}
                 </Link>
               ))}
@@ -151,13 +152,13 @@ export default function Home() {
 }
 
 function AiPlanCard() {
-  const projects = (() => { const v = lsGet('projects', []); return Array.isArray(v) ? v : [] })()
+  const projects = useProjects()
   return (
     <section className="card col-span-2 lg:col-span-8 p-5 lg:p-7 order-2 lg:order-none flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-7 bg-[linear-gradient(120deg,var(--lilac),var(--surface)_55%,var(--sky))]" aria-labelledby="h-ai" data-testid="home-ai-card">
       <div className="flex-1 min-w-0">
-        <span id="h-ai" className="chip-tag !bg-[var(--surface)]/80"><span className="emo">✨</span>AI 帮我规划</span>
-        <b className="block text-[21px] lg:text-[26px] font-black leading-snug mt-3">说出你想做的项目，AI 帮你排好学习路线</b>
-        <p className="m-0 mt-1.5 text-[15px] text-[var(--ink2)] leading-relaxed">先学哪几个概念、每一步做什么、直接复制给 AI 编程工具的指令，一次给全。</p>
+        <span id="h-ai" className="chip-tag !bg-[var(--surface)]/80"><span className="emo">✨</span>实战路线 · AI 规划</span>
+        <b className="block text-[21px] lg:text-[26px] font-black leading-snug mt-3">挑一条精选实战路线直接开练，或让 AI 定制专属路线</b>
+        <p className="m-0 mt-1.5 text-[15px] text-[var(--ink2)] leading-relaxed">内置 6 条零配置项目路线即点即学；也可配置你自己的 AI 按想法排课，概念页全程项目伴学。</p>
       </div>
       <div className="flex flex-wrap gap-2.5 flex-none">
         <Link to="/plan" className="btn btn-pri !min-h-[52px] flex-1 sm:flex-none"><Sparkles size={18} />开始规划</Link>

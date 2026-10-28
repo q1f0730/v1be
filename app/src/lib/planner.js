@@ -1,10 +1,9 @@
 // AI 学习路线规划：使用用户在浏览器里自配的 OpenAI 兼容接口（localStorage aig:ai）+ 本地项目存储（localStorage aig:projects）
-// 项目结构：{ id, createdAt, updatedAt, name, input:{project, level, hours}, route:{name, goal, stages[]}, tasks:[bool], doneAt:{stageIdx: ts} }
+// 项目结构：{ id, templateId?, createdAt, updatedAt, name, input:{project, level, hours}, route:{name, goal, stages[]}, tasks:[bool], doneAt:{stageIdx: ts} }
 //   - 概念是否学会不另存，直接读 aig:done（在概念页点「我学会了」项目进度会自动同步）
 //   - tasks[i] = 第 i 个阶段的动手任务是否完成
 import { useSyncExternalStore } from 'react'
 import { lsGet, lsSet } from './store'
-import { ROUTE_SCHEMA, parseInput, buildMessages, validateRoute } from './planner-core'
 
 export const MAX_PROJECT = 500
 export const MAX_ADJUST = 200
@@ -100,12 +99,13 @@ function resolveEndpoint(baseUrl) {
   return u + '/chat/completions'
 }
 
-// 请求一条路线。body: { project, level?, hours?, current_route?, adjust? }
+// 请求一条路线（真正发起 AI 请求时才按需加载 500 概念提示词目录）。body: { project, level?, hours?, current_route?, adjust? }
 export async function requestPlan(body, { signal } = {}) {
   const cfg = getAiConfig()
   if (!isAiConfigured(cfg)) {
     throw new PlanError('missing_key', MSG.missing_key, 400)
   }
+  const { ROUTE_SCHEMA, parseInput, buildMessages, validateRoute } = await import('./planner-core')
   const p = parseInput(body)
   if (!p.ok) {
     throw new PlanError(p.error, p.message, 400)
@@ -147,7 +147,6 @@ export async function requestPlan(body, { signal } = {}) {
   try {
     res = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify(makePayload(true)), signal: ctl.signal })
     if (res.status === 400) {
-      // 部分兼容接口不支持 response_format，自动退回普通请求重试一次
       res = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify(makePayload(false)), signal: ctl.signal })
     }
   } catch {
@@ -174,7 +173,6 @@ export async function requestPlan(body, { signal } = {}) {
     throw new PlanError('http_' + res.status, errMsg, res.status)
   }
 
-  // 兼容直接返回 { route } 的自定义后端，以及标准 OpenAI { choices: [{ message: { content } }] }
   if (data?.route) {
     const v = validateRoute(data.route)
     if (!v.ok) throw new PlanError('bad_output', MSG.bad_output, 502)
@@ -201,13 +199,32 @@ export function useProjects() {
   return useSyncExternalStore(f => { subs.add(f); return () => subs.delete(f) }, get)
 }
 export const getProject = id => get().find(p => p.id === id) || null
+export const findProjectByTemplate = templateId => (templateId ? get().find(p => p.templateId === templateId) || null : null)
 
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
-export function createProject(route, input) {
+export function createProject(route, input, extra = {}) {
+  if (extra.templateId) {
+    const existing = findProjectByTemplate(extra.templateId)
+    if (existing) return existing
+  }
   const now = Date.now()
-  const p = { id: newId(), createdAt: now, updatedAt: now, name: route.name || '我的项目', input, route, tasks: route.stages.map(() => false), doneAt: {} }
+  const copy = JSON.parse(JSON.stringify(route))
+  const p = {
+    id: newId(),
+    ...(extra.templateId ? { templateId: extra.templateId } : {}),
+    createdAt: now,
+    updatedAt: now,
+    name: copy.name || '我的项目',
+    input: input ? { ...input } : {},
+    route: copy,
+    tasks: copy.stages.map(() => false),
+    doneAt: {},
+  }
   write([p, ...get()])
   return p
+}
+export function createFromTemplate(tpl) {
+  return createProject(tpl.route, tpl.input, { templateId: tpl.id })
 }
 export function updateProject(id, patch) {
   write(get().map(p => p.id === id ? { ...p, ...(typeof patch === 'function' ? patch(p) : patch), updatedAt: Date.now() } : p))
@@ -228,7 +245,7 @@ export function replaceRoute(id, route) {
   })
 }
 
-// ---------------- 进度 ----------------
+// ---------------- 进度与伴学上下文 ----------------
 export function stageState(p, i, done) {
   const s = p.route.stages[i]
   const learned = s.concepts.filter(c => done.has(c)).length
@@ -250,6 +267,57 @@ export function nextConcept(p, done) {
 export function currentStage(p, done) {
   const i = p.route.stages.findIndex((_, k) => !stageState(p, k, done).complete)
   return i < 0 ? p.route.stages.length - 1 : i
+}
+
+// 计算概念页在「项目伴学模式」下的完整导航状态
+export function projectCompanion(p, slug, done) {
+  if (!p?.route?.stages?.length) return null
+  const flat = []
+  p.route.stages.forEach((st, si) => {
+    st.concepts.forEach((c, ci) => {
+      flat.push({ slug: c, stageIdx: si, posInStage: ci, stageTotal: st.concepts.length })
+    })
+  })
+  const pos = flat.findIndex(x => x.slug === slug)
+  const resumeSlug = nextConcept(p, done) || flat[0]?.slug || null
+  if (pos < 0) {
+    const cs = currentStage(p, done)
+    return {
+      project: p,
+      inRoute: false,
+      resumeSlug,
+      backUrl: `/projects/${p.id}?s=${cs + 1}`,
+    }
+  }
+  const cur = flat[pos]
+  const stage = p.route.stages[cur.stageIdx]
+  const stageLearned = stage.concepts.filter(c => done.has(c)).length
+  const stageAllConceptsDone = stageLearned === stage.concepts.length
+  const stageTaskDone = !!p.tasks?.[cur.stageIdx]
+  const prevItem = pos > 0 ? flat[pos - 1] : null
+  const nextItem = pos < flat.length - 1 ? flat[pos + 1] : null
+  const nextUnlearnedInStage = stage.concepts.find(c => c !== slug && !done.has(c)) || null
+  return {
+    project: p,
+    inRoute: true,
+    pos,
+    totalConcepts: flat.length,
+    stageIdx: cur.stageIdx,
+    totalStages: p.route.stages.length,
+    stage,
+    posInStage: cur.posInStage,
+    stageTotal: cur.stageTotal,
+    stageLearned,
+    stageAllConceptsDone,
+    stageTaskDone,
+    prevSlug: prevItem?.slug || null,
+    prevStageChanged: prevItem ? prevItem.stageIdx !== cur.stageIdx : false,
+    nextSlug: nextItem?.slug || null,
+    nextInSameStage: nextItem && nextItem.stageIdx === cur.stageIdx ? nextItem.slug : null,
+    nextUnlearnedInStage,
+    nextUnlearnedInProject: resumeSlug,
+    backUrl: `/projects/${p.id}?s=${cur.stageIdx + 1}`,
+  }
 }
 
 // ---------------- 导出 Markdown ----------------

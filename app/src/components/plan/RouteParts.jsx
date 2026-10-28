@@ -1,16 +1,18 @@
-// AI 规划 / 我的项目 共用的小部件：概念卡、阶段卡、复制按钮、确认弹窗、AI 配置弹窗、生成中动画
+// AI 规划 / 我的项目 共用的小部件：概念卡、阶段卡、精选模板网格、复制按钮、确认弹窗、AI 配置弹窗、生成中动画
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { Check, Copy, Hammer, Target, Flag, X, Settings2, Eye, EyeOff } from 'lucide-react'
+import { Check, Copy, Hammer, Target, Flag, X, Settings2, Eye, EyeOff, ArrowRight, Play } from 'lucide-react'
 import { copyText } from '../../lib/fx'
-import { AI_PRESETS, useAiConfig, saveAiConfig, isLocalEndpoint } from '../../lib/planner'
+import { AI_PRESETS, useAiConfig, saveAiConfig, isLocalEndpoint, createFromTemplate, progress } from '../../lib/planner'
+import { STARTER_TEMPLATES } from '../../lib/templates'
 import Skeleton from '../rw/Skeleton'
 
-export function ConceptCard({ x, lv, learned, order }) {
+export function ConceptCard({ x, lv, learned, order, projId }) {
   if (!x) return null
+  const href = '/c/' + x.slug + (projId ? `?proj=${encodeURIComponent(projId)}` : '')
   return (
-    <Link to={'/c/' + x.slug} data-testid="route-concept" data-learned={learned ? '1' : '0'}
+    <Link to={href} data-testid="route-concept" data-learned={learned ? '1' : '0'}
       className={`${lv?.cls || ''} group relative flex items-center gap-3 min-h-[64px] p-2.5 pr-3 rounded-2xl no-underline border transition-[transform,background] hover:-translate-y-0.5 ${learned ? 'bg-[var(--accs)] border-[color-mix(in_srgb,var(--acc)_30%,transparent)]' : 'bg-[var(--surface2)] border-transparent hover:bg-[var(--surface3)]'}`}>
       <span className="emo text-[24px] w-11 h-11 grid place-items-center rounded-xl bg-[var(--surface)] flex-none shadow-[var(--sh)]">{x.emoji}</span>
       <span className="min-w-0 flex-1">
@@ -39,10 +41,11 @@ export function CopyButton({ text, label = '复制指令', className = '', testi
   )
 }
 
-// 一个阶段的完整内容。project 模式下动手任务可以勾选
-export function StageCard({ stage, i, total, idx, done, taskDone, onToggleTask, complete, compact }) {
+// 一个阶段的完整内容。project 模式下动手任务可以勾选，概念卡片携带 projId 进入伴学模式
+export function StageCard({ stage, i, total, idx, done, taskDone, onToggleTask, complete, compact, projId }) {
   const items = stage.concepts.map(s => idx.bySlug[s]).filter(Boolean)
   const learned = items.filter(x => done.has(x.slug)).length
+  const firstUnlearned = items.find(x => !done.has(x.slug)) || items[0]
   return (
     <article className="card p-4 lg:p-7 flex flex-col gap-4 lg:gap-5" data-testid="stage-card" aria-label={`阶段 ${i + 1}：${stage.title}`}>
       <header className="flex items-start gap-3">
@@ -53,6 +56,12 @@ export function StageCard({ stage, i, total, idx, done, taskDone, onToggleTask, 
           <small className="block text-[13px] text-[var(--ink3)] font-semibold">阶段 {i + 1} / {total}{complete ? ' · 已完成' : ''}</small>
           <h3 className="m-0 text-[20px] lg:text-[24px] font-extrabold leading-snug">{stage.title}</h3>
         </div>
+        {projId && firstUnlearned && learned < items.length && (
+          <Link to={`/c/${firstUnlearned.slug}?proj=${encodeURIComponent(projId)}`} data-testid="stage-start-learn"
+            className="flex-none inline-flex items-center gap-1.5 min-h-[40px] px-3.5 rounded-full bg-[var(--ink)] text-[var(--bg)] no-underline text-[13px] font-bold hover:opacity-90">
+            <Play size={14} fill="currentColor" />伴学本阶段
+          </Link>
+        )}
       </header>
       {stage.goal && <p className="m-0 flex gap-2 text-[16px] leading-relaxed text-[var(--ink2)]"><Target size={18} className="flex-none mt-[5px] text-[var(--blue)]" /><span>{stage.goal}</span></p>}
 
@@ -62,7 +71,7 @@ export function StageCard({ stage, i, total, idx, done, taskDone, onToggleTask, 
           <span className="text-[13px] text-[var(--ink2)] tabular" data-testid="stage-learned">已学会 {learned}/{items.length}</span>
         </div>
         <div className={`grid gap-2 ${compact ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3'}`}>
-          {items.map((x, k) => <ConceptCard key={x.slug} x={x} lv={idx.levelBy[x.level]} learned={done.has(x.slug)} order={k + 1} />)}
+          {items.map((x, k) => <ConceptCard key={x.slug} x={x} lv={idx.levelBy[x.level]} learned={done.has(x.slug)} order={k + 1} projId={projId} />)}
         </div>
       </section>
 
@@ -91,6 +100,91 @@ export function StageCard({ stage, i, total, idx, done, taskDone, onToggleTask, 
         <p className="m-0 flex gap-2 text-[15px] leading-relaxed"><Flag size={17} className="flex-none mt-[4px] text-[#1E7F45]" /><span><b>完成标准：</b>{stage.done_when}</span></p>
       )}
     </article>
+  )
+}
+
+// 官方精选实战路线网格（零 API Key 门槛，一键开启项目伴学）
+export function TemplateGrid({ done, projects = [], onPreview, activeId, title = '精选实战路线 · 零配置直接学', subtitle = '还没准备 API Key？直接挑一条打磨好的实战路线开启伴学闯关，每一步都有配套概念和可复制的开发指令。' }) {
+  const nav = useNavigate()
+  const byTpl = new Map(projects.filter(p => p.templateId).map(p => [p.templateId, p]))
+
+  function startNow(tpl) {
+    const p = createFromTemplate(tpl)
+    nav('/projects/' + p.id)
+  }
+
+  return (
+    <section aria-labelledby="h-templates" data-testid="starter-templates" className="grid gap-3.5 lg:gap-4">
+      <div className="px-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="chip-tag"><span className="emo">🎁</span>免配置 · 开箱即用</span>
+        </div>
+        <h2 id="h-templates" className="m-0 mt-2.5 text-[22px] lg:text-[28px] font-black leading-tight">{title}</h2>
+        {subtitle && <p className="m-0 mt-1 text-[14px] lg:text-[16px] text-[var(--ink2)] leading-relaxed">{subtitle}</p>}
+      </div>
+
+      <ul className="list-none m-0 p-0 grid gap-3.5 lg:gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {STARTER_TEMPLATES.map(tpl => {
+          const allConcepts = tpl.route.stages.flatMap(s => s.concepts)
+          const learnedCount = allConcepts.filter(c => done.has(c)).length
+          const existing = byTpl.get(tpl.id)
+          const exProg = existing ? progress(existing, done) : null
+          const isSelected = activeId === tpl.id
+          return (
+            <li key={tpl.id}>
+              <article data-testid={'tpl-' + tpl.id}
+                style={{ background: `linear-gradient(155deg, ${tpl.tint || 'var(--surface2)'}, var(--surface) 62%)` }}
+                className={`card h-full p-5 flex flex-col gap-3 transition-transform hover:-translate-y-0.5 ${isSelected ? 'ring-2 ring-[var(--blue)]' : ''}`}>
+                <div className="flex items-start justify-between gap-2">
+                  <span className="emo text-[30px] w-12 h-12 rounded-2xl bg-[var(--surface)]/90 shadow-[var(--sh)] grid place-items-center flex-none">{tpl.emoji}</span>
+                  <div className="flex flex-wrap justify-end gap-1.5">
+                    {existing && <span className="px-2.5 py-1 rounded-full text-[12px] font-extrabold bg-[#1E7F45] text-white">进行中 {exProg.pct}%</span>}
+                    <span className="px-2.5 py-1 rounded-full text-[12px] font-bold bg-[var(--surface)]/85 text-[var(--ink2)]">{tpl.badge}</span>
+                  </div>
+                </div>
+
+                <div className="min-w-0">
+                  <h3 className="m-0 text-[19px] font-extrabold leading-snug">{tpl.route.name}</h3>
+                  <p className="m-0 mt-1 text-[14px] text-[var(--ink2)] leading-relaxed clamp2">{tpl.route.goal}</p>
+                </div>
+
+                <div className="mt-auto pt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[12.5px] font-semibold text-[var(--ink3)] tabular">
+                  <span>{tpl.route.stages.length} 个阶段</span>
+                  <span>·</span>
+                  <span>{allConcepts.length} 个概念</span>
+                  {learnedCount > 0 && (
+                    <>
+                      <span>·</span>
+                      <span className="text-[#1E7F45] dark:text-[#5FD08A]">已会 {learnedCount}/{allConcepts.length}</span>
+                    </>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  {existing ? (
+                    <Link to={'/projects/' + existing.id} data-testid={'tpl-open-' + tpl.id}
+                      className="btn btn-pri !min-h-[42px] !px-4 !text-[14px] flex-1 no-underline">
+                      继续项目 <ArrowRight size={16} />
+                    </Link>
+                  ) : (
+                    <button type="button" onClick={() => startNow(tpl)} data-testid={'tpl-start-' + tpl.id}
+                      className="btn btn-pri !min-h-[42px] !px-4 !text-[14px] flex-1">
+                      直接开始 <ArrowRight size={16} />
+                    </button>
+                  )}
+                  {onPreview && (
+                    <button type="button" onClick={() => onPreview(tpl)} data-testid={'tpl-preview-' + tpl.id}
+                      className="btn btn-soft !bg-[var(--surface)] !min-h-[42px] !px-3.5 !text-[14px]">
+                      {isSelected ? '正在预览' : '预览'}
+                    </button>
+                  )}
+                </div>
+              </article>
+            </li>
+          )
+        })}
+      </ul>
+    </section>
   )
 }
 

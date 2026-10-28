@@ -27,7 +27,7 @@ python3 -m http.server 8000 -d site
 
 ## 新版应用（`app/`）
 
-`app/` 是基于 Rewamp UI 重做的新版纯前端应用（React 19 + Vite + Tailwind 4）：分级浏览、知识图谱（`#/graph`）、全文搜索（支持拼音/首字母，`#/search`）、AI 帮我规划学习路线（`#/plan`）和「我的项目」（`#/projects`）。
+`app/` 是基于 Rewamp UI 重做的新版纯前端应用（React 19 + Vite + Tailwind 4）：分级浏览、知识图谱（`#/graph`）、全文搜索（支持拼音/首字母，`#/search`）、实战路线与 AI 规划（`#/plan`）、「我的项目」与概念页伴学闭环（`#/projects`）。
 
 ```bash
 cd app
@@ -36,7 +36,6 @@ npm run dev     # 本地开发（先运行 npm run prep 生成数据）
 npm run build   # 构建产物在 app/dist/，使用者可自行选择任意静态方式托管或本地运行
 ```
 
-**AI 路线规划（自配接口）**：
-- 本项目不包含任何后端部署或内置密钥。
-- 在 `#/plan` 页面点击「**配置 AI 接口**」，填入你自己的 OpenAI 兼容接口（支持 DeepSeek、硅基流动、OpenAI、OpenRouter、Kimi、智谱 GLM、Inception Mercury 或本地 Ollama）。
-- 接口地址、API Key 与生成的学习路线仅保存在你当前浏览器的 `localStorage` 中。详见 `app/README.md`。
+**精选实战路线 & AI 定制规划**：
+- **零配置即点即学**：内置 6 条精选实战路线（个人作品集上线、极简记账应用、AI 日报工作流、Excel 自动清洗工具、RAG 知识库助手、全栈 SaaS 看板），无需填写任何 API Key 即可一键创建项目并进入**项目伴学模式**（概念页按路线顺序切换、阶段学完自动引导动手任务）。
+- **自配 AI 定制路线**：本项目不包含任何后端部署或内置密钥。如需定制任意项目想法，在 `#/plan` 点击「**配置 AI 接口**」，填入你自己的 OpenAI 兼容接口（支持 DeepSeek、硅基流动、OpenAI、OpenRouter、Kimi、智谱 GLM、Inception Mercury 或本地 Ollama）。接口密钥与项目进度仅保存在当前浏览器的 `localStorage` 中。详见 `app/README.md`。

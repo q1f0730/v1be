@@ -109,7 +109,7 @@ function Quiz({ q, solved, onSolved }) {
   )
 }
 
-export function EasySection({ id, c, bySlug, mode, quizSolved, onQuizSolved }) {
+export function EasySection({ id, c, bySlug, mode, projId, quizSolved, onQuizSolved }) {
   switch (id) {
     case 'one': return <p className="text-[clamp(22px,2vw,30px)] leading-normal font-extrabold m-0">{c.oneLiner}</p>
     case 'ana': return (
@@ -148,7 +148,7 @@ export function EasySection({ id, c, bySlug, mode, quizSolved, onQuizSolved }) {
               <h3 className="text-[1em] mt-5 mb-2.5"><span className="emo">🔗</span> 相关概念</h3>
               <div className="flex flex-wrap gap-2">
                 {rel.map(r => (
-                  <Link key={r.slug} to={'/c/' + r.slug + (mode === 'pro' && r.pro ? '/pro' : '')}
+                  <Link key={r.slug} to={'/c/' + r.slug + (mode === 'pro' && r.pro ? '/pro' : '') + (projId ? `?proj=${encodeURIComponent(projId)}` : '')}
                     className="inline-flex items-center gap-1.5 min-h-[44px] no-underline bg-[var(--accs)] rounded-[14px] px-3.5 text-[.92em] font-semibold hover:shadow-[inset_0_0_0_2px_var(--acc)]">
                     <span className="emo">{r.emoji}</span>{r.zh}
                   </Link>

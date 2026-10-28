@@ -1,4 +1,4 @@
-// #/projects 我的项目列表；#/projects/:id 项目详情（进度、按阶段一张一张看、勾任务、复制指令、重命名、删除、导出、让 AI 调整）
+// #/projects 我的项目列表（含精选路线一键起步）；#/projects/:id 项目详情（伴学闭环、按阶段看、勾任务、复制指令、重命名、删除、导出、让 AI 调整）
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Download, Pencil, Trash2, Wand2, Sparkles, Check, Plus, Rows3, GalleryHorizontal, Settings2 } from 'lucide-react'
@@ -8,7 +8,7 @@ import {
   useProjects, updateProject, deleteProject, toggleTask, replaceRoute, progress, stageState, nextConcept, currentStage,
   toMarkdown, downloadText, requestPlan, errorText, canRetry, needsAiSetup, isAiConfigured, LEVEL_OPTS, MAX_ADJUST,
 } from '../lib/planner'
-import { StageCard, ConfirmDialog, ErrorCard, AiConfigDialog } from '../components/plan/RouteParts'
+import { StageCard, ConfirmDialog, ErrorCard, AiConfigDialog, TemplateGrid } from '../components/plan/RouteParts'
 import FlipDeck from '../components/rw/FlipDeck'
 import Skeleton from '../components/rw/Skeleton'
 import mascotSm from '../assets/mascot-sm.webp'
@@ -25,48 +25,61 @@ function ProjectList() {
   const projects = useProjects()
   useEffect(() => { document.title = '我的项目 · AI 造物指南' }, [])
   return (
-    <div className="max-w-[1080px] mx-auto px-3.5 lg:px-6 pt-4 lg:pt-7 pb-6 grid grid-cols-1 gap-4 lg:gap-5 [&>*]:min-w-0">
+    <div className="max-w-[1080px] mx-auto px-3.5 lg:px-6 pt-4 lg:pt-7 pb-6 grid grid-cols-1 gap-5 lg:gap-6 [&>*]:min-w-0">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <span className="chip-tag"><span className="emo">🗂️</span>只存在你的浏览器里</span>
           <h1 className="m-0 mt-3 text-[30px] lg:text-[40px] font-black leading-tight">我的项目</h1>
         </div>
-        <Link to="/plan" className="btn btn-pri !min-h-[48px]" data-testid="new-plan"><Plus size={18} />规划新项目</Link>
+        <Link to="/plan" className="btn btn-pri !min-h-[48px]" data-testid="new-plan"><Plus size={18} />定制新项目</Link>
       </header>
       {projects.length === 0 ? (
-        <div className="card p-8 text-center grid justify-items-center gap-2" data-testid="projects-empty">
-          <img src={mascotSm} alt="" width="80" height="80" className="w-20 h-20 rounded-3xl" />
-          <b className="text-[20px]">还没有项目</b>
-          <p className="m-0 text-[var(--ink2)]">说说你想做什么，AI 帮你排好学习路线。</p>
-          <Link to="/plan" className="btn btn-pri mt-2"><Sparkles size={18} />AI 帮我规划</Link>
-        </div>
+        <>
+          <div className="card p-6 lg:p-8 text-center grid justify-items-center gap-2" data-testid="projects-empty">
+            <img src={mascotSm} alt="" width="76" height="76" className="w-[76px] h-[76px] rounded-3xl" />
+            <b className="text-[20px]">还没有进行中的项目</b>
+            <p className="m-0 text-[var(--ink2)] max-w-[34em]">直接从下方挑一条精选实战路线开启伴学闯关，或者去让 AI 按你的想法定制专属路线。</p>
+            <Link to="/plan" className="btn btn-soft mt-2"><Sparkles size={18} />用 AI 定制我的想法</Link>
+          </div>
+          <TemplateGrid done={done} projects={projects} />
+        </>
       ) : (
-        <ul className="list-none m-0 p-0 grid gap-3.5 lg:gap-5 sm:grid-cols-2">
-          {projects.map(p => {
-            const pr = progress(p, done)
-            const nx = nextConcept(p, done); const nxi = nx && idx.bySlug[nx]
-            const cs = currentStage(p, done)
-            return (
-              <li key={p.id}>
-                <Link to={'/projects/' + p.id} data-testid="project-card" className="card h-full p-5 lg:p-6 flex flex-col gap-3 no-underline hover:-translate-y-1 transition-transform">
-                  <div className="flex items-start justify-between gap-3">
-                    <b className="text-[20px] leading-snug min-w-0 break-words">{p.name}</b>
-                    <span className="text-[26px] font-black tabular leading-none text-[var(--blue)] flex-none">{pr.pct}%</span>
-                  </div>
-                  {p.route.goal && <p className="m-0 text-[15px] text-[var(--ink2)] leading-relaxed clamp2">{p.route.goal}</p>}
-                  <div className="pbar" style={{ '--acc': pr.pct === 100 ? '#1E7F45' : 'var(--blue)' }}><i style={{ width: pr.pct + '%' }} /></div>
-                  <p className="m-0 text-[14px] text-[var(--ink2)] leading-snug">
-                    {pr.stagesDone === pr.stages ? '🎉 全部完成' : <>正在 <b className="text-[var(--ink)]">阶段 {cs + 1}：{p.route.stages[cs].title}</b></>}
-                  </p>
-                  <div className="mt-auto pt-1 flex flex-col items-start sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 text-[13px] text-[var(--ink3)] [&>*]:max-w-full">
-                    <span>{fmtDate(p.createdAt)} 创建 · {pr.stagesDone}/{pr.stages} 阶段</span>
-                    {nxi && <span className="truncate min-w-0">下一个：<span className="emo">{nxi.emoji}</span> {nxi.zh}</span>}
-                  </div>
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
+        <>
+          <ul className="list-none m-0 p-0 grid gap-3.5 lg:gap-5 sm:grid-cols-2">
+            {projects.map(p => {
+              const pr = progress(p, done)
+              const nx = nextConcept(p, done); const nxi = nx && idx.bySlug[nx]
+              const cs = currentStage(p, done)
+              return (
+                <li key={p.id}>
+                  <Link to={'/projects/' + p.id} data-testid="project-card" className="card h-full p-5 lg:p-6 flex flex-col gap-3 no-underline hover:-translate-y-1 transition-transform">
+                    <div className="flex items-start justify-between gap-3">
+                      <b className="text-[20px] leading-snug min-w-0 break-words">{p.name}</b>
+                      <span className="text-[26px] font-black tabular leading-none text-[var(--blue)] flex-none">{pr.pct}%</span>
+                    </div>
+                    {p.route.goal && <p className="m-0 text-[15px] text-[var(--ink2)] leading-relaxed clamp2">{p.route.goal}</p>}
+                    <div className="pbar" style={{ '--acc': pr.pct === 100 ? '#1E7F45' : 'var(--blue)' }}><i style={{ width: pr.pct + '%' }} /></div>
+                    <p className="m-0 text-[14px] text-[var(--ink2)] leading-snug">
+                      {pr.stagesDone === pr.stages ? '🎉 全部完成' : <>正在 <b className="text-[var(--ink)]">阶段 {cs + 1}：{p.route.stages[cs].title}</b></>}
+                    </p>
+                    <div className="mt-auto pt-1 flex flex-col items-start sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 text-[13px] text-[var(--ink3)] [&>*]:max-w-full">
+                      <span>{fmtDate(p.createdAt)} 创建 · {pr.stagesDone}/{pr.stages} 阶段</span>
+                      {nxi && <span className="truncate min-w-0">下一个：<span className="emo">{nxi.emoji}</span> {nxi.zh}</span>}
+                    </div>
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+          <div className="pt-2">
+            <TemplateGrid
+              done={done}
+              projects={projects}
+              title="添加更多精选实战路线"
+              subtitle="随时开启新的实战主题，概念打卡进度与全站实时互通。"
+            />
+          </div>
+        </>
       )}
     </div>
   )
@@ -120,7 +133,19 @@ function ProjectDetail({ id }) {
   const lvLabel = LEVEL_OPTS.find(o => o.id === p.input?.level)?.label
   const stage = i => {
     const st = stageState(p, i, done)
-    return <StageCard stage={p.route.stages[i]} i={i} total={total} idx={idx} done={done} taskDone={st.task} complete={st.complete} onToggleTask={() => toggleTask(p.id, i)} />
+    return (
+      <StageCard
+        stage={p.route.stages[i]}
+        i={i}
+        total={total}
+        idx={idx}
+        done={done}
+        projId={p.id}
+        taskDone={st.task}
+        complete={st.complete}
+        onToggleTask={() => toggleTask(p.id, i)}
+      />
+    )
   }
 
   return (
@@ -154,8 +179,8 @@ function ProjectDetail({ id }) {
 
         <div className="flex flex-wrap gap-2.5 mt-5">
           {nxi ? (
-            <Link to={'/c/' + nxi.slug} data-testid="next-concept" className="btn btn-pri !min-h-[50px] w-full sm:w-auto min-w-0">
-              <span className="truncate min-w-0">继续学：<span className="emo">{nxi.emoji}</span> {nxi.zh}</span><ArrowRight size={18} className="flex-none" />
+            <Link to={`/c/${nxi.slug}?proj=${encodeURIComponent(p.id)}`} data-testid="next-concept" className="btn btn-pri !min-h-[50px] w-full sm:w-auto min-w-0">
+              <span className="truncate min-w-0">进入伴学：<span className="emo">{nxi.emoji}</span> {nxi.zh}</span><ArrowRight size={18} className="flex-none" />
             </Link>
           ) : <span className="btn btn-ok !min-h-[50px]"><Check size={18} />概念全学会了</span>}
           <button type="button" className="btn btn-soft !min-h-[50px] flex-1 sm:flex-none" data-testid="adjust" onClick={() => setAdjustOpen(true)}><Wand2 size={17} />让 AI 调整</button>

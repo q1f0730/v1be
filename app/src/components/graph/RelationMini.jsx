@@ -9,7 +9,7 @@ import { LV_COLORS, DONE_COLOR, shortName } from './colors'
 
 const cutName = (s, n) => { s = shortName(s); return [...s].length > n ? [...s].slice(0, n - 1).join('') + '…' : s }
 
-export default function RelationMini({ slug, mode }) {
+export default function RelationMini({ slug, mode, projId }) {
   const { idx, done, theme } = useApp()
   const { data: g } = useGraph()
   const nav = useNavigate()
@@ -75,7 +75,7 @@ export default function RelationMini({ slug, mode }) {
   if (!g || i == null || !layout) return <div ref={box} className="card mt-5 h-[120px]" aria-hidden="true" />
   const me = g.nodes[i]
   const colorOf = n => LV_COLORS[th][n.l]
-  const to = m => `/c/${m.slug}${mode === 'pro' && m.item.pro ? '/pro' : ''}`
+  const to = m => `/c/${m.slug}${mode === 'pro' && m.item.pro ? '/pro' : ''}${projId ? `?proj=${encodeURIComponent(projId)}` : ''}`
   const go = m => nav(to(m))
   const label = (m, n) => cutName(m.item.zh, n)
   const { pos, p2, cx, cy, grp, H, more, colX } = layout
